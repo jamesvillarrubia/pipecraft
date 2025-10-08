@@ -38,3 +38,6 @@ logs/
 coverage/
 *.lcov
 
+# Development scripts
+flowcraft
+

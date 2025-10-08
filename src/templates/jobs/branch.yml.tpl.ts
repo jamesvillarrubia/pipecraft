@@ -1,4 +1,7 @@
-name: "Branch Management"
+import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+
+// Template for the Branch Management workflow
+const branchWorkflowTemplate = (ctx: any) => `name: "Branch Management"
 
 on:
   workflow_call:
@@ -180,4 +183,8 @@ jobs:
           echo "✅ ${{ steps.branch-action.outputs.message }}"
         else
           echo "❌ ${{ steps.branch-action.outputs.message }}"
-        fi
+        fi`
+
+export const generate = (ctx: PinionContext) =>
+  Promise.resolve(ctx)
+    .then(renderTemplate(branchWorkflowTemplate, toFile('.github/workflows/job.branch.yml')))

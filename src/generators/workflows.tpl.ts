@@ -47,9 +47,9 @@ const defaultConfig = {
 const changesWorkflowTemplate = (ctx: any) => {
   const domainNames = Object.keys(ctx.domains)
   const outputs = domainNames.map(name => `      ${name}: 
-        value: ${{ jobs.changes.outputs.${name} }}`).join('\n')
+        value: \${{ jobs.changes.outputs.${name} }}`).join('\n')
   
-  const jobOutputs = domainNames.map(name => `      ${name}: ${{ steps.merge.outputs.${name} }}`).join('\n')
+  const jobOutputs = domainNames.map(name => `      ${name}: \${{ steps.merge.outputs.${name} }}`).join('\n')
   
   const branchCases = ctx.branchFlow.slice(0, -1).map((branch, index) => 
     `          'refs/heads/${branch}')
@@ -193,7 +193,7 @@ jobs:
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
     .then(loadJSON(
-      () => '.trunkflowrc.json',
+      () => '.flowcraftrc.json',
       (config) => ({ ...ctx, ...config } as FlowcraftConfig),
       () => ({ ...ctx, ...defaultConfig } as FlowcraftConfig)
     ))

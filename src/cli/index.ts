@@ -2,7 +2,7 @@
 
 import { Command } from 'commander'
 import { cosmiconfigSync } from 'cosmiconfig'
-import { runModule } from '@featherscloud/pinion'
+import { runModule, prompt } from '@featherscloud/pinion'
 import { join } from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
@@ -10,6 +10,7 @@ import { IdempotencyManager } from '../utils/idempotency'
 import { VersionManager } from '../utils/versioning'
 import { loadConfig, validateConfig } from '../utils/config'
 import { FlowcraftConfig } from '../types'
+import inquirer from 'inquirer'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -24,7 +25,7 @@ program
 
 // Global options
 program
-  .option('-c, --config <path>', 'path to config file', '.trunkflowrc.json')
+  .option('-c, --config <path>', 'path to config file', '.flowcraftrc.json')
   .option('-v, --verbose', 'verbose output')
   .option('--force', 'force regeneration even if files unchanged')
   .option('--dry-run', 'show what would be done without making changes')
@@ -33,9 +34,13 @@ program
 program
   .command('init')
   .description('Initialize flowcraft configuration')
-  .option('-f, --force', 'overwrite existing config')
-  .option('-i, --interactive', 'interactive setup wizard')
+  .option('-f, --force', 'overwrite existing config file')
+  .option('-i, --interactive', 'run interactive setup wizard')
   .option('--with-versioning', 'include version management setup')
+  .option('--ci-provider <provider>', 'CI provider (github|gitlab)', 'github')
+  .option('--merge-strategy <strategy>', 'merge strategy (fast-forward|merge)', 'fast-forward')
+  .option('--initial-branch <branch>', 'initial development branch', 'develop')
+  .option('--final-branch <branch>', 'final production branch', 'main')
   .action(async (options) => {
     try {
       const globalOptions = program.opts()
@@ -44,13 +49,16 @@ program
         cwd: process.cwd(),
         argv: process.argv,
         pinion: {
-          logger: console,
-          prompt: require('inquirer').prompt,
+          logger: {
+            ...console,
+            notice: console.log
+          },
+          prompt: prompt as any,
           cwd: process.cwd(),
           force: options.force || globalOptions.force || false,
           trace: [],
           exec: async (command: string, args: string[]) => {
-            const { spawn } = require('child_process')
+            const { spawn } = await import('child_process')
             return new Promise((resolve, reject) => {
               const child = spawn(command, args, { stdio: 'inherit', shell: true })
               child.once('exit', (code: number) => (code === 0 ? resolve(code) : reject(code)))
@@ -68,7 +76,7 @@ program
       }
       
       console.log('✅ Configuration initialized successfully!')
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Failed to initialize configuration:', error.message)
       process.exit(1)
     }
@@ -96,7 +104,7 @@ program
       if (!globalOptions.force && !globalOptions.dryRun) {
         const idempotencyManager = new IdempotencyManager(config)
         
-        if (!idempotencyManager.hasChanges()) {
+        if (!(await idempotencyManager.hasChanges())) {
           console.log('ℹ️  No changes detected. Use --force to regenerate anyway.')
           return
         }
@@ -115,13 +123,15 @@ program
         cwd: process.cwd(),
         argv: process.argv,
         pinion: {
-          logger: console,
-          prompt: require('inquirer').prompt,
+          logger: {
+            ...console,
+            notice: console.log
+          },
           cwd: process.cwd(),
           force: globalOptions.force || false,
           trace: [],
           exec: async (command: string, args: string[]) => {
-            const { spawn } = require('child_process')
+            const { spawn } = await import('child_process')
             return new Promise((resolve, reject) => {
               const child = spawn(command, args, { stdio: 'inherit', shell: true })
               child.once('exit', (code: number) => (code === 0 ? resolve(code) : reject(code)))
@@ -132,10 +142,10 @@ program
       
       // Update idempotency cache
       const idempotencyManager = new IdempotencyManager(config)
-      idempotencyManager.updateCache()
+      await idempotencyManager.updateCache()
       
       console.log(`✅ Generated workflows in: ${options.output}`)
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Failed to generate workflows:', error.message)
       process.exit(1)
     }
@@ -154,7 +164,7 @@ program
       validateConfig(config)
       
       console.log('✅ Configuration is valid!')
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Configuration validation failed:', error.message)
       process.exit(1)
     }
@@ -181,8 +191,8 @@ program
       console.log('✅ Configuration is valid!')
       
       // Check if workflows exist
-      const fs = require('fs')
-      const path = require('path')
+      const fs = await import('fs')
+      const path = await import('path')
       
       if (config.ciProvider === 'github') {
         const workflowPath = path.join(process.cwd(), '.github/workflows/pipeline.yml')
@@ -193,7 +203,7 @@ program
         }
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Verification failed:', error.message)
       process.exit(1)
     }
@@ -236,7 +246,7 @@ program
         console.log('✅ Release created!')
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Version command failed:', error.message)
       process.exit(1)
     }

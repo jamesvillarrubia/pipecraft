@@ -1,4 +1,7 @@
-name: "Create Pull Request"
+import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+
+// Template for the Create Pull Request workflow
+const createprWorkflowTemplate = (ctx: any) => `name: "Create Pull Request"
 
 on:
   workflow_call:
@@ -100,13 +103,13 @@ jobs:
         fi
         
         # Create the PR
-        PR_OUTPUT=$(gh pr create \
-          --head "$SOURCE" \
-          --base "$TARGET" \
-          --title "$TITLE" \
-          --body "$BODY" \
-          $LABEL_ARGS \
-          --json number,url \
+        PR_OUTPUT=$(gh pr create \\
+          --head "$SOURCE" \\
+          --base "$TARGET" \\
+          --title "$TITLE" \\
+          --body "$BODY" \\
+          $LABEL_ARGS \\
+          --json number,url \\
           --jq '{number: .number, url: .url}')
         
         PR_NUMBER=$(echo "$PR_OUTPUT" | jq -r '.number')
@@ -125,4 +128,8 @@ jobs:
         else
           echo "✅ Successfully created PR: #${{ steps.create-pr.outputs.prNumber }}"
           echo "🔗 URL: ${{ steps.create-pr.outputs.prUrl }}"
-        fi
+        fi`
+
+export const generate = (ctx: PinionContext) =>
+  Promise.resolve(ctx)
+    .then(renderTemplate(createprWorkflowTemplate, toFile('.github/workflows/job.createpr.yml')))

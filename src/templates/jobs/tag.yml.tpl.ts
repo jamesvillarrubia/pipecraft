@@ -1,4 +1,7 @@
-name: "Create Tag"
+import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+
+// Template for the Create Tag workflow
+const tagWorkflowTemplate = (ctx: any) => `name: "Create Tag"
 
 on:
   workflow_call:
@@ -37,7 +40,7 @@ jobs:
     - name: Validate Version Format
       run: |
         VERSION="${{ inputs.version }}"
-        if [[ ! $VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        if [[ ! $VERSION =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
           echo "❌ Invalid version format: $VERSION"
           echo "Expected format: v1.2.3"
           exit 1
@@ -78,4 +81,8 @@ jobs:
         else
           echo "✅ Successfully created tag: ${{ inputs.version }}"
           echo "📝 Message: ${{ inputs.tagMessage }}"
-        fi
+        fi`
+
+export const generate = (ctx: PinionContext) =>
+  Promise.resolve(ctx)
+    .then(renderTemplate(tagWorkflowTemplate, toFile('.github/workflows/job.tag.yml')))

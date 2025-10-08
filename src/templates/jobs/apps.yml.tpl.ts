@@ -1,4 +1,7 @@
-name: "Application Deployment"
+import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+
+// Template for the Apps workflow
+const appsWorkflowTemplate = (ctx: any) => `name: "Application Deployment"
 
 on:
   workflow_call:
@@ -180,4 +183,8 @@ jobs:
           *)
             echo "❌ Deployment failed"
             ;;
-        esac
+        esac`
+
+export const generate = (ctx: PinionContext) =>
+  Promise.resolve(ctx)
+    .then(renderTemplate(appsWorkflowTemplate, toFile('.github/workflows/job.apps.yml')))

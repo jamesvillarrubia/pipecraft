@@ -1,0 +1,49 @@
+{
+  "ciProvider": "github",
+  "mergeStrategy": "fast-forward",
+  "requireConventionalCommits": true,
+  "initialBranch": "develop",
+  "finalBranch": "main",
+  "branchFlow": [
+    "develop",
+    "staging",
+    "main"
+  ],
+  "semver": {
+    "bumpRules": {
+      "feat": "minor",
+      "fix": "patch",
+      "breaking": "major"
+    }
+  },
+  "actions": {
+    "onDevelopMerge": ["runTests","fastForwardToStaging"],
+    "onStagingMerge": ["runTests","calculateVersion","createOrFastForwardToMain"]
+  },
+  "domains": {
+  "api": {
+    "paths": [
+      "apps/api/**"
+    ],
+    "description": "API application changes"
+  },
+  "web": {
+    "paths": [
+      "apps/web/**"
+    ],
+    "description": "Web application changes"
+  },
+  "libs": {
+    "paths": [
+      "libs/**"
+    ],
+    "description": "Shared library changes"
+  },
+  "cicd": {
+    "paths": [
+      ".github/workflows/**"
+    ],
+    "description": "CI/CD configuration changes"
+  }
+}
+}

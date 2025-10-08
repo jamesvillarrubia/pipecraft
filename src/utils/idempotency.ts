@@ -29,7 +29,7 @@ export class IdempotencyManager {
   /**
    * Calculate hash for a file or directory
    */
-  calculateHash(filePath: string, algorithm: string = 'sha256'): string {
+  async calculateHash(filePath: string, algorithm: string = 'sha256'): Promise<string> {
     if (!existsSync(filePath)) {
       return ''
     }
@@ -37,7 +37,7 @@ export class IdempotencyManager {
     const stats = statSync(filePath)
     if (stats.isDirectory()) {
       // For directories, hash all files recursively
-      return this.hashDirectory(filePath, algorithm)
+      return await this.hashDirectory(filePath, algorithm)
     } else {
       // For files, hash content + metadata
       const content = readFileSync(filePath)
@@ -52,9 +52,9 @@ export class IdempotencyManager {
   /**
    * Hash directory contents recursively
    */
-  private hashDirectory(dirPath: string, algorithm: string): string {
-    const fs = require('fs')
-    const path = require('path')
+  private async hashDirectory(dirPath: string, algorithm: string): Promise<string> {
+    const fs = await import('fs')
+    const path = await import('path')
     const hash = createHash(algorithm)
     
     const hashDir = (dir: string) => {
@@ -89,7 +89,7 @@ export class IdempotencyManager {
     try {
       const content = readFileSync(this.cacheFile, 'utf8')
       return JSON.parse(content)
-    } catch (error) {
+    } catch (error: any) {
       console.warn(`Failed to load cache file: ${error.message}`)
       return null
     }
@@ -101,7 +101,7 @@ export class IdempotencyManager {
   saveCache(cache: RebuildCache): void {
     try {
       writeFileSync(this.cacheFile, JSON.stringify(cache, null, 2))
-    } catch (error) {
+    } catch (error: any) {
       console.warn(`Failed to save cache file: ${error.message}`)
     }
   }
@@ -109,7 +109,7 @@ export class IdempotencyManager {
   /**
    * Check if files have changed since last generation
    */
-  hasChanges(): boolean {
+  async hasChanges(): Promise<boolean> {
     if (!this.config.rebuild?.enabled) {
       return true // Always regenerate if rebuild is disabled
     }
@@ -124,7 +124,7 @@ export class IdempotencyManager {
     }
 
     // Check if config has changed
-    const configHash = this.calculateHash('.trunkflowrc.json')
+    const configHash = await this.calculateHash('.flowcraftrc.json')
     if (cache.configHash !== configHash) {
       return true
     }
@@ -132,7 +132,7 @@ export class IdempotencyManager {
     // Check if template files have changed
     const templateDir = 'src/templates'
     if (existsSync(templateDir)) {
-      const templateHash = this.calculateHash(templateDir)
+      const templateHash = await this.calculateHash(templateDir)
       if (cache.files[templateDir]?.hash !== templateHash) {
         return true
       }
@@ -141,7 +141,7 @@ export class IdempotencyManager {
     // Check if source files have changed
     const sourceDir = 'src/generators'
     if (existsSync(sourceDir)) {
-      const sourceHash = this.calculateHash(sourceDir)
+      const sourceHash = await this.calculateHash(sourceDir)
       if (cache.files[sourceDir]?.hash !== sourceHash) {
         return true
       }
@@ -153,10 +153,10 @@ export class IdempotencyManager {
   /**
    * Update cache with current file states
    */
-  updateCache(): void {
+  async updateCache(): Promise<void> {
     const cache: RebuildCache = {
       files: {},
-      configHash: this.calculateHash('.trunkflowrc.json'),
+      configHash: await this.calculateHash('.flowcraftrc.json'),
       lastGenerated: Date.now(),
       version: '1.0.0'
     }
@@ -166,7 +166,7 @@ export class IdempotencyManager {
     if (existsSync(templateDir)) {
       cache.files[templateDir] = {
         path: templateDir,
-        hash: this.calculateHash(templateDir),
+        hash: await this.calculateHash(templateDir),
         mtime: statSync(templateDir).mtime.getTime(),
         size: 0 // Directory size not meaningful
       }
@@ -177,7 +177,7 @@ export class IdempotencyManager {
     if (existsSync(sourceDir)) {
       cache.files[sourceDir] = {
         path: sourceDir,
-        hash: this.calculateHash(sourceDir),
+        hash: await this.calculateHash(sourceDir),
         mtime: statSync(sourceDir).mtime.getTime(),
         size: 0
       }
@@ -189,7 +189,7 @@ export class IdempotencyManager {
   /**
    * Check if specific file should be regenerated
    */
-  shouldRegenerateFile(filePath: string): boolean {
+  async shouldRegenerateFile(filePath: string): Promise<boolean> {
     if (!this.config.rebuild?.enabled) {
       return true
     }
@@ -203,7 +203,7 @@ export class IdempotencyManager {
       return true
     }
 
-    const currentHash = this.calculateHash(filePath)
+    const currentHash = await this.calculateHash(filePath)
     const cachedFile = cache.files[filePath]
     
     if (!cachedFile) {

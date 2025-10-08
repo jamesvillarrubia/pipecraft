@@ -1,4 +1,7 @@
-name: "Version Calculation"
+import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+
+// Template for the Version Calculation workflow
+const versionWorkflowTemplate = (ctx: any) => `name: "Version Calculation"
 
 on:
   workflow_call:
@@ -54,7 +57,7 @@ jobs:
         VERSION_TYPE="patch"
         
         # Check for breaking changes
-        if echo "$COMMITS" | grep -q "BREAKING CHANGE\|!:"
+        if echo "$COMMITS" | grep -q "BREAKING CHANGE\\|!:"
         then
           VERSION_TYPE="major"
         # Check for features
@@ -102,4 +105,8 @@ jobs:
       run: |
         echo "Current version: ${{ steps.version.outputs.version }}"
         echo "Version type: ${{ steps.version.outputs.versionType }}"
-        echo "Next version: ${{ steps.version.outputs.nextVersion }}"
+        echo "Next version: ${{ steps.version.outputs.nextVersion }}"`
+
+export const generate = (ctx: PinionContext) =>
+  Promise.resolve(ctx)
+    .then(renderTemplate(versionWorkflowTemplate, toFile('.github/workflows/job.version.yml')))

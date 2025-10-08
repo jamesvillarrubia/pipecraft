@@ -1,9 +1,12 @@
-name: "Changes"
+import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+
+// Template for the Changes workflow
+const changesWorkflowTemplate = (ctx: any) => `name: "Changes"
 
 on:
   workflow_call:
     outputs:
-<% for (const [domainName, domainConfig] of Object.entries(domains)) { -%>
+<% for (const [domainName, domainConfig] of Object.entries(ctx.domains)) { -%>
       <%= domainName %>: 
         value: ${{ jobs.changes.outputs.<%= domainName %> }}
 <% } -%>
@@ -17,7 +20,7 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-<% for (const [domainName, domainConfig] of Object.entries(domains)) { -%>
+<% for (const [domainName, domainConfig] of Object.entries(ctx.domains)) { -%>
       <%= domainName %>: ${{ steps.merge.outputs.<%= domainName %> }}
 <% } -%>
     steps:
@@ -28,17 +31,17 @@ jobs:
 
     - name: Set Base Branch
       id: set-base
-      ## Updated <%= branchFlow.length %>-branch flow: <%= branchFlow.join(' → ') %>
+      ## Updated <%= ctx.branchFlow.length %>-branch flow: <%= ctx.branchFlow.join(' → ') %>
       ## Each branch compares to the next in the flow
       run: |
         case '${{ github.ref }}' in
-<% for (let i = 0; i < branchFlow.length - 1; i++) { -%>
-          'refs/heads/<%= branchFlow[i] %>')
-            base_branch='<%= branchFlow[i + 1] %>'
+<% for (let i = 0; i < ctx.branchFlow.length - 1; i++) { -%>
+          'refs/heads/<%= ctx.branchFlow[i] %>')
+            base_branch='<%= ctx.branchFlow[i + 1] %>'
             ;;
 <% } -%>
           *)
-            base_branch='<%= branchFlow[0] %>'
+            base_branch='<%= ctx.branchFlow[0] %>'
             ;;
         esac
         echo "Base branch determined: $base_branch"
@@ -49,7 +52,7 @@ jobs:
       with:
         base: ${{ env.base_branch }}
         filters: |
-<% for (const [domainName, domainConfig] of Object.entries(domains)) { -%>
+<% for (const [domainName, domainConfig] of Object.entries(ctx.domains)) { -%>
           <%= domainName %>:
 <% for (const path of domainConfig.paths) { -%>
             - '<%= path %>'
@@ -60,12 +63,16 @@ jobs:
       id: merge
       run: |
         # Force full deployment on main, staging, and test branches
-<% for (const [domainName, domainConfig] of Object.entries(domains)) { -%>
+<% for (const [domainName, domainConfig] of Object.entries(ctx.domains)) { -%>
         echo "<%= domainName %>=${{ steps.filter.outputs.<%= domainName %> == 'true' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/test' }}" >> $GITHUB_OUTPUT
 <% } -%>
 
     - name: Debug Paths Filter Outputs
       run: |
-<% for (const [domainName, domainConfig] of Object.entries(domains)) { -%>
+<% for (const [domainName, domainConfig] of Object.entries(ctx.domains)) { -%>
         echo "<%= domainName.toUpperCase() %>: ${{ steps.merge.outputs.<%= domainName %> }}"
-<% } -%>
+<% } -%>`
+
+export const generate = (ctx: PinionContext) =>
+  Promise.resolve(ctx)
+    .then(renderTemplate(changesWorkflowTemplate, toFile('.github/workflows/job.changes.yml')))

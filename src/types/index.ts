@@ -1,3 +1,11 @@
+export interface DomainConfig {
+  paths: string[]
+  description: string
+  testable?: boolean
+  deployable?: boolean
+}
+
+
 export interface FlowcraftConfig {
   ciProvider: 'github' | 'gitlab'
   mergeStrategy: 'fast-forward' | 'merge'
@@ -12,10 +20,7 @@ export interface FlowcraftConfig {
     onDevelopMerge: string[]
     onStagingMerge: string[]
   }
-  domains: Record<string, {
-    paths: string[]
-    description: string
-  }>
+  domains: Record<string, DomainConfig>
   // Idempotency and rebuild configuration
   rebuild?: {
     enabled: boolean

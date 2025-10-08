@@ -59,39 +59,6 @@ const configTemplate = (ctx: FlowcraftConfig) => `{
   "domains": ${JSON.stringify(ctx.domains, null, 2)}
 }`
 
-const readmeTemplate = (ctx: FlowcraftConfig) => `# ${ctx.projectName || 'Flowcraft Project'}
-
-This project uses Flowcraft for automated branching and release management.
-
-## Branching Strategy
-
-- **${ctx.initialBranch}**: Active development branch
-- **${ctx.branchFlow.slice(1, -1).join(', ')}**: Staging/validation branches  
-- **${ctx.finalBranch}**: Production branch
-
-## Workflow
-
-1. Create feature branches from \`${ctx.initialBranch}\`
-2. Submit PRs with conventional commit titles
-3. Automated promotion through branch flow
-4. Automatic versioning and tagging
-
-## Commands
-
-\`\`\`bash
-# Initialize Flowcraft
-npx flowcraft init
-
-# Generate workflows
-npx flowcraft generate
-
-# Validate configuration
-npx flowcraft validate
-
-# Promote to next environment
-npx flowcraft promote
-\`\`\`
-`
 
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
@@ -149,5 +116,4 @@ export const generate = (ctx: PinionContext) =>
       }
     ]))
     .then((ctx) => ({ ...ctx, ...defaultConfig } as FlowcraftConfig))
-    .then(renderTemplate(configTemplate, toFile('.trunkflowrc.json')))
-    .then(renderTemplate(readmeTemplate, toFile('FLOWCRAFT.md')))
+    .then(renderTemplate(configTemplate, toFile('.flowcraftrc.json')))
