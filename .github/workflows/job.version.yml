@@ -1,0 +1,100 @@
+name: Versioning
+
+on:
+  workflow_call: 
+    outputs:
+      version:
+        description: "The determined version"
+        value: ${{ jobs.determine-version.outputs.version }}
+
+jobs:
+
+  confirm-pass:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm pass
+        run: exit 0
+
+
+  determine-version:
+    runs-on: ubuntu-latest
+    # Flexible branch checking - easily add/remove branches by updating the array
+    if: ${{ contains(fromJson('["develop", "test", "staging", "main"]'), github.ref_name) }}
+    outputs:
+      version: ${{ steps.set_version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get existing version tag
+        id: get_version_old
+        run: |
+          set -x  # Enable debugging output
+          # Get the current commit hash
+          git rev-parse HEAD
+          COMMIT_HASH=$(git rev-parse HEAD)
+          echo "Current commit hash: $COMMIT_HASH"
+          
+          # Check for tags on the current commit
+          TAG=$(git tag --points-at $COMMIT_HASH | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)
+          echo "Tags found: $TAG"
+          
+          if [ -z "$TAG" ]; then
+            echo "No existing tag found on the current commit"
+          else
+            echo "Found existing tag: $TAG"
+            echo "version=$TAG" >> $GITHUB_OUTPUT
+          fi
+  
+      - name: Set up minimal package.json
+        run: |
+          echo '{
+            "name": "temporary-lib",
+            "version": "0.0.0-release-it"
+          }' > package.json
+
+      - name: Install dependencies
+        run: npm install @release-it/conventional-changelog conventional-changelog-angular
+
+      - name: Get version
+        if: steps.get_version_old.outputs.version == ''
+        id: get_version_new
+        run: |
+          VERSION=$(npx release-it --ci --release-version 2>&1 || echo "")
+          if [[ "$VERSION" == *"No new version to release"* || -z "$VERSION" ]]; then
+            echo "No new version to release"
+            echo "VERSION=" >> $GITHUB_ENV
+            echo "version=" >> $GITHUB_OUTPUT
+          else
+            echo "New version to release: $VERSION"
+            echo "VERSION=v$VERSION" >> $GITHUB_ENV
+            echo "version=v$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set version output
+        id: set_version
+        run: |
+          if [ -n "${{ steps.get_version_old.outputs.version }}" ]; then
+            echo "Using old version: ${{ steps.get_version_old.outputs.version }}"
+            echo "version=${{ steps.get_version_old.outputs.version }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ steps.get_version_new.outputs.version }}" ]; then
+            echo "Using new version: ${{ steps.get_version_new.outputs.version }}"
+            echo "version=${{ steps.get_version_new.outputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "No version determined"
+            echo "version=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Output version
+        run: 'echo "Version determined: ${{ steps.set_version.outputs.version }}"'

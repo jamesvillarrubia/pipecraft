@@ -1,0 +1,153 @@
+name: Test and Deploy
+
+on:
+  push: 
+    branches-ignore:
+      - 'temp-*'
+  workflow_dispatch:
+    inputs:
+      migration_input:
+        description: 'Perform Migration'
+        default: false
+        required: true
+        type: boolean
+      seed_input:
+        description: 'Perform Seed'
+        default: false
+        required: true
+        type: boolean
+
+
+  # Custom event type
+jobs:
+
+  env-check:
+    secrets: inherit
+    uses: ./.github/workflows/job.env-check.yml
+
+  debug-env:
+    needs: [env-check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug Environment Variables
+        run: |
+          echo "project_id: ${{ needs.env-check.outputs.project_id }}"
+          echo "bucket: ${{ needs.env-check.outputs.bucket }}"
+          
+  # LINTING
+  lint:
+    secrets: inherit
+    uses: ./.github/workflows/job.lint.yml
+
+  # CHANGE DETECTION
+  changes:
+    secrets: inherit
+    uses: ./.github/workflows/job.changes.yml
+
+  # # SECURITY
+  code-analyze:
+    needs: [changes]
+    secrets: inherit
+    uses: ./.github/workflows/job.analyze.code.yml
+
+  docker-analyze:
+    needs: [changes]
+    secrets: inherit
+    uses: ./.github/workflows/job.analyze.docker.yml
+
+  # TESTING
+  api-test:
+    needs: [changes, lint]
+    if: ${{ needs.changes.outputs.api == 'true' }}
+    secrets: inherit
+    uses: ./.github/workflows/job.app.api.test.yml
+
+  web-test:
+    needs: [changes, lint]
+    if: ${{ needs.changes.outputs.web == 'true' }}
+    secrets: inherit
+    uses: ./.github/workflows/job.app.web.test.yml
+
+
+  
+
+  # VERSIONING
+  versioning:
+    needs: [api-test, web-test, docker-analyze, code-analyze, changes, lint]
+    # allows the versioning job to run even if api-test or web-test is skipped
+    if:
+      ${{ 
+        always() && (
+          (
+            needs.api-test.result == 'success' || 
+            needs.web-test.result == 'success' || 
+            needs.changes.outputs.cicd == 'true'
+          ) && (
+            needs.api-test.result != 'failure' && 
+            needs.web-test.result != 'failure' &&
+            needs.lint.result != 'failure'
+          )
+      ) || contains(fromJson('["develop", "test", "staging", "main"]'), github.ref_name) }}
+    secrets: inherit
+    uses: ./.github/workflows/job.version.yml
+
+
+
+  # DEPLOYMENTS
+  api-deploy:
+    needs: [versioning, changes, env-check]
+    if: ${{ 
+      always() && 
+      needs.changes.outputs.api == 'true' && 
+      needs.versioning.outputs.version != '' && 
+      contains(fromJson('["develop", "test", "staging", "main"]'), github.ref_name) }}
+    secrets: inherit
+    uses: ./.github/workflows/job.app.api.deploy.yml
+    with:
+      version: ${{ needs.versioning.outputs.version }}
+      project_id: ${{ needs.env-check.outputs.project_id }}
+
+  web-deploy:
+    needs: [versioning, changes, env-check]
+    if: 
+      ${{ 
+        always() && 
+        needs.changes.outputs.web == 'true' && 
+        needs.versioning.outputs.version != '' && 
+        contains(fromJson('["develop", "test", "staging", "main"]'), github.ref_name) }}
+    secrets: inherit
+    uses: ./.github/workflows/job.app.web.deploy.yml
+    with:
+      version: ${{ needs.versioning.outputs.version }}
+      project_id: ${{ needs.env-check.outputs.project_id }}
+      bucket: ${{ needs.env-check.outputs.bucket }}
+
+  create-pr:
+    needs: [api-deploy, web-deploy, versioning]
+    # runs if any of the deployments are successful and non-failure
+    # and the version is not empty
+    # and the branch is develop, test, or staging 
+    if:
+      ${{ 
+        always() && (
+          (
+            needs.api-deploy.result == 'success' || 
+            needs.web-deploy.result == 'success' || 
+            needs.versioning.result == 'success'
+          ) && (
+            needs.api-deploy.result != 'failure' && 
+            needs.web-deploy.result != 'failure' && 
+            needs.versioning.result != 'failure'
+          ) && needs.versioning.outputs.version != '' 
+        ) && contains(fromJson('["develop", "test", "staging"]'), github.ref_name) }}
+    secrets: inherit
+    uses: ./.github/workflows/job.create-pr.yml
+    with:
+      version: ${{ needs.versioning.outputs.version }}
+
+  tag-version:
+    needs: [create-pr, versioning]
+    if: ${{ always() && needs.versioning.outputs.version != '' }}
+    uses: ./.github/workflows/job.tag.yml
+    with:
+      version: ${{ needs.versioning.outputs.version }}

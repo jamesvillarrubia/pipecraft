@@ -1,0 +1,105 @@
+name: "Version Calculation"
+
+on:
+  workflow_call:
+    inputs:
+      baseRef:
+        required: true
+        type: string
+        description: "Base reference for version calculation"
+    outputs:
+      version:
+        value: ${{ jobs.calculate-version.outputs.version }}
+      versionType:
+        value: ${{ jobs.calculate-version.outputs.versionType }}
+      nextVersion:
+        value: ${{ jobs.calculate-version.outputs.nextVersion }}
+      
+  workflow_dispatch:
+    inputs:
+      baseRef:
+        description: 'Base reference for version calculation'
+        required: true
+        default: 'main'
+
+jobs:
+  calculate-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      versionType: ${{ steps.version.outputs.versionType }}
+      nextVersion: ${{ steps.version.outputs.nextVersion }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get Latest Tag
+      id: get-latest-tag
+      run: |
+        # Get the latest tag
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+        echo "Latest tag: $LATEST_TAG"
+
+    - name: Calculate Version Bump
+      id: version
+      run: |
+        # Get commits since last tag
+        COMMITS=$(git log --oneline ${{ steps.get-latest-tag.outputs.latest_tag }}..HEAD --pretty=format:"%s")
+        
+        # Initialize version bump type
+        VERSION_TYPE="patch"
+        
+        # Check for breaking changes
+        if echo "$COMMITS" | grep -q "BREAKING CHANGE\|!:"
+        then
+          VERSION_TYPE="major"
+        # Check for features
+        elif echo "$COMMITS" | grep -q "^feat"
+        then
+          VERSION_TYPE="minor"
+        # Check for fixes
+        elif echo "$COMMITS" | grep -q "^fix"
+        then
+          VERSION_TYPE="patch"
+        fi
+        
+        # Extract current version from tag
+        CURRENT_VERSION=$(echo "${{ steps.get-latest-tag.outputs.latest_tag }}" | sed 's/v//')
+        
+        # Calculate next version using semver logic
+        IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+        
+        case "$VERSION_TYPE" in
+          "major")
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+            ;;
+          "minor")
+            MINOR=$((MINOR + 1))
+            PATCH=0
+            ;;
+          "patch")
+            PATCH=$((PATCH + 1))
+            ;;
+        esac
+        
+        NEXT_VERSION="v$MAJOR.$MINOR.$PATCH"
+        
+        echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "versionType=$VERSION_TYPE" >> $GITHUB_OUTPUT
+        echo "nextVersion=$NEXT_VERSION" >> $GITHUB_OUTPUT
+        
+        echo "Current version: $CURRENT_VERSION"
+        echo "Version type: $VERSION_TYPE"
+        echo "Next version: $NEXT_VERSION"
+
+    - name: Debug Version Information
+      run: |
+        echo "Current version: ${{ steps.version.outputs.version }}"
+        echo "Version type: ${{ steps.version.outputs.versionType }}"
+        echo "Next version: ${{ steps.version.outputs.nextVersion }}"

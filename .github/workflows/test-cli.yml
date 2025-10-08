@@ -1,0 +1,251 @@
+name: 'Test PR Flow CLI'
+
+on:
+  push:
+    branches: [develop, test, main]
+    paths:
+      - 'cli/**'
+      - '.github/workflows/test-cli.yml'
+  pull_request:
+    branches: [develop, test, main]
+    paths:
+      - 'cli/**'
+      - '.github/workflows/test-cli.yml'
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  test-cli:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-type: ['unit', 'integration', 'e2e']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          cd cli
+          npm ci
+
+      - name: Build CLI
+        run: |
+          cd cli
+          npm run build
+
+      - name: Run unit tests
+        if: matrix.test-type == 'unit'
+        run: |
+          cd cli
+          npm test
+
+      - name: Run integration tests
+        if: matrix.test-type == 'integration'
+        run: |
+          cd cli
+          npm run test:integration
+
+      - name: Run E2E tests
+        if: matrix.test-type == 'e2e'
+        run: |
+          cd cli
+          npm run test:e2e
+
+  test-cli-init:
+    runs-on: ubuntu-latest
+    needs: test-cli
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install CLI dependencies
+        run: |
+          cd cli
+          npm ci
+          npm run build
+
+      - name: Test CLI init command
+        run: |
+          # Create test directory
+          mkdir -p /tmp/pr-flow-test
+          cd /tmp/pr-flow-test
+          
+          # Test init command
+          node /Users/james/Sites/published/release-actions/cli/dist/index.js init \
+            --name "test-project" \
+            --template "monorepo" \
+            --skip-git \
+            --skip-install
+          
+          # Verify files were created
+          ls -la
+          test -f package.json
+          test -f .release-it.cjs
+          test -f eslint.config.js
+          test -f .prettierrc
+          test -d .github/workflows
+          test -d .github/ISSUE_TEMPLATE
+          test -d .github/PULL_REQUEST_TEMPLATE
+          test -d docs
+
+      - name: Test CLI setup command
+        run: |
+          # Create test directory with existing project
+          mkdir -p /tmp/pr-flow-setup-test
+          cd /tmp/pr-flow-setup-test
+          
+          # Initialize git repo
+          git init
+          echo '{"name": "existing-project", "version": "1.0.0"}' > package.json
+          git add .
+          git commit -m "feat: initial commit"
+          
+          # Test setup command
+          node /Users/james/Sites/published/release-actions/cli/dist/index.js setup \
+            --force
+          
+          # Verify setup was applied
+          test -f .release-it.cjs
+          test -f eslint.config.js
+          test -d .github/workflows
+
+      - name: Test CLI validate command
+        run: |
+          # Test validate command
+          node /Users/james/Sites/published/release-actions/cli/dist/index.js validate
+          
+          # Test validate with fix
+          node /Users/james/Sites/published/release-actions/cli/dist/index.js validate --fix
+
+      - name: Test CLI version command
+        run: |
+          # Test version check
+          node /Users/james/Sites/published/release-actions/cli/dist/index.js version --check
+
+  test-cli-templates:
+    runs-on: ubuntu-latest
+    needs: test-cli
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install CLI dependencies
+        run: |
+          cd cli
+          npm ci
+          npm run build
+
+      - name: Test template generation
+        run: |
+          # Create test directory
+          mkdir -p /tmp/pr-flow-templates-test
+          cd /tmp/pr-flow-templates-test
+          
+          # Test init with different templates
+          node /Users/james/Sites/published/release-actions/cli/dist/index.js init \
+            --name "monorepo-test" \
+            --template "monorepo" \
+            --skip-git \
+            --skip-install
+          
+          # Verify monorepo structure
+          test -d apps
+          test -d libs
+          test -d apps/api
+          test -d apps/web
+          
+          # Test single-app template
+          rm -rf /tmp/pr-flow-templates-test
+          mkdir -p /tmp/pr-flow-templates-test
+          cd /tmp/pr-flow-templates-test
+          
+          node /Users/james/Sites/published/release-actions/cli/dist/index.js init \
+            --name "single-app-test" \
+            --template "single-app" \
+            --skip-git \
+            --skip-install
+          
+          # Verify single-app structure
+          test -f package.json
+          test -d src
+
+  lint-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          cd cli
+          npm ci
+
+      - name: Run ESLint
+        run: |
+          cd cli
+          npm run lint
+
+      - name: Run Prettier
+        run: |
+          cd cli
+          npm run format:check
+
+  build-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          cd cli
+          npm ci
+
+      - name: Build CLI
+        run: |
+          cd cli
+          npm run build
+
+      - name: Test CLI binary
+        run: |
+          cd cli
+          node dist/index.js --help
+          node dist/index.js init --help
+          node dist/index.js setup --help
+          node dist/index.js validate --help
+          node dist/index.js version --help

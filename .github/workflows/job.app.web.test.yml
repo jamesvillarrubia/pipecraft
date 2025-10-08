@@ -1,0 +1,39 @@
+name: "Web Test"
+
+# Simple test workflow for the Vite web application
+# This demonstrates how to test a frontend application in the CI/CD pipeline
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  WEB_DIR: apps/web
+  NODE_VERSION: '22'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WEB_DIR }}/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ${{ env.WEB_DIR }}
+        run: npm ci
+
+      - name: Run Tests
+        working-directory: ${{ env.WEB_DIR }}
+        run: npm test
+
+      - name: Build Application (Test Build)
+        working-directory: ${{ env.WEB_DIR }}
+        run: npm run build

@@ -1,0 +1,84 @@
+name: "Changes"
+
+on:
+  workflow_call:
+    outputs:
+      api: 
+        value: ${{ jobs.changes.outputs.api }}
+      web: 
+        value: ${{ jobs.changes.outputs.web }}
+      libs: 
+        value: ${{ jobs.changes.outputs.libs }}
+      cicd:
+        value: ${{ jobs.changes.outputs.cicd }}
+      
+  workflow_dispatch:
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      api: ${{ steps.merge.outputs.api }}
+      web: ${{ steps.merge.outputs.web }}
+      libs: ${{ steps.merge.outputs.libs }}
+      cicd: ${{ steps.merge.outputs.cicd }}
+    steps:
+
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set Base Branch
+      id: set-base
+      ## Updated 4-branch flow: develop → test → staging → main
+      ## Develop compares to test, test compares to staging, staging compares to main
+      run: |
+        case '${{ github.ref }}' in
+          'refs/heads/develop')
+            base_branch='test'
+            ;;
+          'refs/heads/test')
+            base_branch='staging'
+            ;;
+          'refs/heads/staging')
+            base_branch='main'
+            ;;
+          *)
+            base_branch='develop'
+            ;;
+        esac
+        echo "Base branch determined: $base_branch"
+        echo "base_branch=$base_branch" >> $GITHUB_ENV
+
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        base: ${{ env.base_branch }}
+        filters: |
+          api:
+            - 'apps/api/**'
+          web:
+            - 'apps/web/**'
+          libs:
+            - 'libs/**'
+          cicd: 
+            - '.github/workflows/**'
+
+    - name: Merge filter outputs with branch condition
+      id: merge
+      run: |
+        # Force full deployment on main, staging, and test branches
+        echo "api=${{ steps.filter.outputs.api == 'true' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/test' }}" >> $GITHUB_OUTPUT
+        echo "web=${{ steps.filter.outputs.web == 'true' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/test' }}" >> $GITHUB_OUTPUT
+        echo "libs=${{ steps.filter.outputs.libs == 'true' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/test' }}" >> $GITHUB_OUTPUT
+        echo "cicd=${{ steps.filter.outputs.cicd == 'true' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/test' }}" >> $GITHUB_OUTPUT
+
+    - name: Debug Paths Filter Outputs
+      run: |
+        echo "API: ${{ steps.merge.outputs.api }}"
+        echo "WEB: ${{ steps.merge.outputs.web }}"
+        echo "LIBS: ${{ steps.merge.outputs.libs }}"
+        echo "CICD: ${{ steps.merge.outputs.cicd }}"

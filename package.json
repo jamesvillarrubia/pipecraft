@@ -1,0 +1,43 @@
+{
+  "name": "flowcraft",
+  "version": "1.0.0",
+  "description": "CLI tool for managing trunk-based development workflows",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "flowcraft": "./src/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli/index.ts",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint --fix . --ext .js,.jsx,.ts,.tsx",
+    "lint:strict": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0",
+    "format": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'",
+    "format:check": "prettier --check '**/*.{js,jsx,ts,tsx,json,css,scss,md}'",
+    "flowcraft": "tsx src/cli/index.ts",
+    "init": "tsx src/cli/index.ts init --interactive",
+    "generate": "tsx src/cli/index.ts generate",
+    "verify": "tsx src/cli/index.ts verify"
+  },
+  "private": true,
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.24.0",
+    "@featherscloud/pinion": "^0.5.5",
+    "@release-it/conventional-changelog": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.30.1",
+    "@typescript-eslint/parser": "^8.30.1",
+    "commander": "^14.0.1",
+    "conventional-changelog-angular": "latest",
+    "cosmiconfig": "^9.0.0",
+    "eslint": "^9.24.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.0.0",
+    "prettier": "^2.8.8",
+    "release-it": "^18.1.2"
+  }
+}

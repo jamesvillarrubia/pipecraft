@@ -1,0 +1,32 @@
+name: Trivy Security Scan
+
+on:
+    workflow_call: 
+    workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    container: aquasec/trivy:latest  # 🔹 Use Trivy's Docker image directly
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # ✅ Scan all directories containing a Dockerfile for misconfigurations
+      - name: Scan Dockerfile Misconfigurations
+        run: |
+          echo "Scanning directories containing Dockerfiles..."
+          for dir in $(find . -name "Dockerfile" -exec dirname {} \; | sort -u); do
+            echo "Scanning $dir..."
+            trivy config --severity HIGH,CRITICAL --exit-code 1 "$dir"
+          done
+
+      # ✅ Scan images listed in Docker Compose files
+      - name: Scan Docker Compose Images
+        run: |
+          echo "Extracting images from docker-compose.yml files..."
+          images=$(grep -hPo '(?<=image: )\S+' **/docker-compose.yml | sort -u || true)
+          for image in $images; do
+            echo "Scanning $image..."
+            trivy image --exit-code 1 --severity HIGH,CRITICAL "$image"
+          done

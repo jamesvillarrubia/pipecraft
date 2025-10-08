@@ -1,0 +1,107 @@
+name: "Create PR"
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'The new version to deploy'
+        required: true
+        type: string
+  workflow_dispatch:
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    # Flexible branch checking - branches that create promotion PRs
+    if: ${{ contains(fromJson('["develop", "test", "staging"]'), github.ref_name) }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensures full history for version tracking
+
+      - name: Set Up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine Base and Target Version
+        id: versioning
+        run: |
+          set -x
+          # Updated 4-branch flow: develop → test → staging → main
+          if [ "${{ github.ref_name }}" = "develop" ]; then
+            BASE_BRANCH="test"
+          elif [ "${{ github.ref_name }}" = "test" ]; then
+            BASE_BRANCH="staging"
+          elif [ "${{ github.ref_name }}" = "staging" ]; then
+            BASE_BRANCH="main"
+          else
+            echo "Error: Unsupported branch for PR creation: ${{ github.ref_name }}"
+            exit 1
+          fi
+          
+          # Fetch latest tag on base branch
+          # Get the current commit hash on the base branch (test or main)
+          BASE_COMMIT_HASH=$(git rev-parse origin/$BASE_BRANCH)
+
+          # Get the tags that are on or before the base commit
+          PREV_VERSION=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | while read tag; do git merge-base --is-ancestor "$tag" "$BASE_COMMIT_HASH" && echo "$tag" && break; done)
+
+          if [[ -z "$PREV_VERSION" ]]; then
+            echo "No previous version found, aborting."
+            exit 1
+          fi
+
+          echo "Previous version: $PREV_VERSION"
+          echo "BASE_BRANCH=$BASE_BRANCH" >> $GITHUB_ENV
+          echo "PREV_VERSION=$PREV_VERSION" >> $GITHUB_ENV
+
+      - name: Create Fake Branches
+        run: |
+          NEW_BRANCH="temp-${BASE_BRANCH}-${{ inputs.version }}"
+          OLD_BRANCH="temp-${BASE_BRANCH}-${PREV_VERSION}"
+
+          # Fetch the latest changes
+          git fetch origin
+
+          # Create a new fake branch from the current version of develop (or base branch)
+          git checkout -b $NEW_BRANCH origin/${{ github.ref_name }}
+          git push origin $NEW_BRANCH --force
+
+          # Create an old branch based on the previous version on the base branch (test or main)
+          git checkout -b $OLD_BRANCH origin/$BASE_BRANCH
+          git push origin $OLD_BRANCH --force
+
+          echo "NEW_BRANCH=$NEW_BRANCH" >> $GITHUB_ENV
+          echo "OLD_BRANCH=$OLD_BRANCH" >> $GITHUB_ENV
+
+      - name: Create Pull Request
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const base = process.env.OLD_BRANCH;
+            const head = process.env.NEW_BRANCH;
+            const version = '${{ inputs.version }}';
+
+            const { data: existingPRs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: head,
+              base: base,
+              state: 'open'
+            });
+
+            if (existingPRs.length > 0) {
+              console.log('A pull request already exists.');
+            } else {
+              const { data: pullRequest } = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `ci: Promote ${process.env.BASE_BRANCH} from ${process.env.PREV_VERSION} to ${version}`,
+                head: head,
+                base: base,
+                body: 'This PR is automatically created by CI.'
+              });
+              console.log(`Created pull request: ${pullRequest.html_url}`);
+            }

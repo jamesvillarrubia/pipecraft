@@ -1,0 +1,63 @@
+name: "API Deploy"
+
+# Simple deploy workflow for the Node.js Express API
+# This demonstrates how to use version numbers in deployment
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to deploy'
+        required: true
+        type: string
+      project_id:
+        description: 'Project ID for deployment'
+        required: false
+        type: string
+  workflow_dispatch:
+
+env:
+  API_DIR: apps/api
+  NODE_VERSION: '22'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.API_DIR }}/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ${{ env.API_DIR }}
+        run: npm ci
+
+      - name: Update Version in Package
+        working-directory: ${{ env.API_DIR }}
+        run: |
+          echo "Updating package.json version to ${{ inputs.version }}"
+          npm version ${{ inputs.version }} --no-git-tag-version
+
+      - name: Example Deployment Step
+        env:
+          VERSION: ${{ inputs.version }}
+          PROJECT_ID: ${{ inputs.project_id }}
+        run: |
+          echo "🚀 Deploying API version $VERSION"
+          echo "🔧 Project ID: $PROJECT_ID"
+          echo "📂 API Directory: ${{ env.API_DIR }}"
+          echo ""
+          echo "In a real deployment, you would:"
+          echo "  1. Build Docker image with version tag"
+          echo "  2. Push to container registry"
+          echo "  3. Deploy to cloud service (GCP, AWS, etc.)"
+          echo "  4. Update environment variables"
+          echo "  5. Run health checks"
+          echo "  6. Send deployment notifications"

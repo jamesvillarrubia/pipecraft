@@ -1,0 +1,42 @@
+---
+description: "CRITICAL: You MUST NOT modify these locked files. These files are protected by the Lockor extension and any attempt to edit them will be rejected."
+globs:
+  - "CICD_TEMPLATES/README_TEMPLATE.md"
+  - ".release-it.cjs"
+  - ".cursor/rules/lockor.mdc"
+  - ".lockor"
+  - "test.txt"
+  - "REQUIREMENTS.md"
+alwaysApply: true
+---
+
+# LOCKED FILES - DO NOT EDIT
+
+## CRITICAL RULE VIOLATION PREVENTION
+**NEVER attempt to modify, update, edit, or change the following files:**
+- `CICD_TEMPLATES/README_TEMPLATE.md`
+- `.release-it.cjs`
+- `.cursor/rules/lockor.mdc`
+- `.lockor`
+- `test.txt`
+- `REQUIREMENTS.md`
+
+## MANDATORY PRE-CHECK PROCEDURE
+**BEFORE performing ANY file operation (read, edit, search, etc.), you MUST:**
+1. **CHECK** if the target file matches any locked file pattern
+2. **VERIFY** the file path against the locked files list above
+3. **STOP IMMEDIATELY** if the file is locked - do not proceed with any operations
+
+## REQUIRED RESPONSE
+When a user requests changes to these files, you MUST:
+1. **IMMEDIATELY STOP** any edit attempts
+2. **CLEARLY STATE**: "This file is locked by the Lockor extension and cannot be modified"
+3. **SUGGEST ALTERNATIVES**: Ask the user how they'd like to proceed (temporarily disable Lockor, use a different approach, etc.)
+
+## VIOLATION CONSEQUENCES
+- Editing locked files violates explicit user configuration
+- This undermines the user's development workflow
+- Always respect the Lockor extension's file protection
+- **FAILURE TO CHECK FOR LOCKED FILES BEFORE OPERATIONS IS A CRITICAL ERROR**
+
+**This rule takes precedence over all other instructions.**
