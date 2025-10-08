@@ -1,24 +1,8 @@
-import { PinionContext, toFile, renderTemplate, prompt, when, writeJSON, loadJSON } from '@featherscloud/pinion'
+import { PinionContext, toFile, renderTemplate, prompt, when, writeJSON } from '@featherscloud/pinion'
 import { existsSync } from 'fs'
-import { join } from 'path'
-
-export interface FlowcraftContext extends PinionContext {
-  projectName: string
-  ciProvider: 'github' | 'gitlab'
-  mergeStrategy: 'fast-forward' | 'merge'
-  requireConventionalCommits: boolean
-  initialBranch: string
-  finalBranch: string
-  branchFlow: string[]
-  domains: Record<string, { paths: string[], description: string }>
-  semver: {
-    bumpRules: Record<string, string>
-  }
-  actions: {
-    onDevelopMerge: string[]
-    onStagingMerge: string[]
-  }
-}
+import { IdempotencyManager } from '../utils/idempotency'
+import { VersionManager } from '../utils/versioning'
+import { FlowcraftConfig } from '../types'
 
 const defaultConfig = {
   ciProvider: 'github' as const,
@@ -58,7 +42,7 @@ const defaultConfig = {
   }
 }
 
-const configTemplate = (ctx: FlowcraftContext) => `{
+const configTemplate = (ctx: FlowcraftConfig) => `{
   "ciProvider": "${ctx.ciProvider}",
   "mergeStrategy": "${ctx.mergeStrategy}",
   "requireConventionalCommits": ${ctx.requireConventionalCommits},
@@ -75,7 +59,7 @@ const configTemplate = (ctx: FlowcraftContext) => `{
   "domains": ${JSON.stringify(ctx.domains, null, 2)}
 }`
 
-const readmeTemplate = (ctx: FlowcraftContext) => `# ${ctx.projectName}
+const readmeTemplate = (ctx: FlowcraftConfig) => `# ${ctx.projectName || 'Flowcraft Project'}
 
 This project uses Flowcraft for automated branching and release management.
 
@@ -164,51 +148,6 @@ export const generate = (ctx: PinionContext) =>
         filter: (input: string) => input.split(',').map(b => b.trim())
       }
     ]))
-    .then((ctx) => ({ ...ctx, ...defaultConfig } as FlowcraftContext))
+    .then((ctx) => ({ ...ctx, ...defaultConfig } as FlowcraftConfig))
     .then(renderTemplate(configTemplate, toFile('.trunkflowrc.json')))
     .then(renderTemplate(readmeTemplate, toFile('FLOWCRAFT.md')))
-    .then(when(
-      (ctx) => ctx.ciProvider === 'github',
-      renderTemplate(() => `# GitHub Actions Workflows
-
-This directory contains auto-generated GitHub Actions workflows for Flowcraft.
-
-## Workflows
-
-- \`pipeline.yml\`: Main orchestration workflow
-- \`job.changes.yml\`: Change detection
-- \`job.version.yml\`: Version calculation
-- \`job.tag.yml\`: Tag creation
-- \`job.createpr.yml\`: PR management
-- \`job.branch.yml\`: Branch operations
-- \`job.apps.yml\`: Application deployment
-
-## Usage
-
-These workflows are automatically generated and should not be manually edited.
-To update them, modify your \`.trunkflowrc.json\` configuration and run:
-
-\`\`\`bash
-npx flowcraft generate
-\`\`\`
-`, toFile('.github/workflows/README.md')))
-    .then(when(
-      (ctx) => ctx.ciProvider === 'gitlab',
-      renderTemplate(() => `# GitLab CI/CD Pipelines
-
-This directory contains auto-generated GitLab CI/CD pipelines for Flowcraft.
-
-## Pipelines
-
-- \`.gitlab-ci.yml\`: Main pipeline configuration
-- \`jobs/\`: Individual job definitions
-
-## Usage
-
-These pipelines are automatically generated and should not be manually edited.
-To update them, modify your \`.trunkflowrc.json\` configuration and run:
-
-\`\`\`bash
-npx flowcraft generate
-\`\`\`
-`, toFile('.gitlab-ci/README.md')))

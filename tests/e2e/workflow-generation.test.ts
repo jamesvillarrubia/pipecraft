@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { writeFileSync, existsSync, rmSync, readFileSync } from 'fs'
 import { join } from 'path'
+import { spawn } from 'child_process'
 import { TEST_DIR, FIXTURES_DIR } from '../setup'
 
 describe('End-to-End Workflow Generation', () => {

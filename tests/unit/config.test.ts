@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { writeFileSync, existsSync } from 'fs'
+import { writeFileSync, existsSync, readFileSync, rmSync } from 'fs'
 import { join } from 'path'
 import { loadConfig, validateConfig } from '../../src/utils/config'
 import { TEST_DIR, FIXTURES_DIR } from '../setup'

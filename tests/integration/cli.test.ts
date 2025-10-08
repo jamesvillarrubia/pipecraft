@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { spawn } from 'child_process'
-import { writeFileSync, existsSync, rmSync } from 'fs'
+import { writeFileSync, existsSync, rmSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { TEST_DIR, FIXTURES_DIR } from '../setup'
 
