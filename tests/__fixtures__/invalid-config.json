@@ -1,0 +1,9 @@
+{
+  "ciProvider": "invalid-provider",
+  "mergeStrategy": "invalid-strategy",
+  "requireConventionalCommits": "not-boolean",
+  "initialBranch": "",
+  "finalBranch": "",
+  "branchFlow": [],
+  "domains": {}
+}
