@@ -9,7 +9,7 @@ import { generate } from '../../src/templates/job._tag.yml.tpl'
 describe('Tag Template Generation', () => {
   beforeEach(() => {
     // Clean up test directory
-    const testFiles = ['.trunkflowrc.json', '.github/workflows/job.tag.yml']
+    const testFiles = ['.trunkflowrc.json', '.github/workflows/job._tag.yml']
     testFiles.forEach(file => {
       if (existsSync(join(TEST_DIR, file))) {
         rmSync(join(TEST_DIR, file), { recursive: true, force: true })
@@ -55,7 +55,7 @@ describe('Tag Template Generation', () => {
     })
 
     // Check that the file was generated
-    const generatedFile = join(TEST_DIR, '.github/workflows/job.tag.yml')
+    const generatedFile = join(TEST_DIR, '.github/workflows/job._tag.yml')
     expect(existsSync(generatedFile)).toBe(true)
 
     // Check the content
@@ -100,7 +100,7 @@ describe('Tag Template Generation', () => {
     })
 
     // Check the content
-    const generatedFile = join(TEST_DIR, '.github/workflows/job.tag.yml')
+    const generatedFile = join(TEST_DIR, '.github/workflows/job._tag.yml')
     const content = readFileSync(generatedFile, 'utf8')
     expect(content).toContain('github.ref_name == \'main\'')
   })

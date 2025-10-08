@@ -53,4 +53,4 @@ jobs:
 
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
-    .then(renderTemplate(tagWorkflowTemplate, toFile('.github/workflows/job.tag.yml')))
+    .then(renderTemplate(tagWorkflowTemplate, toFile('.github/workflows/job._tag.yml')))
