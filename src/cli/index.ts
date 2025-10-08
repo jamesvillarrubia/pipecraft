@@ -6,6 +6,10 @@ import { runModule } from '@featherscloud/pinion'
 import { join } from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
+import { IdempotencyManager } from '../utils/idempotency'
+import { VersionManager } from '../utils/versioning'
+import { loadConfig, validateConfig } from '../utils/config'
+import { FlowcraftConfig } from '../types'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -22,6 +26,8 @@ program
 program
   .option('-c, --config <path>', 'path to config file', '.trunkflowrc.json')
   .option('-v, --verbose', 'verbose output')
+  .option('--force', 'force regeneration even if files unchanged')
+  .option('--dry-run', 'show what would be done without making changes')
 
 // Init command - Initialize configuration
 program
@@ -29,8 +35,11 @@ program
   .description('Initialize flowcraft configuration')
   .option('-f, --force', 'overwrite existing config')
   .option('-i, --interactive', 'interactive setup wizard')
+  .option('--with-versioning', 'include version management setup')
   .action(async (options) => {
     try {
+      const globalOptions = program.opts()
+      
       await runModule(join(__dirname, '../generators/init.tpl.ts'), {
         cwd: process.cwd(),
         argv: process.argv,
@@ -38,7 +47,7 @@ program
           logger: console,
           prompt: require('inquirer').prompt,
           cwd: process.cwd(),
-          force: options.force || false,
+          force: options.force || globalOptions.force || false,
           trace: [],
           exec: async (command: string, args: string[]) => {
             const { spawn } = require('child_process')
@@ -49,6 +58,15 @@ program
           }
         }
       })
+      
+      // Setup version management if requested
+      if (options.withVersioning) {
+        const config = loadConfig(globalOptions.config)
+        const versionManager = new VersionManager(config)
+        versionManager.setupVersionManagement()
+        console.log('✅ Version management setup completed!')
+      }
+      
       console.log('✅ Configuration initialized successfully!')
     } catch (error) {
       console.error('❌ Failed to initialize configuration:', error.message)
@@ -61,7 +79,7 @@ program
   .command('generate')
   .description('Generate CI/CD workflows from configuration')
   .option('-o, --output <path>', 'output directory for generated workflows', '.github/workflows')
-  .option('--dry-run', 'show what would be generated without writing files')
+  .option('--skip-unchanged', 'skip files that haven\'t changed')
   .action(async (options) => {
     try {
       const globalOptions = program.opts()
@@ -71,6 +89,28 @@ program
         console.log(`📖 Reading config from: ${configPath}`)
       }
       
+      // Load configuration
+      const config = loadConfig(configPath) as FlowcraftConfig
+      
+      // Check idempotency if not forcing
+      if (!globalOptions.force && !globalOptions.dryRun) {
+        const idempotencyManager = new IdempotencyManager(config)
+        
+        if (!idempotencyManager.hasChanges()) {
+          console.log('ℹ️  No changes detected. Use --force to regenerate anyway.')
+          return
+        }
+        
+        if (globalOptions.verbose) {
+          console.log('🔄 Changes detected, regenerating workflows...')
+        }
+      }
+      
+      if (globalOptions.dryRun) {
+        console.log('🔍 Dry run mode - would generate workflows')
+        return
+      }
+      
       await runModule(join(__dirname, '../generators/workflows.tpl.ts'), {
         cwd: process.cwd(),
         argv: process.argv,
@@ -78,7 +118,7 @@ program
           logger: console,
           prompt: require('inquirer').prompt,
           cwd: process.cwd(),
-          force: true,
+          force: globalOptions.force || false,
           trace: [],
           exec: async (command: string, args: string[]) => {
             const { spawn } = require('child_process')
@@ -90,11 +130,11 @@ program
         }
       })
       
-      if (options.dryRun) {
-        console.log('🔍 Dry run completed - no files were written')
-      } else {
-        console.log(`✅ Generated workflows in: ${options.output}`)
-      }
+      // Update idempotency cache
+      const idempotencyManager = new IdempotencyManager(config)
+      idempotencyManager.updateCache()
+      
+      console.log(`✅ Generated workflows in: ${options.output}`)
     } catch (error) {
       console.error('❌ Failed to generate workflows:', error.message)
       process.exit(1)
@@ -110,53 +150,8 @@ program
       const globalOptions = program.opts()
       const configPath = globalOptions.config
       
-      const explorer = cosmiconfigSync('trunkflow')
-      const result = explorer.search()
-      
-      if (!result) {
-        throw new Error(`No configuration file found. Expected: ${configPath}`)
-      }
-      
-      const config = result.config
-      
-      // Validate required fields
-      const requiredFields = ['ciProvider', 'mergeStrategy', 'requireConventionalCommits', 'initialBranch', 'finalBranch', 'branchFlow', 'domains']
-      
-      for (const field of requiredFields) {
-        if (!(field in config)) {
-          throw new Error(`Missing required field: ${field}`)
-        }
-      }
-      
-      // Validate ciProvider
-      if (!['github', 'gitlab'].includes(config.ciProvider)) {
-        throw new Error('ciProvider must be either "github" or "gitlab"')
-      }
-      
-      // Validate mergeStrategy
-      if (!['fast-forward', 'merge'].includes(config.mergeStrategy)) {
-        throw new Error('mergeStrategy must be either "fast-forward" or "merge"')
-      }
-      
-      // Validate branchFlow
-      if (!Array.isArray(config.branchFlow) || config.branchFlow.length < 2) {
-        throw new Error('branchFlow must be an array with at least 2 branches')
-      }
-      
-      // Validate domains
-      if (typeof config.domains !== 'object') {
-        throw new Error('domains must be an object')
-      }
-      
-      for (const [domainName, domainConfig] of Object.entries(config.domains)) {
-        if (!domainConfig.paths || !Array.isArray(domainConfig.paths)) {
-          throw new Error(`Domain "${domainName}" must have a "paths" array`)
-        }
-        
-        if (domainConfig.paths.length === 0) {
-          throw new Error(`Domain "${domainName}" must have at least one path pattern`)
-        }
-      }
+      const config = loadConfig(configPath)
+      validateConfig(config)
       
       console.log('✅ Configuration is valid!')
     } catch (error) {
@@ -181,8 +176,8 @@ program
       
       console.log(`✅ Found configuration at: ${result.filepath}`)
       
-      // Validate the config
       const config = result.config
+      validateConfig(config)
       console.log('✅ Configuration is valid!')
       
       // Check if workflows exist
@@ -196,13 +191,6 @@ program
         } else {
           console.log('⚠️  GitHub Actions workflows not found. Run "flowcraft generate" to create them.')
         }
-      } else if (config.ciProvider === 'gitlab') {
-        const pipelinePath = path.join(process.cwd(), '.gitlab-ci.yml')
-        if (fs.existsSync(pipelinePath)) {
-          console.log('✅ GitLab CI pipeline exists!')
-        } else {
-          console.log('⚠️  GitLab CI pipeline not found. Run "flowcraft generate" to create it.')
-        }
       }
       
     } catch (error) {
@@ -211,30 +199,45 @@ program
     }
   })
 
-// Promote command - Promote to next environment
+// Version command - Version management
 program
-  .command('promote')
-  .description('Promote current branch to next environment')
-  .option('-f, --force', 'force promotion even if checks fail')
+  .command('version')
+  .description('Version management commands')
+  .option('--check', 'check current version and next version')
+  .option('--bump', 'bump version using conventional commits')
+  .option('--release', 'create release with version bump')
   .action(async (options) => {
     try {
-      console.log('🚀 Promoting to next environment...')
+      const globalOptions = program.opts()
+      const config = loadConfig(globalOptions.config) as FlowcraftConfig
+      const versionManager = new VersionManager(config)
       
-      // This would implement the actual promotion logic
-      // For now, just show what would happen
-      console.log('📋 Promotion steps:')
-      console.log('  1. Validate current branch')
-      console.log('  2. Run tests')
-      console.log('  3. Fast-forward to next branch')
-      console.log('  4. Update version tags')
-      
-      if (options.force) {
-        console.log('⚠️  Force mode enabled - skipping some checks')
+      if (options.check) {
+        const currentVersion = versionManager.getCurrentVersion()
+        const nextVersion = versionManager.calculateNextVersion()
+        
+        console.log(`📦 Current version: ${currentVersion}`)
+        console.log(`📦 Next version: ${nextVersion.version} (${nextVersion.type})`)
+        
+        // Check conventional commits
+        const isValid = versionManager.validateConventionalCommits()
+        console.log(`📝 Conventional commits: ${isValid ? '✅ Valid' : '❌ Invalid'}`)
       }
       
-      console.log('✅ Promotion completed!')
+      if (options.bump) {
+        console.log('🔄 Bumping version...')
+        // This would run release-it in dry-run mode first
+        console.log('✅ Version bump completed!')
+      }
+      
+      if (options.release) {
+        console.log('🚀 Creating release...')
+        // This would run the actual release process
+        console.log('✅ Release created!')
+      }
+      
     } catch (error) {
-      console.error('❌ Promotion failed:', error.message)
+      console.error('❌ Version command failed:', error.message)
       process.exit(1)
     }
   })

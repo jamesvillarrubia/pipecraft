@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "flowcraft": "./src/cli/index.js"
+    "flowcraft": "./dist/cli/index.js"
   },
   "scripts": {
     "build": "tsc",
