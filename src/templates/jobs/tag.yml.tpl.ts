@@ -14,7 +14,7 @@ on:
         required: false
         type: string
         description: "Message for the tag"
-        default: "Release ${{ inputs.version }}"
+        default: "Release \${{ inputs.version }}"
       
   workflow_dispatch:
     inputs:
@@ -24,7 +24,7 @@ on:
       tagMessage:
         description: 'Message for the tag'
         required: false
-        default: 'Release ${{ inputs.version }}'
+        default: 'Release \${{ inputs.version }}'
 
 jobs:
   create-tag:
@@ -35,11 +35,11 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: \${{ secrets.GITHUB_TOKEN }}
 
     - name: Validate Version Format
       run: |
-        VERSION="${{ inputs.version }}"
+        VERSION="\${{ inputs.version }}"
         if [[ ! $VERSION =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
           echo "❌ Invalid version format: $VERSION"
           echo "Expected format: v1.2.3"
@@ -50,7 +50,7 @@ jobs:
     - name: Check if Tag Exists
       id: check-tag
       run: |
-        TAG="${{ inputs.version }}"
+        TAG="\${{ inputs.version }}"
         if git rev-parse "$TAG" >/dev/null 2>&1; then
           echo "exists=true" >> $GITHUB_OUTPUT
           echo "⚠️  Tag $TAG already exists"
@@ -62,8 +62,8 @@ jobs:
     - name: Create Tag
       if: steps.check-tag.outputs.exists == 'false'
       run: |
-        TAG="${{ inputs.version }}"
-        MESSAGE="${{ inputs.tagMessage }}"
+        TAG="\${{ inputs.version }}"
+        MESSAGE="\${{ inputs.tagMessage }}"
         
         # Create the tag
         git tag -a "$TAG" -m "$MESSAGE"
@@ -76,11 +76,11 @@ jobs:
 
     - name: Tag Creation Summary
       run: |
-        if [ "${{ steps.check-tag.outputs.exists }}" == "true" ]; then
-          echo "⚠️  Tag ${{ inputs.version }} already exists - skipped creation"
+        if [ "\${{ steps.check-tag.outputs.exists }}" == "true" ]; then
+          echo "⚠️  Tag \${{ inputs.version }} already exists - skipped creation"
         else
-          echo "✅ Successfully created tag: ${{ inputs.version }}"
-          echo "📝 Message: ${{ inputs.tagMessage }}"
+          echo "✅ Successfully created tag: \${{ inputs.version }}"
+          echo "📝 Message: \${{ inputs.tagMessage }}"
         fi`
 
 export const generate = (ctx: PinionContext) =>

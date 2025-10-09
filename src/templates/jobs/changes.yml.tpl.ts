@@ -8,7 +8,7 @@ on:
     outputs:
 <% for (const [domainName, domainConfig] of Object.entries(ctx.domains)) { -%>
       <%= domainName %>: 
-        value: ${{ jobs.changes.outputs.<%= domainName %> }}
+        value: \${{ jobs.changes.outputs.<%= domainName %> }}
 <% } -%>
       
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
       pull-requests: read
     outputs:
 <% for (const [domainName, domainConfig] of Object.entries(ctx.domains)) { -%>
-      <%= domainName %>: ${{ steps.merge.outputs.<%= domainName %> }}
+      <%= domainName %>: \${{ steps.merge.outputs.<%= domainName %> }}
 <% } -%>
     steps:
 
@@ -34,7 +34,7 @@ jobs:
       ## Updated <%= ctx.branchFlow.length %>-branch flow: <%= ctx.branchFlow.join(' → ') %>
       ## Each branch compares to the next in the flow
       run: |
-        case '${{ github.ref }}' in
+        case '\${{ github.ref }}' in
 <% for (let i = 0; i < ctx.branchFlow.length - 1; i++) { -%>
           'refs/heads/<%= ctx.branchFlow[i] %>')
             base_branch='<%= ctx.branchFlow[i + 1] %>'
@@ -50,7 +50,7 @@ jobs:
     - uses: dorny/paths-filter@v3
       id: filter
       with:
-        base: ${{ env.base_branch }}
+        base: \${{ env.base_branch }}
         filters: |
 <% for (const [domainName, domainConfig] of Object.entries(ctx.domains)) { -%>
           <%= domainName %>:
@@ -64,13 +64,13 @@ jobs:
       run: |
         # Force full deployment on main, staging, and test branches
 <% for (const [domainName, domainConfig] of Object.entries(ctx.domains)) { -%>
-        echo "<%= domainName %>=${{ steps.filter.outputs.<%= domainName %> == 'true' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/test' }}" >> $GITHUB_OUTPUT
+        echo "<%= domainName %>=\${{ steps.filter.outputs.<%= domainName %> == 'true' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/test' }}" >> $GITHUB_OUTPUT
 <% } -%>
 
     - name: Debug Paths Filter Outputs
       run: |
 <% for (const [domainName, domainConfig] of Object.entries(ctx.domains)) { -%>
-        echo "<%= domainName.toUpperCase() %>: ${{ steps.merge.outputs.<%= domainName %> }}"
+        echo "<%= domainName.toUpperCase() %>: \${{ steps.merge.outputs.<%= domainName %> }}"
 <% } -%>`
 
 export const generate = (ctx: PinionContext) =>

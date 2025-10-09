@@ -1,7 +1,4 @@
-import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
-
-// Template for the Branch Management workflow
-const branchWorkflowTemplate = (ctx: any) => `name: "Branch Management"
+name: "Branch Management"
 
 on:
   workflow_call:
@@ -24,9 +21,9 @@ on:
         description: "Name for new branch (for create action)"
     outputs:
       success:
-        value: \${{ jobs.branch-management.outputs.success }}
+        value: ${{ jobs.branch-management.outputs.success }}
       message:
-        value: \${{ jobs.branch-management.outputs.message }}
+        value: ${{ jobs.branch-management.outputs.message }}
       
   workflow_dispatch:
     inputs:
@@ -54,21 +51,21 @@ jobs:
     permissions:
       contents: write
     outputs:
-      success: \${{ steps.branch-action.outputs.success }}
-      message: \${{ steps.branch-action.outputs.message }}
+      success: ${{ steps.branch-action.outputs.success }}
+      message: ${{ steps.branch-action.outputs.message }}
     steps:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        token: \${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Validate Inputs
       id: validate
       run: |
-        ACTION="\${{ inputs.action }}"
-        TARGET="\${{ inputs.targetBranch }}"
-        SOURCE="\${{ inputs.sourceBranch }}"
-        BRANCH_NAME="\${{ inputs.branchName }}"
+        ACTION="${{ inputs.action }}"
+        TARGET="${{ inputs.targetBranch }}"
+        SOURCE="${{ inputs.sourceBranch }}"
+        BRANCH_NAME="${{ inputs.branchName }}"
         
         case "$ACTION" in
           "fast-forward")
@@ -98,10 +95,10 @@ jobs:
     - name: Perform Branch Action
       id: branch-action
       run: |
-        ACTION="\${{ inputs.action }}"
-        TARGET="\${{ inputs.targetBranch }}"
-        SOURCE="\${{ inputs.sourceBranch }}"
-        BRANCH_NAME="\${{ inputs.branchName }}"
+        ACTION="${{ inputs.action }}"
+        TARGET="${{ inputs.targetBranch }}"
+        SOURCE="${{ inputs.sourceBranch }}"
+        BRANCH_NAME="${{ inputs.branchName }}"
         
         case "$ACTION" in
           "fast-forward")
@@ -179,12 +176,8 @@ jobs:
 
     - name: Action Summary
       run: |
-        if [ "\${{ steps.branch-action.outputs.success }}" == "true" ]; then
-          echo "✅ \${{ steps.branch-action.outputs.message }}"
+        if [ "${{ steps.branch-action.outputs.success }}" == "true" ]; then
+          echo "✅ ${{ steps.branch-action.outputs.message }}"
         else
-          echo "❌ \${{ steps.branch-action.outputs.message }}"
-        fi`
-
-export const generate = (ctx: PinionContext) =>
-  Promise.resolve(ctx)
-    .then(renderTemplate(branchWorkflowTemplate, toFile('.github/workflows/job.branch.yml')))
+          echo "❌ ${{ steps.branch-action.outputs.message }}"
+        fi

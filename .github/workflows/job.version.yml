@@ -1,7 +1,4 @@
-import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
-
-// Template for the Version Calculation workflow
-const versionWorkflowTemplate = (ctx: any) => `name: "Version Calculation"
+name: "Version Calculation"
 
 on:
   workflow_call:
@@ -12,11 +9,11 @@ on:
         description: "Base reference for version calculation"
     outputs:
       version:
-        value: \${{ jobs.calculate-version.outputs.version }}
+        value: ${{ jobs.calculate-version.outputs.version }}
       versionType:
-        value: \${{ jobs.calculate-version.outputs.versionType }}
+        value: ${{ jobs.calculate-version.outputs.versionType }}
       nextVersion:
-        value: \${{ jobs.calculate-version.outputs.nextVersion }}
+        value: ${{ jobs.calculate-version.outputs.nextVersion }}
       
   workflow_dispatch:
     inputs:
@@ -31,9 +28,9 @@ jobs:
     permissions:
       contents: read
     outputs:
-      version: \${{ steps.version.outputs.version }}
-      versionType: \${{ steps.version.outputs.versionType }}
-      nextVersion: \${{ steps.version.outputs.nextVersion }}
+      version: ${{ steps.version.outputs.version }}
+      versionType: ${{ steps.version.outputs.versionType }}
+      nextVersion: ${{ steps.version.outputs.nextVersion }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -51,13 +48,13 @@ jobs:
       id: version
       run: |
         # Get commits since last tag
-        COMMITS=$(git log --oneline \${{ steps.get-latest-tag.outputs.latest_tag }}..HEAD --pretty=format:"%s")
+        COMMITS=$(git log --oneline ${{ steps.get-latest-tag.outputs.latest_tag }}..HEAD --pretty=format:"%s")
         
         # Initialize version bump type
         VERSION_TYPE="patch"
         
         # Check for breaking changes
-        if echo "$COMMITS" | grep -q "BREAKING CHANGE\\|!:"
+        if echo "$COMMITS" | grep -q "BREAKING CHANGE\|!:"
         then
           VERSION_TYPE="major"
         # Check for features
@@ -71,7 +68,7 @@ jobs:
         fi
         
         # Extract current version from tag
-        CURRENT_VERSION=$(echo "\${{ steps.get-latest-tag.outputs.latest_tag }}" | sed 's/v//')
+        CURRENT_VERSION=$(echo "${{ steps.get-latest-tag.outputs.latest_tag }}" | sed 's/v//')
         
         # Calculate next version using semver logic
         IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
@@ -103,10 +100,6 @@ jobs:
 
     - name: Debug Version Information
       run: |
-        echo "Current version: \${{ steps.version.outputs.version }}"
-        echo "Version type: \${{ steps.version.outputs.versionType }}"
-        echo "Next version: \${{ steps.version.outputs.nextVersion }}"`
-
-export const generate = (ctx: PinionContext) =>
-  Promise.resolve(ctx)
-    .then(renderTemplate(versionWorkflowTemplate, toFile('.github/workflows/job.version.yml')))
+        echo "Current version: ${{ steps.version.outputs.version }}"
+        echo "Version type: ${{ steps.version.outputs.versionType }}"
+        echo "Next version: ${{ steps.version.outputs.nextVersion }}"

@@ -1,7 +1,4 @@
-import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
-
-// Template for the Create Pull Request workflow
-const createprWorkflowTemplate = (ctx: any) => `name: "Create Pull Request"
+name: "Create Pull Request"
 
 on:
   workflow_call:
@@ -28,9 +25,9 @@ on:
         description: "Comma-separated list of labels"
     outputs:
       prNumber:
-        value: \${{ jobs.create-pr.outputs.prNumber }}
+        value: ${{ jobs.create-pr.outputs.prNumber }}
       prUrl:
-        value: \${{ jobs.create-pr.outputs.prUrl }}
+        value: ${{ jobs.create-pr.outputs.prUrl }}
       
   workflow_dispatch:
     inputs:
@@ -57,19 +54,19 @@ jobs:
       contents: write
       pull-requests: write
     outputs:
-      prNumber: \${{ steps.create-pr.outputs.prNumber }}
-      prUrl: \${{ steps.create-pr.outputs.prUrl }}
+      prNumber: ${{ steps.create-pr.outputs.prNumber }}
+      prUrl: ${{ steps.create-pr.outputs.prUrl }}
     steps:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        token: \${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Check if PR Already Exists
       id: check-existing-pr
       run: |
-        SOURCE="\${{ inputs.sourceBranch }}"
-        TARGET="\${{ inputs.targetBranch }}"
+        SOURCE="${{ inputs.sourceBranch }}"
+        TARGET="${{ inputs.targetBranch }}"
         
         # Check if PR already exists
         EXISTING_PR=$(gh pr list --head "$SOURCE" --base "$TARGET" --json number --jq '.[0].number' 2>/dev/null || echo "")
@@ -87,29 +84,29 @@ jobs:
       if: steps.check-existing-pr.outputs.exists == 'false'
       id: create-pr
       run: |
-        SOURCE="\${{ inputs.sourceBranch }}"
-        TARGET="\${{ inputs.targetBranch }}"
-        TITLE="\${{ inputs.title }}"
-        BODY="\${{ inputs.body }}"
-        LABELS="\${{ inputs.labels }}"
+        SOURCE="${{ inputs.sourceBranch }}"
+        TARGET="${{ inputs.targetBranch }}"
+        TITLE="${{ inputs.title }}"
+        BODY="${{ inputs.body }}"
+        LABELS="${{ inputs.labels }}"
         
         # Prepare labels array
         LABEL_ARGS=""
         if [ -n "$LABELS" ]; then
           IFS=',' read -ra LABEL_ARRAY <<< "$LABELS"
-          for label in "\${LABEL_ARRAY[@]}"; do
-            LABEL_ARGS="$LABEL_ARGS --label \"\${label// /}\""
+          for label in "${LABEL_ARRAY[@]}"; do
+            LABEL_ARGS="$LABEL_ARGS --label "${label// /}""
           done
         fi
         
         # Create the PR
-        PR_OUTPUT=$(gh pr create \\
-          --head "$SOURCE" \\
-          --base "$TARGET" \\
-          --title "$TITLE" \\
-          --body "$BODY" \\
-          $LABEL_ARGS \\
-          --json number,url \\
+        PR_OUTPUT=$(gh pr create \
+          --head "$SOURCE" \
+          --base "$TARGET" \
+          --title "$TITLE" \
+          --body "$BODY" \
+          $LABEL_ARGS \
+          --json number,url \
           --jq '{number: .number, url: .url}')
         
         PR_NUMBER=$(echo "$PR_OUTPUT" | jq -r '.number')
@@ -123,13 +120,9 @@ jobs:
 
     - name: PR Creation Summary
       run: |
-        if [ "\${{ steps.check-existing-pr.outputs.exists }}" == "true" ]; then
-          echo "⚠️  PR already exists: #\${{ steps.check-existing-pr.outputs.prNumber }}"
+        if [ "${{ steps.check-existing-pr.outputs.exists }}" == "true" ]; then
+          echo "⚠️  PR already exists: #${{ steps.check-existing-pr.outputs.prNumber }}"
         else
-          echo "✅ Successfully created PR: #\${{ steps.create-pr.outputs.prNumber }}"
-          echo "🔗 URL: \${{ steps.create-pr.outputs.prUrl }}"
-        fi`
-
-export const generate = (ctx: PinionContext) =>
-  Promise.resolve(ctx)
-    .then(renderTemplate(createprWorkflowTemplate, toFile('.github/workflows/job.createpr.yml')))
+          echo "✅ Successfully created PR: #${{ steps.create-pr.outputs.prNumber }}"
+          echo "🔗 URL: ${{ steps.create-pr.outputs.prUrl }}"
+        fi

@@ -1,7 +1,4 @@
-import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
-
-// Template for the Apps workflow
-const appsWorkflowTemplate = (ctx: any) => `name: "Application Deployment"
+name: "Application Deployment"
 
 on:
   workflow_call:
@@ -20,9 +17,9 @@ on:
         description: "Version to deploy"
     outputs:
       deploymentStatus:
-        value: \${{ jobs.deploy-apps.outputs.deploymentStatus }}
+        value: ${{ jobs.deploy-apps.outputs.deploymentStatus }}
       deployedDomains:
-        value: \${{ jobs.deploy-apps.outputs.deployedDomains }}
+        value: ${{ jobs.deploy-apps.outputs.deployedDomains }}
       
   workflow_dispatch:
     inputs:
@@ -48,8 +45,8 @@ jobs:
       contents: read
       id-token: write
     outputs:
-      deploymentStatus: \${{ steps.deploy.outputs.status }}
-      deployedDomains: \${{ steps.deploy.outputs.domains }}
+      deploymentStatus: ${{ steps.deploy.outputs.status }}
+      deployedDomains: ${{ steps.deploy.outputs.domains }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -58,34 +55,34 @@ jobs:
     - name: Parse Domains
       id: parse-domains
       run: |
-        DOMAINS="\${{ inputs.domains }}"
+        DOMAINS="${{ inputs.domains }}"
         IFS=',' read -ra DOMAIN_ARRAY <<< "$DOMAINS"
         
         # Create JSON array of domains
         DOMAIN_JSON="["
-        for i in "\${!DOMAIN_ARRAY[@]}"; do
+        for i in "${!DOMAIN_ARRAY[@]}"; do
           if [ $i -gt 0 ]; then
             DOMAIN_JSON="$DOMAIN_JSON,"
           fi
-          DOMAIN_JSON="$DOMAIN_JSON\"\${DOMAIN_ARRAY[i]// /}\""
+          DOMAIN_JSON="$DOMAIN_JSON"${DOMAIN_ARRAY[i]// /}""
         done
         DOMAIN_JSON="$DOMAIN_JSON]"
         
         echo "domains=$DOMAIN_JSON" >> $GITHUB_OUTPUT
-        echo "domain_count=\${#DOMAIN_ARRAY[@]}" >> $GITHUB_OUTPUT
+        echo "domain_count=${#DOMAIN_ARRAY[@]}" >> $GITHUB_OUTPUT
         
         echo "📋 Domains to deploy:"
-        for domain in "\${DOMAIN_ARRAY[@]}"; do
+        for domain in "${DOMAIN_ARRAY[@]}"; do
           echo "  - $domain"
         done
 
     - name: Set Environment Variables
       run: |
-        ENV="\${{ inputs.environment }}"
-        VERSION="\${{ inputs.version }}"
+        ENV="${{ inputs.environment }}"
+        VERSION="${{ inputs.version }}"
         
         echo "ENVIRONMENT=$ENV" >> $GITHUB_ENV
-        echo "VERSION=\${VERSION:-latest}" >> $GITHUB_ENV
+        echo "VERSION=${VERSION:-latest}" >> $GITHUB_ENV
         
         # Set environment-specific variables
         case "$ENV" in
@@ -110,9 +107,9 @@ jobs:
     - name: Deploy Applications
       id: deploy
       run: |
-        DOMAINS='\${{ steps.parse-domains.outputs.domains }}'
-        ENV="\${{ inputs.environment }}"
-        VERSION="\${{ inputs.version }}"
+        DOMAINS='${{ steps.parse-domains.outputs.domains }}'
+        ENV="${{ inputs.environment }}"
+        VERSION="${{ inputs.version }}"
         
         echo "🚀 Starting deployment to $ENV..."
         
@@ -168,8 +165,8 @@ jobs:
 
     - name: Deployment Summary
       run: |
-        STATUS="\${{ steps.deploy.outputs.status }}"
-        DOMAINS="\${{ steps.deploy.outputs.domains }}"
+        STATUS="${{ steps.deploy.outputs.status }}"
+        DOMAINS="${{ steps.deploy.outputs.domains }}"
         
         case "$STATUS" in
           "success")
@@ -183,8 +180,4 @@ jobs:
           *)
             echo "❌ Deployment failed"
             ;;
-        esac`
-
-export const generate = (ctx: PinionContext) =>
-  Promise.resolve(ctx)
-    .then(renderTemplate(appsWorkflowTemplate, toFile('.github/workflows/job.apps.yml')))
+        esac

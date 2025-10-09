@@ -4,6 +4,10 @@ import { FlowcraftConfig } from '../types'
 
 // Import individual workflow templates
 import { generate as generateTagWorkflow } from '../templates/job._tag.yml.tpl'
+import { generate as generateVersionWorkflow } from '../templates/jobs/version.yml.tpl'
+import { generate as generateCreatePRWorkflow } from '../templates/jobs/createpr.yml.tpl'
+import { generate as generateBranchWorkflow } from '../templates/jobs/branch.yml.tpl'
+import { generate as generateAppsWorkflow } from '../templates/jobs/apps.yml.tpl'
 
 const defaultConfig = {
   ciProvider: 'github' as const,
@@ -218,7 +222,10 @@ export const generate = (ctx: PinionContext) =>
       async (ctx) => {
         // Generate individual workflow templates
         await generateTagWorkflow(ctx)
-        // Add other workflow generators here as they are created
+        await generateVersionWorkflow(ctx)
+        await generateCreatePRWorkflow(ctx)
+        await generateBranchWorkflow(ctx)
+        await generateAppsWorkflow(ctx)
         return ctx
       }
     ))
