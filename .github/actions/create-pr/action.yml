@@ -71,18 +71,12 @@ runs:
         if [ -n "$LABELS" ]; then
           IFS=',' read -ra LABEL_ARRAY <<< "$LABELS"
           for label in "${LABEL_ARRAY[@]}"; do
-            LABEL_ARGS="$LABEL_ARGS --label "${label// /}""
+            LABEL_ARGS="$LABEL_ARGS --label \"${label// /}\""
           done
         fi
         
         # Create the PR
-        PR_OUTPUT=$(gh pr create \
-          --title "$TITLE" \
-          --body "$BODY" \
-          --head "$SOURCE" \
-          --base "$TARGET" \
-          $LABEL_ARGS \
-          --json number,url --jq '.number,.url' 2>/dev/null || echo "")
+        PR_OUTPUT=$(gh pr create \--title "$TITLE" \--body "$BODY" \--head "$SOURCE" \--base "$TARGET" \$LABEL_ARGS \--json number,url --jq '.number,.url' 2>/dev/null || echo "")
         
         if [ -n "$PR_OUTPUT" ]; then
           PR_NUMBER=$(echo "$PR_OUTPUT" | head -n1)

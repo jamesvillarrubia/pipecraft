@@ -1,0 +1,96 @@
+name: "Test Actions"
+
+on:
+  workflow_dispatch:
+    inputs:
+      testAction:
+        description: 'Which action to test'
+        required: true
+        type: choice
+        options:
+          - detect-changes
+          - calculate-version
+          - create-tag
+          - create-pr
+          - manage-branch
+          - deploy-apps
+
+jobs:
+  test-detect-changes:
+    if: github.event.inputs.testAction == 'detect-changes'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/detect-changes
+        with:
+          baseRef: 'main'
+
+  test-calculate-version:
+    if: github.event.inputs.testAction == 'calculate-version'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/calculate-version
+        with:
+          baseRef: 'main'
+
+  test-create-tag:
+    if: github.event.inputs.testAction == 'create-tag'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/create-tag
+        with:
+          version: '1.0.0-test'
+          tag_prefix: 'v'
+          push: 'false'
+
+  test-create-pr:
+    if: github.event.inputs.testAction == 'create-pr'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/create-pr
+        with:
+          sourceBranch: 'develop'
+          targetBranch: 'main'
+          title: 'Test PR'
+          body: 'This is a test PR'
+          labels: 'test'
+
+  test-manage-branch:
+    if: github.event.inputs.testAction == 'manage-branch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/manage-branch
+        with:
+          action: 'create'
+          targetBranch: 'main'
+          branchName: 'test-branch-$(date +%s)'
+
+  test-deploy-apps:
+    if: github.event.inputs.testAction == 'deploy-apps'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/deploy-apps
+        with:
+          environment: 'development'
+          domains: 'api,web'
+          version: '1.0.0-test'

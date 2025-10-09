@@ -3,12 +3,11 @@ import { IdempotencyManager } from '../utils/idempotency'
 import { FlowcraftConfig } from '../types'
 
 // Import individual workflow templates
-import { generate as generateTagWorkflow } from '../templates/jobs/_tag.yml.tpl'
-import { generate as generateChangesWorkflow } from '../templates/jobs/_changes.yml.tpl'
-import { generate as generateVersionWorkflow } from '../templates/jobs/_version.yml.tpl'
-import { generate as generateCreatePRWorkflow } from '../templates/jobs/_createpr.yml.tpl'
-import { generate as generateBranchWorkflow } from '../templates/jobs/_branch.yml.tpl'
-import { generate as generateAppsWorkflow } from '../templates/jobs/_apps.yml.tpl'
+import { generate as generateTagWorkflow } from '../templates/actions/create-tag.yml.tpl'
+import { generate as generateChangesWorkflow } from '../templates/actions/detect-changes.yml.tpl'
+import { generate as generateVersionWorkflow } from '../templates/actions/calculate-version.yml.tpl'
+import { generate as generateCreatePRWorkflow } from '../templates/actions/create-pr.yml.tpl'
+import { generate as generateBranchWorkflow } from '../templates/actions/manage-branch.yml.tpl'
 
 const defaultConfig = {
   ciProvider: 'github' as const,
@@ -170,7 +169,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/actions/job._changes
+      - uses: ./.github/actions/detect-changes
         with:
           baseRef: \${{ inputs.baseRef || 'main' }}
 
@@ -182,7 +181,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/actions/job._version
+      - uses: ./.github/actions/calculate-version
         with:
           baseRef: \${{ inputs.baseRef || 'main' }}
 
@@ -195,7 +194,7 @@ jobs:
         with:
           fetch-depth: 0
           token: \${{ secrets.GITHUB_TOKEN }}
-      - uses: ./.github/actions/job._tag
+      - uses: ./.github/actions/create-tag
         with:
           version: \${{ needs.version.outputs.nextVersion }}
 
@@ -208,7 +207,7 @@ jobs:
         with:
           fetch-depth: 0
           token: \${{ secrets.GITHUB_TOKEN }}
-      - uses: ./.github/actions/job._createpr
+      - uses: ./.github/actions/create-pr
         with:
           sourceBranch: \${{ github.ref_name }}
           targetBranch: '${ctx.finalBranch}'
@@ -224,25 +223,53 @@ jobs:
         with:
           fetch-depth: 0
           token: \${{ secrets.GITHUB_TOKEN }}
-      - uses: ./.github/actions/job._branch
+      - uses: ./.github/actions/manage-branch
         with:
           action: 'fast-forward'
           targetBranch: '${ctx.finalBranch}'
           sourceBranch: \${{ github.ref_name }}
 
-  apps:
-    if: github.ref_name == '${ctx.initialBranch}'
-    needs: branch
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/job._apps
-        with:
-          environment: '${ctx.environment || 'production'}'
-          domains: 'api,web,libs'
-          version: \${{ needs.version.outputs.nextVersion }}`
+  # =============================================================================
+  # DEPLOYMENT JOBS
+  # =============================================================================
+  # Add your deployment jobs here
+  # Example:
+  # deploy-api:
+  #   if: github.ref_name == '${ctx.initialBranch}'
+  #   needs: branch
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Deploy API
+  #       run: echo "Deploy API to production"
+  #
+  # deploy-web:
+  #   if: github.ref_name == '${ctx.initialBranch}'
+  #   needs: branch
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Deploy Web
+  #       run: echo "Deploy Web to production"
+  #
+  # =============================================================================
+  # TESTING JOBS
+  # =============================================================================
+  # Add your testing jobs here
+  # Example:
+  # test-api:
+  #   if: github.ref_name == '${ctx.initialBranch}'
+  #   needs: branch
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Test API
+  #       run: echo "Run API tests"
+  #
+  # test-web:
+  #   if: github.ref_name == '${ctx.initialBranch}'
+  #   needs: branch
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Test Web
+  #       run: echo "Run Web tests"`
 }
 
 export const generate = (ctx: PinionContext) =>
@@ -269,7 +296,6 @@ export const generate = (ctx: PinionContext) =>
         await generateVersionWorkflow(ctx)
         await generateCreatePRWorkflow(ctx)
         await generateBranchWorkflow(ctx)
-        await generateAppsWorkflow(ctx)
         return ctx
       }
     ))

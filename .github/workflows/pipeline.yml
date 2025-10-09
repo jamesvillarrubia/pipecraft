@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/actions/job._changes
+      - uses: ./.github/actions/detect-changes
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
 
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/actions/job._version
+      - uses: ./.github/actions/calculate-version
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
 
@@ -56,7 +56,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: ./.github/actions/job._tag
+      - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.nextVersion }}
 
@@ -69,7 +69,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: ./.github/actions/job._createpr
+      - uses: ./.github/actions/create-pr
         with:
           sourceBranch: ${{ github.ref_name }}
           targetBranch: 'main'
@@ -85,22 +85,50 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: ./.github/actions/job._branch
+      - uses: ./.github/actions/manage-branch
         with:
           action: 'fast-forward'
           targetBranch: 'main'
           sourceBranch: ${{ github.ref_name }}
 
-  apps:
-    if: github.ref_name == 'develop'
-    needs: branch
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/job._apps
-        with:
-          environment: 'production'
-          domains: 'api,web,libs'
-          version: ${{ needs.version.outputs.nextVersion }}
+  # =============================================================================
+  # DEPLOYMENT JOBS
+  # =============================================================================
+  # Add your deployment jobs here
+  # Example:
+  # deploy-api:
+  #   if: github.ref_name == 'develop'
+  #   needs: branch
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Deploy API
+  #       run: echo "Deploy API to production"
+  #
+  # deploy-web:
+  #   if: github.ref_name == 'develop'
+  #   needs: branch
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Deploy Web
+  #       run: echo "Deploy Web to production"
+  #
+  # =============================================================================
+  # TESTING JOBS
+  # =============================================================================
+  # Add your testing jobs here
+  # Example:
+  # test-api:
+  #   if: github.ref_name == 'develop'
+  #   needs: branch
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Test API
+  #       run: echo "Run API tests"
+  #
+  # test-web:
+  #   if: github.ref_name == 'develop'
+  #   needs: branch
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Test Web
+  #       run: echo "Run Web tests"

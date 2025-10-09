@@ -1,4 +1,5 @@
 import { PinionContext, toFile, renderTemplate, inject, prepend, after, before } from '@featherscloud/pinion'
+import dedent from 'dedent';
 
 // Template for injecting branches-ignore into on.push
 const branchesIgnoreTemplate = (ctx: any) => `    branches-ignore:
@@ -18,12 +19,14 @@ const workflowDispatchTemplate = (ctx: any) => `  workflow_dispatch:
         required: true
         type: boolean`
 
-// Template for injecting specific jobs
-const envCheckJobTemplate = (ctx: any) => `  env-check:
+// Template for injecting specific jobs with anchor comments
+const envCheckJobTemplate = (ctx: any) => `  # FLOWCRAFT: ENV CHECK
+  env-check:
     secrets: inherit
     uses: ./.github/workflows/job.env-check.yml`
 
-const debugEnvJobTemplate = (ctx: any) => `  debug-env:
+const debugEnvJobTemplate = (ctx: any) => `  # FLOWCRAFT: DEBUG ENV
+  debug-env:
     needs: [env-check]
     runs-on: ubuntu-latest
     steps:
@@ -32,91 +35,70 @@ const debugEnvJobTemplate = (ctx: any) => `  debug-env:
           echo "project_id: \${{ needs.env-check.outputs.project_id }}"
           echo "bucket: \${{ needs.env-check.outputs.bucket }}"`
 
-const lintJobTemplate = (ctx: any) => `  # LINTING
+const lintJobTemplate = (ctx: any) => dedent`
+  #----------------------------------------------------------------------------
+  # FLOWCRAFT: LINTING
+  #----------------------------------------------------------------------------
   lint:
     secrets: inherit
     uses: ./.github/workflows/job.lint.yml`
 
-const changesJobTemplate = (ctx: any) => `  # CHANGE DETECTION
+const changesJobTemplate = (ctx: any) => dedent`
+  #----------------------------------------------------------------------------
+  # FLOWCRAFT: CHANGE DETECTION
+  #----------------------------------------------------------------------------
   changes:
     secrets: inherit
     uses: ./.github/workflows/job.changes.yml`
 
-const securityJobsTemplate = (ctx: any) => `  # SECURITY
-  code-analyze:
-    needs: [changes]
-    secrets: inherit
-    uses: ./.github/workflows/job.analyze.code.yml
 
-  docker-analyze:
-    needs: [changes]
-    secrets: inherit
-    uses: ./.github/workflows/job.analyze.docker.yml`
-
-const testingJobsTemplate = (ctx: any) => `  # TESTING
-  api-test:
+const testingJobsTemplate = (ctx: any) => {
+  const domains = Object.keys(ctx.domains).filter(d => d !== 'cicd' && ctx.domains[d].testable !== false)
+  return `  # FLOWCRAFT: TESTING
+${domains.map(domainName => `  ${domainName}-test:
     needs: [changes, lint]
-    if: \${{ needs.changes.outputs.api == 'true' }}
+    if: \${{ needs.changes.outputs.${domainName} == 'true' }}
     secrets: inherit
-    uses: ./.github/workflows/job.app.api.test.yml
+    uses: ./.github/workflows/job.app.${domainName}.test.yml`).join('\n\n')}`
+}
 
-  web-test:
-    needs: [changes, lint]
-    if: \${{ needs.changes.outputs.web == 'true' }}
-    secrets: inherit
-    uses: ./.github/workflows/job.app.web.test.yml`
-
-const versioningJobTemplate = (ctx: any) => `  # VERSIONING
+const versioningJobTemplate = (ctx: any) => {
+  const testableDomains = Object.keys(ctx.domains).filter(d => d !== 'cicd' && ctx.domains[d].testable !== false)
+  const testJobs = testableDomains.map(d => d + '-test').join(', ')
+  const testSuccessConditions = testableDomains.map(d => `needs.${d}-test.result == 'success'`).join(' || ')
+  const testFailureConditions = testableDomains.map(d => `needs.${d}-test.result != 'failure'`).join(' && ')
+  
+  return `  # FLOWCRAFT: VERSIONING
   versioning:
-    needs: [api-test, web-test, docker-analyze, code-analyze, changes, lint]
-    # allows the versioning job to run even if api-test or web-test is skipped
+    needs: [${testJobs}, docker-analyze, code-analyze, changes, lint]
+    # allows the versioning job to run even if test jobs are skipped
     if:
       \${{ 
         always() && (
           (
-            needs.api-test.result == 'success' || 
-            needs.web-test.result == 'success' || 
+            ${testSuccessConditions} || 
             needs.changes.outputs.cicd == 'true'
           ) && (
-            needs.api-test.result != 'failure' && 
-            needs.web-test.result != 'failure' &&
+            ${testFailureConditions} &&
             needs.lint.result != 'failure'
           )
       ) || contains(fromJson('["develop", "test", "staging", "main"]'), github.ref_name) }}
     secrets: inherit
     uses: ./.github/workflows/job.version.yml`
+}
 
-const deploymentJobsTemplate = (ctx: any) => `  # DEPLOYMENTS
-  api-deploy:
-    needs: [versioning, changes, env-check]
-    if: \${{ 
-      always() && 
-      needs.changes.outputs.api == 'true' && 
-      needs.versioning.outputs.version != '' && 
-      contains(fromJson('["develop", "test", "staging", "main"]'), github.ref_name) }}
-    secrets: inherit
-    uses: ./.github/workflows/job.app.api.deploy.yml
-    with:
-      version: \${{ needs.versioning.outputs.version }}
-      project_id: \${{ needs.env-check.outputs.project_id }}
-
-  web-deploy:
-    needs: [versioning, changes, env-check]
-    if: 
-      \${{ 
-        always() && 
-        needs.changes.outputs.web == 'true' && 
-        needs.versioning.outputs.version != '' && 
-        contains(fromJson('["develop", "test", "staging", "main"]'), github.ref_name) }}
-    secrets: inherit
-    uses: ./.github/workflows/job.app.web.deploy.yml
-    with:
-      version: \${{ needs.versioning.outputs.version }}
-      project_id: \${{ needs.env-check.outputs.project_id }}
-      bucket: \${{ needs.env-check.outputs.bucket }}`
-
-const releaseJobsTemplate = (ctx: any) => `  create-pr:
-    needs: [api-deploy, web-deploy, versioning]
+const releaseJobsTemplate = (ctx: any) => {
+  const deployableDomains = Object.keys(ctx.domains).filter(d => d !== 'cicd' && ctx.domains[d].deployable !== false)
+  const deployJobs = deployableDomains.map(d => d + '-deploy').join(', ')
+  const deploySuccessConditions = deployableDomains.map(d => `needs.${d}-deploy.result == 'success'`).join(' || ')
+  const deployFailureConditions = deployableDomains.map(d => `needs.${d}-deploy.result != 'failure'`).join(' && ')
+  
+  return dedent`
+  #----------------------------------------------------------------------------
+  # FLOWCRAFT: RELEASE MANAGEMENT
+  #----------------------------------------------------------------------------
+  create-pr:
+    needs: [${deployJobs}, versioning]
     # runs if any of the deployments are successful and non-failure
     # and the version is not empty
     # and the branch is develop, test, or staging 
@@ -124,12 +106,10 @@ const releaseJobsTemplate = (ctx: any) => `  create-pr:
       \${{ 
         always() && (
           (
-            needs.api-deploy.result == 'success' || 
-            needs.web-deploy.result == 'success' || 
+            ${deploySuccessConditions} || 
             needs.versioning.result == 'success'
           ) && (
-            needs.api-deploy.result != 'failure' && 
-            needs.web-deploy.result != 'failure' && 
+            ${deployFailureConditions} &&
             needs.versioning.result != 'failure'
           ) && needs.versioning.outputs.version != '' 
         ) && contains(fromJson('["develop", "test", "staging"]'), github.ref_name) }}
@@ -144,6 +124,7 @@ const releaseJobsTemplate = (ctx: any) => `  create-pr:
     uses: ./.github/workflows/job.tag.yml
     with:
       version: \${{ needs.versioning.outputs.version }}`
+}
 
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
@@ -195,35 +176,11 @@ export const generate = (ctx: PinionContext) =>
         toFile('.github/workflows/pipeline.yml')
       )
     )
-    // Inject security jobs if they don't exist
-    .then(
-      inject(
-        securityJobsTemplate,
-        after('changes:'),
-        toFile('.github/workflows/pipeline.yml')
-      )
-    )
-    // Inject testing jobs if they don't exist
-    .then(
-      inject(
-        testingJobsTemplate,
-        after('docker-analyze:'),
-        toFile('.github/workflows/pipeline.yml')
-      )
-    )
     // Inject versioning job if it doesn't exist
     .then(
       inject(
         versioningJobTemplate,
-        after('web-test:'),
-        toFile('.github/workflows/pipeline.yml')
-      )
-    )
-    // Inject deployment jobs if they don't exist
-    .then(
-      inject(
-        deploymentJobsTemplate,
-        after('versioning:'),
+        after('docker-analyze:'),
         toFile('.github/workflows/pipeline.yml')
       )
     )
@@ -231,7 +188,7 @@ export const generate = (ctx: PinionContext) =>
     .then(
       inject(
         releaseJobsTemplate,
-        after('web-deploy:'),
+        after('versioning:'),
         toFile('.github/workflows/pipeline.yml')
       )
     )
