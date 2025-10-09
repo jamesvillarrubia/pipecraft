@@ -127,6 +127,7 @@ program
             ...console,
             notice: console.log
           },
+          prompt: prompt as any,
           cwd: process.cwd(),
           force: globalOptions.force || false,
           trace: [],

@@ -42,22 +42,26 @@ const defaultConfig = {
   }
 }
 
-const configTemplate = (ctx: FlowcraftConfig) => `{
-  "ciProvider": "${ctx.ciProvider}",
-  "mergeStrategy": "${ctx.mergeStrategy}",
-  "requireConventionalCommits": ${ctx.requireConventionalCommits},
-  "initialBranch": "${ctx.initialBranch}",
-  "finalBranch": "${ctx.finalBranch}",
-  "branchFlow": ${JSON.stringify(ctx.branchFlow, null, 2)},
-  "semver": {
-    "bumpRules": ${JSON.stringify(ctx.semver.bumpRules, null, 4)}
-  },
-  "actions": {
-    "onDevelopMerge": ${JSON.stringify(ctx.actions.onDevelopMerge)},
-    "onStagingMerge": ${JSON.stringify(ctx.actions.onStagingMerge)}
-  },
-  "domains": ${JSON.stringify(ctx.domains, null, 2)}
-}`
+const configTemplate = (ctx: FlowcraftConfig) => {
+  const config = {
+    ciProvider: ctx.ciProvider,
+    mergeStrategy: ctx.mergeStrategy,
+    requireConventionalCommits: ctx.requireConventionalCommits,
+    initialBranch: ctx.initialBranch,
+    finalBranch: ctx.finalBranch,
+    branchFlow: ctx.branchFlow,
+    semver: {
+      bumpRules: ctx.semver.bumpRules
+    },
+    actions: {
+      onDevelopMerge: ctx.actions.onDevelopMerge,
+      onStagingMerge: ctx.actions.onStagingMerge
+    },
+    domains: ctx.domains
+  }
+  
+  return JSON.stringify(config, null, 2)
+}
 
 
 export const generate = (ctx: PinionContext) =>

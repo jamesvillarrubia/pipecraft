@@ -47,9 +47,9 @@ const defaultConfig = {
 const changesWorkflowTemplate = (ctx: any) => {
   const domainNames = Object.keys(ctx.domains)
   const outputs = domainNames.map(name => `      ${name}: 
-        value: \${{ jobs.changes.outputs.${name} }}`).join('\n')
+        value: \${{ jobs.changes.outputs.` + name + ` }}`).join('\n')
   
-  const jobOutputs = domainNames.map(name => `      ${name}: \${{ steps.merge.outputs.${name} }}`).join('\n')
+  const jobOutputs = domainNames.map(name => `      ${name}: \${{ steps.merge.outputs.` + name + ` }}`).join('\n')
   
   const branchCases = ctx.branchFlow.slice(0, -1).map((branch, index) => 
     `          'refs/heads/${branch}')
@@ -63,11 +63,11 @@ ${config.paths.map(path => `            - '${path}'`).join('\n')}`
   ).join('\n')
   
   const mergeOutputs = domainNames.map(name => 
-    `        echo "${name}=${{ steps.filter.outputs.${name} == 'true' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/test' }}" >> $GITHUB_OUTPUT`
+    `        echo "${name}=\${{ contains(steps.filter.outputs.changes, '` + name + `') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/test' }}" >> \$GITHUB_OUTPUT`
   ).join('\n')
   
   const debugOutputs = domainNames.map(name => 
-    `        echo "${name.toUpperCase()}: ${{ steps.merge.outputs.${name} }}"`
+    `        echo "${name.toUpperCase()}: \${{ steps.merge.outputs.` + name + ` }}"`
   ).join('\n')
 
   return `name: "Changes"
@@ -98,7 +98,7 @@ ${jobOutputs}
       ## Updated ${ctx.branchFlow.length}-branch flow: ${ctx.branchFlow.join(' → ')}
       ## Each branch compares to the next in the flow
       run: |
-        case '${{ github.ref }}' in
+        case '\${{ github.ref }}' in
 ${branchCases}
           *)
             base_branch='${ctx.branchFlow[0]}'
@@ -106,11 +106,17 @@ ${branchCases}
         esac
         echo "Base branch determined: $base_branch"
         echo "base_branch=$base_branch" >> $GITHUB_ENV
+        echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
+
+    - name: Install Git
+      run: |
+        apt-get update
+        apt-get install -y git
 
     - uses: dorny/paths-filter@v3
       id: filter
       with:
-        base: ${{ env.base_branch }}
+        base: \${{ steps.set-base.outputs.base_branch }}
         filters: |
 ${filters}
 
@@ -128,8 +134,10 @@ ${debugOutputs}`
 // Pipeline workflow template
 const pipelineWorkflowTemplate = (ctx: any) => {
   const domainNames = Object.keys(ctx.domains)
-  const domainOutputs = domainNames.map(name => `      ${name}: 
-        value: ${{ jobs.changes.outputs.${name} }}`).join('\n')
+  const domainOutputs = domainNames.map(name => 
+    `      ${name}: 
+        value: \${{ jobs.changes.outputs.` + name + ` }}`
+  ).join('\n')
 
   return `name: "Pipeline"
 
@@ -211,5 +219,6 @@ export const generate = (ctx: PinionContext) =>
         // Generate individual workflow templates
         await generateTagWorkflow(ctx)
         // Add other workflow generators here as they are created
+        return ctx
       }
     ))

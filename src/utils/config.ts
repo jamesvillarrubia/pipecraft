@@ -2,7 +2,7 @@ import { cosmiconfigSync } from 'cosmiconfig'
 import { FlowcraftConfig, DomainConfig } from '../types'  
 
 export const loadConfig = (configPath?: string) => {
-  const explorer = cosmiconfigSync('trunkflow')
+  const explorer = cosmiconfigSync('flowcraft')
   const result = explorer.search()
   
   if (!result) {

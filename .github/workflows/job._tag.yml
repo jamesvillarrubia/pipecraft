@@ -1,7 +1,4 @@
-import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
-
-// Template for the Tag workflow
-const tagWorkflowTemplate = (ctx: any) => `name: "Tag"
+name: "Tag"
 
 on:
   workflow_call:
@@ -14,7 +11,7 @@ on:
 
 jobs:
   tag: 
-    if: github.ref_name == '${ctx.initialBranch || "develop"}'
+    if: github.ref_name == 'develop'
     runs-on: ubuntu-latest
     steps:
 
@@ -30,7 +27,7 @@ jobs:
     
     - name: Create Version Tag
       run: |
-        NEWEST_VERSION=\${{ inputs.version }}
+        NEWEST_VERSION=${{ inputs.version }}
         
         # Check if version is empty
         if [ -z "$NEWEST_VERSION" ]; then
@@ -39,7 +36,7 @@ jobs:
         fi
         
         # Check if tag already exists
-        if git tag -l | grep -q "^\${NEWEST_VERSION}$"; then
+        if git tag -l | grep -q "^${NEWEST_VERSION}$"; then
           echo "Tag $NEWEST_VERSION already exists, skipping"
           exit 0
         fi
@@ -49,8 +46,4 @@ jobs:
         git tag $NEWEST_VERSION
         git push origin $NEWEST_VERSION
         
-        echo "✅ Successfully created and pushed tag: $NEWEST_VERSION"`
-
-export const generate = (ctx: PinionContext) =>
-  Promise.resolve(ctx)
-    .then(renderTemplate(tagWorkflowTemplate, toFile('.github/workflows/job._tag.yml')))
+        echo "✅ Successfully created and pushed tag: $NEWEST_VERSION"
