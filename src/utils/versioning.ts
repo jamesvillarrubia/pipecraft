@@ -58,7 +58,7 @@ export class VersionManager {
             
             // eslint-disable-next-line prefer-spread
             let level = Math.min.apply(Math, commits.map(commit => {
-              let level = levelSet.indexOf(bumpRules[commit.type] || 'ignore')
+              let level = levelSet.indexOf(bumpRules[commit.type as keyof typeof bumpRules] || 'ignore')
               level = level < 0 ? 3 : level
               
               if (commit.notes.length > 0) {

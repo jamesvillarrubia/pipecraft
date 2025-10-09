@@ -55,15 +55,15 @@ const changesWorkflowTemplate = (ctx: any) => {
   
   const jobOutputs = domainNames.map(name => `      ${name}: \${{ steps.merge.outputs.` + name + ` }}`).join('\n')
   
-  const branchCases = ctx.branchFlow.slice(0, -1).map((branch, index) => 
+  const branchCases = ctx.branchFlow.slice(0, -1).map((branch: string, index: number) => 
     `          'refs/heads/${branch}')
             base_branch='${ctx.branchFlow[index + 1]}'
             ;;`
   ).join('\n')
   
-  const filters = Object.entries(ctx.domains).map(([name, config]) => 
+  const filters = Object.entries(ctx.domains).map(([name, config]: [string, any]) => 
     `          ${name}:
-${config.paths.map(path => `            - '${path}'`).join('\n')}`
+${config.paths.map((path: string) => `            - '${path}'`).join('\n')}`
   ).join('\n')
   
   const mergeOutputs = domainNames.map(name => 
@@ -276,7 +276,7 @@ export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
     .then(loadJSON(
       () => '.flowcraftrc.json',
-      (config) => ({ ...ctx, ...config } as FlowcraftConfig),
+      (config: any) => ({ ...ctx, ...config } as FlowcraftConfig),
       () => ({ ...ctx, ...defaultConfig } as FlowcraftConfig)
     ))
     .then(when(

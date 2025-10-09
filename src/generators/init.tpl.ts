@@ -120,4 +120,7 @@ export const generate = (ctx: PinionContext) =>
       }
     ]))
     .then((ctx) => ({ ...ctx, ...defaultConfig } as FlowcraftConfig))
-    .then(renderTemplate(configTemplate, toFile('.flowcraftrc.json')))
+    .then((config) => {
+      const content = configTemplate(config)
+      return writeJSON(() => content, toFile('.flowcraftrc.json'))(ctx)
+    })
