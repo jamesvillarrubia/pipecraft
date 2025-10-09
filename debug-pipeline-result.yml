@@ -121,7 +121,7 @@ jobs:
 
 
   createpr:
-    # SHOULD BE ANY FLOW BRANCH EXCEPT the final branch
+    ## SHOULD BE ANY BRANCH EXCEPT the final branch
     if: github.ref_name == 'develop' || github.ref_name == 'test' || github.ref_name == 'staging'
     needs: tag
     runs-on: ubuntu-latest
@@ -135,7 +135,8 @@ jobs:
   
 
   branch:
-    if: github.ref_name == 'develop' THEN 'test' THEN 'staging'
+    ## SHOULD BE THE NEXT BRANCH
+
     needs: createpr
     runs-on: ubuntu-latest
     steps:

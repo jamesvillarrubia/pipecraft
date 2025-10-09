@@ -1,4 +1,5 @@
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+import fs from 'fs'
 import dedent from 'dedent'
 // Template for the Tag GitHub Action
 const tagActionTemplate = (ctx: any) => {
@@ -90,4 +91,12 @@ const tagActionTemplate = (ctx: any) => {
 
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
+    .then((ctx) => {
+      // Check if file exists to determine merge status
+      const filePath = '.github/actions/create-tag/action.yml'
+      const exists = fs.existsSync(filePath)
+      const status = exists ? '🔄 Merged with existing' : '📝 Created new'
+      console.log(`${status} ${filePath}`)
+      return ctx
+    })
     .then(renderTemplate(tagActionTemplate, toFile('.github/actions/create-tag/action.yml')))

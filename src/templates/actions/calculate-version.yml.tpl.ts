@@ -1,4 +1,5 @@
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+import fs from 'fs'
 
 // Template for the Version Calculation GitHub Action
 const versionActionTemplate = (ctx: any) => {
@@ -107,4 +108,12 @@ runs:
 
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
+    .then((ctx) => {
+      // Check if file exists to determine merge status
+      const filePath = '.github/actions/calculate-version/action.yml'
+      const exists = fs.existsSync(filePath)
+      const status = exists ? '🔄 Merged with existing' : '📝 Created new'
+      console.log(`${status} ${filePath}`)
+      return ctx
+    })
     .then(renderTemplate(versionActionTemplate, toFile('.github/actions/calculate-version/action.yml')))

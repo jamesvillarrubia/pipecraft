@@ -1,4 +1,5 @@
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+import fs from 'fs'
 import dedent from 'dedent'
 import { DomainConfig } from '../../types'
 
@@ -79,4 +80,12 @@ ${domainResults}`
 
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
+    .then((ctx) => {
+      // Check if file exists to determine merge status
+      const filePath = '.github/actions/detect-changes/action.yml'
+      const exists = fs.existsSync(filePath)
+      const status = exists ? '🔄 Merged with existing' : '📝 Created new'
+      console.log(`${status} ${filePath}`)
+      return ctx
+    })
     .then(renderTemplate(changesActionTemplate, toFile('.github/actions/detect-changes/action.yml')))

@@ -1,0 +1,146 @@
+{
+  "name": "Pipeline",
+  "on": {
+    "pull_request": {
+      "branches": [
+        "develop",
+        "main",
+        "staging"
+      ]
+    },
+    "workflow_call": {
+      "inputs": {
+        "version": {
+          "description": "The version to deploy",
+          "required": false,
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "api": {
+          "value": "${{ jobs.changes.outputs.api }}"
+        },
+        "web": {
+          "value": "${{ jobs.changes.outputs.web }}"
+        },
+        "libs": {
+          "value": "${{ jobs.changes.outputs.libs }}"
+        },
+        "cicd": {
+          "value": "${{ jobs.changes.outputs.cicd }}"
+        }
+      }
+    },
+    "workflow_dispatch": {
+      "inputs": {
+        "version": {
+          "description": "The version to deploy",
+          "required": false,
+          "type": "string"
+        }
+      }
+    }
+  },
+  "jobs": {
+    "changes": {
+      "runs-on": "ubuntu-latest",
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "fetch-depth": 0
+          }
+        },
+        {
+          "uses": "./.github/actions/detect-changes",
+          "with": {
+            "baseRef": "${{ inputs.baseRef || 'main' }}"
+          }
+        }
+      ]
+    },
+    "version": {
+      "if": "github.ref_name == 'develop'",
+      "needs": "changes",
+      "runs-on": "ubuntu-latest",
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "fetch-depth": 0
+          }
+        },
+        {
+          "uses": "./.github/actions/calculate-version",
+          "with": {
+            "baseRef": "${{ inputs.baseRef || 'main' }}"
+          }
+        }
+      ]
+    },
+    "tag": {
+      "if": "github.ref_name == 'develop'",
+      "needs": "version",
+      "runs-on": "ubuntu-latest",
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "fetch-depth": 0,
+            "token": "${{ secrets.GITHUB_TOKEN }}"
+          }
+        },
+        {
+          "uses": "./.github/actions/create-tag",
+          "with": {
+            "version": "${{ needs.version.outputs.nextVersion }}"
+          }
+        }
+      ]
+    },
+    "createpr": {
+      "if": "github.ref_name == 'develop' || github.ref_name == 'test' || github.ref_name == 'staging'",
+      "needs": "tag",
+      "runs-on": "ubuntu-latest",
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "fetch-depth": 0,
+            "token": "${{ secrets.GITHUB_TOKEN }}"
+          }
+        },
+        {
+          "uses": "./.github/actions/create-pr",
+          "with": {
+            "sourceBranch": "${{ github.ref_name }}",
+            "targetBranch": "${{ ctx.nextBranch }}",
+            "title": "Release ${{ needs.version.outputs.nextVersion }}",
+            "body": "Automated release PR for version ${{ needs.version.outputs.nextVersion }}"
+          }
+        }
+      ]
+    },
+    "branch": {
+      "needs": "createpr",
+      "runs-on": "ubuntu-latest",
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "fetch-depth": 0,
+            "token": "${{ secrets.GITHUB_TOKEN }}"
+          }
+        },
+        {
+          "uses": "./.github/actions/manage-branch",
+          "with": {
+            "action": "fast-forward",
+            "targetBranch": "${{ ctx.nextBranch }}",
+            "sourceBranch": "${{ github.ref_name }}"
+          }
+        }
+      ]
+    }
+  }
+}

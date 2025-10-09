@@ -49,6 +49,7 @@
     "vitest": "^2.1.8"
   },
   "dependencies": {
-    "dedent": "^1.7.0"
+    "dedent": "^1.7.0",
+    "yaml": "^2.8.1"
   }
 }
