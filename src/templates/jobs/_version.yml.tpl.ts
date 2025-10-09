@@ -109,4 +109,4 @@ jobs:
 
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
-    .then(renderTemplate(versionWorkflowTemplate, toFile('.github/workflows/job.version.yml')))
+    .then(renderTemplate(versionWorkflowTemplate, toFile('.github/workflows/job._version.yml')))

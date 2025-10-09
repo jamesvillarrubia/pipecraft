@@ -187,4 +187,4 @@ jobs:
 
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
-    .then(renderTemplate(branchWorkflowTemplate, toFile('.github/workflows/job.branch.yml')))
+    .then(renderTemplate(branchWorkflowTemplate, toFile('.github/workflows/job._branch.yml')))

@@ -4,10 +4,10 @@ import { FlowcraftConfig } from '../types'
 
 // Import individual workflow templates
 import { generate as generateTagWorkflow } from '../templates/job._tag.yml.tpl'
-import { generate as generateVersionWorkflow } from '../templates/jobs/version.yml.tpl'
-import { generate as generateCreatePRWorkflow } from '../templates/jobs/createpr.yml.tpl'
-import { generate as generateBranchWorkflow } from '../templates/jobs/branch.yml.tpl'
-import { generate as generateAppsWorkflow } from '../templates/jobs/apps.yml.tpl'
+import { generate as generateVersionWorkflow } from '../templates/jobs/_version.yml.tpl'
+import { generate as generateCreatePRWorkflow } from '../templates/jobs/_createpr.yml.tpl'
+import { generate as generateBranchWorkflow } from '../templates/jobs/_branch.yml.tpl'
+import { generate as generateAppsWorkflow } from '../templates/jobs/_apps.yml.tpl'
 
 const defaultConfig = {
   ciProvider: 'github' as const,
