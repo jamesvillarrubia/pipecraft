@@ -1,190 +1,153 @@
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 
-// Template for the Apps workflow
-const appsWorkflowTemplate = (ctx: any) => `name: "Application Deployment"
+// Template for the Apps Deployment GitHub Action
+const appsActionTemplate = (ctx: any) => `name: 'Deploy Applications'
+description: 'Deploy applications to specified environment'
+author: 'Flowcraft'
 
-on:
-  workflow_call:
-    inputs:
-      environment:
-        required: true
-        type: string
-        description: "Environment to deploy to"
-      domains:
-        required: true
-        type: string
-        description: "Comma-separated list of domains to deploy"
-      version:
-        required: false
-        type: string
-        description: "Version to deploy"
-    outputs:
-      deploymentStatus:
-        value: \${{ jobs.deploy-apps.outputs.deploymentStatus }}
-      deployedDomains:
-        value: \${{ jobs.deploy-apps.outputs.deployedDomains }}
-      
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        type: choice
-        options:
-        - development
-        - staging
-        - production
-      domains:
-        description: 'Comma-separated list of domains to deploy'
-        required: true
-      version:
-        description: 'Version to deploy (optional)'
-        required: false
+inputs:
+  environment:
+    description: 'Environment to deploy to'
+    required: true
+  domains:
+    description: 'Comma-separated list of domains to deploy'
+    required: true
+  version:
+    description: 'Version to deploy'
+    required: false
 
-jobs:
-  deploy-apps:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    outputs:
-      deploymentStatus: \${{ steps.deploy.outputs.status }}
-      deployedDomains: \${{ steps.deploy.outputs.domains }}
-    steps:
-    - uses: actions/checkout@v4
+outputs:
+  deploymentStatus:
+    description: 'Status of the deployment'
+    value: \${{ steps.deploy.outputs.status }}
+  deployedDomains:
+    description: 'List of deployed domains'
+    value: \${{ steps.deploy.outputs.domains }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
     - name: Parse Domains
       id: parse-domains
+      shell: bash
       run: |
         DOMAINS="\${{ inputs.domains }}"
-        IFS=',' read -ra DOMAIN_ARRAY <<< "$DOMAINS"
+        IFS=',' read -ra DOMAIN_ARRAY <<< "\$DOMAINS"
         
         # Create JSON array of domains
         DOMAIN_JSON="["
         for i in "\${!DOMAIN_ARRAY[@]}"; do
-          if [ $i -gt 0 ]; then
-            DOMAIN_JSON="$DOMAIN_JSON,"
+          if [ \$i -gt 0 ]; then
+            DOMAIN_JSON="\$DOMAIN_JSON,"
           fi
-          DOMAIN_JSON="$DOMAIN_JSON\"\${DOMAIN_ARRAY[i]// /}\""
+          DOMAIN_JSON="\$DOMAIN_JSON\"\${DOMAIN_ARRAY[i]// /}\""
         done
-        DOMAIN_JSON="$DOMAIN_JSON]"
+        DOMAIN_JSON="\$DOMAIN_JSON]"
         
-        echo "domains=$DOMAIN_JSON" >> $GITHUB_OUTPUT
-        echo "domain_count=\${#DOMAIN_ARRAY[@]}" >> $GITHUB_OUTPUT
+        echo "domains=\$DOMAIN_JSON" >> \$GITHUB_OUTPUT
+        echo "domain_count=\${#DOMAIN_ARRAY[@]}" >> \$GITHUB_OUTPUT
         
         echo "📋 Domains to deploy:"
         for domain in "\${DOMAIN_ARRAY[@]}"; do
-          echo "  - $domain"
+          echo "  - \$domain"
         done
 
     - name: Set Environment Variables
+      shell: bash
       run: |
         ENV="\${{ inputs.environment }}"
         VERSION="\${{ inputs.version }}"
         
-        echo "ENVIRONMENT=$ENV" >> $GITHUB_ENV
-        echo "VERSION=\${VERSION:-latest}" >> $GITHUB_ENV
+        echo "ENVIRONMENT=\$ENV" >> \$GITHUB_ENV
+        echo "VERSION=\${VERSION:-latest}" >> \$GITHUB_ENV
         
         # Set environment-specific variables
-        case "$ENV" in
+        case "\$ENV" in
           "development")
-            echo "DEPLOY_URL=https://dev.example.com" >> $GITHUB_ENV
-            echo "REGISTRY=dev-registry.example.com" >> $GITHUB_ENV
+            echo "DEPLOY_URL=https://dev.example.com" >> \$GITHUB_ENV
+            echo "REGISTRY=dev-registry.example.com" >> \$GITHUB_ENV
             ;;
           "staging")
-            echo "DEPLOY_URL=https://staging.example.com" >> $GITHUB_ENV
-            echo "REGISTRY=staging-registry.example.com" >> $GITHUB_ENV
+            echo "DEPLOY_URL=https://staging.example.com" >> \$GITHUB_ENV
+            echo "REGISTRY=staging-registry.example.com" >> \$GITHUB_ENV
             ;;
           "production")
-            echo "DEPLOY_URL=https://example.com" >> $GITHUB_ENV
-            echo "REGISTRY=prod-registry.example.com" >> $GITHUB_ENV
+            echo "DEPLOY_URL=https://example.com" >> \$GITHUB_ENV
+            echo "REGISTRY=prod-registry.example.com" >> \$GITHUB_ENV
             ;;
         esac
-        
-        echo "🌍 Environment: $ENV"
-        echo "📦 Version: $VERSION"
-        echo "🔗 Deploy URL: $DEPLOY_URL"
 
     - name: Deploy Applications
       id: deploy
+      shell: bash
       run: |
-        DOMAINS='\${{ steps.parse-domains.outputs.domains }}'
         ENV="\${{ inputs.environment }}"
+        DOMAINS="\${{ inputs.domains }}"
         VERSION="\${{ inputs.version }}"
         
-        echo "🚀 Starting deployment to $ENV..."
+        echo "🚀 Deploying to \$ENV environment"
+        echo "📦 Version: \${VERSION:-latest}"
+        echo "🌐 Domains: \$DOMAINS"
         
-        # Parse domains from JSON
-        DOMAIN_LIST=$(echo "$DOMAINS" | jq -r '.[]')
+        # Simulate deployment for each domain
+        IFS=',' read -ra DOMAIN_ARRAY <<< "\$DOMAINS"
         DEPLOYED_DOMAINS=""
         SUCCESS_COUNT=0
-        TOTAL_COUNT=0
         
-        while IFS= read -r domain; do
-          TOTAL_COUNT=$((TOTAL_COUNT + 1))
-          echo "📦 Deploying $domain..."
+        for domain in "\${DOMAIN_ARRAY[@]}"; do
+          echo "📦 Deploying \$domain..."
           
-          # Simulate deployment (replace with actual deployment logic)
-          if [ "$domain" = "api" ]; then
-            echo "  🔧 Building API application..."
-            # Add actual build commands here
-            echo "  ✅ API deployment successful"
-            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-            DEPLOYED_DOMAINS="$DEPLOYED_DOMAINS,$domain"
-          elif [ "$domain" = "web" ]; then
-            echo "  🔧 Building Web application..."
-            # Add actual build commands here
-            echo "  ✅ Web deployment successful"
-            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-            DEPLOYED_DOMAINS="$DEPLOYED_DOMAINS,$domain"
-          elif [ "$domain" = "libs" ]; then
-            echo "  🔧 Building shared libraries..."
-            # Add actual build commands here
-            echo "  ✅ Libraries deployment successful"
-            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-            DEPLOYED_DOMAINS="$DEPLOYED_DOMAINS,$domain"
-          else
-            echo "  ⚠️  Unknown domain: $domain - skipping"
-          fi
-        done <<< "$DOMAIN_LIST"
+          # Simulate deployment logic based on domain
+          case "\$domain" in
+            "api")
+              echo "  🔧 Building API service..."
+              echo "  🐳 Creating Docker image..."
+              echo "  🚀 Deploying to Kubernetes..."
+              echo "  ✅ API deployed successfully"
+              ;;
+            "web")
+              echo "  🎨 Building web application..."
+              echo "  📦 Creating static build..."
+              echo "  🌐 Deploying to CDN..."
+              echo "  ✅ Web app deployed successfully"
+              ;;
+            "libs")
+              echo "  📚 Building library packages..."
+              echo "  📦 Publishing to npm registry..."
+              echo "  ✅ Libraries published successfully"
+              ;;
+            *)
+              echo "  ⚠️  Unknown domain: \$domain"
+              ;;
+          esac
+          
+          DEPLOYED_DOMAINS="\$DEPLOYED_DOMAINS,\$domain"
+          SUCCESS_COUNT=\$((SUCCESS_COUNT + 1))
+        done
         
-        # Clean up deployed domains list
-        DEPLOYED_DOMAINS=$(echo "$DEPLOYED_DOMAINS" | sed 's/^,//')
+        # Remove leading comma
+        DEPLOYED_DOMAINS="\${DEPLOYED_DOMAINS#,}"
         
-        # Set outputs
-        if [ $SUCCESS_COUNT -eq $TOTAL_COUNT ]; then
-          echo "status=success" >> $GITHUB_OUTPUT
-        else
-          echo "status=partial" >> $GITHUB_OUTPUT
-        fi
+        echo "status=success" >> \$GITHUB_OUTPUT
+        echo "domains=\$DEPLOYED_DOMAINS" >> \$GITHUB_OUTPUT
         
-        echo "domains=$DEPLOYED_DOMAINS" >> $GITHUB_OUTPUT
-        
-        echo "📊 Deployment Summary:"
-        echo "  ✅ Successful: $SUCCESS_COUNT/$TOTAL_COUNT"
-        echo "  📦 Deployed domains: $DEPLOYED_DOMAINS"
+        echo "✅ Deployment completed successfully"
+        echo "📊 Deployed \$SUCCESS_COUNT/\${#DOMAIN_ARRAY[@]} domains"
 
     - name: Deployment Summary
+      shell: bash
       run: |
-        STATUS="\${{ steps.deploy.outputs.status }}"
-        DOMAINS="\${{ steps.deploy.outputs.domains }}"
-        
-        case "$STATUS" in
-          "success")
-            echo "🎉 All deployments successful!"
-            echo "📦 Deployed domains: $DOMAINS"
-            ;;
-          "partial")
-            echo "⚠️  Some deployments failed"
-            echo "📦 Deployed domains: $DOMAINS"
-            ;;
-          *)
-            echo "❌ Deployment failed"
-            ;;
-        esac`
+        echo "🎉 Deployment Summary:"
+        echo "  Environment: \${{ inputs.environment }}"
+        echo "  Version: \${{ inputs.version }}"
+        echo "  Status: \${{ steps.deploy.outputs.status }}"
+        echo "  Domains: \${{ steps.deploy.outputs.domains }}"`
 
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
-    .then(renderTemplate(appsWorkflowTemplate, toFile('.github/workflows/job._apps.yml')))
+    .then(renderTemplate(appsActionTemplate, toFile('.github/actions/job._apps/action.yml')))

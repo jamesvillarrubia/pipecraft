@@ -1,0 +1,91 @@
+import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+
+// Template for the Tag GitHub Action
+const tagActionTemplate = (ctx: any) => `name: 'Tag Version'
+description: 'Create and push a Git tag for a given version'
+author: 'Flowcraft'
+
+inputs:
+  version:
+    description: 'Version to tag'
+    required: true
+  tag_prefix:
+    description: 'Prefix for the tag (e.g., v)'
+    required: false
+    default: 'v'
+  push:
+    description: 'Whether to push the tag to remote'
+    required: false
+    default: 'true'
+
+outputs:
+  tag_name:
+    description: 'The created tag name'
+    value: \${{ steps.tag.outputs.tag_name }}
+  success:
+    description: 'Whether the tag was created successfully'
+    value: \${{ steps.tag.outputs.success }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate Inputs
+      id: validate
+      shell: bash
+      run: |
+        if [ -z "\${{ inputs.version }}" ]; then
+          echo "❌ Version is required"
+          exit 1
+        fi
+        
+        # Validate version format (semantic versioning)
+        if [[ ! "\${{ inputs.version }}" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
+          echo "❌ Version must be in format x.y.z (e.g., 1.0.0)"
+          exit 1
+        fi
+        
+        echo "✅ Version format is valid: \${{ inputs.version }}"
+
+    - name: Create Tag
+      id: tag
+      shell: bash
+      run: |
+        VERSION="\${{ inputs.version }}"
+        PREFIX="\${{ inputs.tag_prefix }}"
+        TAG_NAME="\${PREFIX}\${VERSION}"
+        
+        # Check if tag already exists
+        if git tag -l | grep -q "^\${TAG_NAME}$"; then
+          echo "⚠️  Tag \${TAG_NAME} already exists"
+          echo "tag_name=\${TAG_NAME}" >> \$GITHUB_OUTPUT
+          echo "success=false" >> \$GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # Create the tag
+        git tag -a "\${TAG_NAME}" -m "Release \${TAG_NAME}"
+        echo "✅ Created tag: \${TAG_NAME}"
+        
+        echo "tag_name=\${TAG_NAME}" >> \$GITHUB_OUTPUT
+        echo "success=true" >> \$GITHUB_OUTPUT
+
+    - name: Push Tag
+      if: steps.tag.outputs.success == 'true' && inputs.push == 'true'
+      shell: bash
+      run: |
+        TAG_NAME="\${{ steps.tag.outputs.tag_name }}"
+        git push origin "\${TAG_NAME}"
+        echo "✅ Pushed tag \${TAG_NAME} to remote"
+
+    - name: Action Summary
+      shell: bash
+      run: |
+        if [ "\${{ steps.tag.outputs.success }}" == "true" ]; then
+          echo "✅ Successfully created and pushed tag: \${{ steps.tag.outputs.tag_name }}"
+        else
+          echo "❌ Failed to create tag: \${{ steps.tag.outputs.tag_name }}"
+        fi`
+
+export const generate = (ctx: PinionContext) =>
+  Promise.resolve(ctx)
+    .then(renderTemplate(tagActionTemplate, toFile('.github/actions/job._tag/action.yml')))

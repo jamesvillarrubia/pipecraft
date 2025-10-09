@@ -26,39 +26,81 @@ on:
 
 jobs:
   changes:
-    uses: ./.github/workflows/job._changes.yml
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/job._changes
+        with:
+          baseRef: ${{ inputs.baseRef || 'main' }}
 
   version:
     if: github.ref_name == 'develop'
     needs: changes
-    uses: ./.github/workflows/job._version.yml
-    with:
-      version: ${{ inputs.version }}
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/job._version
+        with:
+          baseRef: ${{ inputs.baseRef || 'main' }}
 
   tag:
     if: github.ref_name == 'develop'
     needs: version
-    uses: ./.github/workflows/job._tag.yml
-    with:
-      version: ${{ inputs.version }}
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/job._tag
+        with:
+          version: ${{ needs.version.outputs.nextVersion }}
 
   createpr:
     if: github.ref_name == 'develop'
     needs: tag
-    uses: ./.github/workflows/job._createpr.yml
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/job._createpr
+        with:
+          sourceBranch: ${{ github.ref_name }}
+          targetBranch: 'main'
+          title: 'Release ${{ needs.version.outputs.nextVersion }}'
+          body: 'Automated release PR for version ${{ needs.version.outputs.nextVersion }}'
 
   branch:
     if: github.ref_name == 'develop'
     needs: createpr
-    uses: ./.github/workflows/job._branch.yml
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/job._branch
+        with:
+          action: 'fast-forward'
+          targetBranch: 'main'
+          sourceBranch: ${{ github.ref_name }}
 
   apps:
     if: github.ref_name == 'develop'
     needs: branch
-    uses: ./.github/workflows/job._apps.yml
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/job._apps
+        with:
+          environment: 'production'
+          domains: 'api,web,libs'
+          version: ${{ needs.version.outputs.nextVersion }}

@@ -1,54 +1,44 @@
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 
-// Template for the Version Calculation workflow
-const versionWorkflowTemplate = (ctx: any) => `name: "Version Calculation"
+// Template for the Version Calculation GitHub Action
+const versionActionTemplate = (ctx: any) => `name: 'Calculate Version'
+description: 'Calculate semantic version from commit messages since last tag'
+author: 'Flowcraft'
 
-on:
-  workflow_call:
-    inputs:
-      baseRef:
-        required: true
-        type: string
-        description: "Base reference for version calculation"
-    outputs:
-      version:
-        value: \${{ jobs.calculate-version.outputs.version }}
-      versionType:
-        value: \${{ jobs.calculate-version.outputs.versionType }}
-      nextVersion:
-        value: \${{ jobs.calculate-version.outputs.nextVersion }}
-      
-  workflow_dispatch:
-    inputs:
-      baseRef:
-        description: 'Base reference for version calculation'
-        required: true
-        default: 'main'
+inputs:
+  baseRef:
+    description: 'Base reference for version calculation'
+    required: true
+  currentVersion:
+    description: 'Current version to calculate from (optional)'
+    required: false
 
-jobs:
-  calculate-version:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      version: \${{ steps.version.outputs.version }}
-      versionType: \${{ steps.version.outputs.versionType }}
-      nextVersion: \${{ steps.version.outputs.nextVersion }}
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+outputs:
+  version:
+    description: 'The current version'
+    value: \${{ steps.version.outputs.version }}
+  versionType:
+    description: 'The version bump type (major, minor, patch)'
+    value: \${{ steps.version.outputs.versionType }}
+  nextVersion:
+    description: 'The next calculated version'
+    value: \${{ steps.version.outputs.nextVersion }}
 
+runs:
+  using: 'composite'
+  steps:
     - name: Get Latest Tag
       id: get-latest-tag
+      shell: bash
       run: |
         # Get the latest tag
         LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-        echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
-        echo "Latest tag: $LATEST_TAG"
+        echo "latest_tag=\$LATEST_TAG" >> \$GITHUB_OUTPUT
+        echo "Latest tag: \$LATEST_TAG"
 
     - name: Calculate Version Bump
       id: version
+      shell: bash
       run: |
         # Get commits since last tag
         COMMITS=$(git log --oneline \${{ steps.get-latest-tag.outputs.latest_tag }}..HEAD --pretty=format:"%s")
@@ -57,16 +47,13 @@ jobs:
         VERSION_TYPE="patch"
         
         # Check for breaking changes
-        if echo "$COMMITS" | grep -q "BREAKING CHANGE\\|!:"
-        then
+        if echo "\$COMMITS" | grep -q "BREAKING CHANGE\\|!:"; then
           VERSION_TYPE="major"
         # Check for features
-        elif echo "$COMMITS" | grep -q "^feat"
-        then
+        elif echo "\$COMMITS" | grep -q "^feat"; then
           VERSION_TYPE="minor"
         # Check for fixes
-        elif echo "$COMMITS" | grep -q "^fix"
-        then
+        elif echo "\$COMMITS" | grep -q "^fix"; then
           VERSION_TYPE="patch"
         fi
         
@@ -74,34 +61,35 @@ jobs:
         CURRENT_VERSION=$(echo "\${{ steps.get-latest-tag.outputs.latest_tag }}" | sed 's/v//')
         
         # Calculate next version using semver logic
-        IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+        IFS='.' read -r MAJOR MINOR PATCH <<< "\$CURRENT_VERSION"
         
-        case "$VERSION_TYPE" in
+        case "\$VERSION_TYPE" in
           "major")
-            MAJOR=$((MAJOR + 1))
+            MAJOR=\$((MAJOR + 1))
             MINOR=0
             PATCH=0
             ;;
           "minor")
-            MINOR=$((MINOR + 1))
+            MINOR=\$((MINOR + 1))
             PATCH=0
             ;;
           "patch")
-            PATCH=$((PATCH + 1))
+            PATCH=\$((PATCH + 1))
             ;;
         esac
         
-        NEXT_VERSION="v$MAJOR.$MINOR.$PATCH"
+        NEXT_VERSION="v\$MAJOR.\$MINOR.\$PATCH"
         
-        echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-        echo "versionType=$VERSION_TYPE" >> $GITHUB_OUTPUT
-        echo "nextVersion=$NEXT_VERSION" >> $GITHUB_OUTPUT
+        echo "version=\$CURRENT_VERSION" >> \$GITHUB_OUTPUT
+        echo "versionType=\$VERSION_TYPE" >> \$GITHUB_OUTPUT
+        echo "nextVersion=\$NEXT_VERSION" >> \$GITHUB_OUTPUT
         
-        echo "Current version: $CURRENT_VERSION"
-        echo "Version type: $VERSION_TYPE"
-        echo "Next version: $NEXT_VERSION"
+        echo "Current version: \$CURRENT_VERSION"
+        echo "Version type: \$VERSION_TYPE"
+        echo "Next version: \$NEXT_VERSION"
 
     - name: Debug Version Information
+      shell: bash
       run: |
         echo "Current version: \${{ steps.version.outputs.version }}"
         echo "Version type: \${{ steps.version.outputs.versionType }}"
@@ -109,4 +97,4 @@ jobs:
 
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
-    .then(renderTemplate(versionWorkflowTemplate, toFile('.github/workflows/job._version.yml')))
+    .then(renderTemplate(versionActionTemplate, toFile('.github/actions/job._version/action.yml')))

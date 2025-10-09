@@ -3,7 +3,8 @@ import { IdempotencyManager } from '../utils/idempotency'
 import { FlowcraftConfig } from '../types'
 
 // Import individual workflow templates
-import { generate as generateTagWorkflow } from '../templates/job._tag.yml.tpl'
+import { generate as generateTagWorkflow } from '../templates/jobs/_tag.yml.tpl'
+import { generate as generateChangesWorkflow } from '../templates/jobs/_changes.yml.tpl'
 import { generate as generateVersionWorkflow } from '../templates/jobs/_version.yml.tpl'
 import { generate as generateCreatePRWorkflow } from '../templates/jobs/_createpr.yml.tpl'
 import { generate as generateBranchWorkflow } from '../templates/jobs/_branch.yml.tpl'
@@ -164,42 +165,84 @@ ${domainOutputs}
 
 jobs:
   changes:
-    uses: ./.github/workflows/job._changes.yml
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/job._changes
+        with:
+          baseRef: \${{ inputs.baseRef || 'main' }}
 
   version:
     if: github.ref_name == '${ctx.initialBranch}'
     needs: changes
-    uses: ./.github/workflows/job._version.yml
-    with:
-      version: \${{ inputs.version }}
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/job._version
+        with:
+          baseRef: \${{ inputs.baseRef || 'main' }}
 
   tag:
     if: github.ref_name == '${ctx.initialBranch}'
     needs: version
-    uses: ./.github/workflows/job._tag.yml
-    with:
-      version: \${{ inputs.version }}
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: \${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/job._tag
+        with:
+          version: \${{ needs.version.outputs.nextVersion }}
 
   createpr:
     if: github.ref_name == '${ctx.initialBranch}'
     needs: tag
-    uses: ./.github/workflows/job._createpr.yml
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: \${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/job._createpr
+        with:
+          sourceBranch: \${{ github.ref_name }}
+          targetBranch: '${ctx.finalBranch}'
+          title: 'Release \${{ needs.version.outputs.nextVersion }}'
+          body: 'Automated release PR for version \${{ needs.version.outputs.nextVersion }}'
 
   branch:
     if: github.ref_name == '${ctx.initialBranch}'
     needs: createpr
-    uses: ./.github/workflows/job._branch.yml
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: \${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/job._branch
+        with:
+          action: 'fast-forward'
+          targetBranch: '${ctx.finalBranch}'
+          sourceBranch: \${{ github.ref_name }}
 
   apps:
     if: github.ref_name == '${ctx.initialBranch}'
     needs: branch
-    uses: ./.github/workflows/job._apps.yml
-    secrets: inherit`
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/job._apps
+        with:
+          environment: '${ctx.environment || 'production'}'
+          domains: 'api,web,libs'
+          version: \${{ needs.version.outputs.nextVersion }}`
 }
 
 export const generate = (ctx: PinionContext) =>
@@ -221,6 +264,7 @@ export const generate = (ctx: PinionContext) =>
       (ctx) => ctx.ciProvider === 'github',
       async (ctx) => {
         // Generate individual workflow templates
+        await generateChangesWorkflow(ctx)
         await generateTagWorkflow(ctx)
         await generateVersionWorkflow(ctx)
         await generateCreatePRWorkflow(ctx)
