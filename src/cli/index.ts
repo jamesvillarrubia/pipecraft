@@ -253,6 +253,85 @@ program
     }
   })
 
+// Setup command - Create necessary branches
+program
+  .command('setup')
+  .description('Set up the repository with necessary branches from branch flow')
+  .option('--force', 'Force creation even if branches exist')
+  .action(async (options) => {
+    try {
+      const globalOptions = program.opts()
+      const configPath = globalOptions.config
+      
+      if (globalOptions.verbose) {
+        console.log(`📖 Reading config from: ${configPath}`)
+      }
+      
+      // Load configuration
+      const config = loadConfig(configPath) as FlowcraftConfig
+      
+      if (!config.branchFlow || config.branchFlow.length === 0) {
+        console.log('⚠️  No branch flow configured in config file')
+        return
+      }
+      
+      console.log(`🌿 Setting up branches: ${config.branchFlow.join(' → ')}`)
+      
+      // Check current branch
+      const { execSync } = await import('child_process')
+      const currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim()
+      console.log(`📍 Current branch: ${currentBranch}`)
+      
+      // Check which branches exist
+      const existingBranches = execSync('git branch -a', { encoding: 'utf8' })
+        .split('\n')
+        .map(line => line.trim().replace('* ', '').replace('remotes/origin/', ''))
+        .filter(line => line.length > 0)
+      
+      console.log(`📋 Existing branches: ${existingBranches.join(', ')}`)
+      
+      // Create missing branches
+      for (const branch of config.branchFlow) {
+        if (existingBranches.includes(branch)) {
+          console.log(`✅ Branch '${branch}' already exists locally`)
+        } else {
+          console.log(`🌱 Creating branch '${branch}'...`)
+          try {
+            execSync(`git checkout -b ${branch}`, { stdio: 'inherit' })
+            console.log(`✅ Created branch '${branch}'`)
+          } catch (error: any) {
+            if (error.message.includes('already exists')) {
+              console.log(`ℹ️  Branch '${branch}' already exists (checked out from remote)`)
+            } else {
+              throw error
+            }
+          }
+        }
+        
+        // Push branch to remote if it doesn't exist there
+        try {
+          console.log(`📤 Checking if '${branch}' exists on remote...`)
+          execSync(`git ls-remote --heads origin ${branch}`, { stdio: 'pipe' })
+          console.log(`✅ Branch '${branch}' already exists on remote`)
+        } catch (error: any) {
+          console.log(`🚀 Pushing branch '${branch}' to remote...`)
+          execSync(`git push -u origin ${branch}`, { stdio: 'inherit' })
+          console.log(`✅ Pushed branch '${branch}' to remote`)
+        }
+      }
+      
+      // Return to original branch
+      execSync(`git checkout ${currentBranch}`, { stdio: 'inherit' })
+      console.log(`🔄 Returned to original branch: ${currentBranch}`)
+      
+      console.log('✅ Branch setup complete!')
+      
+    } catch (error: any) {
+      console.error('❌ Setup command failed:', error.message)
+      process.exit(1)
+    }
+  })
+
 // Parse command line arguments
 program.parse()
 
