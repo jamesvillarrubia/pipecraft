@@ -1,0 +1,293 @@
+name: USER NAME
+on:
+  pull_request:
+    paths:
+      - "**/*.yml"
+      - "**/*.yaml"
+      - "**/*.json"
+      - "**/*.ts"
+      - "**/*.js"
+      - "**/*.tsx"
+    branches:
+      - develop
+      - feature
+      - staging
+      - main
+  workflow_call:
+    inputs:
+      fakevar1:
+        description: The fake version to deploy
+        required: false
+        type: string
+      version:
+        description: The version to deploy
+        required: false
+        type: string
+      fakevar2:
+        description: The fake version to deploy
+        required: false
+        type: string
+      baseRef:
+        description: The base reference for comparison
+        required: false
+        type: string
+    outputs:
+      fakevar3:
+        value: fakevalue3
+      fakevar4:
+        value: fakevalue4
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The version to deploy
+        required: false
+        type: string
+      baseRef:
+        description: The base reference for comparison
+        required: false
+        type: string
+jobs:
+  fake-job-1:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fake Job
+        run: |
+          echo "Running fake job"
+  changes:
+    items:
+      - key:
+          # =============================================================================
+          # CHANGES DETECTION
+          # =============================================================================
+          runs-on
+        value: ubuntu-latest
+      - key: steps
+        value:
+          items:
+            - items:
+                - key: uses
+                  value: ./.github/actions/detect-changes
+                - key: with
+                  value:
+                    items:
+                      - key: baseRef
+                        value: "{ inputs.baseRef || main "
+                    range:
+                      - 334
+                      - 370
+                      - 370
+              range:
+                - 263
+                - 370
+                - 370
+          range:
+            - 261
+            - 370
+            - 370
+    range:
+      - 213
+      - 370
+      - 370
+  fake-job-2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fake Job
+        run: |
+          echo "Running fake job"
+  fake-job-3:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fake Job
+        run: |
+          echo "Running fake job"
+  version:
+    items:
+      - key:
+          # =============================================================================
+          # VERSIONING
+          # =============================================================================
+          if
+        value: github.ref_name == 'develop'
+      - key: needs
+        value: changes
+      - key: runs-on
+        value: ubuntu-latest
+      - key: steps
+        value:
+          items:
+            - items:
+                - key: uses
+                  value: ./.github/actions/calculate-version
+                - key: with
+                  value:
+                    items:
+                      - key: baseRef
+                        value: "{ inputs.baseRef || 'main' "
+                    range:
+                      - 394
+                      - 432
+                      - 432
+              range:
+                - 320
+                - 432
+                - 432
+          range:
+            - 318
+            - 432
+            - 432
+    range:
+      - 206
+      - 432
+      - 432
+  fake-job-4:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fake Job
+        run: |
+          echo "Running fake job"
+  fake-job-5:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fake Job
+        run: |
+          echo "Running fake job"
+  deploy-api:
+    needs: branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy API
+        run: |
+          echo "Deploy API to production"
+  fake-job-6:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fake Job
+        run: |
+          echo "Running fake job"
+  tag:
+    items:
+      - key:
+          # =============================================================================
+          # TAG & CREATE PR
+          # =============================================================================
+          if
+        value: github.ref_name == 'develop'
+      - key: needs
+        value: version
+      - key: runs-on
+        value: ubuntu-latest
+      - key: steps
+        value:
+          items:
+            - items:
+                - key: uses
+                  value: ./.github/actions/create-tag
+                - key: with
+                  value:
+                    items:
+                      - key: version
+                        value: "{ needs.version.outputs.nextVersion "
+                    range:
+                      - 392
+                      - 439
+                      - 439
+              range:
+                - 325
+                - 439
+                - 439
+          range:
+            - 323
+            - 439
+            - 439
+    range:
+      - 211
+      - 439
+      - 439
+  fake-job-7:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fake Job
+        run: |
+          echo "Running fake job"
+  createpr:
+    items:
+      - key:
+          ## SHOULD BE ANY BRANCH EXCEPT the final branch
+          if
+        value: github.ref_name != 'main'
+      - key: needs
+        value: tag
+      - key: runs-on
+        value: ubuntu-latest
+      - key: steps
+        value:
+          items:
+            - items:
+                - key: uses
+                  value: ./.github/actions/create-pr
+                - key: with
+                  value:
+                    items:
+                      - key: sourceBranch
+                        value: "{ github.ref_name "
+                    range:
+                      - 238
+                      - 272
+                      - 272
+              range:
+                - 172
+                - 272
+                - 272
+          range:
+            - 170
+            - 272
+            - 272
+    range:
+      - 65
+      - 272
+      - 272
+  branch:
+    items:
+      - key:
+          ## SHOULD BE THE NEXT BRANCH
+          needs
+        value: createpr
+      - key: runs-on
+        value: ubuntu-latest
+      - key: steps
+        value:
+          items:
+            - items:
+                - key: uses
+                  value: ./.github/actions/manage-branch
+                - key: with
+                  value:
+                    items:
+                      - key: action
+                        value: 'fast-forward'
+                      - key: targetBranch
+                        value: "{ github.ref_name == 'develop' && 'staging' || github.ref_name ==
+                          'staging' && 'main' || github.ref_name == 'main' &&
+                          'main' || 'main' "
+                    range:
+                      - 190
+                      - 378
+                      - 378
+              range:
+                - 120
+                - 378
+                - 378
+          range:
+            - 118
+            - 378
+            - 378
+    range:
+      - 46
+      - 378
+      - 378
+  fake-job-8:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fake Job
+        run: |
+          echo "Running fake job"

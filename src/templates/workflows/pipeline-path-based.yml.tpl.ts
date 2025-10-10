@@ -39,6 +39,7 @@ const getBaseTemplate = (ctx: any) => {
   const branchFlow = ctx.branchFlow || ['develop', 'staging', 'main']
   const branchFlowNextLogic = generateBranchFlowNextLogic(branchFlow)
   
+  // Create a minimal YAML structure that can be parsed
   return dedent`
         name: "Pipeline"
 
@@ -83,7 +84,7 @@ const getBaseTemplate = (ctx: any) => {
             - uses: ./.github/actions/create-pr
                 with:
                 sourceBranch: \${{ github.ref_name }}
-                targetBranch: \${branchFlowNextLogic}
+                targetBranch: ${branchFlowNextLogic}
                 title: 'Release \${{ needs.version.outputs.nextVersion }}'
                 body: 'Automated release PR for version \${{ needs.version.outputs.nextVersion }}'
 
@@ -205,8 +206,8 @@ export const createPathBasedPipeline = (ctx: any) => {
         steps:
           - uses: ./.github/actions/detect-changes
             with:
-              baseRef: \${{ inputs.baseRef || ${ctx.finalBranch || 'main' }}}
-      `),
+              baseRef: \${{ inputs.baseRef || ${ctx.finalBranch || "main"} }}
+      `, ctx),
       required: true
     },
     
@@ -223,8 +224,8 @@ export const createPathBasedPipeline = (ctx: any) => {
         steps:
           - uses: ./.github/actions/calculate-version
             with:
-              baseRef: \${{ inputs.baseRef || ${ctx.finalBranch || 'main'} }}
-      `),
+              baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
+      `, ctx),
       required: true
     },
     
@@ -242,7 +243,7 @@ export const createPathBasedPipeline = (ctx: any) => {
           - uses: ./.github/actions/create-tag
             with:
               version: \${{ needs.version.outputs.nextVersion }}
-      `),
+      `, ctx),
       required: true
     },
     
@@ -251,7 +252,7 @@ export const createPathBasedPipeline = (ctx: any) => {
       operation: 'overwrite',
       value: createValueFromString(`
         ## SHOULD BE ANY BRANCH EXCEPT the final branch
-        if: github.ref_name != '${ctx.finalBranch || 'main'}'
+        if: github.ref_name != '${ctx.finalBranch || "main"}'
         needs: tag
         runs-on: ubuntu-latest
         steps:
@@ -261,7 +262,7 @@ export const createPathBasedPipeline = (ctx: any) => {
               targetBranch: ${generateBranchFlowNextLogic(branchFlow)}
               title: 'Release \${{ needs.version.outputs.nextVersion }}'
               body: 'Automated release PR for version \${{ needs.version.outputs.nextVersion }}'
-      `),
+      `, ctx),
       required: true
     },
     
@@ -278,7 +279,7 @@ export const createPathBasedPipeline = (ctx: any) => {
               action: 'fast-forward'
               targetBranch: ${generateBranchFlowNextLogic(branchFlow)}
               sourceBranch: \${{ github.ref_name }}
-      `),
+      `, ctx),
       required: true
     },
     
@@ -313,7 +314,7 @@ export const createPathBasedPipeline = (ctx: any) => {
         #     - name: Test Web
         #       run: |
         #         echo "Run Web tests"
-      `),
+      `, ctx),
       required: false
     },
     
@@ -341,7 +342,7 @@ export const createPathBasedPipeline = (ctx: any) => {
         #     - name: Deploy Web
         #       run: |
         #         echo "Deploy Web to production"
-      `),
+      `, ctx),
       required: false
     }
   ]

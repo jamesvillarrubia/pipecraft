@@ -464,8 +464,21 @@ export function applyPathOperations(
  * `)
  * ```
  */
-export function createValueFromString(yamlString: string): Node {
-  return parseDocument(yamlString).contents as Node
+export function createValueFromString(yamlString: string, context?: any): Node {
+  // Evaluate JavaScript template literals in the string using the provided context
+  const processedString = yamlString.replace(/\$\{([^}]+)\}/g, (match, expression) => {
+    try {
+      // Create a function that evaluates the expression with the context
+      const func = new Function('ctx', `return ${expression}`)
+      const result = func(context || {})
+      return JSON.stringify(result)
+    } catch (error) {
+      // If evaluation fails, return the original expression as a string
+      return `"${expression}"`
+    }
+  })
+  
+  return parseDocument(processedString).contents as Node
 }
 
 /**

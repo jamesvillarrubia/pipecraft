@@ -2,18 +2,18 @@
   "files": {
     "src/templates": {
       "path": "src/templates",
-      "hash": "2a7ff647dae25801bd3ab2fa0647e59336fd2f3de46d3ea9f9b8acdfddad1cd7",
+      "hash": "02d858ce24666e9903685d532f31646b1ee7bbe2182defc739f0ae9ddad61402",
       "mtime": 1760024507366,
       "size": 0
     },
     "src/generators": {
       "path": "src/generators",
-      "hash": "30c7ce451418220609e945eb57df3b32d292c41346e89d62e7083f1eda9010dd",
+      "hash": "448125277a642ba45a673f87210a13722627bc458957cbf3187c78c375f0d768",
       "mtime": 1760022327845,
       "size": 0
     }
   },
-  "configHash": "72b62ada16751a3e42f8010cb53398eafdb75296fb8bda828a8ceeab034f0c5d",
-  "lastGenerated": 1760062276014,
+  "configHash": "947adfe6196c7d04cf915e00611ec12c21198408f5f6e9c7cdcdd9d710e1e110",
+  "lastGenerated": 1760118365607,
   "version": "1.0.0"
 }
