@@ -101,6 +101,24 @@ const getBaseTemplate = (ctx: any) => {
 }
 
 /**
+ * Define which jobs Flowcraft owns vs user jobs
+ */
+const FLOWCRAFT_OWNED_JOBS = new Set([
+  'changes',
+  'version', 
+  'tag',
+  'create-pr',
+  'manage-branch'
+])
+
+/**
+ * Check if a job is owned by Flowcraft
+ */
+const isFlowcraftJob = (jobName: string): boolean => {
+  return FLOWCRAFT_OWNED_JOBS.has(jobName)
+}
+
+/**
  * Create path-based pipeline content
  */
 export const createPathBasedPipeline = (ctx: any) => {
@@ -205,7 +223,7 @@ export const createPathBasedPipeline = (ctx: any) => {
           {
             uses: './.github/actions/detect-changes',
             with: {
-              baseRef: `\${{ inputs.baseRef || ${ctx.finalBranch || "main"} }}`
+              baseRef: `\${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}`
             }
           }
         ]
@@ -349,6 +367,20 @@ export const createPathBasedPipeline = (ctx: any) => {
     }
   ]
   
+  // Remove Flowcraft-owned jobs from existing pipeline to ensure clean overwrite
+  if (ctx.existingPipelineContent && doc.contents.get('jobs')) {
+    const jobsNode = doc.contents.get('jobs')
+    if (jobsNode && jobsNode.items) {
+      // Remove all Flowcraft-owned jobs from existing pipeline
+      for (const jobName of FLOWCRAFT_OWNED_JOBS) {
+        if (jobsNode.has(jobName)) {
+          console.log(`🔄 Removing existing Flowcraft job: ${jobName}`)
+          jobsNode.delete(jobName)
+        }
+      }
+    }
+  }
+  
   // Apply all operations
   applyPathOperations(doc.contents, operations, doc)
   
@@ -376,7 +408,7 @@ const loadExistingPipeline = (filePath: string): string | null => {
 /**
  * Main export - path-based pipeline generator
  */
-export const generate = (ctx: PinionContext & { existingPipeline?: any }) =>
+export const generate = (ctx: PinionContext & { existingPipeline?: any, outputPipelinePath?: string }) =>
   Promise.resolve(ctx)
     .then((ctx) => {
       const result = createPathBasedPipeline(ctx)
@@ -388,11 +420,12 @@ export const generate = (ctx: PinionContext & { existingPipeline?: any }) =>
     })
     .then((ctx) => {
       // Provide user feedback about file operation
+      const outputPath = ctx.outputPipelinePath || '.github/workflows/pipeline.yml'
       const status = ctx.mergeStatus === 'merged' ? '🔄 Merged with existing' : '📝 Created new'
-      console.log(`${status} .github/workflows/pipeline.yml`)
+      console.log(`${status} ${outputPath}`)
       return ctx
     })
     .then(renderTemplate(
       (ctx: any) => ctx.yamlContent,
-      toFile('.github/workflows/pipeline.yml')
+      toFile((ctx: any) => ctx.outputPipelinePath || '.github/workflows/pipeline.yml')
     ))

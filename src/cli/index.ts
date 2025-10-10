@@ -27,6 +27,7 @@ program
 program
   .option('-c, --config <path>', 'path to config file', '.flowcraftrc.json')
   .option('-p, --pipeline <path>', 'path to existing pipeline file for merging', '.github/workflows/pipeline.yml')
+  .option('-o, --output-pipeline <path>', 'path to output pipeline file (for testing)', '.github/workflows/pipeline.yml')
   .option('-v, --verbose', 'verbose output')
   .option('--force', 'force regeneration even if files unchanged')
   .option('--dry-run', 'show what would be done without making changes')
@@ -94,6 +95,7 @@ program
       const globalOptions = program.opts()
       const configPath = globalOptions.config
       const pipelinePath = globalOptions.pipeline
+      const outputPipelinePath = globalOptions.outputPipeline
       
       if (globalOptions.verbose) {
         console.log(`📖 Reading config from: ${configPath}`)
@@ -126,6 +128,7 @@ program
         cwd: process.cwd(),
         argv: process.argv,
         pipelinePath: pipelinePath,
+        outputPipelinePath: outputPipelinePath,
         config: config,
         pinion: {
           logger: {

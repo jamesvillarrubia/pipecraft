@@ -38,7 +38,7 @@ const defaultConfig = {
   }
 }
 
-export const generate = (ctx: PinionContext & { pipelinePath?: string, config?: any }) =>
+export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPipelinePath?: string, config?: any }) =>
   Promise.resolve(ctx)
     .then((ctx) => {
       console.log('🔧 Generating GitHub Actions...')
@@ -56,7 +56,7 @@ export const generate = (ctx: PinionContext & { pipelinePath?: string, config?: 
         }
       }
       
-      return { ...ctx, ...defaultConfig, ...ctx.config, ...ctx, existingPipeline, existingPipelineContent }
+      return { ...ctx, ...defaultConfig, ...ctx.config, ...ctx, existingPipeline, existingPipelineContent, outputPipelinePath: ctx.outputPipelinePath }
     })
     .then((ctx) => {
       // Generate individual GitHub Actions
