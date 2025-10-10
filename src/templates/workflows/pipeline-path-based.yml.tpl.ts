@@ -2,7 +2,6 @@ import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import { parseDocument, stringify } from 'yaml'
 import fs from 'fs'
 import { 
-  ensureWorkflowInputs, 
   applyPathOperations, 
   PathOperationConfig,
   createValueFromString,
@@ -20,83 +19,16 @@ import dedent from 'dedent';
  * - Preserve user customizations while ensuring template requirements
  */
 
-// Generate dynamic branch flow logic
-const generateBranchFlowNextLogic = (branchFlow: string[]) => {
-  if (!branchFlow || branchFlow.length === 0) return "'main'"
-  
-  const conditions = branchFlow.map((branch, index) => {
-    const nextBranch = index < branchFlow.length - 1 ? branchFlow[index + 1] : branchFlow[index]
-    return `github.ref_name == '${branch}' && '${nextBranch}'`
-  }).join(' || ')
-  
-  return `\${{ ${conditions} || '${branchFlow[branchFlow.length - 1]}' }}`
-}
 
 /**
- * Get base template with minimal structure
+ * Get minimal base template - just enough structure to be parsed
+ * All actual content is defined via operations list
  */
 const getBaseTemplate = (ctx: any) => {
-  const branchFlow = ctx.branchFlow || ['develop', 'staging', 'main']
-  const branchFlowNextLogic = generateBranchFlowNextLogic(branchFlow)
-  
-  // Create a minimal YAML structure that can be parsed
   return dedent`
         name: "Pipeline"
-
-        on:
-        pull_request:
-            branches:
-            - develop
-            - staging
-            - main
-
-        jobs:
-        changes:
-            runs-on: ubuntu-latest
-            steps:
-            - uses: ./.github/actions/detect-changes
-                with:
-                baseRef: \${{ inputs.baseRef || 'main' }}
-
-        version:
-            if: github.ref_name == '${branchFlow[0]}'
-            needs: changes
-            runs-on: ubuntu-latest
-            steps:
-            - uses: ./.github/actions/calculate-version
-                with:
-                baseRef: \${{ inputs.baseRef || 'main' }}
-
-        tag:
-            if: github.ref_name == '${branchFlow[0]}'
-            needs: version
-            runs-on: ubuntu-latest
-            steps:
-            - uses: ./.github/actions/create-tag
-                with:
-                version: \${{ needs.version.outputs.nextVersion }}
-
-        createpr:
-            if: github.ref_name != '${ctx.finalBranch}'
-            needs: tag
-            runs-on: ubuntu-latest
-            steps:
-            - uses: ./.github/actions/create-pr
-                with:
-                sourceBranch: \${{ github.ref_name }}
-                targetBranch: ${branchFlowNextLogic}
-                title: 'Release \${{ needs.version.outputs.nextVersion }}'
-                body: 'Automated release PR for version \${{ needs.version.outputs.nextVersion }}'
-
-        branch:
-            needs: createpr
-            runs-on: ubuntu-latest
-            steps:
-            - uses: ./.github/actions/manage-branch
-                with:
-                action: 'fast-forward'
-                targetBranch: ${branchFlowNextLogic}
-                sourceBranch: \${{ github.ref_name }}
+        on: {}
+        jobs: {}
         `
 }
 
@@ -279,7 +211,7 @@ export const createPathBasedPipeline = (ctx: any) => {
           - uses: ./.github/actions/create-pr
             with:
               sourceBranch: \${{ github.ref_name }}
-              targetBranch: ${generateBranchFlowNextLogic(branchFlow)}
+              targetBranch: \${{ github.ref_name == '${branchFlow[0]}' && '${branchFlow[1] || branchFlow[0]}' || github.ref_name == '${branchFlow[1]}' && '${branchFlow[2] || branchFlow[1]}' || '${branchFlow[branchFlow.length - 1]}' }}
               title: 'Release \${{ needs.version.outputs.nextVersion }}'
               body: 'Automated release PR for version \${{ needs.version.outputs.nextVersion }}'
       `, ctx),
@@ -297,7 +229,7 @@ export const createPathBasedPipeline = (ctx: any) => {
           - uses: ./.github/actions/manage-branch
             with:
               action: 'fast-forward'
-              targetBranch: ${generateBranchFlowNextLogic(branchFlow)}
+              targetBranch: \${{ github.ref_name == '${branchFlow[0]}' && '${branchFlow[1] || branchFlow[0]}' || github.ref_name == '${branchFlow[1]}' && '${branchFlow[2] || branchFlow[1]}' || '${branchFlow[branchFlow.length - 1]}' }}
               sourceBranch: \${{ github.ref_name }}
       `, ctx),
       required: true
