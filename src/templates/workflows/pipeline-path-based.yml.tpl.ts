@@ -328,47 +328,22 @@ export const createPathBasedPipeline = (ctx: any) => {
     console.log(`📋 Found existing Flowcraft jobs: ${Array.from(existingFlowcraftJobs).join(', ')}`)
     console.log('🔄 Preserving user\'s job positions and updating content')
     
-    // Collect all jobs in their original order
-    const orderedJobs = new Map<string, any>()
+    // Remove Flowcraft-owned jobs from existing pipeline to ensure clean overwrite
     if (doc.contents.get('jobs')) {
       const jobsNode = doc.contents.get('jobs')
       if (jobsNode && jobsNode.items) {
-        for (const item of jobsNode.items) {
-          const jobName = item.key.value
-          orderedJobs.set(jobName, item.value)
+        // Remove all Flowcraft-owned jobs from existing pipeline
+        for (const jobName of FLOWCRAFT_OWNED_JOBS) {
+          if (jobsNode.has(jobName)) {
+            console.log(`🔄 Removing existing Flowcraft job: ${jobName}`)
+            jobsNode.delete(jobName)
+          }
         }
       }
     }
     
-    // Clear the jobs section
-    const jobsNode = doc.contents.get('jobs')
-    if (jobsNode && jobsNode.items) {
-      jobsNode.items = []
-    }
-    
-    // Rebuild jobs section preserving original order
-    // First, add Flowcraft jobs in their original positions
-    const flowcraftJobOrder = ['changes', 'version', 'tag', 'createpr', 'branch']
-    for (const jobName of flowcraftJobOrder) {
-      if (orderedJobs.has(jobName)) {
-        // User had this job - add it back in its original position
-        jobsNode.set(jobName, orderedJobs.get(jobName))
-      } else {
-        // User didn't have this job - create it using operations
-        const operation = operations.find(op => op.path === `jobs.${jobName}`)
-        if (operation) {
-          // Apply just this operation
-          ensurePathAndApply(doc.contents, operation, doc)
-        }
-      }
-    }
-    
-    // Then add all other user jobs
-    for (const [jobName, jobValue] of orderedJobs) {
-      if (!FLOWCRAFT_OWNED_JOBS.has(jobName)) {
-        jobsNode.set(jobName, jobValue)
-      }
-    }
+    // Apply all operations - this will add Flowcraft jobs back in their original positions
+    applyPathOperations(doc.contents, operations, doc)
   } else {
     // No existing Flowcraft jobs - build in correct order
     console.log('📋 No existing Flowcraft jobs found - building in correct order')
