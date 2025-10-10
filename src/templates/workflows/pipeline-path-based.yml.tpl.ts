@@ -150,17 +150,16 @@ export const createPathBasedPipeline = (ctx: any) => {
     {
       path: 'jobs.changes',
       operation: 'overwrite',
-      value: createValueFromObject({
-        'runs-on': 'ubuntu-latest',
-        steps: [
-          {
-            uses: './.github/actions/detect-changes',
-            with: {
-              baseRef: `\${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}`
-            }
-          }
-        ]
-      }, doc),
+      value: createValueFromString(`
+        # =============================================================================
+        # CHANGES DETECTION
+        # =============================================================================
+        runs-on: ubuntu-latest
+        steps:
+          - uses: ./.github/actions/detect-changes
+            with:
+              baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
+      `, ctx),
       required: true
     },
 
