@@ -15,6 +15,11 @@ on:
     branches:
       - develop
       - feature
+      - alpha
+      - beta
+      - gamma
+      - delta
+      - epsilon
       # USER COMMENT 4
 
   workflow_call:
@@ -25,13 +30,16 @@ on:
         required: false
         type: string
       version:
-        # USER COMMENT 6
-        description: 'The version to deploy'
+        description: The version to deploy
         required: false
         type: string
       # USER COMMENT 7
       fakevar2:
         description: 'The fake version to deploy'
+        required: false
+        type: string
+      baseRef:
+        description: The base reference for comparison
         required: false
         type: string
     # USER COMMENT 8
@@ -40,6 +48,16 @@ on:
         value: 'fakevalue3'
       fakevar4:
         value: 'fakevalue4'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The version to deploy
+        required: false
+        type: string
+      baseRef:
+        description: The base reference for comparison
+        required: false
+        type: string
 
 jobs:
   # USER COMMENT 9
@@ -52,6 +70,9 @@ jobs:
         run: |
           echo "Running fake job"
   changes:
+    # =============================================================================
+    # CHANGES DETECTION
+    # =============================================================================
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/detect-changes

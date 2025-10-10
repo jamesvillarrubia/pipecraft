@@ -151,15 +151,17 @@ export const createPathBasedPipeline = (ctx: any) => {
       path: 'jobs.changes',
       operation: 'overwrite',
       value: createValueFromString(`
-        # =============================================================================
-        # CHANGES DETECTION
-        # =============================================================================
         runs-on: ubuntu-latest
         steps:
           - uses: ./.github/actions/detect-changes
             with:
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
       `, ctx),
+      commentBefore: `
+        # =============================================================================
+        # CHANGES DETECTION
+        # =============================================================================
+      `,
       required: true
     },
 
@@ -359,6 +361,12 @@ export const createPathBasedPipeline = (ctx: any) => {
           } else {
             updatedJobValue = createValueFromObject(operation.value, doc)
           }
+          
+          // Apply commentBefore if provided
+          if (operation.commentBefore && updatedJobValue) {
+            updatedJobValue.commentBefore = operation.commentBefore.trim()
+          }
+          
           jobsNode.set(jobName, updatedJobValue)
         }
       } else {
@@ -380,6 +388,12 @@ export const createPathBasedPipeline = (ctx: any) => {
           } else {
             newJobValue = createValueFromObject(operation.value, doc)
           }
+          
+          // Apply commentBefore if provided
+          if (operation.commentBefore && newJobValue) {
+            newJobValue.commentBefore = operation.commentBefore.trim()
+          }
+          
           jobsNode.set(jobName, newJobValue)
         }
       }

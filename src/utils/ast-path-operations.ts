@@ -129,6 +129,7 @@ export interface PathOperationConfig {
   operation: PathOperation
   value: PathValue
   required?: boolean
+  commentBefore?: string
 }
 
 /**
@@ -150,7 +151,7 @@ export interface PathOperationConfig {
  * // Results in: jobs: { changes: { 'runs-on': 'ubuntu-latest' } }
  * ```
  */
-export function setPathValue(doc: YAMLMap, path: string, value: PathValue, document?: any): void {
+export function setPathValue(doc: YAMLMap, path: string, value: PathValue, document?: any, commentBefore?: string): void {
   const pathParts = path.split('.')
   let current: Node = doc
   
@@ -174,15 +175,23 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue, docum
   // Set the final value
   const finalKey = pathParts[pathParts.length - 1]
   if (current instanceof YAMLMap) {
+    let node: any
+    
     // Check if value is already a node (from createValueFromString, etc.)
     if (value && typeof value === 'object' && ('items' in value || 'type' in value)) {
       // Value is already a node, use it directly
-      current.set(finalKey, value)
+      node = value
     } else {
       // Value is not a node, create one
-      const node = document && document.createNode ? document.createNode(value) : createNode(value)
-      current.set(finalKey, node)
+      node = document && document.createNode ? document.createNode(value) : createNode(value)
     }
+    
+    // Apply commentBefore if provided
+    if (commentBefore && node) {
+      node.commentBefore = commentBefore.trim()
+    }
+    
+    current.set(finalKey, node)
   } else {
     throw new Error(`Cannot set ${finalKey} - parent is not a map`)
   }
@@ -248,14 +257,14 @@ export function ensurePathAndApply(
   config: PathOperationConfig,
   document?: any
 ): void {
-  const { path, operation, value, required = true } = config
+  const { path, operation, value, required = true, commentBefore } = config
   
   // Check if path exists
   const existingValue = getPathValue(doc, path)
   
   if (!existingValue && required) {
     // Path doesn't exist and is required - create it
-    setPathValue(doc, path, value, document)
+    setPathValue(doc, path, value, document, commentBefore)
     return
   }
   
@@ -267,7 +276,7 @@ export function ensurePathAndApply(
   // Path exists - apply operation
   switch (operation) {
     case 'set':
-      setPathValue(doc, path, value, document)
+      setPathValue(doc, path, value, document, commentBefore)
       break
       
     case 'merge':
@@ -275,7 +284,7 @@ export function ensurePathAndApply(
       break
       
     case 'overwrite':
-      setPathValue(doc, path, value, document)
+      setPathValue(doc, path, value, document, commentBefore)
       break
       
     case 'preserve':

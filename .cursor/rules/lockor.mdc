@@ -1,12 +1,8 @@
 ---
 description: "CRITICAL: You MUST NOT modify these locked files. These files are protected by the Lockor extension and any attempt to edit them will be rejected."
 globs:
-  - "CICD_TEMPLATES/README_TEMPLATE.md"
-  - ".release-it.cjs"
-  - ".cursor/rules/lockor.mdc"
-  - ".lockor"
-  - "test.txt"
-  - "REQUIREMENTS.md"
+  - "tests/fixtures/pipeline-user-modified.yml"
+  - "tests/fixtures/test-config.json"
 alwaysApply: true
 ---
 
@@ -14,12 +10,8 @@ alwaysApply: true
 
 ## CRITICAL RULE VIOLATION PREVENTION
 **NEVER attempt to modify, update, edit, or change the following files:**
-- `CICD_TEMPLATES/README_TEMPLATE.md`
-- `.release-it.cjs`
-- `.cursor/rules/lockor.mdc`
-- `.lockor`
-- `test.txt`
-- `REQUIREMENTS.md`
+- `tests/fixtures/pipeline-user-modified.yml`
+- `tests/fixtures/test-config.json`
 
 ## MANDATORY PRE-CHECK PROCEDURE
 **BEFORE performing ANY file operation (read, edit, search, etc.), you MUST:**
