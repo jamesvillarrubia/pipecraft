@@ -385,6 +385,10 @@ export const createPathBasedPipeline = (ctx: any) => {
         }
       }
     }
+    
+    // Apply non-job operations (like workflow_dispatch inputs)
+    const nonJobOperations = operations.filter(op => !op.path.startsWith('jobs.'))
+    applyPathOperations(doc.contents, nonJobOperations, doc)
   } else {
     // No existing Flowcraft jobs - build in correct order
     console.log('📋 No existing Flowcraft jobs found - building in correct order')
