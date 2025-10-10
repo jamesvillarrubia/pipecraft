@@ -1,41 +1,50 @@
-name: USER NAME
+## USER COMMENT 1
+
+name: "USER NAME"
+# USER COMMENT 2
 on:
   pull_request:
     paths:
-      - "**/*.yml"
-      - "**/*.yaml"
-      - "**/*.json"
-      - "**/*.ts"
-      - "**/*.js"
-      - "**/*.tsx"
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '**/*.json'
+      - '**/*.ts'
+      - '**/*.js'
+      - '**/*.tsx'
+    # USER COMMENT 3
     branches:
       - develop
       - feature
       - staging
       - main
+      # USER COMMENT 4
+
   workflow_call:
     inputs:
+      # USER COMMENT 5
       fakevar1:
-        description: The fake version to deploy
+        description: 'The fake version to deploy'
         required: false
         type: string
       version:
         description: The version to deploy
         required: false
         type: string
+      # USER COMMENT 7
       fakevar2:
-        description: The fake version to deploy
+        description: 'The fake version to deploy'
         required: false
         type: string
       baseRef:
         description: The base reference for comparison
         required: false
         type: string
+    # USER COMMENT 8
     outputs:
       fakevar3:
-        value: fakevalue3
+        value: 'fakevalue3'
       fakevar4:
-        value: fakevalue4
+        value: 'fakevalue4'
   workflow_dispatch:
     inputs:
       version:
@@ -46,13 +55,22 @@ on:
         description: The base reference for comparison
         required: false
         type: string
+
 jobs:
+  # USER COMMENT 9
+
   fake-job-1:
+    # USER COMMENT 10    
     runs-on: ubuntu-latest
     steps:
       - name: Fake Job
         run: |
           echo "Running fake job"
+
+  # =============================================================================
+  # CHANGES DETECTION
+  # =============================================================================
+  # USER COMMENT 11
   changes:
     items:
       - key:
@@ -88,18 +106,51 @@ jobs:
       - 213
       - 370
       - 370
+
+  # USER COMMENT 12
   fake-job-2:
+    # USER COMMENT 13
     runs-on: ubuntu-latest
     steps:
       - name: Fake Job
         run: |
           echo "Running fake job"
+
+  # =============================================================================
+  # TESTING JOBS
+  # =============================================================================
+  # Add your testing jobs here
+  # Example:
+  # test-api: 
+  #   needs: branch
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Test API
+  #       run: |
+  #         echo "Run API tests"
+  #
+  # test-web:
+  #   needs: branch
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Test Web
+  #       run: |
+  #         echo "Run Web tests"
+
+
+  # USER COMMENT 14
+
   fake-job-3:
+    # USER COMMENT 15
     runs-on: ubuntu-latest
     steps:
       - name: Fake Job
         run: |
           echo "Running fake job"
+
+  # =============================================================================
+  # VERSIONING
+  # =============================================================================
   version:
     items:
       - key:
@@ -139,18 +190,32 @@ jobs:
       - 206
       - 432
       - 432
+
+  # USER COMMENT 16
+
   fake-job-4:
+    # USER COMMENT 17
     runs-on: ubuntu-latest
     steps:
       - name: Fake Job
         run: |
           echo "Running fake job"
+
+  # USER COMMENT 18
+
   fake-job-5:
+    # USER COMMENT 19
     runs-on: ubuntu-latest
     steps:
       - name: Fake Job
         run: |
           echo "Running fake job"
+
+  # USER COMMENT 20
+
+  # =============================================================================
+  # DEPLOYMENT JOBS
+  # =============================================================================
   deploy-api:
     needs: branch
     runs-on: ubuntu-latest
@@ -158,12 +223,18 @@ jobs:
       - name: Deploy API
         run: |
           echo "Deploy API to production"
+
   fake-job-6:
+    # USER COMMENT 21
     runs-on: ubuntu-latest
     steps:
       - name: Fake Job
         run: |
           echo "Running fake job"
+
+  # =============================================================================
+  # TAG & CREATE PR
+  # =============================================================================     
   tag:
     items:
       - key:
@@ -203,12 +274,17 @@ jobs:
       - 211
       - 439
       - 439
+
+  # USER COMMENT 22
+
   fake-job-7:
+    # USER COMMENT 23
     runs-on: ubuntu-latest
     steps:
       - name: Fake Job
         run: |
           echo "Running fake job"
+
   createpr:
     items:
       - key:
@@ -246,6 +322,7 @@ jobs:
       - 65
       - 272
       - 272
+
   branch:
     items:
       - key:
@@ -285,7 +362,11 @@ jobs:
       - 46
       - 378
       - 378
+
+  # USER COMMENT 24
+
   fake-job-8:
+    # USER COMMENT 25
     runs-on: ubuntu-latest
     steps:
       - name: Fake Job

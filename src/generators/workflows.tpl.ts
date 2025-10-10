@@ -45,17 +45,18 @@ export const generate = (ctx: PinionContext & { pipelinePath?: string }) =>
       
       // Load existing pipeline if provided
       let existingPipeline = null
+      let existingPipelineContent = null
       if (ctx.pipelinePath && existsSync(ctx.pipelinePath)) {
         try {
-          const pipelineContent = readFileSync(ctx.pipelinePath, 'utf8')
-          existingPipeline = parse(pipelineContent)
+          existingPipelineContent = readFileSync(ctx.pipelinePath, 'utf8')
+          existingPipeline = parse(existingPipelineContent)
           console.log(`📖 Loaded existing pipeline from: ${ctx.pipelinePath}`)
         } catch (error) {
           console.warn(`⚠️  Failed to load existing pipeline: ${error}`)
         }
       }
       
-      return { ...ctx, ...defaultConfig, ...ctx, existingPipeline }
+      return { ...ctx, ...defaultConfig, ...ctx, existingPipeline, existingPipelineContent }
     })
     .then((ctx) => {
       // Generate individual GitHub Actions
