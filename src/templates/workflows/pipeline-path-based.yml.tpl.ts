@@ -105,6 +105,8 @@ const getBaseTemplate = (ctx: any) => {
  */
 export const createPathBasedPipeline = (ctx: any) => {
   const branchFlow = ctx.branchFlow || ['develop', 'staging', 'main']
+  console.log('🔍 Branch flow from context:', branchFlow)
+  console.log('🔍 Context keys:', Object.keys(ctx))
   
   // Use existing pipeline from context or start with base template
   let doc: any

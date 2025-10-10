@@ -15,8 +15,11 @@ on:
     branches:
       - develop
       - feature
-      - staging
-      - main
+      - alpha
+      - beta
+      - gamma
+      - delta
+      - epsilon
       # USER COMMENT 4
 
   workflow_call:
@@ -89,23 +92,23 @@ jobs:
                   value:
                     items:
                       - key: baseRef
-                        value: "{ inputs.baseRef || main "
+                        value: "{ inputs.baseRef || epsilon "
                     range:
                       - 334
-                      - 370
-                      - 370
+                      - 373
+                      - 373
               range:
                 - 263
-                - 370
-                - 370
+                - 373
+                - 373
           range:
             - 261
-            - 370
-            - 370
+            - 373
+            - 373
     range:
       - 213
-      - 370
-      - 370
+      - 373
+      - 373
 
   # USER COMMENT 12
   fake-job-2:
@@ -158,7 +161,7 @@ jobs:
           # VERSIONING
           # =============================================================================
           if
-        value: github.ref_name == 'develop'
+        value: github.ref_name == 'alpha'
       - key: needs
         value: changes
       - key: runs-on
@@ -173,23 +176,23 @@ jobs:
                   value:
                     items:
                       - key: baseRef
-                        value: "{ inputs.baseRef || 'main' "
+                        value: "{ inputs.baseRef || 'epsilon' "
                     range:
-                      - 394
-                      - 432
-                      - 432
+                      - 392
+                      - 433
+                      - 433
               range:
-                - 320
-                - 432
-                - 432
+                - 318
+                - 433
+                - 433
           range:
-            - 318
-            - 432
-            - 432
+            - 316
+            - 433
+            - 433
     range:
       - 206
-      - 432
-      - 432
+      - 433
+      - 433
 
   # USER COMMENT 16
 
@@ -242,7 +245,7 @@ jobs:
           # TAG & CREATE PR
           # =============================================================================
           if
-        value: github.ref_name == 'develop'
+        value: github.ref_name == 'alpha'
       - key: needs
         value: version
       - key: runs-on
@@ -259,21 +262,21 @@ jobs:
                       - key: version
                         value: "{ needs.version.outputs.nextVersion "
                     range:
-                      - 392
-                      - 439
-                      - 439
+                      - 390
+                      - 437
+                      - 437
               range:
-                - 325
-                - 439
-                - 439
+                - 323
+                - 437
+                - 437
           range:
-            - 323
-            - 439
-            - 439
+            - 321
+            - 437
+            - 437
     range:
       - 211
-      - 439
-      - 439
+      - 437
+      - 437
 
   # USER COMMENT 22
 
@@ -290,7 +293,7 @@ jobs:
       - key:
           ## SHOULD BE ANY BRANCH EXCEPT the final branch
           if
-        value: github.ref_name != 'main'
+        value: github.ref_name != 'epsilon'
       - key: needs
         value: tag
       - key: runs-on
@@ -307,21 +310,21 @@ jobs:
                       - key: sourceBranch
                         value: "{ github.ref_name "
                     range:
-                      - 238
-                      - 272
-                      - 272
+                      - 241
+                      - 275
+                      - 275
               range:
-                - 172
-                - 272
-                - 272
+                - 175
+                - 275
+                - 275
           range:
-            - 170
-            - 272
-            - 272
+            - 173
+            - 275
+            - 275
     range:
       - 65
-      - 272
-      - 272
+      - 275
+      - 275
 
   branch:
     items:
@@ -343,25 +346,27 @@ jobs:
                       - key: action
                         value: 'fast-forward'
                       - key: targetBranch
-                        value: "{ github.ref_name == 'develop' && 'staging' || github.ref_name ==
-                          'staging' && 'main' || github.ref_name == 'main' &&
-                          'main' || 'main' "
+                        value: "{ github.ref_name == 'alpha' && 'beta' || github.ref_name == 'beta' &&
+                          'gamma' || github.ref_name == 'gamma' && 'delta' ||
+                          github.ref_name == 'delta' && 'epsilon' ||
+                          github.ref_name == 'epsilon' && 'epsilon' || 'epsilon'
+                          "
                     range:
                       - 190
-                      - 378
-                      - 378
+                      - 464
+                      - 464
               range:
                 - 120
-                - 378
-                - 378
+                - 464
+                - 464
           range:
             - 118
-            - 378
-            - 378
+            - 464
+            - 464
     range:
       - 46
-      - 378
-      - 378
+      - 464
+      - 464
 
   # USER COMMENT 24
 

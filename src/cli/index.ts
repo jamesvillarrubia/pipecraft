@@ -126,6 +126,7 @@ program
         cwd: process.cwd(),
         argv: process.argv,
         pipelinePath: pipelinePath,
+        config: config,
         pinion: {
           logger: {
             ...console,
