@@ -328,22 +328,63 @@ export const createPathBasedPipeline = (ctx: any) => {
     console.log(`📋 Found existing Flowcraft jobs: ${Array.from(existingFlowcraftJobs).join(', ')}`)
     console.log('🔄 Preserving user\'s job positions and updating content')
     
-    // Remove Flowcraft-owned jobs from existing pipeline to ensure clean overwrite
+    // Collect all jobs in their original order
+    const orderedJobs = new Map<string, any>()
     if (doc.contents.get('jobs')) {
       const jobsNode = doc.contents.get('jobs')
       if (jobsNode && jobsNode.items) {
-        // Remove all Flowcraft-owned jobs from existing pipeline
-        for (const jobName of FLOWCRAFT_OWNED_JOBS) {
-          if (jobsNode.has(jobName)) {
-            console.log(`🔄 Removing existing Flowcraft job: ${jobName}`)
-            jobsNode.delete(jobName)
-          }
+        for (const item of jobsNode.items) {
+          const jobName = item.key.value
+          orderedJobs.set(jobName, item.value)
         }
       }
     }
     
-    // Apply all operations - this will add Flowcraft jobs back in their original positions
-    applyPathOperations(doc.contents, operations, doc)
+    // Clear the jobs section
+    const jobsNode = doc.contents.get('jobs')
+    if (jobsNode && jobsNode.items) {
+      jobsNode.items = []
+    }
+    
+    // Rebuild jobs section preserving original order
+    // Iterate through jobs in their original order
+    for (const [jobName, jobValue] of orderedJobs) {
+      if (FLOWCRAFT_OWNED_JOBS.has(jobName)) {
+        // This is a Flowcraft job - update it with the latest template content
+        const operation = operations.find(op => op.path === `jobs.${jobName}`)
+        if (operation) {
+          // Create the updated job content and set it at the original position
+          let updatedJobValue
+          if (typeof operation.value === 'string') {
+            updatedJobValue = createValueFromString(operation.value, ctx)
+          } else {
+            updatedJobValue = createValueFromObject(operation.value, doc)
+          }
+          jobsNode.set(jobName, updatedJobValue)
+        }
+      } else {
+        // This is a user job - preserve it as-is
+        jobsNode.set(jobName, jobValue)
+      }
+    }
+    
+    // Add any Flowcraft jobs that the user didn't have
+    const flowcraftJobOrder = ['changes', 'version', 'tag', 'createpr', 'branch']
+    for (const jobName of flowcraftJobOrder) {
+      if (!orderedJobs.has(jobName)) {
+        // User didn't have this job - create it using operations
+        const operation = operations.find(op => op.path === `jobs.${jobName}`)
+        if (operation) {
+          let newJobValue
+          if (typeof operation.value === 'string') {
+            newJobValue = createValueFromString(operation.value, ctx)
+          } else {
+            newJobValue = createValueFromObject(operation.value, doc)
+          }
+          jobsNode.set(jobName, newJobValue)
+        }
+      }
+    }
   } else {
     // No existing Flowcraft jobs - build in correct order
     console.log('📋 No existing Flowcraft jobs found - building in correct order')
