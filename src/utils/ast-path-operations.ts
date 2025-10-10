@@ -150,7 +150,7 @@ export interface PathOperationConfig {
  * // Results in: jobs: { changes: { 'runs-on': 'ubuntu-latest' } }
  * ```
  */
-export function setPathValue(doc: YAMLMap, path: string, value: PathValue): void {
+export function setPathValue(doc: YAMLMap, path: string, value: PathValue, document?: any): void {
   const pathParts = path.split('.')
   let current: Node = doc
   
@@ -174,7 +174,8 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue): void
   // Set the final value
   const finalKey = pathParts[pathParts.length - 1]
   if (current instanceof YAMLMap) {
-    current.set(finalKey, createNode(value))
+    const node = document && document.createNode ? document.createNode(value) : createNode(value)
+    current.set(finalKey, node)
   } else {
     throw new Error(`Cannot set ${finalKey} - parent is not a map`)
   }
@@ -237,7 +238,8 @@ export function getPathValue(doc: YAMLMap, path: string): Node | null {
  */
 export function ensurePathAndApply(
   doc: YAMLMap, 
-  config: PathOperationConfig
+  config: PathOperationConfig,
+  document?: any
 ): void {
   const { path, operation, value, required = true } = config
   
@@ -246,7 +248,7 @@ export function ensurePathAndApply(
   
   if (!existingValue && required) {
     // Path doesn't exist and is required - create it
-    setPathValue(doc, path, value)
+    setPathValue(doc, path, value, document)
     return
   }
   
@@ -258,15 +260,15 @@ export function ensurePathAndApply(
   // Path exists - apply operation
   switch (operation) {
     case 'set':
-      setPathValue(doc, path, value)
+      setPathValue(doc, path, value, document)
       break
       
     case 'merge':
-      mergePathValue(doc, path, value)
+      mergePathValue(doc, path, value, document)
       break
       
     case 'overwrite':
-      setPathValue(doc, path, value)
+      setPathValue(doc, path, value, document)
       break
       
     case 'preserve':
@@ -299,18 +301,18 @@ export function ensurePathAndApply(
  * mergePathValue(doc, 'on.pull_request.branches', ['feature-branch'])
  * ```
  */
-function mergePathValue(doc: YAMLMap, path: string, value: PathValue): void {
+function mergePathValue(doc: YAMLMap, path: string, value: PathValue, document?: any): void {
   const existingValue = getPathValue(doc, path)
   
   if (!existingValue) {
-    setPathValue(doc, path, value)
+    setPathValue(doc, path, value, document)
     return
   }
   
   // Merge logic based on type
   if (existingValue instanceof YAMLMap && typeof value === 'object') {
     // Merge objects
-    const newMap = createNode(value) as YAMLMap
+    const newMap = (document && document.createNode ? document.createNode(value) : createNode(value)) as YAMLMap
     for (const pair of newMap.items) {
       const key = pair.key
       const val = pair.value
@@ -318,7 +320,7 @@ function mergePathValue(doc: YAMLMap, path: string, value: PathValue): void {
     }
   } else if (existingValue instanceof YAMLSeq && Array.isArray(value)) {
     // Merge arrays - add new items that don't exist
-    const newSeq = createNode(value) as YAMLSeq
+    const newSeq = (document && document.createNode ? document.createNode(value) : createNode(value)) as YAMLSeq
     for (const item of newSeq.items) {
       if (!existingValue.items.some(existing => 
         stringify(existing) === stringify(item)
@@ -328,7 +330,7 @@ function mergePathValue(doc: YAMLMap, path: string, value: PathValue): void {
     }
   } else {
     // Fallback to overwrite
-    setPathValue(doc, path, value)
+    setPathValue(doc, path, value, document)
   }
 }
 
@@ -369,7 +371,12 @@ function createNode(value: PathValue): Node {
   
   // If it's a parsed document, extract the contents
   if (value && typeof value === 'object' && 'contents' in value) {
-    return (value as any).contents
+    const contents = (value as any).contents
+    // If contents is a single item, return it directly
+    if (contents && typeof contents === 'object' && 'type' in contents) {
+      return contents
+    }
+    return contents
   }
   
   // Handle primitive types
@@ -429,10 +436,11 @@ function createNode(value: PathValue): Node {
  */
 export function applyPathOperations(
   doc: YAMLMap, 
-  operations: PathOperationConfig[]
+  operations: PathOperationConfig[],
+  document?: any
 ): void {
   for (const operation of operations) {
-    ensurePathAndApply(doc, operation)
+    ensurePathAndApply(doc, operation, document)
   }
 }
 
@@ -464,21 +472,33 @@ export function applyPathOperations(
  * `)
  * ```
  */
-export function createValueFromString(yamlString: string, context?: any): Node {
+export function createValueFromString(yamlString: string, context?: any, document?: any): Node {
   // Evaluate JavaScript template literals in the string using the provided context
-  const processedString = yamlString.replace(/\$\{([^}]+)\}/g, (match, expression) => {
+  // Use a more sophisticated approach that handles nested braces
+  let processedString = yamlString
+  let match
+  const regex = /\$\{([^{}]+)\}/g
+  
+  while ((match = regex.exec(processedString)) !== null) {
+    const [fullMatch, expression] = match
     try {
       // Create a function that evaluates the expression with the context
       const func = new Function('ctx', `return ${expression}`)
       const result = func(context || {})
-      return JSON.stringify(result)
+      processedString = processedString.replace(fullMatch, JSON.stringify(result))
+      // Reset regex lastIndex to avoid issues with string replacement
+      regex.lastIndex = 0
     } catch (error) {
       // If evaluation fails, return the original expression as a string
-      return `"${expression}"`
+      processedString = processedString.replace(fullMatch, `"${expression}"`)
+      regex.lastIndex = 0
     }
-  })
+  }
   
-  return parseDocument(processedString).contents as Node
+  // Parse the YAML string and return the root content as a proper Node
+  const doc = parseDocument(processedString)
+  // Return the contents directly - this should be a proper YAML structure
+  return doc.contents as Node
 }
 
 /**
@@ -498,7 +518,10 @@ export function createValueFromString(yamlString: string, context?: any): Node {
  * })
  * ```
  */
-export function createValueFromObject(obj: object): Node {
+export function createValueFromObject(obj: object, doc?: any): Node {
+  if (doc && doc.createNode) {
+    return doc.createNode(obj)
+  }
   return createNode(obj)
 }
 

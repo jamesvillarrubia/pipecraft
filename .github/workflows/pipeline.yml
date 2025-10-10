@@ -76,39 +76,22 @@ jobs:
   # USER COMMENT 11
   changes:
     items:
-      - key:
-          # =============================================================================
-          # CHANGES DETECTION
-          # =============================================================================
-          runs-on
-        value: ubuntu-latest
+      - key: runs-on
+        value:
+          value: ubuntu-latest
       - key: steps
         value:
           items:
             - items:
                 - key: uses
-                  value: ./.github/actions/detect-changes
+                  value:
+                    value: ./.github/actions/detect-changes
                 - key: with
                   value:
                     items:
                       - key: baseRef
-                        value: "{ inputs.baseRef || epsilon "
-                    range:
-                      - 334
-                      - 373
-                      - 373
-              range:
-                - 263
-                - 373
-                - 373
-          range:
-            - 261
-            - 373
-            - 373
-    range:
-      - 213
-      - 373
-      - 373
+                        value:
+                          value: ${{ inputs.baseRef || epsilon }}
 
   # USER COMMENT 12
   fake-job-2:
@@ -346,11 +329,7 @@ jobs:
                       - key: action
                         value: 'fast-forward'
                       - key: targetBranch
-                        value: "{ github.ref_name == 'alpha' && 'beta' || github.ref_name == 'beta' &&
-                          'gamma' || github.ref_name == 'gamma' && 'delta' ||
-                          github.ref_name == 'delta' && 'epsilon' ||
-                          github.ref_name == 'epsilon' && 'epsilon' || 'epsilon'
-                          "
+                        value: "{ github.ref_name == 'alpha' && 'beta' || github.ref_name == 'beta' && 'gamma' || github.ref_name == 'gamma' && 'delta' || github.ref_name == 'delta' && 'epsilon' || github.ref_name == 'epsilon' && 'epsilon' || 'epsilon' "
                     range:
                       - 190
                       - 464
