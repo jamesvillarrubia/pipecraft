@@ -301,22 +301,38 @@ export const createPathBasedPipeline = (ctx: any) => {
 
   ]
   
-  // Remove Flowcraft-owned jobs from existing pipeline to ensure clean overwrite
+  // Collect user jobs before removing Flowcraft jobs
+  const userJobs = new Map<string, any>()
   if (ctx.existingPipelineContent && doc.contents.get('jobs')) {
     const jobsNode = doc.contents.get('jobs')
     if (jobsNode && jobsNode.items) {
-      // Remove all Flowcraft-owned jobs from existing pipeline
-      for (const jobName of FLOWCRAFT_OWNED_JOBS) {
-        if (jobsNode.has(jobName)) {
-          console.log(`🔄 Removing existing Flowcraft job: ${jobName}`)
-          jobsNode.delete(jobName)
+      // Collect all user jobs (non-Flowcraft jobs)
+      for (const item of jobsNode.items) {
+        const jobName = item.key.value
+        if (!FLOWCRAFT_OWNED_JOBS.has(jobName)) {
+          userJobs.set(jobName, item.value)
         }
       }
+      console.log(`📋 Preserved ${userJobs.size} user jobs`)
     }
   }
   
-  // Apply all operations
+  // Clear the entire jobs section to rebuild in correct order
+  const jobsNode = doc.contents.get('jobs')
+  if (jobsNode && jobsNode.items) {
+    jobsNode.items = []
+  }
+  
+  // Apply all operations in order - this builds the Flowcraft jobs
   applyPathOperations(doc.contents, operations, doc)
+  
+  // Re-insert user jobs after the operations (they'll go at the end for now)
+  // TODO: Need a better strategy for inserting user jobs at specific positions
+  if (userJobs.size > 0 && jobsNode) {
+    for (const [jobName, jobValue] of userJobs) {
+      jobsNode.set(jobName, jobValue)
+    }
+  }
   
   // Generate final content with comment preservation
   const finalContent = stringify(doc)
