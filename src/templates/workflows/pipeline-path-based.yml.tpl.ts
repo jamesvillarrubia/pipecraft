@@ -3,6 +3,7 @@ import { parseDocument, stringify } from 'yaml'
 import fs from 'fs'
 import { 
   applyPathOperations, 
+  ensurePathAndApply,
   PathOperationConfig,
   createValueFromString,
   createValueFromObject,
@@ -39,8 +40,8 @@ const FLOWCRAFT_OWNED_JOBS = new Set([
   'changes',
   'version', 
   'tag',
-  'create-pr',
-  'manage-branch'
+  'createpr',
+  'branch'
 ])
 
 /**
@@ -301,37 +302,114 @@ export const createPathBasedPipeline = (ctx: any) => {
 
   ]
   
-  // Collect user jobs before removing Flowcraft jobs
-  const userJobs = new Map<string, any>()
+  // Helper function to get job keys in order
+  const getJobKeysInOrder = (jobsNode: any): string[] => {
+    if (!jobsNode || !jobsNode.items) return []
+    return jobsNode.items.map((item: any) => item.key.value)
+  }
+  
+  // Check if Flowcraft jobs already exist in user's pipeline
+  const existingFlowcraftJobs = new Set<string>()
   if (ctx.existingPipelineContent && doc.contents.get('jobs')) {
     const jobsNode = doc.contents.get('jobs')
     if (jobsNode && jobsNode.items) {
-      // Collect all user jobs (non-Flowcraft jobs)
+      console.log('📋 Original job order:', getJobKeysInOrder(jobsNode))
       for (const item of jobsNode.items) {
         const jobName = item.key.value
-        if (!FLOWCRAFT_OWNED_JOBS.has(jobName)) {
-          userJobs.set(jobName, item.value)
+        if (FLOWCRAFT_OWNED_JOBS.has(jobName)) {
+          existingFlowcraftJobs.add(jobName)
         }
       }
-      console.log(`📋 Preserved ${userJobs.size} user jobs`)
     }
   }
   
-  // Clear the entire jobs section to rebuild in correct order
-  const jobsNode = doc.contents.get('jobs')
-  if (jobsNode && jobsNode.items) {
-    jobsNode.items = []
+  if (existingFlowcraftJobs.size > 0) {
+    // User has existing Flowcraft jobs - preserve their positions
+    console.log(`📋 Found existing Flowcraft jobs: ${Array.from(existingFlowcraftJobs).join(', ')}`)
+    console.log('🔄 Preserving user\'s job positions and updating content')
+    
+    // Collect all jobs in their original order
+    const orderedJobs = new Map<string, any>()
+    if (doc.contents.get('jobs')) {
+      const jobsNode = doc.contents.get('jobs')
+      if (jobsNode && jobsNode.items) {
+        for (const item of jobsNode.items) {
+          const jobName = item.key.value
+          orderedJobs.set(jobName, item.value)
+        }
+      }
+    }
+    
+    // Clear the jobs section
+    const jobsNode = doc.contents.get('jobs')
+    if (jobsNode && jobsNode.items) {
+      jobsNode.items = []
+    }
+    
+    // Rebuild jobs section preserving original order
+    // First, add Flowcraft jobs in their original positions
+    const flowcraftJobOrder = ['changes', 'version', 'tag', 'createpr', 'branch']
+    for (const jobName of flowcraftJobOrder) {
+      if (orderedJobs.has(jobName)) {
+        // User had this job - add it back in its original position
+        jobsNode.set(jobName, orderedJobs.get(jobName))
+      } else {
+        // User didn't have this job - create it using operations
+        const operation = operations.find(op => op.path === `jobs.${jobName}`)
+        if (operation) {
+          // Apply just this operation
+          ensurePathAndApply(doc.contents, operation, doc)
+        }
+      }
+    }
+    
+    // Then add all other user jobs
+    for (const [jobName, jobValue] of orderedJobs) {
+      if (!FLOWCRAFT_OWNED_JOBS.has(jobName)) {
+        jobsNode.set(jobName, jobValue)
+      }
+    }
+  } else {
+    // No existing Flowcraft jobs - build in correct order
+    console.log('📋 No existing Flowcraft jobs found - building in correct order')
+    
+    // Collect user jobs before clearing
+    const userJobs = new Map<string, any>()
+    if (doc.contents.get('jobs')) {
+      const jobsNode = doc.contents.get('jobs')
+      if (jobsNode && jobsNode.items) {
+        // Collect all user jobs (non-Flowcraft jobs)
+        for (const item of jobsNode.items) {
+          const jobName = item.key.value
+          if (!FLOWCRAFT_OWNED_JOBS.has(jobName)) {
+            userJobs.set(jobName, item.value)
+          }
+        }
+        console.log(`📋 Preserved ${userJobs.size} user jobs`)
+      }
+    }
+    
+    // Clear the entire jobs section to rebuild in correct order
+    const jobsNode = doc.contents.get('jobs')
+    if (jobsNode && jobsNode.items) {
+      jobsNode.items = []
+    }
+    
+    // Apply all operations in order - this builds the Flowcraft jobs
+    applyPathOperations(doc.contents, operations, doc)
+    
+    // Re-insert user jobs after the operations
+    if (userJobs.size > 0 && jobsNode) {
+      for (const [jobName, jobValue] of userJobs) {
+        jobsNode.set(jobName, jobValue)
+      }
+    }
   }
   
-  // Apply all operations in order - this builds the Flowcraft jobs
-  applyPathOperations(doc.contents, operations, doc)
-  
-  // Re-insert user jobs after the operations (they'll go at the end for now)
-  // TODO: Need a better strategy for inserting user jobs at specific positions
-  if (userJobs.size > 0 && jobsNode) {
-    for (const [jobName, jobValue] of userJobs) {
-      jobsNode.set(jobName, jobValue)
-    }
+  // Log final job order
+  const finalJobsNode = doc.contents.get('jobs')
+  if (finalJobsNode) {
+    console.log('📋 Final job order:', getJobKeysInOrder(finalJobsNode))
   }
   
   // Generate final content with comment preservation
