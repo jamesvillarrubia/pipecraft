@@ -162,6 +162,41 @@ export const createPathBasedPipeline = (ctx: any) => {
       }, doc),
       required: true
     },
+
+    // =============================================================================
+    // USER-MANAGED SECTIONS - Preserve user customizations
+    // =============================================================================
+    // These sections are designed for user customizations (testing, deployment).
+    // Using 'preserve' operation to keep any existing user jobs while providing
+    // template structure and examples for new users.
+    
+    {
+      path: 'jobs.testing-section',
+      operation: 'preserve',
+      value: createValueFromString(`
+        # =============================================================================
+        # TESTING JOBS
+        # =============================================================================
+        # Add your testing jobs here
+        # Example:
+        # test-api: 
+        #   needs: changes
+        #   runs-on: ubuntu-latest
+        #   steps:
+        #     - name: Test API
+        #       run: |
+        #         echo "Run API tests"
+        #
+        # test-web:
+        #   needs: changes
+        #   runs-on: ubuntu-latest
+        #   steps:
+        #     - name: Test Web
+        #       run: |
+        #         echo "Run Web tests"
+      `, ctx),
+      required: false
+    },
     
     {
       path: 'jobs.version',
@@ -179,6 +214,34 @@ export const createPathBasedPipeline = (ctx: any) => {
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
       `, ctx),
       required: true
+    },
+    
+    {
+      path: 'jobs.deployment-section',
+      operation: 'preserve',
+      value: createValueFromString(`
+        # =============================================================================
+        # DEPLOYMENT JOBS
+        # =============================================================================
+        # Add your deployment jobs here
+        # Example:
+        # deploy-api:
+        #   needs: version
+        #   runs-on: ubuntu-latest
+        #   steps:
+        #     - name: Deploy API
+        #       run: |
+        #         echo "Deploy API to production"
+        #
+        # deploy-web:
+        #   needs: version
+        #   runs-on: ubuntu-latest
+        #   steps:
+        #     - name: Deploy Web
+        #       run: |
+        #         echo "Deploy Web to production"
+      `, ctx),
+      required: false
     },
     
     {
@@ -235,68 +298,7 @@ export const createPathBasedPipeline = (ctx: any) => {
       required: true
     },
     
-    // =============================================================================
-    // USER-MANAGED SECTIONS - Preserve user customizations
-    // =============================================================================
-    // These sections are designed for user customizations (testing, deployment).
-    // Using 'preserve' operation to keep any existing user jobs while providing
-    // template structure and examples for new users.
-    
-    {
-      path: 'jobs.testing-section',
-      operation: 'preserve',
-      value: createValueFromString(`
-        # =============================================================================
-        # TESTING JOBS
-        # =============================================================================
-        # Add your testing jobs here
-        # Example:
-        # test-api: 
-        #   needs: changes
-        #   runs-on: ubuntu-latest
-        #   steps:
-        #     - name: Test API
-        #       run: |
-        #         echo "Run API tests"
-        #
-        # test-web:
-        #   needs: changes
-        #   runs-on: ubuntu-latest
-        #   steps:
-        #     - name: Test Web
-        #       run: |
-        #         echo "Run Web tests"
-      `, ctx),
-      required: false
-    },
-    
-    {
-      path: 'jobs.deployment-section',
-      operation: 'preserve',
-      value: createValueFromString(`
-        # =============================================================================
-        # DEPLOYMENT JOBS
-        # =============================================================================
-        # Add your deployment jobs here
-        # Example:
-        # deploy-api:
-        #   needs: version
-        #   runs-on: ubuntu-latest
-        #   steps:
-        #     - name: Deploy API
-        #       run: |
-        #         echo "Deploy API to production"
-        #
-        # deploy-web:
-        #   needs: version
-        #   runs-on: ubuntu-latest
-        #   steps:
-        #     - name: Deploy Web
-        #       run: |
-        #         echo "Deploy Web to production"
-      `, ctx),
-      required: false
-    }
+
   ]
   
   // Remove Flowcraft-owned jobs from existing pipeline to ensure clean overwrite
