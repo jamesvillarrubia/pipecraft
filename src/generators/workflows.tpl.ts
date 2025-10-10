@@ -8,7 +8,7 @@ import { generate as generateChangesWorkflow } from '../templates/actions/detect
 import { generate as generateVersionWorkflow } from '../templates/actions/calculate-version.yml.tpl'
 import { generate as generateCreatePRWorkflow } from '../templates/actions/create-pr.yml.tpl'
 import { generate as generateBranchWorkflow } from '../templates/actions/manage-branch.yml.tpl'
-import { generate as generateASTPipeline } from '../templates/workflows/pipeline-ast-based.yml.tpl'
+import { generate as generatePathBasedPipeline } from '../templates/workflows/pipeline-path-based.yml.tpl'
 
 const defaultConfig = {
   ciProvider: 'github' as const,
@@ -54,7 +54,7 @@ export const generate = (ctx: PinionContext) =>
     })
     .then((ctx) => {
       // Generate the main pipeline
-      return generateASTPipeline(ctx)
+      return generatePathBasedPipeline(ctx)
     })
     .then((ctx) => {
       console.log('✅ Generated workflows in: .github/workflows')

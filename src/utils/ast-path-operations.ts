@@ -1,4 +1,5 @@
-import { parseDocument, stringify, YAMLMap, YAMLSeq, Scalar, YAMLNode } from 'yaml'
+import { parseDocument, stringify, YAMLMap, YAMLSeq, Scalar, Node } from 'yaml'
+
 
 /**
  * Path-based AST operations for YAML manipulation
@@ -7,7 +8,7 @@ import { parseDocument, stringify, YAMLMap, YAMLSeq, Scalar, YAMLNode } from 'ya
 
 export type PathOperation = 'set' | 'merge' | 'overwrite' | 'preserve'
 
-export type PathValue = YAMLNode | object | string | number | boolean | any[]
+export type PathValue = Node | object | string | number | boolean | any[]
 
 export interface PathOperationConfig {
   path: string
@@ -21,14 +22,14 @@ export interface PathOperationConfig {
  */
 export function setPathValue(doc: YAMLMap, path: string, value: PathValue): void {
   const pathParts = path.split('.')
-  let current: YAMLNode = doc
+  let current: Node = doc
   
   // Navigate to the parent of the target
   for (let i = 0; i < pathParts.length - 1; i++) {
     const part = pathParts[i]
     
     if (current instanceof YAMLMap) {
-      let next = current.get(part)
+      let next: any = current.get(part)
       if (!next) {
         // Create missing intermediate nodes
         next = new YAMLMap()
@@ -43,7 +44,7 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue): void
   // Set the final value
   const finalKey = pathParts[pathParts.length - 1]
   if (current instanceof YAMLMap) {
-    current.set(finalKey, createYAMLNode(value))
+    current.set(finalKey, createNode(value))
   } else {
     throw new Error(`Cannot set ${finalKey} - parent is not a map`)
   }
@@ -52,13 +53,13 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue): void
 /**
  * Get a value at a specific path in the YAML AST
  */
-export function getPathValue(doc: YAMLMap, path: string): YAMLNode | null {
+export function getPathValue(doc: YAMLMap, path: string): Node | null {
   const pathParts = path.split('.')
-  let current: YAMLNode = doc
+  let current: Node = doc
   
   for (const part of pathParts) {
     if (current instanceof YAMLMap) {
-      current = current.get(part)
+      current = current.get(part) as Node
       if (!current) return null
     } else {
       return null
@@ -125,13 +126,15 @@ function mergePathValue(doc: YAMLMap, path: string, value: PathValue): void {
   // Merge logic based on type
   if (existingValue instanceof YAMLMap && typeof value === 'object') {
     // Merge objects
-    const newMap = createYAMLNode(value) as YAMLMap
-    for (const [key, val] of newMap.items) {
+    const newMap = createNode(value) as YAMLMap
+    for (const pair of newMap.items) {
+      const key = pair.key
+      const val = pair.value
       existingValue.set(key, val)
     }
   } else if (existingValue instanceof YAMLSeq && Array.isArray(value)) {
     // Merge arrays - add new items that don't exist
-    const newSeq = createYAMLNode(value) as YAMLSeq
+    const newSeq = createNode(value) as YAMLSeq
     for (const item of newSeq.items) {
       if (!existingValue.items.some(existing => 
         stringify(existing) === stringify(item)
@@ -148,10 +151,10 @@ function mergePathValue(doc: YAMLMap, path: string, value: PathValue): void {
 /**
  * Create a YAML node from a JavaScript value, YAML node, or parsed document
  */
-function createYAMLNode(value: PathValue): YAMLNode {
+function createNode(value: PathValue): Node {
   // If it's already a YAML node, return it
-  if (value instanceof YAMLNode) {
-    return value
+  if (value && typeof value === 'object' && 'type' in value) {
+    return value as Node
   }
   
   // If it's a parsed document, extract the contents
@@ -169,13 +172,13 @@ function createYAMLNode(value: PathValue): YAMLNode {
   } else if (Array.isArray(value)) {
     const seq = new YAMLSeq()
     for (const item of value) {
-      seq.items.push(createYAMLNode(item))
+      seq.items.push(createNode(item))
     }
     return seq
   } else if (typeof value === 'object' && value !== null) {
     const map = new YAMLMap()
     for (const [key, val] of Object.entries(value)) {
-      map.set(key, createYAMLNode(val))
+      map.set(key, createNode(val))
     }
     return map
   } else {
@@ -198,16 +201,16 @@ export function applyPathOperations(
 /**
  * Helper functions for creating values
  */
-export function createValueFromString(yamlString: string): YAMLNode {
-  return parseDocument(yamlString).contents
+export function createValueFromString(yamlString: string): Node {
+  return parseDocument(yamlString).contents as Node
 }
 
-export function createValueFromObject(obj: object): YAMLNode {
-  return createYAMLNode(obj)
+export function createValueFromObject(obj: object): Node {
+  return createNode(obj)
 }
 
-export function createValueFromArray(arr: any[]): YAMLNode {
-  return createYAMLNode(arr)
+export function createValueFromArray(arr: any[]): Node {
+  return createNode(arr)
 }
 
 /**
