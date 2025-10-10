@@ -1,15 +1,129 @@
 import { parseDocument, stringify, YAMLMap, YAMLSeq, Scalar, Node } from 'yaml'
 
-
 /**
- * Path-based AST operations for YAML manipulation
- * Allows precise control over specific paths in the YAML structure
+ * # AST Path Operations for YAML Manipulation
+ * 
+ * This module provides a powerful and precise way to manipulate YAML documents using
+ * path-based operations. It allows you to target specific locations in the YAML
+ * structure and apply different types of operations (set, merge, overwrite, preserve).
+ * 
+ * ## Key Features
+ * 
+ * - **Path-based targeting**: Use dot notation to target specific YAML paths
+ * - **Multiple operation types**: Set, merge, overwrite, or preserve values
+ * - **Flexible value types**: Support objects, arrays, strings, YAML nodes, and parsed documents
+ * - **Type safety**: Full TypeScript support with proper Node types
+ * - **Context injection**: Dynamic values can be injected at build time
+ * 
+ * ## Usage Examples
+ * 
+ * ### Basic Path Operations
+ * ```typescript
+ * import { applyPathOperations, createValueFromString } from './ast-path-operations'
+ * 
+ * const operations = [
+ *   {
+ *     path: 'on.workflow_call.inputs.version',
+ *     operation: 'set',
+ *     value: {
+ *       description: 'The version to deploy',
+ *       required: false,
+ *       type: 'string'
+ *     }
+ *   }
+ * ]
+ * 
+ * applyPathOperations(doc, operations)
+ * ```
+ * 
+ * ### Complex Job Definitions
+ * ```typescript
+ * const jobOperation = {
+ *   path: 'jobs.changes',
+ *   operation: 'overwrite',
+ *   value: createValueFromString(`
+ *     runs-on: ubuntu-latest
+ *     steps:
+ *       - uses: ./.github/actions/detect-changes
+ *         with:
+ *           baseRef: ${{ inputs.baseRef || 'main' }}
+ *   `)
+ * }
+ * ```
+ * 
+ * ### Array Merging
+ * ```typescript
+ * const branchOperation = {
+ *   path: 'on.pull_request.branches',
+ *   operation: 'merge',
+ *   value: ['develop', 'staging', 'main']
+ * }
+ * ```
+ * 
+ * ## Operation Types
+ * 
+ * - **`set`**: Set a value at the specified path (creates if doesn't exist)
+ * - **`merge`**: Merge with existing value (for objects/arrays)
+ * - **`overwrite`**: Replace existing value completely
+ * - **`preserve`**: Keep existing value, ignore template value
+ * 
+ * ## Value Types Supported
+ * 
+ * - **Objects**: `{ key: 'value' }` - Simple key-value pairs
+ * - **Arrays**: `['item1', 'item2']` - Simple arrays
+ * - **YAML Strings**: Multi-line YAML with proper formatting
+ * - **Parsed Documents**: Pre-parsed YAML nodes
+ * - **Primitives**: strings, numbers, booleans
+ * 
+ * @fileoverview Path-based AST operations for precise YAML manipulation
+ * @author Flowcraft Team
+ * @version 1.0.0
  */
 
+/**
+ * Available operation types for path-based AST manipulation
+ * 
+ * @typedef {('set' | 'merge' | 'overwrite' | 'preserve')} PathOperation
+ * 
+ * - `set`: Set a value at the specified path (creates if doesn't exist)
+ * - `merge`: Merge with existing value (for objects/arrays)  
+ * - `overwrite`: Replace existing value completely
+ * - `preserve`: Keep existing value, ignore template value
+ */
 export type PathOperation = 'set' | 'merge' | 'overwrite' | 'preserve'
 
+/**
+ * Supported value types for path operations
+ * 
+ * @typedef {(Node | object | string | number | boolean | any[])} PathValue
+ * 
+ * Supports YAML nodes, JavaScript objects, primitives, and arrays
+ */
 export type PathValue = Node | object | string | number | boolean | any[]
 
+/**
+ * Configuration for a single path operation
+ * 
+ * @interface PathOperationConfig
+ * @property {string} path - Dot-notation path to target (e.g., 'jobs.changes.steps')
+ * @property {PathOperation} operation - Type of operation to perform
+ * @property {PathValue} value - Value to set/merge/overwrite
+ * @property {boolean} [required=true] - Whether the path must exist
+ * 
+ * @example
+ * ```typescript
+ * const config: PathOperationConfig = {
+ *   path: 'on.workflow_call.inputs.version',
+ *   operation: 'set',
+ *   value: {
+ *     description: 'The version to deploy',
+ *     required: false,
+ *     type: 'string'
+ *   },
+ *   required: true
+ * }
+ * ```
+ */
 export interface PathOperationConfig {
   path: string
   operation: PathOperation
@@ -19,6 +133,22 @@ export interface PathOperationConfig {
 
 /**
  * Set a value at a specific path in the YAML AST
+ * 
+ * Creates intermediate nodes as needed and sets the final value at the specified path.
+ * This is the core function for setting values in the YAML structure.
+ * 
+ * @param {YAMLMap} doc - The YAML document to modify
+ * @param {string} path - Dot-notation path (e.g., 'jobs.changes.steps')
+ * @param {PathValue} value - Value to set at the path
+ * 
+ * @throws {Error} When path navigation fails or parent is not a map
+ * 
+ * @example
+ * ```typescript
+ * const doc = parseDocument('name: Pipeline')
+ * setPathValue(doc.contents, 'jobs.changes.runs-on', 'ubuntu-latest')
+ * // Results in: jobs: { changes: { 'runs-on': 'ubuntu-latest' } }
+ * ```
  */
 export function setPathValue(doc: YAMLMap, path: string, value: PathValue): void {
   const pathParts = path.split('.')
@@ -52,6 +182,20 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue): void
 
 /**
  * Get a value at a specific path in the YAML AST
+ * 
+ * Navigates to the specified path and returns the node if found, null otherwise.
+ * This is useful for checking if a path exists before applying operations.
+ * 
+ * @param {YAMLMap} doc - The YAML document to read from
+ * @param {string} path - Dot-notation path (e.g., 'jobs.changes.steps')
+ * @returns {Node | null} The node at the path, or null if not found
+ * 
+ * @example
+ * ```typescript
+ * const doc = parseDocument('jobs: { changes: { runs-on: ubuntu-latest } }')
+ * const value = getPathValue(doc.contents, 'jobs.changes.runs-on')
+ * console.log(value) // Scalar('ubuntu-latest')
+ * ```
  */
 export function getPathValue(doc: YAMLMap, path: string): Node | null {
   const pathParts = path.split('.')
@@ -71,6 +215,25 @@ export function getPathValue(doc: YAMLMap, path: string): Node | null {
 
 /**
  * Ensure a path exists and apply the specified operation
+ * 
+ * This is the main orchestration function that handles all path operations.
+ * It checks if the path exists, applies the appropriate operation based on
+ * the configuration, and handles required vs optional paths.
+ * 
+ * @param {YAMLMap} doc - The YAML document to modify
+ * @param {PathOperationConfig} config - Operation configuration
+ * 
+ * @example
+ * ```typescript
+ * const config: PathOperationConfig = {
+ *   path: 'jobs.changes.runs-on',
+ *   operation: 'set',
+ *   value: 'ubuntu-latest',
+ *   required: true
+ * }
+ * 
+ * ensurePathAndApply(doc, config)
+ * ```
  */
 export function ensurePathAndApply(
   doc: YAMLMap, 
@@ -114,6 +277,27 @@ export function ensurePathAndApply(
 
 /**
  * Merge a value at a specific path (for objects/arrays)
+ * 
+ * Intelligently merges values based on their type:
+ * - Objects: Merges key-value pairs, preserving existing keys
+ * - Arrays: Adds new items that don't already exist
+ * - Other types: Falls back to overwrite behavior
+ * 
+ * @param {YAMLMap} doc - The YAML document to modify
+ * @param {string} path - Dot-notation path to merge at
+ * @param {PathValue} value - Value to merge
+ * 
+ * @example
+ * ```typescript
+ * // Merge object properties
+ * mergePathValue(doc, 'on.workflow_call.inputs', {
+ *   version: { description: 'Version to deploy' },
+ *   environment: { description: 'Environment to deploy to' }
+ * })
+ * 
+ * // Merge array items
+ * mergePathValue(doc, 'on.pull_request.branches', ['feature-branch'])
+ * ```
  */
 function mergePathValue(doc: YAMLMap, path: string, value: PathValue): void {
   const existingValue = getPathValue(doc, path)
@@ -150,6 +334,32 @@ function mergePathValue(doc: YAMLMap, path: string, value: PathValue): void {
 
 /**
  * Create a YAML node from a JavaScript value, YAML node, or parsed document
+ * 
+ * This is the core value conversion function that handles all supported value types.
+ * It intelligently converts JavaScript values to appropriate YAML nodes.
+ * 
+ * @param {PathValue} value - Value to convert to YAML node
+ * @returns {Node} The converted YAML node
+ * 
+ * @example
+ * ```typescript
+ * // Convert object
+ * const node = createNode({ key: 'value' })
+ * 
+ * // Convert array
+ * const node = createNode(['item1', 'item2'])
+ * 
+ * // Convert string
+ * const node = createNode('simple string')
+ * 
+ * // Convert YAML string
+ * const node = createNode(createValueFromString(`
+ *   runs-on: ubuntu-latest
+ *   steps:
+ *     - name: Example step
+ *       run: echo "Hello"
+ * `))
+ * ```
  */
 function createNode(value: PathValue): Node {
   // If it's already a YAML node, return it
@@ -188,6 +398,34 @@ function createNode(value: PathValue): Node {
 
 /**
  * Apply multiple path operations to a document
+ * 
+ * This is the main entry point for applying multiple operations to a YAML document.
+ * It processes all operations in order and applies them to the document.
+ * 
+ * @param {YAMLMap} doc - The YAML document to modify
+ * @param {PathOperationConfig[]} operations - Array of operations to apply
+ * 
+ * @example
+ * ```typescript
+ * const operations: PathOperationConfig[] = [
+ *   {
+ *     path: 'on.workflow_call.inputs.version',
+ *     operation: 'set',
+ *     value: { description: 'Version to deploy', required: false, type: 'string' }
+ *   },
+ *   {
+ *     path: 'jobs.changes',
+ *     operation: 'overwrite',
+ *     value: createValueFromString(`
+ *       runs-on: ubuntu-latest
+ *       steps:
+ *         - uses: ./.github/actions/detect-changes
+ *     `)
+ *   }
+ * ]
+ * 
+ * applyPathOperations(doc, operations)
+ * ```
  */
 export function applyPathOperations(
   doc: YAMLMap, 
@@ -200,21 +438,94 @@ export function applyPathOperations(
 
 /**
  * Helper functions for creating values
+ * 
+ * These convenience functions make it easier to create YAML nodes from different
+ * value types. They handle the parsing and conversion automatically.
+ */
+
+/**
+ * Create a YAML node from a YAML string
+ * 
+ * Parses a YAML string and returns the root node. This is useful for complex
+ * multi-line YAML structures like job definitions.
+ * 
+ * @param {string} yamlString - YAML string to parse
+ * @returns {Node} The parsed YAML node
+ * 
+ * @example
+ * ```typescript
+ * const node = createValueFromString(`
+ *   runs-on: ubuntu-latest
+ *   steps:
+ *     - name: Checkout code
+ *       uses: actions/checkout@v3
+ *     - name: Run tests
+ *       run: npm test
+ * `)
+ * ```
  */
 export function createValueFromString(yamlString: string): Node {
   return parseDocument(yamlString).contents as Node
 }
 
+/**
+ * Create a YAML node from a JavaScript object
+ * 
+ * Converts a plain JavaScript object to a YAML map node.
+ * 
+ * @param {object} obj - JavaScript object to convert
+ * @returns {Node} The converted YAML map node
+ * 
+ * @example
+ * ```typescript
+ * const node = createValueFromObject({
+ *   description: 'The version to deploy',
+ *   required: false,
+ *   type: 'string'
+ * })
+ * ```
+ */
 export function createValueFromObject(obj: object): Node {
   return createNode(obj)
 }
 
+/**
+ * Create a YAML node from a JavaScript array
+ * 
+ * Converts a JavaScript array to a YAML sequence node.
+ * 
+ * @param {any[]} arr - JavaScript array to convert
+ * @returns {Node} The converted YAML sequence node
+ * 
+ * @example
+ * ```typescript
+ * const node = createValueFromArray(['develop', 'staging', 'main'])
+ * ```
+ */
 export function createValueFromArray(arr: any[]): Node {
   return createNode(arr)
 }
 
 /**
  * Example usage for workflow inputs
+ * 
+ * This is a practical example showing how to use path operations to ensure
+ * workflow inputs exist with the correct structure. It demonstrates the
+ * most common patterns for workflow configuration.
+ * 
+ * @param {YAMLMap} doc - The YAML document to modify
+ * @param {any} ctx - Context object containing configuration
+ * 
+ * @example
+ * ```typescript
+ * const doc = parseDocument('name: Pipeline')
+ * const ctx = { branchFlow: ['develop', 'staging', 'main'] }
+ * 
+ * ensureWorkflowInputs(doc.contents, ctx)
+ * 
+ * // Results in a document with workflow_call and workflow_dispatch inputs
+ * // and proper branch configuration
+ * ```
  */
 export function ensureWorkflowInputs(doc: YAMLMap, ctx: any): void {
   const operations: PathOperationConfig[] = [

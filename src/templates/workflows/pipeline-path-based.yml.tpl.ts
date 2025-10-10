@@ -102,16 +102,17 @@ const getBaseTemplate = (ctx: any) => {
 /**
  * Create path-based pipeline content
  */
-const createPathBasedPipeline = (ctx: any) => {
+export const createPathBasedPipeline = (ctx: any) => {
   const branchFlow = ctx.branchFlow || ['develop', 'staging', 'main']
   
-  // Load existing pipeline or start with base template
+  // Use existing pipeline from context or start with base template
   let doc: any
-  const existingPipeline = loadExistingPipeline('.github/workflows/pipeline.yml')
   
-  if (existingPipeline) {
-    doc = parseDocument(existingPipeline)
-    console.log('🔄 Merging with existing pipeline')
+  if (ctx.existingPipeline) {
+    // Convert existing pipeline object to YAML string and parse
+    const yamlString = stringify(ctx.existingPipeline)
+    doc = parseDocument(yamlString)
+    console.log('🔄 Merging with existing pipeline from context')
   } else {
     doc = parseDocument(getBaseTemplate(ctx))
     console.log('📝 Creating new pipeline')
@@ -124,7 +125,13 @@ const createPathBasedPipeline = (ctx: any) => {
   // Apply path-based operations
   const operations: PathOperationConfig[] = [
     
-    // Simple objects - use object syntax
+    // =============================================================================
+    // WORKFLOW INPUTS - Ensure required inputs exist for workflow calls
+    // =============================================================================
+    // These operations ensure that workflow_call and workflow_dispatch have the
+    // required inputs (version, baseRef) that Flowcraft needs to function.
+    // Using 'set' operation to ensure these inputs always exist with correct structure.
+    
     {
       path: 'on.workflow_call.inputs.version',
       operation: 'set',
@@ -166,7 +173,13 @@ const createPathBasedPipeline = (ctx: any) => {
       required: true
     },
     
-    // Array - use array syntax
+    // =============================================================================
+    // BRANCH CONFIGURATION - Merge template branches with user branches
+    // =============================================================================
+    // Using 'merge' operation to preserve any custom branches the user has added
+    // while ensuring the template branches (from branchFlow) are included.
+    // This allows users to add custom branches without losing template functionality.
+    
     {
       path: 'on.pull_request.branches',
       operation: 'merge',
@@ -174,7 +187,13 @@ const createPathBasedPipeline = (ctx: any) => {
       required: true
     },
     
-    // Complex jobs with comments - use YAML string
+    // =============================================================================
+    // CORE FLOWCRAFT JOBS - Template-managed jobs that get updates
+    // =============================================================================
+    // These are the core Flowcraft jobs that should always use the latest template
+    // version. Using 'overwrite' operation ensures users get bug fixes and improvements.
+    // These jobs are essential for Flowcraft functionality and should not be customized.
+    
     {
       path: 'jobs.changes',
       operation: 'overwrite',
@@ -186,7 +205,7 @@ const createPathBasedPipeline = (ctx: any) => {
         steps:
           - uses: ./.github/actions/detect-changes
             with:
-              baseRef: \${{ inputs.baseRef || 'main' }}
+              baseRef: \${{ inputs.baseRef || ${ctx.finalBranch || 'main' }}}
       `),
       required: true
     },
@@ -204,7 +223,7 @@ const createPathBasedPipeline = (ctx: any) => {
         steps:
           - uses: ./.github/actions/calculate-version
             with:
-              baseRef: \${{ inputs.baseRef || 'main' }}
+              baseRef: \${{ inputs.baseRef || ${ctx.finalBranch || 'main'} }}
       `),
       required: true
     },
@@ -263,7 +282,13 @@ const createPathBasedPipeline = (ctx: any) => {
       required: true
     },
     
-    // Add testing jobs section (user-managed - preserve existing)
+    // =============================================================================
+    // USER-MANAGED SECTIONS - Preserve user customizations
+    // =============================================================================
+    // These sections are designed for user customizations (testing, deployment).
+    // Using 'preserve' operation to keep any existing user jobs while providing
+    // template structure and examples for new users.
+    
     {
       path: 'jobs.testing-section',
       operation: 'preserve',
@@ -292,7 +317,6 @@ const createPathBasedPipeline = (ctx: any) => {
       required: false
     },
     
-    // Add deployment jobs section (user-managed - preserve existing)
     {
       path: 'jobs.deployment-section',
       operation: 'preserve',
@@ -330,7 +354,7 @@ const createPathBasedPipeline = (ctx: any) => {
   
   return { 
     yamlContent: finalContent, 
-    mergeStatus: existingPipeline ? 'merged' : 'overwritten'
+    mergeStatus: ctx.existingPipeline ? 'merged' : 'overwritten'
   }
 }
 
@@ -349,7 +373,7 @@ const loadExistingPipeline = (filePath: string): string | null => {
 /**
  * Main export - path-based pipeline generator
  */
-export const generate = (ctx: PinionContext) =>
+export const generate = (ctx: PinionContext & { existingPipeline?: any }) =>
   Promise.resolve(ctx)
     .then((ctx) => {
       const result = createPathBasedPipeline(ctx)

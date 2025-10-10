@@ -1,6 +1,8 @@
 import { PinionContext, toFile, renderTemplate, loadJSON, when } from '@featherscloud/pinion'
 import { IdempotencyManager } from '../utils/idempotency'
 import { FlowcraftConfig } from '../types'
+import { readFileSync, existsSync } from 'fs'
+import { parse } from 'yaml'
 
 // Import individual workflow templates
 import { generate as generateTagWorkflow } from '../templates/actions/create-tag.yml.tpl'
@@ -36,11 +38,24 @@ const defaultConfig = {
   }
 }
 
-export const generate = (ctx: PinionContext) =>
+export const generate = (ctx: PinionContext & { pipelinePath?: string }) =>
   Promise.resolve(ctx)
     .then((ctx) => {
       console.log('🔧 Generating GitHub Actions...')
-      return { ...ctx, ...defaultConfig, ...ctx }
+      
+      // Load existing pipeline if provided
+      let existingPipeline = null
+      if (ctx.pipelinePath && existsSync(ctx.pipelinePath)) {
+        try {
+          const pipelineContent = readFileSync(ctx.pipelinePath, 'utf8')
+          existingPipeline = parse(pipelineContent)
+          console.log(`📖 Loaded existing pipeline from: ${ctx.pipelinePath}`)
+        } catch (error) {
+          console.warn(`⚠️  Failed to load existing pipeline: ${error}`)
+        }
+      }
+      
+      return { ...ctx, ...defaultConfig, ...ctx, existingPipeline }
     })
     .then((ctx) => {
       // Generate individual GitHub Actions

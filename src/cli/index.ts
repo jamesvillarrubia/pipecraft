@@ -26,6 +26,7 @@ program
 // Global options
 program
   .option('-c, --config <path>', 'path to config file', '.flowcraftrc.json')
+  .option('-p, --pipeline <path>', 'path to existing pipeline file for merging', '.github/workflows/pipeline.yml')
   .option('-v, --verbose', 'verbose output')
   .option('--force', 'force regeneration even if files unchanged')
   .option('--dry-run', 'show what would be done without making changes')
@@ -92,9 +93,11 @@ program
     try {
       const globalOptions = program.opts()
       const configPath = globalOptions.config
+      const pipelinePath = globalOptions.pipeline
       
       if (globalOptions.verbose) {
         console.log(`📖 Reading config from: ${configPath}`)
+        console.log(`📖 Reading pipeline from: ${pipelinePath}`)
       }
       
       // Load configuration
@@ -122,6 +125,7 @@ program
       await runModule(join(__dirname, '../generators/workflows.tpl.ts'), {
         cwd: process.cwd(),
         argv: process.argv,
+        pipelinePath: pipelinePath,
         pinion: {
           logger: {
             ...console,

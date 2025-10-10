@@ -2,14 +2,12 @@
   "ciProvider": "github",
   "mergeStrategy": "fast-forward",
   "requireConventionalCommits": true,
-  "initialBranch": "alpha",
-  "finalBranch": "epsilon",
+  "initialBranch": "develop",
+  "finalBranch": "main",
   "branchFlow": [
-    "alpha",
-    "beta",
-    "gamma",
-    "delta",
-    "epsilon"
+    "develop",
+    "staging",
+    "main"
   ],
   "semver": {
     "bumpRules": {
@@ -30,29 +28,29 @@
     ]
   },
   "domains": {
-    "fake-domain1": {
+    "api": {
       "paths": [
-        "apps/fake-domain1/**"
+        "apps/api/**"
       ],
-      "description": "fake-domain1 application changes"
+      "description": "API application changes"
     },
-    "fake-domain2": {
+    "web": {
       "paths": [
-        "apps/fake-domain2/**"
+        "apps/web/**"
       ],
-      "description": "fake-domain2 application changes"
+      "description": "Web application changes"
     },
-    "fake-domain3": {
+    "libs": {
       "paths": [
-        "libs/fake-domain3/**"
+        "libs/**"
       ],
-      "description": "fake-domain3 application changes"
+      "description": "Shared library changes"
     },
-    "fake-domain4": {
+    "cicd": {
       "paths": [
-        ".github/workflows/fake-domain4/**"
+        ".github/workflows/**"
       ],
-      "description": "fake-domain4 application changes"
+      "description": "CI/CD configuration changes"
     }
   }
 }
