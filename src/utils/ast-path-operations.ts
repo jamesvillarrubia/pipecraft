@@ -174,8 +174,15 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue, docum
   // Set the final value
   const finalKey = pathParts[pathParts.length - 1]
   if (current instanceof YAMLMap) {
-    const node = document && document.createNode ? document.createNode(value) : createNode(value)
-    current.set(finalKey, node)
+    // Check if value is already a node (from createValueFromString, etc.)
+    if (value && typeof value === 'object' && ('items' in value || 'type' in value)) {
+      // Value is already a node, use it directly
+      current.set(finalKey, value)
+    } else {
+      // Value is not a node, create one
+      const node = document && document.createNode ? document.createNode(value) : createNode(value)
+      current.set(finalKey, node)
+    }
   } else {
     throw new Error(`Cannot set ${finalKey} - parent is not a map`)
   }
@@ -497,7 +504,6 @@ export function createValueFromString(yamlString: string, context?: any, documen
   
   // Parse the YAML string and return the root content as a proper Node
   const doc = parseDocument(processedString)
-  // Return the contents directly - this should be a proper YAML structure
   return doc.contents as Node
 }
 

@@ -75,23 +75,11 @@ jobs:
   # =============================================================================
   # USER COMMENT 11
   changes:
-    items:
-      - key: runs-on
-        value:
-          value: ubuntu-latest
-      - key: steps
-        value:
-          items:
-            - items:
-                - key: uses
-                  value:
-                    value: ./.github/actions/detect-changes
-                - key: with
-                  value:
-                    items:
-                      - key: baseRef
-                        value:
-                          value: ${{ inputs.baseRef || epsilon }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/detect-changes
+        with:
+          baseRef: ${{ inputs.baseRef || epsilon }}
 
   # USER COMMENT 12
   fake-job-2:
@@ -138,44 +126,16 @@ jobs:
   # VERSIONING
   # =============================================================================
   version:
-    items:
-      - key:
-          # =============================================================================
-          # VERSIONING
-          # =============================================================================
-          if
-        value: github.ref_name == 'alpha'
-      - key: needs
-        value: changes
-      - key: runs-on
-        value: ubuntu-latest
-      - key: steps
-        value:
-          items:
-            - items:
-                - key: uses
-                  value: ./.github/actions/calculate-version
-                - key: with
-                  value:
-                    items:
-                      - key: baseRef
-                        value: "{ inputs.baseRef || 'epsilon' "
-                    range:
-                      - 392
-                      - 433
-                      - 433
-              range:
-                - 318
-                - 433
-                - 433
-          range:
-            - 316
-            - 433
-            - 433
-    range:
-      - 206
-      - 433
-      - 433
+    # =============================================================================
+    # VERSIONING
+    # =============================================================================
+    if: github.ref_name == 'alpha'
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/calculate-version
+        with:
+          baseRef: ${{ inputs.baseRef || 'epsilon' }}
 
   # USER COMMENT 16
 
@@ -222,44 +182,16 @@ jobs:
   # TAG & CREATE PR
   # =============================================================================     
   tag:
-    items:
-      - key:
-          # =============================================================================
-          # TAG & CREATE PR
-          # =============================================================================
-          if
-        value: github.ref_name == 'alpha'
-      - key: needs
-        value: version
-      - key: runs-on
-        value: ubuntu-latest
-      - key: steps
-        value:
-          items:
-            - items:
-                - key: uses
-                  value: ./.github/actions/create-tag
-                - key: with
-                  value:
-                    items:
-                      - key: version
-                        value: "{ needs.version.outputs.nextVersion "
-                    range:
-                      - 390
-                      - 437
-                      - 437
-              range:
-                - 323
-                - 437
-                - 437
-          range:
-            - 321
-            - 437
-            - 437
-    range:
-      - 211
-      - 437
-      - 437
+    # =============================================================================
+    # TAG & CREATE PR
+    # =============================================================================
+    if: github.ref_name == 'alpha'
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/create-tag
+        with:
+          version: ${{ needs.version.outputs.nextVersion }}
 
   # USER COMMENT 22
 
@@ -272,80 +204,35 @@ jobs:
           echo "Running fake job"
 
   createpr:
-    items:
-      - key:
-          ## SHOULD BE ANY BRANCH EXCEPT the final branch
-          if
-        value: github.ref_name != 'epsilon'
-      - key: needs
-        value: tag
-      - key: runs-on
-        value: ubuntu-latest
-      - key: steps
-        value:
-          items:
-            - items:
-                - key: uses
-                  value: ./.github/actions/create-pr
-                - key: with
-                  value:
-                    items:
-                      - key: sourceBranch
-                        value: "{ github.ref_name "
-                    range:
-                      - 241
-                      - 275
-                      - 275
-              range:
-                - 175
-                - 275
-                - 275
-          range:
-            - 173
-            - 275
-            - 275
-    range:
-      - 65
-      - 275
-      - 275
+    ## SHOULD BE ANY BRANCH EXCEPT the final branch
+    if: github.ref_name != 'epsilon'
+    needs: tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/create-pr
+        with:
+          sourceBranch: ${{ github.ref_name }}
+          targetBranch: ${{ github.ref_name == 'alpha' && 'beta' || github.ref_name ==
+            'beta' && 'gamma' || github.ref_name == 'gamma' && 'delta' ||
+            github.ref_name == 'delta' && 'epsilon' || github.ref_name ==
+            'epsilon' && 'epsilon' || 'epsilon' }}
+          title: 'Release ${{ needs.version.outputs.nextVersion }}'
+          body: 'Automated release PR for version ${{ needs.version.outputs.nextVersion
+            }}'
 
   branch:
-    items:
-      - key:
-          ## SHOULD BE THE NEXT BRANCH
-          needs
-        value: createpr
-      - key: runs-on
-        value: ubuntu-latest
-      - key: steps
-        value:
-          items:
-            - items:
-                - key: uses
-                  value: ./.github/actions/manage-branch
-                - key: with
-                  value:
-                    items:
-                      - key: action
-                        value: 'fast-forward'
-                      - key: targetBranch
-                        value: "{ github.ref_name == 'alpha' && 'beta' || github.ref_name == 'beta' && 'gamma' || github.ref_name == 'gamma' && 'delta' || github.ref_name == 'delta' && 'epsilon' || github.ref_name == 'epsilon' && 'epsilon' || 'epsilon' "
-                    range:
-                      - 190
-                      - 464
-                      - 464
-              range:
-                - 120
-                - 464
-                - 464
-          range:
-            - 118
-            - 464
-            - 464
-    range:
-      - 46
-      - 464
-      - 464
+    ## SHOULD BE THE NEXT BRANCH
+    needs: createpr
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/manage-branch
+        with:
+          action: 'fast-forward'
+          targetBranch: ${{ github.ref_name == 'alpha' && 'beta' || github.ref_name ==
+            'beta' && 'gamma' || github.ref_name == 'gamma' && 'delta' ||
+            github.ref_name == 'delta' && 'epsilon' || github.ref_name ==
+            'epsilon' && 'epsilon' || 'epsilon' }}
+          sourceBranch: ${{ github.ref_name }}
 
   # USER COMMENT 24
 

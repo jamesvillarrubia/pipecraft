@@ -144,7 +144,7 @@ program
             })
           }
         }
-      })
+      } as any)
       
       // Update idempotency cache
       const idempotencyManager = new IdempotencyManager(config)

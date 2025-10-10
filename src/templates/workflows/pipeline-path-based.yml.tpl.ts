@@ -101,237 +101,12 @@ const getBaseTemplate = (ctx: any) => {
 }
 
 /**
- * Create path operations for the pipeline
- * 
- * This function creates the path operations that will be applied to the pipeline.
- * It takes the document as a parameter so that createValueFromString can use it.
- * 
- * @param {any} ctx - Context object containing configuration
- * @param {any} doc - YAML document for node creation
- * @returns {PathOperationConfig[]} Array of path operations
- */
-const createPathOperations = (ctx: any, doc: any): PathOperationConfig[] => {
-  const branchFlow = ctx.branchFlow || ['develop', 'staging', 'main']
-  
-  return [
-    
-    // =============================================================================
-    // WORKFLOW INPUTS - Ensure required inputs exist for workflow calls
-    // =============================================================================
-    // These operations ensure that workflow_call and workflow_dispatch have the
-    // required inputs while preserving any additional inputs the user may have added.
-    
-    {
-      path: 'on.workflow_call.inputs.version',
-      operation: 'set',
-      value: createValueFromObject({
-        description: 'Version to deploy',
-        required: false,
-        type: 'string'
-      }, doc),
-      required: true
-    },
-    
-    {
-      path: 'on.workflow_call.inputs.baseRef',
-      operation: 'set',
-      value: createValueFromObject({
-        description: 'Base reference for changes detection',
-        required: false,
-        type: 'string'
-      }, doc),
-      required: true
-    },
-    
-    {
-      path: 'on.workflow_dispatch.inputs.version',
-      operation: 'set',
-      value: createValueFromObject({
-        description: 'Version to deploy',
-        required: false,
-        type: 'string'
-      }, doc),
-      required: true
-    },
-    
-    {
-      path: 'on.workflow_dispatch.inputs.baseRef',
-      operation: 'set',
-      value: createValueFromObject({
-        description: 'Base reference for changes detection',
-        required: false,
-        type: 'string'
-      }, doc),
-      required: true
-    },
-    
-    // =============================================================================
-    // ESSENTIAL JOBS - Core Flowcraft functionality
-    // =============================================================================
-    // These jobs are essential for Flowcraft functionality and should not be customized.
-    
-    {
-      path: 'jobs.changes',
-      operation: 'overwrite',
-      value: createValueFromString(`
-        runs-on: ubuntu-latest
-        steps:
-          - uses: ./.github/actions/detect-changes
-            with:
-              baseRef: \${{ inputs.baseRef || ${ctx.finalBranch || "main"} }}
-      `, ctx, doc),
-      required: true
-    },
-    
-    {
-      path: 'jobs.version',
-      operation: 'overwrite',
-      value: createValueFromObject({
-        if: `github.ref_name == '${ctx.initialBranch || branchFlow[0]}'`,
-        needs: 'changes',
-        'runs-on': 'ubuntu-latest',
-        steps: [
-          {
-            uses: './.github/actions/calculate-version',
-            with: {
-              baseRef: `\${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}`
-            }
-          }
-        ]
-      }, doc),
-      required: true
-    },
-    
-    {
-      path: 'jobs.tag',
-      operation: 'overwrite',
-      value: createValueFromObject({
-        if: `github.ref_name == '${ctx.initialBranch || branchFlow[0]}'`,
-        needs: 'version',
-        'runs-on': 'ubuntu-latest',
-        steps: [
-          {
-            uses: './.github/actions/create-tag',
-            with: {
-              version: '${{ needs.version.outputs.nextVersion }}'
-            }
-          }
-        ]
-      }, doc),
-      required: true
-    },
-    
-    {
-      path: 'jobs.createpr',
-      operation: 'overwrite',
-      value: createValueFromObject({
-        if: `github.ref_name != '${ctx.finalBranch || "main"}'`,
-        needs: 'tag',
-        'runs-on': 'ubuntu-latest',
-        steps: [
-          {
-            uses: './.github/actions/create-pr',
-            with: {
-              sourceBranch: '${{ github.ref_name }}',
-              targetBranch: generateBranchFlowNextLogic(branchFlow),
-              title: `Release \${{ needs.version.outputs.nextVersion }}`,
-              body: `Automated release PR for version \${{ needs.version.outputs.nextVersion }}`
-            }
-          }
-        ]
-      }, doc),
-      required: true
-    },
-    
-    {
-      path: 'jobs.branch',
-      operation: 'overwrite',
-      value: createValueFromObject({
-        needs: 'createpr',
-        'runs-on': 'ubuntu-latest',
-        steps: [
-          {
-            uses: './.github/actions/manage-branch',
-            with: {
-              action: 'fast-forward',
-              targetBranch: generateBranchFlowNextLogic(branchFlow),
-              sourceBranch: '${{ github.ref_name }}'
-            }
-          }
-        ]
-      }, doc),
-      required: true
-    },
-    
-    // =============================================================================
-    // USER-MANAGED SECTIONS - Preserve user customizations
-    // =============================================================================
-    // These sections are managed by the user and should be preserved.
-    // The template provides examples but doesn't override user customizations.
-    
-    {
-      path: 'jobs.testing',
-      operation: 'preserve',
-      value: createValueFromString(`
-        # =============================================================================
-        # TESTING JOBS
-        # =============================================================================
-        # Add your testing jobs here
-        # Example:
-        # test-api:
-        #   needs: version
-        #   runs-on: ubuntu-latest
-        #   steps:
-        #     - name: Test API
-        #       run: |
-        #         echo "Testing API"
-        #
-        # test-web:
-        #   needs: version
-        #   runs-on: ubuntu-latest
-        #   steps:
-        #     - name: Test Web
-        #       run: |
-        #         echo "Testing Web"
-      `, ctx, doc),
-      required: false
-    },
-    
-    {
-      path: 'jobs.deployment',
-      operation: 'preserve',
-      value: createValueFromString(`
-        # =============================================================================
-        # DEPLOYMENT JOBS
-        # =============================================================================
-        # Add your deployment jobs here
-        # Example:
-        # deploy-api:
-        #   needs: version
-        #   runs-on: ubuntu-latest
-        #   steps:
-        #     - name: Deploy API
-        #       run: |
-        #         echo "Deploy API to production"
-        #
-        # deploy-web:
-        #   needs: version
-        #   runs-on: ubuntu-latest
-        #   steps:
-        #     - name: Deploy Web
-        #       run: |
-        #         echo "Deploy Web to production"
-      `, ctx, doc),
-      required: false
-    }
-  ]
-}
-
-/**
  * Create path-based pipeline content
  */
 export const createPathBasedPipeline = (ctx: any) => {
   const branchFlow = ctx.branchFlow || ['develop', 'staging', 'main']
+  console.log('🔍 Branch flow from context:', branchFlow)
+  console.log('🔍 Context keys:', Object.keys(ctx))
   
   // Use existing pipeline from context or start with base template
   let doc: any
@@ -350,6 +125,7 @@ export const createPathBasedPipeline = (ctx: any) => {
   }
   
   // Apply path-based operations
+  const operations: PathOperationConfig[] = [
     
     // =============================================================================
     // WORKFLOW INPUTS - Ensure required inputs exist for workflow calls
@@ -423,93 +199,89 @@ export const createPathBasedPipeline = (ctx: any) => {
     {
       path: 'jobs.changes',
       operation: 'overwrite',
-      value: createValueFromString(`
-        runs-on: ubuntu-latest
-        steps:
-          - uses: ./.github/actions/detect-changes
-            with:
-              baseRef: \${{ inputs.baseRef || ${ctx.finalBranch || "main"} }}
-      `, ctx),
+      value: createValueFromObject({
+        'runs-on': 'ubuntu-latest',
+        steps: [
+          {
+            uses: './.github/actions/detect-changes',
+            with: {
+              baseRef: `\${{ inputs.baseRef || ${ctx.finalBranch || "main"} }}`
+            }
+          }
+        ]
+      }, doc),
       required: true
     },
     
     {
       path: 'jobs.version',
       operation: 'overwrite',
-      value: createValueFromObject({
-        if: `github.ref_name == '${ctx.initialBranch || branchFlow[0]}'`,
-        needs: 'changes',
-        'runs-on': 'ubuntu-latest',
-        steps: [
-          {
-            uses: './.github/actions/calculate-version',
-            with: {
-              baseRef: `\${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}`
-            }
-          }
-        ]
-      }, doc),
+      value: createValueFromString(`
+        # =============================================================================
+        # VERSIONING
+        # =============================================================================
+        if: github.ref_name == '${ctx.initialBranch || branchFlow[0]}'
+        needs: changes
+        runs-on: ubuntu-latest
+        steps:
+          - uses: ./.github/actions/calculate-version
+            with:
+              baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
+      `, ctx),
       required: true
     },
     
     {
       path: 'jobs.tag',
       operation: 'overwrite',
-      value: createValueFromObject({
-        if: `github.ref_name == '${ctx.initialBranch || branchFlow[0]}'`,
-        needs: 'version',
-        'runs-on': 'ubuntu-latest',
-        steps: [
-          {
-            uses: './.github/actions/create-tag',
-            with: {
-              version: '${{ needs.version.outputs.nextVersion }}'
-            }
-          }
-        ]
-      }, doc),
+      value: createValueFromString(`
+        # =============================================================================
+        # TAG & CREATE PR
+        # =============================================================================
+        if: github.ref_name == '${ctx.initialBranch || branchFlow[0]}'
+        needs: version
+        runs-on: ubuntu-latest
+        steps:
+          - uses: ./.github/actions/create-tag
+            with:
+              version: \${{ needs.version.outputs.nextVersion }}
+      `, ctx),
       required: true
     },
     
     {
       path: 'jobs.createpr',
       operation: 'overwrite',
-      value: createValueFromObject({
-        if: `github.ref_name != '${ctx.finalBranch || "main"}'`,
-        needs: 'tag',
-        'runs-on': 'ubuntu-latest',
-        steps: [
-          {
-            uses: './.github/actions/create-pr',
-            with: {
-              sourceBranch: '${{ github.ref_name }}',
-              targetBranch: generateBranchFlowNextLogic(branchFlow),
-              title: `Release \${{ needs.version.outputs.nextVersion }}`,
-              body: `Automated release PR for version \${{ needs.version.outputs.nextVersion }}`
-            }
-          }
-        ]
-      }, doc),
+      value: createValueFromString(`
+        ## SHOULD BE ANY BRANCH EXCEPT the final branch
+        if: github.ref_name != '${ctx.finalBranch || "main"}'
+        needs: tag
+        runs-on: ubuntu-latest
+        steps:
+          - uses: ./.github/actions/create-pr
+            with:
+              sourceBranch: \${{ github.ref_name }}
+              targetBranch: ${generateBranchFlowNextLogic(branchFlow)}
+              title: 'Release \${{ needs.version.outputs.nextVersion }}'
+              body: 'Automated release PR for version \${{ needs.version.outputs.nextVersion }}'
+      `, ctx),
       required: true
     },
     
     {
       path: 'jobs.branch',
       operation: 'overwrite',
-      value: createValueFromObject({
-        needs: 'createpr',
-        'runs-on': 'ubuntu-latest',
-        steps: [
-          {
-            uses: './.github/actions/manage-branch',
-            with: {
-              action: 'fast-forward',
-              targetBranch: generateBranchFlowNextLogic(branchFlow),
-              sourceBranch: '${{ github.ref_name }}'
-            }
-          }
-        ]
-      }, doc),
+      value: createValueFromString(`
+        ## SHOULD BE THE NEXT BRANCH
+        needs: createpr
+        runs-on: ubuntu-latest
+        steps:
+          - uses: ./.github/actions/manage-branch
+            with:
+              action: 'fast-forward'
+              targetBranch: ${generateBranchFlowNextLogic(branchFlow)}
+              sourceBranch: \${{ github.ref_name }}
+      `, ctx),
       required: true
     },
     
@@ -577,14 +349,11 @@ export const createPathBasedPipeline = (ctx: any) => {
     }
   ]
   
-  // Create operations after document is available
-  const operations = createPathOperations(ctx, doc)
-  
   // Apply all operations
   applyPathOperations(doc.contents, operations, doc)
   
   // Generate final content with comment preservation
-  const finalContent = stringify(doc, { lineWidth: 0 })
+  const finalContent = stringify(doc)
   
   return { 
     yamlContent: finalContent, 
