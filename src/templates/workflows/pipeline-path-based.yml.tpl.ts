@@ -27,10 +27,10 @@ import dedent from 'dedent';
  */
 const getBaseTemplate = (ctx: any) => {
   return dedent`
-        name: "Pipeline"
-        on: {}
-        jobs: {}
-        `
+    name: "Pipeline"
+    on: {}
+    jobs: {}
+  `
 }
 
 /**
@@ -78,74 +78,74 @@ export const createPathBasedPipeline = (ctx: any) => {
   // Apply path-based operations
   const operations: PathOperationConfig[] = [
     
-    // // =============================================================================
-    // // WORKFLOW INPUTS - Ensure required inputs exist for workflow calls
-    // // =============================================================================
-    // // These operations ensure that workflow_call and workflow_dispatch have the
-    // // required inputs (version, baseRef) that Flowcraft needs to function.
-    // // Using 'set' operation to ensure these inputs always exist with correct structure.
+    // =============================================================================
+    // WORKFLOW INPUTS - Ensure required inputs exist for workflow calls
+    // =============================================================================
+    // These operations ensure that workflow_call and workflow_dispatch have the
+    // required inputs (version, baseRef) that Flowcraft needs to function.
+    // Using 'set' operation to ensure these inputs always exist with correct structure.
     
-    // {
-    //   path: 'on.workflow_call.inputs.version',
-    //   operation: 'set',
-    //   value: {
-    //     description: 'The version to deploy',
-    //     required: false,
-    //     type: 'string'
-    //   },
-    //   required: true
-    // },
-    // {
-    //   path: 'on.workflow_call.inputs.baseRef',
-    //   operation: 'set',
-    //   value: {
-    //     description: 'The base reference for comparison',
-    //     required: false,
-    //     type: 'string'
-    //   },
-    //   required: true
-    // },
-    // {
-    //   path: 'on.workflow_dispatch.inputs.version',
-    //   operation: 'set',
-    //   value: {
-    //     description: 'The version to deploy',
-    //     required: false,
-    //     type: 'string'
-    //   },
-    //   required: true
-    // },
-    // {
-    //   path: 'on.workflow_dispatch.inputs.baseRef',
-    //   operation: 'set',
-    //   value: {
-    //     description: 'The base reference for comparison',
-    //     required: false,
-    //     type: 'string'
-    //   },
-    //   required: true
-    // },
+    {
+      path: 'on.workflow_call.inputs.version',
+      operation: 'set',
+      value: {
+        description: 'The version to deploy',
+        required: false,
+        type: 'string'
+      },
+      required: true
+    },
+    {
+      path: 'on.workflow_call.inputs.baseRef',
+      operation: 'set',
+      value: {
+        description: 'The base reference for comparison',
+        required: false,
+        type: 'string'
+      },
+      required: true
+    },
+    {
+      path: 'on.workflow_dispatch.inputs.version',
+      operation: 'set',
+      value: {
+        description: 'The version to deploy',
+        required: false,
+        type: 'string'
+      },
+      required: true
+    },
+    {
+      path: 'on.workflow_dispatch.inputs.baseRef',
+      operation: 'set',
+      value: {
+        description: 'The base reference for comparison',
+        required: false,
+        type: 'string'
+      },
+      required: true
+    },
     
-    // // =============================================================================
-    // // BRANCH CONFIGURATION - Merge template branches with user branches
-    // // =============================================================================
-    // // Using 'merge' operation to preserve any custom branches the user has added
-    // // while ensuring the template branches (from branchFlow) are included.
-    // // This allows users to add custom branches without losing template functionality.
+    // =============================================================================
+    // BRANCH CONFIGURATION - Merge template branches with user branches
+    // =============================================================================
+    // Using 'merge' operation to preserve any custom branches the user has added
+    // while ensuring the template branches (from branchFlow) are included.
+    // This allows users to add custom branches without losing template functionality.
     
-    // {
-    //   path: 'on.pull_request.branches',
-    //   operation: 'merge',
-    //   value: branchFlow,
-    //   required: true
-    // },
+    {
+      path: 'on.pull_request.branches',
+      operation: 'merge',
+      value: branchFlow,
+      required: true
+    },
     
-    // // =============================================================================
-    // // CORE FLOWCRAFT JOBS - Template-managed jobs that get updates
-    // // =============================================================================
-    // // These are the core Flowcraft jobs that should always use the latest template
-    // // version. Using 'overwrite' operation ensures users get bug fixes and improvements.
-    // // These jobs are essential for Flowcraft functionality and should not be customized.
+    // =============================================================================
+    // CORE FLOWCRAFT JOBS - Template-managed jobs that get updates
+    // =============================================================================
+    // These are the core Flowcraft jobs that should always use the latest template
+    // version. Using 'overwrite' operation ensures users get bug fixes and improvements.
+    // These jobs are essential for Flowcraft functionality and should not be customized.
     
     {
       path: 'jobs.changes',
@@ -165,149 +165,149 @@ export const createPathBasedPipeline = (ctx: any) => {
       required: true
     },
 
-    // // =============================================================================
-    // // USER-MANAGED SECTIONS - Preserve user customizations
-    // // =============================================================================
-    // // These sections are designed for user customizations (testing, deployment).
-    // // Using 'preserve' operation to keep any existing user jobs while providing
-    // // template structure and examples for new users.
+    // =============================================================================
+    // USER-MANAGED SECTIONS - Preserve user customizations
+    // =============================================================================
+    // These sections are designed for user customizations (testing, deployment).
+    // Using 'preserve' operation to keep any existing user jobs while providing
+    // template structure and examples for new users.
     
-    // {
-    //   path: 'jobs.testing-section',
-    //   operation: 'preserve',
-    //   commentBefore: `
-    //     # =============================================================================
-    //     # TESTING JOBS
-    //     # =============================================================================
-    //   `,
-    //   value: createValueFromString(`
-    //     # =============================================================================
-    //     # TESTING JOBS
-    //     # =============================================================================
-    //     # Add your testing jobs here
-    //     # Example:
-    //     # test-api: 
-    //     #   needs: changes
-    //     #   runs-on: ubuntu-latest
-    //     #   steps:
-    //     #     - name: Test API
-    //     #       run: |
-    //     #         echo "Run API tests"
-    //     #
-    //     # test-web:
-    //     #   needs: changes
-    //     #   runs-on: ubuntu-latest
-    //     #   steps:
-    //     #     - name: Test Web
-    //     #       run: |
-    //     #         echo "Run Web tests"
-    //   `, ctx),
-    //   required: false
-    // },
+    {
+      path: 'jobs.testing-section',
+      operation: 'preserve',
+      commentBefore: `
+        # =============================================================================
+        # TESTING JOBS
+        # =============================================================================
+      `,
+      value: createValueFromString(`
+        # =============================================================================
+        # TESTING JOBS
+        # =============================================================================
+        # Add your testing jobs here
+        # Example:
+        # test-api: 
+        #   needs: changes
+        #   runs-on: ubuntu-latest
+        #   steps:
+        #     - name: Test API
+        #       run: |
+        #         echo "Run API tests"
+        #
+        # test-web:
+        #   needs: changes
+        #   runs-on: ubuntu-latest
+        #   steps:
+        #     - name: Test Web
+        #       run: |
+        #         echo "Run Web tests"
+      `, ctx),
+      required: false
+    },
     
-    // {
-    //   path: 'jobs.version',
-    //   operation: 'overwrite',
-    //   commentBefore: `
-    //     # =============================================================================
-    //     # VERSIONING
-    //     # =============================================================================
-    //   `,
-    //   value: createValueFromString(`
-    //     if: github.ref_name == '${ctx.initialBranch || branchFlow[0]}'
-    //     needs: changes
-    //     runs-on: ubuntu-latest
-    //     steps:
-    //       - uses: ./.github/actions/calculate-version
-    //         with:
-    //           baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
-    //   `, ctx),
-    //   required: true
-    // },
+    {
+      path: 'jobs.version',
+      operation: 'overwrite',
+      commentBefore: `
+        # =============================================================================
+        # VERSIONING
+        # =============================================================================
+      `,
+      value: createValueFromString(`
+        if: github.ref_name == '${ctx.initialBranch || branchFlow[0]}'
+        needs: changes
+        runs-on: ubuntu-latest
+        steps:
+          - uses: ./.github/actions/calculate-version
+            with:
+              baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
+      `, ctx),
+      required: true
+    },
     
-    // {
-    //   path: 'jobs.deployment-section',
-    //   operation: 'preserve',
-    //   value: createValueFromString(`
-    //     # =============================================================================
-    //     # DEPLOYMENT JOBS
-    //     # =============================================================================
-    //     # Add your deployment jobs here
-    //     # Example:
-    //     # deploy-api:
-    //     #   needs: version
-    //     #   runs-on: ubuntu-latest
-    //     #   steps:
-    //     #     - name: Deploy API
-    //     #       run: |
-    //     #         echo "Deploy API to production"
-    //     #
-    //     # deploy-web:
-    //     #   needs: version
-    //     #   runs-on: ubuntu-latest
-    //     #   steps:
-    //     #     - name: Deploy Web
-    //     #       run: |
-    //     #         echo "Deploy Web to production"
-    //   `, ctx),
-    //   required: false
-    // },
+    {
+      path: 'jobs.deployment-section',
+      operation: 'preserve',
+      value: createValueFromString(`
+        # =============================================================================
+        # DEPLOYMENT JOBS
+        # =============================================================================
+        # Add your deployment jobs here
+        # Example:
+        # deploy-api:
+        #   needs: version
+        #   runs-on: ubuntu-latest
+        #   steps:
+        #     - name: Deploy API
+        #       run: |
+        #         echo "Deploy API to production"
+        #
+        # deploy-web:
+        #   needs: version
+        #   runs-on: ubuntu-latest
+        #   steps:
+        #     - name: Deploy Web
+        #       run: |
+        #         echo "Deploy Web to production"
+      `, ctx),
+      required: false
+    },
     
-    // {
-    //   path: 'jobs.tag',
-    //   operation: 'overwrite',
-    //   value: createValueFromString(`
-    //     if: github.ref_name == '${ctx.initialBranch || branchFlow[0]}'
-    //     needs: version
-    //     runs-on: ubuntu-latest
-    //     steps:
-    //       - uses: ./.github/actions/create-tag
-    //         with:
-    //           version: \${{ needs.version.outputs.nextVersion }}
-    //   `, ctx),
-    //   commentBefore: `
-    //     # =============================================================================
-    //     # TAG & CREATE PR
-    //     # =============================================================================
-    //   `,
-    //   required: true
-    // },
+    {
+      path: 'jobs.tag',
+      operation: 'overwrite',
+      value: createValueFromString(`
+        if: github.ref_name == '${ctx.initialBranch || branchFlow[0]}'
+        needs: version
+        runs-on: ubuntu-latest
+        steps:
+          - uses: ./.github/actions/create-tag
+            with:
+              version: \${{ needs.version.outputs.nextVersion }}
+      `, ctx),
+      commentBefore: `
+        # =============================================================================
+        # TAG & CREATE PR
+        # =============================================================================
+      `,
+      required: true
+    },
     
-    // {
-    //   path: 'jobs.createpr',
-    //   operation: 'overwrite',
-    //   value: createValueFromString(`
-    //     ## SHOULD BE ANY BRANCH EXCEPT the final branch
-    //     if: github.ref_name != '${ctx.finalBranch || "main"}'
-    //     needs: tag
-    //     runs-on: ubuntu-latest
-    //     steps:
-    //       - uses: ./.github/actions/create-pr
-    //         with:
-    //           sourceBranch: \${{ github.ref_name }}
-    //           targetBranch: \${{ github.ref_name == '${branchFlow[0]}' && '${branchFlow[1] || branchFlow[0]}' || github.ref_name == '${branchFlow[1]}' && '${branchFlow[2] || branchFlow[1]}' || '${branchFlow[branchFlow.length - 1]}' }}
-    //           title: 'Release \${{ needs.version.outputs.nextVersion }}'
-    //           body: 'Automated release PR for version \${{ needs.version.outputs.nextVersion }}'
-    //   `, ctx),
-    //   required: true
-    // },
+    {
+      path: 'jobs.createpr',
+      operation: 'overwrite',
+      value: createValueFromString(`
+        ## SHOULD BE ANY BRANCH EXCEPT the final branch
+        if: github.ref_name != '${ctx.finalBranch || "main"}'
+        needs: tag
+        runs-on: ubuntu-latest
+        steps:
+          - uses: ./.github/actions/create-pr
+            with:
+              sourceBranch: \${{ github.ref_name }}
+              targetBranch: \${{ github.ref_name == '${branchFlow[0]}' && '${branchFlow[1] || branchFlow[0]}' || github.ref_name == '${branchFlow[1]}' && '${branchFlow[2] || branchFlow[1]}' || '${branchFlow[branchFlow.length - 1]}' }}
+              title: 'Release \${{ needs.version.outputs.nextVersion }}'
+              body: 'Automated release PR for version \${{ needs.version.outputs.nextVersion }}'
+      `, ctx),
+      required: true
+    },
     
-    // {
-    //   path: 'jobs.branch',
-    //   operation: 'overwrite',
-    //   value: createValueFromString(`
-    //     ## SHOULD BE THE NEXT BRANCH
-    //     needs: createpr
-    //     runs-on: ubuntu-latest
-    //     steps:
-    //       - uses: ./.github/actions/manage-branch
-    //         with:
-    //           action: 'fast-forward'
-    //           targetBranch: \${{ github.ref_name == '${branchFlow[0]}' && '${branchFlow[1] || branchFlow[0]}' || github.ref_name == '${branchFlow[1]}' && '${branchFlow[2] || branchFlow[1]}' || '${branchFlow[branchFlow.length - 1]}' }}
-    //           sourceBranch: \${{ github.ref_name }}
-    //   `, ctx),
-    //   required: true
-    // },
+    {
+      path: 'jobs.branch',
+      operation: 'overwrite',
+      value: createValueFromString(`
+        ## SHOULD BE THE NEXT BRANCH
+        needs: createpr
+        runs-on: ubuntu-latest
+        steps:
+          - uses: ./.github/actions/manage-branch
+            with:
+              action: 'fast-forward'
+              targetBranch: \${{ github.ref_name == '${branchFlow[0]}' && '${branchFlow[1] || branchFlow[0]}' || github.ref_name == '${branchFlow[1]}' && '${branchFlow[2] || branchFlow[1]}' || '${branchFlow[branchFlow.length - 1]}' }}
+              sourceBranch: \${{ github.ref_name }}
+      `, ctx),
+      required: true
+    },
     
 
   ]

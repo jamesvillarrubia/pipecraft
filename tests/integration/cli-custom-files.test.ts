@@ -211,7 +211,7 @@ jobs:
     steps:
       - uses: ./.github/actions/detect-changes
         with:
-          baseRef: ${{ inputs.baseRef || 'main' }}
+          baseRef: \${{ inputs.baseRef || 'main' }}
 
   # USER COMMENT 12
   fake-job-2:
@@ -264,7 +264,7 @@ jobs:
     steps:
       - uses: ./.github/actions/calculate-version
         with:
-          baseRef: ${{ inputs.baseRef || 'main' }}
+          baseRef: \${{ inputs.baseRef || 'main' }}
 
 
   # USER COMMENT 16
@@ -318,7 +318,7 @@ jobs:
     steps:
       - uses: ./.github/actions/create-tag
         with:
-          version: ${{ needs.version.outputs.nextVersion }}
+          version: \${{ needs.version.outputs.nextVersion }}
 
   # USER COMMENT 22
 
@@ -338,12 +338,12 @@ jobs:
     steps:
       - uses: ./.github/actions/create-pr
         with:
-          sourceBranch: ${{ github.ref_name }}
-          targetBranch: ${{ github.ref_name == 'develop' && 'staging' || github.ref_name
+          sourceBranch: \${{ github.ref_name }}
+          targetBranch: \${{ github.ref_name == 'develop' && 'staging' || github.ref_name
             == 'staging' && 'main' || github.ref_name == 'main' && 'main' ||
             'main' }}
-          title: 'Release ${{ needs.version.outputs.nextVersion }}'
-          body: 'Automated release PR for version ${{ needs.version.outputs.nextVersion
+          title: 'Release \${{ needs.version.outputs.nextVersion }}'
+          body: 'Automated release PR for version \${{ needs.version.outputs.nextVersion
             }}'
 
   branch:
@@ -354,10 +354,10 @@ jobs:
       - uses: ./.github/actions/manage-branch
         with:
           action: 'fast-forward'
-          targetBranch: ${{ github.ref_name == 'develop' && 'staging' || github.ref_name
+          targetBranch: \${{ github.ref_name == 'develop' && 'staging' || github.ref_name
             == 'staging' && 'main' || github.ref_name == 'main' && 'main' ||
             'main' }}
-          sourceBranch: ${{ github.ref_name }}
+          sourceBranch: \${{ github.ref_name }}
 
   # USER COMMENT 24
 

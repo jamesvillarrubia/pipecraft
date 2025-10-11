@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 // Load test configuration with multiple domains
-const config = JSON.parse(readFileSync(join(__dirname, 'tests/__fixtures__/basic-config.json'), 'utf8'))
+const config = JSON.parse(readFileSync(join(__dirname, 'tests/fixtures/basic-config.json'), 'utf8'))
 
 // Add more domains to test dynamic generation
 config.domains = {

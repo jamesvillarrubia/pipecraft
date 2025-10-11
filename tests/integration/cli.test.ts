@@ -7,7 +7,7 @@ import { TEST_DIR, FIXTURES_DIR } from '../setup'
 describe('CLI Integration Tests', () => {
   beforeEach(() => {
     // Clean up any existing files
-    const filesToClean = ['.trunkflowrc.json', '.flowcraft-cache.json', 'package.json']
+    const filesToClean = ['.flowcraftrc.json', '.flowcraft-cache.json', 'package.json']
     filesToClean.forEach(file => {
       if (existsSync(join(TEST_DIR, file))) {
         rmSync(join(TEST_DIR, file))
@@ -21,7 +21,7 @@ describe('CLI Integration Tests', () => {
       
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain('Configuration initialized successfully')
-      expect(existsSync(join(TEST_DIR, '.trunkflowrc.json'))).toBe(true)
+      expect(existsSync(join(TEST_DIR, '.flowcraftrc.json'))).toBe(true)
     })
 
     it('should initialize with versioning setup', async () => {
@@ -39,7 +39,7 @@ describe('CLI Integration Tests', () => {
       // Setup test configuration
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      writeFileSync(join(TEST_DIR, '.trunkflowrc.json'), configContent)
+      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), configContent)
     })
 
     it('should generate workflows successfully', async () => {
@@ -83,7 +83,7 @@ describe('CLI Integration Tests', () => {
     it('should validate correct configuration', async () => {
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      writeFileSync(join(TEST_DIR, '.trunkflowrc.json'), configContent)
+      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), configContent)
       
       const result = await runCLI(['validate'])
       
@@ -94,7 +94,7 @@ describe('CLI Integration Tests', () => {
     it('should fail validation for invalid configuration', async () => {
       const configPath = join(FIXTURES_DIR, 'invalid-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      writeFileSync(join(TEST_DIR, '.trunkflowrc.json'), configContent)
+      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), configContent)
       
       const result = await runCLI(['validate'])
       
@@ -114,7 +114,7 @@ describe('CLI Integration Tests', () => {
     it('should verify setup successfully', async () => {
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      writeFileSync(join(TEST_DIR, '.trunkflowrc.json'), configContent)
+      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), configContent)
       
       const result = await runCLI(['verify'])
       
@@ -135,7 +135,7 @@ describe('CLI Integration Tests', () => {
     beforeEach(() => {
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      writeFileSync(join(TEST_DIR, '.trunkflowrc.json'), configContent)
+      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), configContent)
     })
 
     it('should check version information', async () => {

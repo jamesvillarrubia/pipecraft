@@ -4,13 +4,20 @@ import { join } from 'path'
 
 // Test utilities
 export const TEST_DIR = join(process.cwd(), 'test-temp')
-export const FIXTURES_DIR = join(__dirname, '__fixtures__')
+export const FIXTURES_DIR = join(__dirname, 'fixtures')
 
 // Setup test environment
 beforeAll(() => {
   // Create test directory
   if (existsSync(TEST_DIR)) {
-    rmSync(TEST_DIR, { recursive: true, force: true })
+    try {
+      rmSync(TEST_DIR, { recursive: true, force: true })
+    } catch (error) {
+      // If directory is not empty, try to remove contents first
+      if (error.code === 'ENOTEMPTY') {
+        rmSync(TEST_DIR, { recursive: true, force: true, maxRetries: 3 })
+      }
+    }
   }
   mkdirSync(TEST_DIR, { recursive: true })
 })

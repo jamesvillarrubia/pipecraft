@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 // Load test configuration
-const config = JSON.parse(readFileSync(join(__dirname, 'tests/__fixtures__/basic-config.json'), 'utf8'))
+const config = JSON.parse(readFileSync(join(__dirname, 'tests/fixtures/basic-config.json'), 'utf8'))
 
 // Create a pipeline file with some existing jobs to test injection
 const existingPipeline = `name: My Custom Pipeline

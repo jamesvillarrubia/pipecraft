@@ -7,7 +7,7 @@ import { TEST_DIR, FIXTURES_DIR } from '../setup'
 describe('End-to-End Workflow Generation', () => {
   beforeEach(() => {
     // Clean up test directory
-    const testFiles = ['.trunkflowrc.json', '.flowcraft-cache.json', 'package.json']
+    const testFiles = ['.flowcraftrc.json', '.flowcraft-cache.json', 'package.json']
     testFiles.forEach(file => {
       if (existsSync(join(TEST_DIR, file))) {
         rmSync(join(TEST_DIR, file))
@@ -30,7 +30,7 @@ describe('End-to-End Workflow Generation', () => {
       // Setup configuration
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      writeFileSync(join(TEST_DIR, '.trunkflowrc.json'), configContent)
+      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), configContent)
 
       // Generate workflows
       const result = await runCLI(['generate'])
@@ -56,7 +56,7 @@ describe('End-to-End Workflow Generation', () => {
       // Setup configuration
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      writeFileSync(join(TEST_DIR, '.trunkflowrc.json'), configContent)
+      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), configContent)
 
       // Generate workflows
       await runCLI(['generate'])
@@ -81,7 +81,7 @@ describe('End-to-End Workflow Generation', () => {
       // Setup configuration
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      writeFileSync(join(TEST_DIR, '.trunkflowrc.json'), configContent)
+      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), configContent)
 
       // First generation
       const result1 = await runCLI(['generate'])
@@ -117,7 +117,7 @@ describe('End-to-End Workflow Generation', () => {
           breaking: 'major'
         }
       }
-      writeFileSync(join(TEST_DIR, '.trunkflowrc.json'), JSON.stringify(config, null, 2))
+      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), JSON.stringify(config, null, 2))
 
       // Initialize with versioning
       const initResult = await runCLI(['init', '--force', '--with-versioning'])
@@ -140,7 +140,7 @@ describe('End-to-End Workflow Generation', () => {
       // Setup valid configuration
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      writeFileSync(join(TEST_DIR, '.trunkflowrc.json'), configContent)
+      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), configContent)
 
       const result = await runCLI(['validate'])
       expect(result.exitCode).toBe(0)
@@ -151,7 +151,7 @@ describe('End-to-End Workflow Generation', () => {
       // Setup invalid configuration
       const configPath = join(FIXTURES_DIR, 'invalid-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      writeFileSync(join(TEST_DIR, '.trunkflowrc.json'), configContent)
+      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), configContent)
 
       const result = await runCLI(['validate'])
       expect(result.exitCode).toBe(1)
@@ -164,7 +164,7 @@ describe('End-to-End Workflow Generation', () => {
       // Setup configuration
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      writeFileSync(join(TEST_DIR, '.trunkflowrc.json'), configContent)
+      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), configContent)
 
       const result = await runCLI(['version', '--check'])
       expect(result.exitCode).toBe(0)
