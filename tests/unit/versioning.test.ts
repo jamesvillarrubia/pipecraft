@@ -15,7 +15,7 @@ describe('VersionManager', () => {
   let versionManager: VersionManager
   let mockExecSync: any
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Load test config
     const configPath = join(FIXTURES_DIR, 'basic-config.json')
     const configContent = readFileSync(configPath, 'utf8')

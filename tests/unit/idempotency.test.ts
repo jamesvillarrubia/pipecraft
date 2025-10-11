@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { writeFileSync, existsSync, rmSync } from 'fs'
+import { writeFileSync, existsSync, rmSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { IdempotencyManager } from '../../src/utils/idempotency'
 import { FlowcraftConfig } from '../../src/types'
@@ -27,59 +27,59 @@ describe('IdempotencyManager', () => {
   })
 
   describe('calculateHash', () => {
-    it('should calculate hash for existing file', () => {
+    it('should calculate hash for existing file', async () => {
       const testFile = join(TEST_DIR, 'test.txt')
       writeFileSync(testFile, 'test content')
       
-      const hash = idempotencyManager.calculateHash(testFile)
+      const hash = await idempotencyManager.calculateHash(testFile)
       
       expect(hash).toBeDefined()
       expect(hash).toMatch(/^[a-f0-9]{64}$/) // SHA256 hash
     })
 
-    it('should return empty string for non-existent file', () => {
-      const hash = idempotencyManager.calculateHash('non-existent-file.txt')
+    it('should return empty string for non-existent file', async () => {
+      const hash = await idempotencyManager.calculateHash('non-existent-file.txt')
       
       expect(hash).toBe('')
     })
 
-    it('should calculate different hashes for different content', () => {
+    it('should calculate different hashes for different content', async () => {
       const file1 = join(TEST_DIR, 'file1.txt')
       const file2 = join(TEST_DIR, 'file2.txt')
       
       writeFileSync(file1, 'content 1')
       writeFileSync(file2, 'content 2')
       
-      const hash1 = idempotencyManager.calculateHash(file1)
-      const hash2 = idempotencyManager.calculateHash(file2)
+      const hash1 = await idempotencyManager.calculateHash(file1)
+      const hash2 = await idempotencyManager.calculateHash(file2)
       
       expect(hash1).not.toBe(hash2)
     })
   })
 
   describe('hasChanges', () => {
-    it('should return true when rebuild is disabled', () => {
+    it('should return true when rebuild is disabled', async () => {
       config.rebuild = { enabled: false, skipIfUnchanged: true, forceRegenerate: false, watchMode: false, hashAlgorithm: 'sha256', cacheFile: '.flowcraft-cache.json', ignorePatterns: [] }
       const manager = new IdempotencyManager(config)
       
-      expect(manager.hasChanges()).toBe(true)
+      expect(await manager.hasChanges()).toBe(true)
     })
 
-    it('should return true when forceRegenerate is enabled', () => {
+    it('should return true when forceRegenerate is enabled', async () => {
       config.rebuild = { enabled: true, skipIfUnchanged: true, forceRegenerate: true, watchMode: false, hashAlgorithm: 'sha256', cacheFile: '.flowcraft-cache.json', ignorePatterns: [] }
       const manager = new IdempotencyManager(config)
       
-      expect(manager.hasChanges()).toBe(true)
+      expect(await manager.hasChanges()).toBe(true)
     })
 
-    it('should return true when no cache exists', () => {
+    it('should return true when no cache exists', async () => {
       config.rebuild = { enabled: true, skipIfUnchanged: true, forceRegenerate: false, watchMode: false, hashAlgorithm: 'sha256', cacheFile: '.flowcraft-cache.json', ignorePatterns: [] }
       const manager = new IdempotencyManager(config)
       
-      expect(manager.hasChanges()).toBe(true)
+      expect(await manager.hasChanges()).toBe(true)
     })
 
-    it('should return false when no changes detected', () => {
+    it('should return false when no changes detected', async () => {
       // Create a config file
       const configFile = join(TEST_DIR, '.trunkflowrc.json')
       writeFileSync(configFile, JSON.stringify(config, null, 2))
@@ -88,12 +88,12 @@ describe('IdempotencyManager', () => {
       idempotencyManager.updateCache()
       
       // Check for changes (should be false)
-      expect(idempotencyManager.hasChanges()).toBe(false)
+      expect(await idempotencyManager.hasChanges()).toBe(false)
     })
   })
 
   describe('updateCache', () => {
-    it('should create cache file', () => {
+    it('should create cache file', async () => {
       const configFile = join(TEST_DIR, '.trunkflowrc.json')
       writeFileSync(configFile, JSON.stringify(config, null, 2))
       
@@ -103,7 +103,7 @@ describe('IdempotencyManager', () => {
       expect(existsSync(cacheFile)).toBe(true)
     })
 
-    it('should include config hash in cache', () => {
+    it('should include config hash in cache', async () => {
       const configFile = join(TEST_DIR, '.trunkflowrc.json')
       writeFileSync(configFile, JSON.stringify(config, null, 2))
       
@@ -117,24 +117,24 @@ describe('IdempotencyManager', () => {
   })
 
   describe('shouldRegenerateFile', () => {
-    it('should return true for new file', () => {
+    it('should return true for new file', async () => {
       const testFile = join(TEST_DIR, 'new-file.txt')
       writeFileSync(testFile, 'content')
       
-      expect(idempotencyManager.shouldRegenerateFile(testFile)).toBe(true)
+      expect(await idempotencyManager.shouldRegenerateFile(testFile)).toBe(true)
     })
 
-    it('should return false for unchanged file', () => {
+    it('should return false for unchanged file', async () => {
       const testFile = join(TEST_DIR, 'test-file.txt')
       writeFileSync(testFile, 'content')
       
       // Update cache with current file state
       idempotencyManager.updateCache()
       
-      expect(idempotencyManager.shouldRegenerateFile(testFile)).toBe(false)
+      expect(await idempotencyManager.shouldRegenerateFile(testFile)).toBe(false)
     })
 
-    it('should return true for changed file', () => {
+    it('should return true for changed file', async () => {
       const testFile = join(TEST_DIR, 'test-file.txt')
       writeFileSync(testFile, 'original content')
       
@@ -144,7 +144,7 @@ describe('IdempotencyManager', () => {
       // Change file content
       writeFileSync(testFile, 'modified content')
       
-      expect(idempotencyManager.shouldRegenerateFile(testFile)).toBe(true)
+      expect(await idempotencyManager.shouldRegenerateFile(testFile)).toBe(true)
     })
   })
 })
