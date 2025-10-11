@@ -74,7 +74,7 @@ jobs:
   # CHANGES DETECTION
   # =============================================================================
   # USER COMMENT 11
-  changes:
+  changes2:
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/detect-changes

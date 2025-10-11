@@ -130,6 +130,9 @@ export interface PathOperationConfig {
   value: PathValue
   required?: boolean
   commentBefore?: string
+  comment?: string
+  spaceBefore?: boolean
+  tag?: string
 }
 
 /**
