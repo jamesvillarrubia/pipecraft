@@ -19,6 +19,12 @@ describe('CLI Integration Tests', () => {
     it('should initialize configuration with interactive mode', async () => {
       const result = await runCLI(['init', '--force'])
       
+      // Log output for debugging
+      if (result.exitCode !== 0) {
+        console.log('stdout:', result.stdout)
+        console.log('stderr:', result.stderr)
+      }
+      
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain('Configuration initialized successfully')
       expect(existsSync(join(TEST_DIR, '.flowcraftrc.json'))).toBe(true)
@@ -183,7 +189,9 @@ describe('CLI Integration Tests', () => {
 // Helper function to run CLI commands
 async function runCLI(args: string[]): Promise<{ exitCode: number, stdout: string, stderr: string }> {
   return new Promise((resolve) => {
-    const child = spawn('node', ['../../src/cli/index.ts', ...args], {
+    // Use tsx to run TypeScript CLI directly
+    const cliPath = join(process.cwd(), 'src/cli/index.ts')
+    const child = spawn('npx', ['tsx', '--import', cliPath, ...args], {
       cwd: TEST_DIR,
       stdio: 'pipe'
     })
