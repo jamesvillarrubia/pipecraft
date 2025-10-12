@@ -9,18 +9,18 @@ inputs:
     default: 'main'
 
 outputs:
-  api:
-    description: 'Whether api domain has changes'
-    value: ${{ steps.merge.outputs.api }}
-  web:
-    description: 'Whether web domain has changes'
-    value: ${{ steps.merge.outputs.web }}
-  libs:
-    description: 'Whether libs domain has changes'
-    value: ${{ steps.merge.outputs.libs }}
-  cicd:
-    description: 'Whether cicd domain has changes'
-    value: ${{ steps.merge.outputs.cicd }}
+  fake-domain1:
+    description: 'Whether fake-domain1 domain has changes'
+    value: ${{ steps.merge.outputs.fake-domain1 }}
+  fake-domain2:
+    description: 'Whether fake-domain2 domain has changes'
+    value: ${{ steps.merge.outputs.fake-domain2 }}
+  fake-domain3:
+    description: 'Whether fake-domain3 domain has changes'
+    value: ${{ steps.merge.outputs.fake-domain3 }}
+  fake-domain4:
+    description: 'Whether fake-domain4 domain has changes'
+    value: ${{ steps.merge.outputs.fake-domain4 }}
 
 runs:
   using: 'composite'
@@ -48,26 +48,26 @@ runs:
       with:
         base: ${{ steps.set-base.outputs.base_branch }}
         filters: |
-          api:
-            - 'apps/api/**'
-          web:
-            - 'apps/web/**'
-          libs:
-            - 'libs/**'
-          cicd:
-            - '.github/workflows/**'
+          fake-domain1:
+            - 'apps/fake-domain1/**'
+          fake-domain2:
+            - 'apps/fake-domain2/**'
+          fake-domain3:
+            - 'libs/fake-domain3/**'
+          fake-domain4:
+            - '.github/workflows/fake-domain4/**'
 
     - name: Merge filter outputs
       id: merge
       shell: bash
       run: |
-        echo "api=${{ contains(steps.filter.outputs.changes, 'api') }}" >> $GITHUB_OUTPUT
-        echo "web=${{ contains(steps.filter.outputs.changes, 'web') }}" >> $GITHUB_OUTPUT
-        echo "libs=${{ contains(steps.filter.outputs.changes, 'libs') }}" >> $GITHUB_OUTPUT
-        echo "cicd=${{ contains(steps.filter.outputs.changes, 'cicd') }}" >> $GITHUB_OUTPUT
+        echo "fake-domain1=${{ contains(steps.filter.outputs.changes, 'fake-domain1') }}" >> $GITHUB_OUTPUT
+        echo "fake-domain2=${{ contains(steps.filter.outputs.changes, 'fake-domain2') }}" >> $GITHUB_OUTPUT
+        echo "fake-domain3=${{ contains(steps.filter.outputs.changes, 'fake-domain3') }}" >> $GITHUB_OUTPUT
+        echo "fake-domain4=${{ contains(steps.filter.outputs.changes, 'fake-domain4') }}" >> $GITHUB_OUTPUT
         
         echo "📋 Change Detection Results:"
-        echo "  api: ${{ contains(steps.filter.outputs.changes, 'api') }}"
-        echo "  web: ${{ contains(steps.filter.outputs.changes, 'web') }}"
-        echo "  libs: ${{ contains(steps.filter.outputs.changes, 'libs') }}"
-        echo "  cicd: ${{ contains(steps.filter.outputs.changes, 'cicd') }}"
+        echo "  fake-domain1: ${{ contains(steps.filter.outputs.changes, 'fake-domain1') }}"
+        echo "  fake-domain2: ${{ contains(steps.filter.outputs.changes, 'fake-domain2') }}"
+        echo "  fake-domain3: ${{ contains(steps.filter.outputs.changes, 'fake-domain3') }}"
+        echo "  fake-domain4: ${{ contains(steps.filter.outputs.changes, 'fake-domain4') }}"
