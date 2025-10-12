@@ -31,6 +31,10 @@ afterAll(() => {
 
 beforeEach(() => {
   // Reset test environment before each test
+  // Ensure TEST_DIR exists before trying to chdir
+  if (!existsSync(TEST_DIR)) {
+    mkdirSync(TEST_DIR, { recursive: true })
+  }
   process.chdir(TEST_DIR)
 })
 
