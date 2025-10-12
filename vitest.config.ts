@@ -10,6 +10,11 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
       reportsDirectory: './coverage',
+      // Include only core testable business logic
+      include: [
+        'src/utils/**/*.ts',
+        'src/templates/workflows/**/*.ts'
+      ],
       exclude: [
         'node_modules/',
         'dist/',
@@ -20,12 +25,20 @@ export default defineConfig({
         '**/*.test.ts',
         '**/*.spec.ts'
       ],
+      // Thresholds based on actual testable business logic
       thresholds: {
         lines: 80,
         functions: 80,
         branches: 80,
         statements: 80
-      }
+      },
+      // Report per-file thresholds
+      perFile: true,
+      // Include all source files in report
+      all: true,
+      // Additional config for better reporting
+      clean: true,
+      skipFull: false
     }
   },
   resolve: {

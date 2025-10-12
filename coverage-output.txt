@@ -1,0 +1,72 @@
+
+> flowcraft@1.0.0 test
+> vitest --coverage --run tests/unit/
+
+
+ RUN  v2.1.9 /Users/james/Sites/published/flowcraft
+      Coverage enabled with v8
+
+ ✓ tests/unit/versioning.test.ts (13 tests) 12ms
+ ❯ tests/unit/idempotency.test.ts (12 tests | 2 failed) 19ms
+   × IdempotencyManager > updateCache > should include config hash in cache 5ms
+     → expected undefined to be defined
+   × IdempotencyManager > shouldRegenerateFile > should return true for changed file 1ms
+     → ENOENT: no such file or directory, open '/Users/james/Sites/published/flowcraft/test-temp/test-file.txt'
+ ✓ tests/unit/config.test.ts (9 tests) 14ms
+ ❯ tests/unit/idempotency-extended.test.ts (15 tests | 1 failed) 24ms
+   × IdempotencyManager - Extended Coverage > calculateHash > should calculate different hashes for different content 8ms
+     → expected '' to match /^[a-f0-9]{64}$/
+ ✓ tests/unit/ast-path-operations-extended.test.ts (32 tests) 26ms
+ ✓ tests/unit/pipeline-path-based.test.ts (21 tests) 139ms
+ ✓ tests/unit/job-order.test.ts (4 tests) 1755ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/idempotency-extended.test.ts > IdempotencyManager - Extended Coverage > calculateHash > should calculate different hashes for different content
+AssertionError: expected '' to match /^[a-f0-9]{64}$/
+
+- Expected: 
+/^[a-f0-9]{64}$/
+
++ Received: 
+""
+
+ ❯ tests/unit/idempotency-extended.test.ts:53:21
+     51|       expect(hash1).not.toBe(hash2)
+     52|       expect(hash1).toMatch(/^[a-f0-9]{64}$/)
+     53|       expect(hash2).toMatch(/^[a-f0-9]{64}$/)
+       |                     ^
+     54|     })
+     55| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  tests/unit/idempotency.test.ts > IdempotencyManager > updateCache > should include config hash in cache
+AssertionError: expected undefined to be defined
+ ❯ tests/unit/idempotency.test.ts:118:33
+    116|       const cache = idempotencyManager.loadCache()
+    117|       expect(cache).toBeDefined()
+    118|       expect(cache?.configHash).toBeDefined()
+       |                                 ^
+    119|       expect(cache?.lastGenerated).toBeDefined()
+    120|     })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  tests/unit/idempotency.test.ts > IdempotencyManager > shouldRegenerateFile > should return true for changed file
+Error: ENOENT: no such file or directory, open '/Users/james/Sites/published/flowcraft/test-temp/test-file.txt'
+ ❯ tests/unit/idempotency.test.ts:144:7
+    142|     it('should return true for changed file', async () => {
+    143|       const testFile = join(TEST_DIR, 'test-file.txt')
+    144|       writeFileSync(testFile, 'original content')
+       |       ^
+    145|       
+    146|       // Update cache with original content
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+ Test Files  2 failed | 5 passed (7)
+      Tests  3 failed | 103 passed (106)
+   Start at  23:42:30
+   Duration  2.15s (transform 255ms, setup 109ms, collect 571ms, tests 1.99s, environment 1ms, prepare 614ms)
+
