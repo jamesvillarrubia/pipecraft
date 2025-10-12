@@ -7,7 +7,7 @@ import { TEST_DIR, FIXTURES_DIR } from '../setup'
 describe('Config Utilities', () => {
   beforeEach(() => {
     // Clean up any existing config files
-    const configFiles = ['.trunkflowrc.json', '.trunkflowrc', 'package.json']
+    const configFiles = ['.flowcraftrc.json', '.flowcraftrc', 'package.json']
     configFiles.forEach(file => {
       if (existsSync(join(TEST_DIR, file))) {
         rmSync(join(TEST_DIR, file))
@@ -16,10 +16,10 @@ describe('Config Utilities', () => {
   })
 
   describe('loadConfig', () => {
-    it('should load valid configuration from .trunkflowrc.json', () => {
+    it('should load valid configuration from .flowcraftrc.json', () => {
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      writeFileSync(join(TEST_DIR, '.trunkflowrc.json'), configContent)
+      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), configContent)
 
       const config = loadConfig()
       
