@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { writeFileSync, existsSync, rmSync } from 'fs'
+import { writeFileSync, existsSync, rmSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { VersionManager } from '../../src/utils/versioning'
 import { FlowcraftConfig } from '../../src/types'

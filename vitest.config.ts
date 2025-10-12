@@ -8,15 +8,24 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
+      reportsDirectory: './coverage',
       exclude: [
         'node_modules/',
         'dist/',
         'tests/',
         '**/*.d.ts',
         '**/*.config.*',
-        '**/coverage/**'
-      ]
+        '**/coverage/**',
+        '**/*.test.ts',
+        '**/*.spec.ts'
+      ],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80
+      }
     }
   },
   resolve: {
