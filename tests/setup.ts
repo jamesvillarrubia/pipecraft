@@ -23,10 +23,8 @@ beforeAll(() => {
 })
 
 afterAll(() => {
-  // Clean up test directory
-  if (existsSync(TEST_DIR)) {
-    rmSync(TEST_DIR, { recursive: true, force: true })
-  }
+  // Don't delete TEST_DIR as other test files may still need it
+  // The directory will be cleaned up at the start of the next test run by beforeAll
 })
 
 beforeEach(() => {

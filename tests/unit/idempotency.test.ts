@@ -21,8 +21,12 @@ describe('IdempotencyManager', () => {
   afterEach(() => {
     // Clean up cache file
     const cacheFile = join(TEST_DIR, '.flowcraft-cache.json')
-    if (existsSync(cacheFile)) {
-      rmSync(cacheFile)
+    try {
+      if (existsSync(cacheFile)) {
+        rmSync(cacheFile)
+      }
+    } catch (error) {
+      // Ignore cleanup errors
     }
   })
 
