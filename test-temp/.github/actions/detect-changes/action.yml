@@ -1,0 +1,59 @@
+name: 'Detect Changes'
+description: 'Detect changes in different application domains based on file paths'
+author: 'Flowcraft'
+
+inputs:
+  baseRef:
+    description: 'Base reference to compare against'
+    required: false
+    default: 'main'
+
+outputs:
+  api:
+    description: 'Whether api domain has changes'
+    value: ${{ steps.merge.outputs.api }}
+  web:
+    description: 'Whether web domain has changes'
+    value: ${{ steps.merge.outputs.web }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set Base Branch
+      id: set-base
+      shell: bash
+      run: |
+        base_branch=${{ inputs.baseRef || 'main' }}
+        echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
+        echo "base_branch=$base_branch" >> $GITHUB_ENV
+
+    - name: Install Git
+      run: |
+        apt-get update && apt-get install -y git
+
+    - name: Detect Changes
+      uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        base: ${{ steps.set-base.outputs.base_branch }}
+        filters: |
+          api:
+            - 'apps/api/**'
+          web:
+            - 'apps/web/**'
+
+    - name: Merge filter outputs
+      id: merge
+      shell: bash
+      run: |
+        echo "api=${{ contains(steps.filter.outputs.changes, 'api') }}" >> $GITHUB_OUTPUT
+        echo "web=${{ contains(steps.filter.outputs.changes, 'web') }}" >> $GITHUB_OUTPUT
+        
+        echo "📋 Change Detection Results:"
+        echo "  api: ${{ contains(steps.filter.outputs.changes, 'api') }}"
+        echo "  web: ${{ contains(steps.filter.outputs.changes, 'web') }}"
