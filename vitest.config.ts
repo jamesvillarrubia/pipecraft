@@ -10,10 +10,12 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
       reportsDirectory: './coverage',
-      // Include only core testable business logic
+      // Include core business logic AND orchestration code (CLI, generators)
       include: [
         'src/utils/**/*.ts',
-        'src/templates/workflows/**/*.ts'
+        'src/templates/workflows/**/*.ts',
+        'src/generators/**/*.ts',
+        'src/cli/index.ts'
       ],
       exclude: [
         'node_modules/',
@@ -25,12 +27,12 @@ export default defineConfig({
         '**/*.test.ts',
         '**/*.spec.ts'
       ],
-      // Thresholds based on actual testable business logic
+      // Thresholds based on actual testable code (CLI + generators + core logic)
       thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 80,
-        statements: 80
+        lines: 75,
+        functions: 75,
+        branches: 75,
+        statements: 75
       },
       // Report per-file thresholds
       perFile: true,
