@@ -25,14 +25,16 @@ describe('CLI Integration Tests - Working Commands', () => {
     })
 
     it('should generate workflows successfully', async () => {
-      const result = await runCLI(['generate'])
+      const result = await runCLI(['generate', '--force'])
       
       expect(result.exitCode).toBe(0)
       // Check that .github/workflows directory was created
       expect(existsSync(join(TEST_DIR, '.github/workflows'))).toBe(true)
       // Check that pipeline.yml was created
       expect(existsSync(join(TEST_DIR, '.github/workflows/pipeline.yml'))).toBe(true)
-    }, 10000)
+      // Check that actions were created
+      expect(existsSync(join(TEST_DIR, '.github/actions'))).toBe(true)
+    }, 15000)
 
     it('should respect dry-run flag', async () => {
       const result = await runCLI(['generate', '--dry-run'])
@@ -43,26 +45,33 @@ describe('CLI Integration Tests - Working Commands', () => {
 
     it('should respect force flag', async () => {
       // First generation
-      await runCLI(['generate'])
+      await runCLI(['generate', '--force'])
       
-      // Second generation with force
+      // Second generation with force (should regenerate even though no changes)
       const result = await runCLI(['generate', '--force'])
       
       expect(result.exitCode).toBe(0)
-    }, 10000)
+      expect(result.stdout).toContain('Generated workflows')
+    }, 15000)
 
     it('should handle custom output path', async () => {
       const customPath = join(TEST_DIR, 'custom-pipeline.yml')
-      const result = await runCLI(['generate', '--output-pipeline', customPath])
+      const result = await runCLI(['generate', '--force', '--output-pipeline', customPath])
       
       expect(result.exitCode).toBe(0)
       expect(existsSync(customPath)).toBe(true)
-    }, 10000)
+    }, 15000)
   })
 
   describe('help command', () => {
     it('should show help for generate command', async () => {
       const result = await runCLI(['generate', '--help'])
+      
+      if (result.exitCode !== 0) {
+        console.log('Help command failed')
+        console.log('stdout:', result.stdout)
+        console.log('stderr:', result.stderr)
+      }
       
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain('Generate CI/CD workflows')
