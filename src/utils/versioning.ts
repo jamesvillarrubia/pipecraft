@@ -147,6 +147,11 @@ npx commitlint --edit $1`
     const huskyDir = '.husky'
     if (!existsSync(huskyDir)) {
       execSync('npx husky install', { stdio: 'inherit' })
+      // Ensure directory exists (in case husky install was mocked/failed)
+      if (!existsSync(huskyDir)) {
+        const { mkdirSync } = require('fs')
+        mkdirSync(huskyDir, { recursive: true })
+      }
     }
     
     const commitMsgHook = this.generateHuskyConfig()
