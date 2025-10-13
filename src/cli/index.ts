@@ -346,4 +346,4 @@ program.parse()
 // Show help if no command provided
 if (!process.argv.slice(2).length) {
   program.outputHelp()
-}
+}// Test pipeline trigger
