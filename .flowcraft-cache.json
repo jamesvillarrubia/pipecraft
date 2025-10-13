@@ -2,7 +2,7 @@
   "files": {
     "src/templates": {
       "path": "src/templates",
-      "hash": "4577ef411a657416b5e372ce959f92bfe471c52e750f11b3497dbd8d7df72c91",
+      "hash": "8e03618c2e7d84fbfe1d1fd673c935256c1fac182d1ec59d74986721b34c9322",
       "mtime": 1760024507366,
       "size": 0
     },
@@ -14,6 +14,6 @@
     }
   },
   "configHash": "947adfe6196c7d04cf915e00611ec12c21198408f5f6e9c7cdcdd9d710e1e110",
-  "lastGenerated": 1760323072809,
+  "lastGenerated": 1760323996610,
   "version": "1.0.0"
 }
