@@ -86,9 +86,12 @@ runs:
         fi
         
         # Create the PR
-        PR_OUTPUT=$(gh pr create \--title "$TITLE" \--body "$BODY" \--head "$SOURCE" \--base "$TARGET" \$LABEL_ARGS \--json number,url --jq '.number,.url' 2>/dev/null || echo "")
-        
-        if [ -n "$PR_OUTPUT" ]; then
+        set +e  # Don't exit on error so we can capture it
+        PR_OUTPUT=$(gh pr create --title "$TITLE" --body "$BODY" --head "$SOURCE" --base "$TARGET" $LABEL_ARGS --json number,url --jq '.number,.url' 2>&1)
+        EXIT_CODE=$?
+        set -e
+
+        if [ $EXIT_CODE -eq 0 ] && [ -n "$PR_OUTPUT" ]; then
           PR_NUMBER=$(echo "$PR_OUTPUT" | head -n1)
           PR_URL=$(echo "$PR_OUTPUT" | tail -n1)
           echo "prNumber=$PR_NUMBER" >> $GITHUB_OUTPUT
@@ -97,6 +100,8 @@ runs:
           echo "🔗 URL: $PR_URL"
         else
           echo "❌ Failed to create PR"
+          echo "Error output: $PR_OUTPUT"
+          echo "Exit code: $EXIT_CODE"
           exit 1
         fi
 
