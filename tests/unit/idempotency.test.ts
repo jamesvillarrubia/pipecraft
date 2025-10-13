@@ -5,25 +5,37 @@ import { IdempotencyManager } from '../../src/utils/idempotency'
 import { FlowcraftConfig } from '../../src/types'
 import { TEST_DIR, FIXTURES_DIR } from '../setup'
 
+// Use isolated directory for this test file to avoid race conditions
+const IDEMPOTENCY_TEST_DIR = join(TEST_DIR, 'idempotency-test')
+
 describe('IdempotencyManager', () => {
   let config: FlowcraftConfig
   let idempotencyManager: IdempotencyManager
 
   beforeEach(() => {
+    // Create isolated test directory
+    if (existsSync(IDEMPOTENCY_TEST_DIR)) {
+      rmSync(IDEMPOTENCY_TEST_DIR, { recursive: true, force: true })
+    }
+    mkdirSync(IDEMPOTENCY_TEST_DIR, { recursive: true })
+    
+    // Change to isolated directory
+    const originalCwd = process.cwd()
+    process.chdir(IDEMPOTENCY_TEST_DIR)
+    
     // Load test config
     const configPath = join(FIXTURES_DIR, 'basic-config.json')
     const configContent = readFileSync(configPath, 'utf8')
     config = JSON.parse(configContent)
     
-    idempotencyManager = new IdempotencyManager(config, join(TEST_DIR, '.flowcraft-cache.json'))
+    idempotencyManager = new IdempotencyManager(config, join(IDEMPOTENCY_TEST_DIR, '.flowcraft-cache.json'))
   })
 
   afterEach(() => {
-    // Clean up cache file
-    const cacheFile = join(TEST_DIR, '.flowcraft-cache.json')
+    // Clean up isolated test directory
     try {
-      if (existsSync(cacheFile)) {
-        rmSync(cacheFile)
+      if (existsSync(IDEMPOTENCY_TEST_DIR)) {
+        rmSync(IDEMPOTENCY_TEST_DIR, { recursive: true, force: true })
       }
     } catch (error) {
       // Ignore cleanup errors
@@ -32,7 +44,7 @@ describe('IdempotencyManager', () => {
 
   describe('calculateHash', () => {
     it('should calculate hash for existing file', async () => {
-      const testFile = join(TEST_DIR, 'test.txt')
+      const testFile = join(IDEMPOTENCY_TEST_DIR, 'test.txt')
       writeFileSync(testFile, 'test content')
       
       const hash = await idempotencyManager.calculateHash(testFile)
@@ -48,8 +60,8 @@ describe('IdempotencyManager', () => {
     })
 
     it('should calculate different hashes for different content', async () => {
-      const file1 = join(TEST_DIR, 'file1.txt')
-      const file2 = join(TEST_DIR, 'file2.txt')
+      const file1 = join(IDEMPOTENCY_TEST_DIR, 'file1.txt')
+      const file2 = join(IDEMPOTENCY_TEST_DIR, 'file2.txt')
       
       writeFileSync(file1, 'content 1')
       writeFileSync(file2, 'content 2')
@@ -85,12 +97,12 @@ describe('IdempotencyManager', () => {
 
     it('should return false when no changes detected', async () => {
       // Create a config file
-      const configFile = join(TEST_DIR, '.flowcraftrc.json')
+      const configFile = join(IDEMPOTENCY_TEST_DIR, '.flowcraftrc.json')
       writeFileSync(configFile, JSON.stringify(config, null, 2))
       
       // Create mock template and generator directories to avoid checking project root
-      const templateDir = join(TEST_DIR, 'src', 'templates')
-      const generatorDir = join(TEST_DIR, 'src', 'generators')
+      const templateDir = join(IDEMPOTENCY_TEST_DIR, 'src', 'templates')
+      const generatorDir = join(IDEMPOTENCY_TEST_DIR, 'src', 'generators')
       mkdirSync(templateDir, { recursive: true })
       mkdirSync(generatorDir, { recursive: true })
       writeFileSync(join(templateDir, 'test.tpl.ts'), 'export const test = "template"')
@@ -109,17 +121,17 @@ describe('IdempotencyManager', () => {
 
   describe('updateCache', () => {
     it('should create cache file', async () => {
-      const configFile = join(TEST_DIR, '.flowcraftrc.json')
+      const configFile = join(IDEMPOTENCY_TEST_DIR, '.flowcraftrc.json')
       writeFileSync(configFile, JSON.stringify(config, null, 2))
       
       await idempotencyManager.updateCache()
       
-      const cacheFile = join(TEST_DIR, '.flowcraft-cache.json')
+      const cacheFile = join(IDEMPOTENCY_TEST_DIR, '.flowcraft-cache.json')
       expect(existsSync(cacheFile)).toBe(true)
     })
 
     it('should include config hash in cache', async () => {
-      const configFile = join(TEST_DIR, '.flowcraftrc.json')
+      const configFile = join(IDEMPOTENCY_TEST_DIR, '.flowcraftrc.json')
       writeFileSync(configFile, JSON.stringify(config, null, 2))
       
       await idempotencyManager.updateCache()
@@ -133,14 +145,14 @@ describe('IdempotencyManager', () => {
 
   describe('shouldRegenerateFile', () => {
     it('should return true for new file', async () => {
-      const testFile = join(TEST_DIR, 'new-file.txt')
+      const testFile = join(IDEMPOTENCY_TEST_DIR, 'new-file.txt')
       writeFileSync(testFile, 'content')
       
       expect(await idempotencyManager.shouldRegenerateFile(testFile)).toBe(true)
     })
 
     it('should return true for file not in cache', async () => {
-      const testFile = join(TEST_DIR, 'test-file.txt')
+      const testFile = join(IDEMPOTENCY_TEST_DIR, 'test-file.txt')
       writeFileSync(testFile, 'content')
       
       // Update cache (but won't include our test file since it's not in src/templates or src/generators)
@@ -151,7 +163,7 @@ describe('IdempotencyManager', () => {
     })
 
     it('should return true for changed file', async () => {
-      const testFile = join(TEST_DIR, 'test-file.txt')
+      const testFile = join(IDEMPOTENCY_TEST_DIR, 'test-file.txt')
       writeFileSync(testFile, 'original content')
       
       // Update cache with original content
