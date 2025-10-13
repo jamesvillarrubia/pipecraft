@@ -9,18 +9,9 @@ inputs:
     default: 'main'
 
 outputs:
-  fake-domain1:
-    description: 'Whether fake-domain1 domain has changes'
-    value: ${{ steps.merge.outputs.fake-domain1 }}
-  fake-domain2:
-    description: 'Whether fake-domain2 domain has changes'
-    value: ${{ steps.merge.outputs.fake-domain2 }}
-  fake-domain3:
-    description: 'Whether fake-domain3 domain has changes'
-    value: ${{ steps.merge.outputs.fake-domain3 }}
-  fake-domain4:
-    description: 'Whether fake-domain4 domain has changes'
-    value: ${{ steps.merge.outputs.fake-domain4 }}
+  core:
+    description: 'Whether core domain has changes'
+    value: ${{ steps.merge.outputs.core }}
 
 runs:
   using: 'composite'
@@ -38,36 +29,20 @@ runs:
         echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
         echo "base_branch=$base_branch" >> $GITHUB_ENV
 
-    - name: Install Git
-      run: |
-        apt-get update && apt-get install -y git
-
     - name: Detect Changes
       uses: dorny/paths-filter@v3
       id: filter
       with:
         base: ${{ steps.set-base.outputs.base_branch }}
         filters: |
-          fake-domain1:
-            - 'apps/fake-domain1/**'
-          fake-domain2:
-            - 'apps/fake-domain2/**'
-          fake-domain3:
-            - 'libs/fake-domain3/**'
-          fake-domain4:
-            - '.github/workflows/fake-domain4/**'
+          core:
+            - 'src/**'
 
     - name: Merge filter outputs
       id: merge
       shell: bash
       run: |
-        echo "fake-domain1=${{ contains(steps.filter.outputs.changes, 'fake-domain1') }}" >> $GITHUB_OUTPUT
-        echo "fake-domain2=${{ contains(steps.filter.outputs.changes, 'fake-domain2') }}" >> $GITHUB_OUTPUT
-        echo "fake-domain3=${{ contains(steps.filter.outputs.changes, 'fake-domain3') }}" >> $GITHUB_OUTPUT
-        echo "fake-domain4=${{ contains(steps.filter.outputs.changes, 'fake-domain4') }}" >> $GITHUB_OUTPUT
+        echo "core=${{ contains(steps.filter.outputs.changes, 'core') }}" >> $GITHUB_OUTPUT
         
         echo "📋 Change Detection Results:"
-        echo "  fake-domain1: ${{ contains(steps.filter.outputs.changes, 'fake-domain1') }}"
-        echo "  fake-domain2: ${{ contains(steps.filter.outputs.changes, 'fake-domain2') }}"
-        echo "  fake-domain3: ${{ contains(steps.filter.outputs.changes, 'fake-domain3') }}"
-        echo "  fake-domain4: ${{ contains(steps.filter.outputs.changes, 'fake-domain4') }}"
+        echo "  core: ${{ contains(steps.filter.outputs.changes, 'core') }}"

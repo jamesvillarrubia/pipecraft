@@ -1,53 +1,15 @@
-## USER COMMENT 1
-
 name: "Pipeline"
-# USER COMMENT 2
 on:
-  pull_request:
-    paths:
-      - '**/*.yml'
-      - '**/*.yaml'
-      - '**/*.json'
-      - '**/*.ts'
-      - '**/*.js'
-      - '**/*.tsx'
-    # USER COMMENT 3
-    branches:
-      - develop
-      - feature
-      - alpha
-      - beta
-      - gamma
-      - delta
-      - epsilon
-      # USER COMMENT 4
-
   workflow_call:
     inputs:
-      # USER COMMENT 5
-      fakevar1:
-        description: 'The fake version to deploy'
-        required: false
-        type: string
       version:
         description: The version to deploy
-        required: false
-        type: string
-      # USER COMMENT 7
-      fakevar2:
-        description: 'The fake version to deploy'
         required: false
         type: string
       baseRef:
         description: The base reference for comparison
         required: false
         type: string
-    # USER COMMENT 8
-    outputs:
-      fakevar3:
-        value: 'fakevalue3'
-      fakevar4:
-        value: 'fakevalue4'
   workflow_dispatch:
     inputs:
       version:
@@ -58,161 +20,93 @@ on:
         description: The base reference for comparison
         required: false
         type: string
-
+  pull_request:
+    branches:
+      - develop
+      - staging
+      - main
 jobs:
-  # USER COMMENT 9
-
-  fake-job-1:
-    # USER COMMENT 10    
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fake Job
-        run: |
-          echo "Running fake job"
-
-  # =============================================================================
-  # CHANGES DETECTION
-  # =============================================================================
-  # USER COMMENT 11
   changes:
+    ## =============================================================================
+    #        # CHANGES DETECTION
+    #        # =============================================================================
     runs-on: ubuntu-latest
+    outputs:
+      core: ${{ steps.detect.outputs.core }}
     steps:
       - uses: ./.github/actions/detect-changes
+        id: detect
         with:
-          baseRef: ${{ inputs.baseRef || 'epsilon' }}
+          baseRef: ${{ inputs.baseRef || 'main' }}
 
-  # USER COMMENT 12
-  fake-job-2:
-    # USER COMMENT 13
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fake Job
-        run: |
-          echo "Running fake job"
-
-  # =============================================================================
-  # TESTING JOBS
-  # =============================================================================
-  # Add your testing jobs here
-  # Example:
-  # test-api: 
-  #   needs: branch
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Test API
-  #       run: |
-  #         echo "Run API tests"
-  #
-  # test-web:
-  #   needs: branch
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Test Web
-  #       run: |
-  #         echo "Run Web tests"
-
-
-  # USER COMMENT 14
-
-  fake-job-3:
-    # USER COMMENT 15
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fake Job
-        run: |
-          echo "Running fake job"
-
-  # =============================================================================
-  # VERSIONING
-  # =============================================================================
-  version:
-    if: github.ref_name == 'alpha'
+  ## =============================================================================
+  #        # TESTING JOBS
+  #        # =============================================================================
+  test-core:
     needs: changes
+    if: needs.changes.outputs.core == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests
+        run: pnpm test:run
+
+      - name: Build
+        run: pnpm build
+
+  version:
+    ## =============================================================================
+    #        # VERSIONING
+    #        # =============================================================================
+    if: github.ref_name == 'develop'
+    needs: [changes, test-core]
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/calculate-version
         id: calculate-version
         with:
-          baseRef: ${{ inputs.baseRef || 'epsilon' }}
+          baseRef: ${{ inputs.baseRef || 'main' }}
     outputs:
       nextVersion: ${{ steps.calculate-version.outputs.nextVersion }}
-
-  # USER COMMENT 16
-
-  fake-job-4:
-    # USER COMMENT 17
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fake Job
-        run: |
-          echo "Running fake job"
-
-  # USER COMMENT 18
-
-  fake-job-5:
-    # USER COMMENT 19
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fake Job
-        run: |
-          echo "Running fake job"
-
-  # USER COMMENT 20
-
-  # =============================================================================
-  # DEPLOYMENT JOBS
-  # =============================================================================
-  deploy-api:
-    needs: branch
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy API
-        run: |
-          echo "Deploy API to production"
-
-  fake-job-6:
-    # USER COMMENT 21
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fake Job
-        run: |
-          echo "Running fake job"
-
-  # =============================================================================
-  # TAG & CREATE PR
-  # =============================================================================     
   tag:
-    if: github.ref_name == 'alpha'
+    ## =============================================================================
+    #        # TAG & CREATE PR
+    #        # =============================================================================
+    if: github.ref_name == 'develop'
     needs: version
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.nextVersion }}
-
-  # USER COMMENT 22
-
-  fake-job-7:
-    # USER COMMENT 23
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fake Job
-        run: |
-          echo "Running fake job"
-
   createpr:
     ## SHOULD BE ANY BRANCH EXCEPT the final branch
-    if: github.ref_name != 'epsilon'
+    if: github.ref_name != 'main'
     needs: [ changes, version ]
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/create-pr
         with:
           sourceBranch: ${{ github.ref_name }}
-          targetBranch: ${{ github.ref_name == 'alpha' && 'beta' || github.ref_name == 'beta' && 'gamma' || 'epsilon' }}
+          targetBranch: ${{ github.ref_name == 'develop' && 'staging' || github.ref_name == 'staging' && 'main' || 'main' }}
           title: 'Release ${{ needs.version.outputs.nextVersion }}'
           body: 'Automated release PR for version ${{ needs.version.outputs.nextVersion }}'
-
   branch:
     ## SHOULD BE THE NEXT BRANCH
     needs: createpr
@@ -221,15 +115,5 @@ jobs:
       - uses: ./.github/actions/manage-branch
         with:
           action: 'fast-forward'
-          targetBranch: ${{ github.ref_name == 'alpha' && 'beta' || github.ref_name == 'beta' && 'gamma' || 'epsilon' }}
+          targetBranch: ${{ github.ref_name == 'develop' && 'staging' || github.ref_name == 'staging' && 'main' || 'main' }}
           sourceBranch: ${{ github.ref_name }}
-
-  # USER COMMENT 24
-
-  fake-job-8:
-    # USER COMMENT 25
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fake Job
-        run: |
-          echo "Running fake job"

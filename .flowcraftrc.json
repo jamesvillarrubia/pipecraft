@@ -2,14 +2,12 @@
   "ciProvider": "github",
   "mergeStrategy": "fast-forward",
   "requireConventionalCommits": true,
-  "initialBranch": "alpha",
-  "finalBranch": "epsilon",
+  "initialBranch": "develop",
+  "finalBranch": "main",
   "branchFlow": [
-    "alpha",
-    "beta",
-    "gamma",
-    "delta",
-    "epsilon"
+    "develop",
+    "staging",
+    "main"
   ],
   "semver": {
     "bumpRules": {
@@ -30,29 +28,30 @@
     ]
   },
   "domains": {
-    "fake-domain1": {
+    "core": {
       "paths": [
-        "apps/fake-domain1/**"
+        "src/**"
       ],
-      "description": "fake-domain1 application changes"
-    },
-    "fake-domain2": {
-      "paths": [
-        "apps/fake-domain2/**"
-      ],
-      "description": "fake-domain2 application changes"
-    },
-    "fake-domain3": {
-      "paths": [
-        "libs/fake-domain3/**"
-      ],
-      "description": "fake-domain3 application changes"
-    },
-    "fake-domain4": {
-      "paths": [
-        ".github/workflows/fake-domain4/**"
-      ],
-      "description": "fake-domain4 application changes"
+      "description": "FlowCraft core library changes"
     }
+  },
+  "versioning": {
+    "enabled": true,
+    "releaseItConfig": ".release-it.cjs",
+    "conventionalCommits": true,
+    "autoTag": true,
+    "autoPush": false,
+    "changelog": true,
+    "bumpRules": {
+      "feat": "minor",
+      "fix": "patch",
+      "breaking": "major"
+    }
+  },
+  "rebuild": {
+    "enabled": true,
+    "skipIfUnchanged": true,
+    "forceRegenerate": false,
+    "cacheFile": ".flowcraft-cache.json"
   }
 }

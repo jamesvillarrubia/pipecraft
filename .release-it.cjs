@@ -6,7 +6,8 @@ module.exports = {
       "tagMatch": "v[0-9]*.[0-9]*.[0-9]*" // Required to exclude non-versioning tags
     },
     "github": {
-      "release": false
+      "release": true,
+      "releaseName": "Release ${version}"
     },
     "npm": {
       "ignoreVersion": true,
