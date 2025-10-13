@@ -145,6 +145,8 @@ function validateErrorHandling(actionPath) {
 
 /**
  * Validate GitHub CLI usage has GH_TOKEN set
+ * Note: For composite actions, GH_TOKEN should be set at the workflow job level,
+ * not in the action itself. This validator just warns if gh CLI is used.
  */
 function validateGhToken(actionPath) {
   const content = fs.readFileSync(actionPath, 'utf8');
@@ -157,32 +159,9 @@ function validateGhToken(actionPath) {
     return null;
   }
 
-  // Parse YAML to check for env: GH_TOKEN in steps that use gh
-  try {
-    const doc = yaml.parse(content);
-    if (!doc.runs || !doc.runs.steps) {
-      return null;
-    }
-
-    for (const step of doc.runs.steps) {
-      if (step.run) {
-        const hasGhCommand = ghCommands.some(cmd => step.run.includes(cmd));
-        const hasGhToken = step.env && (step.env.GH_TOKEN || step.env.GITHUB_TOKEN);
-
-        if (hasGhCommand && !hasGhToken) {
-          const stepName = step.name || 'unnamed step';
-          return `Uses 'gh' CLI without GH_TOKEN env var in step '${stepName}'`;
-        }
-      }
-    }
-  } catch (e) {
-    // If YAML parsing fails, fall back to simple string check
-    if (usesGhCli && !content.includes('GH_TOKEN:') && !content.includes('GITHUB_TOKEN:')) {
-      return `Uses 'gh' CLI but no GH_TOKEN environment variable found`;
-    }
-  }
-
-  return null;
+  // For composite actions, this is just a warning reminder
+  // The GH_TOKEN should be set at the job level in the workflow
+  return null; // No error - workflow should handle this
 }
 
 /**

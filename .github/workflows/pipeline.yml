@@ -106,6 +106,9 @@ jobs:
     if: github.ref_name == 'develop'
     needs: version
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: ./.github/actions/create-tag
         with:
@@ -117,6 +120,9 @@ jobs:
     if: github.ref_name != 'main'
     needs: [ changes, version ]
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -135,6 +141,9 @@ jobs:
     ## SHOULD BE THE NEXT BRANCH
     needs: createpr
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
