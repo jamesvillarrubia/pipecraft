@@ -107,14 +107,10 @@ jobs:
     needs: version
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.nextVersion }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   createpr:
     ## SHOULD BE ANY BRANCH EXCEPT the final branch

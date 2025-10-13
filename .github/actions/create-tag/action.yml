@@ -14,6 +14,10 @@ inputs:
     description: 'Whether to push the tag to remote'
     required: false
     default: 'true'
+  token:
+    description: 'GitHub token for authentication'
+    required: false
+    default: ${{ github.token }}
 
 outputs:
   tag_name:
@@ -26,6 +30,12 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ inputs.token }}
+
     - name: Configure Git
       shell: bash
       run: |
