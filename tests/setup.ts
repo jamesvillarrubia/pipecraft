@@ -1,4 +1,4 @@
-import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
+import { beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest'
 import { mkdirSync, rmSync, existsSync } from 'fs'
 import { join } from 'path'
 
@@ -33,7 +33,16 @@ beforeEach(() => {
   if (!existsSync(TEST_DIR)) {
     mkdirSync(TEST_DIR, { recursive: true })
   }
-  process.chdir(TEST_DIR)
+  // Only change to TEST_DIR if it exists and current directory is valid
+  try {
+    if (existsSync(TEST_DIR)) {
+      process.chdir(TEST_DIR)
+    }
+  } catch (error) {
+    // If chdir fails, recreate the directory and try again
+    mkdirSync(TEST_DIR, { recursive: true })
+    process.chdir(TEST_DIR)
+  }
 })
 
 afterEach(() => {
