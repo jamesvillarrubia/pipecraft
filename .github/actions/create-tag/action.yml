@@ -34,20 +34,26 @@ runs:
           echo "❌ Version is required"
           exit 1
         fi
-        
+
+        # Strip 'v' prefix if present
+        VERSION="${{ inputs.version }}"
+        VERSION="${VERSION#v}"
+
         # Validate version format (semantic versioning)
-        if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
-          echo "❌ Version must be in format x.y.z (e.g., 1.0.0)"
+        if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "❌ Version must be in format x.y.z (e.g., 1.0.0), got: $VERSION"
           exit 1
         fi
-        
-        echo "✅ Version format is valid: ${{ inputs.version }}"
+
+        echo "✅ Version format is valid: $VERSION"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Create Tag
       id: tag
       shell: bash
       run: |
-        VERSION="${{ inputs.version }}"
+        # Use validated version from previous step (without 'v' prefix)
+        VERSION="${{ steps.validate.outputs.version }}"
         PREFIX="${{ inputs.tag_prefix }}"
         TAG_NAME="${PREFIX}${VERSION}"
         

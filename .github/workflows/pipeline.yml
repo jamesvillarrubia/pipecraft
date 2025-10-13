@@ -133,6 +133,7 @@ jobs:
           targetBranch: ${{ github.ref_name == 'develop' && 'staging' || github.ref_name == 'staging' && 'main' || 'main' }}
           title: 'Release ${{ needs.version.outputs.nextVersion }}'
           body: 'Automated release PR for version ${{ needs.version.outputs.nextVersion }}'
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   branch:
     ## SHOULD BE THE NEXT BRANCH
