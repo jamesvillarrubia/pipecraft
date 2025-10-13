@@ -61,11 +61,19 @@ export const createPathBasedPipeline = (ctx: any) => {
   
   // Use existing pipeline from context or start with base template
   let doc: any
+  let hasExistingPipeline = false
   
   if (ctx.existingPipelineContent) {
     // Parse the original YAML content with comment preservation
     doc = parseDocument(ctx.existingPipelineContent, { keepSourceTokens: true })
-    console.log('🔄 Merging with existing pipeline from context')
+    hasExistingPipeline = true
+    console.log('🔄 Merging with existing pipeline from existingPipelineContent')
+  } else if (ctx.existingPipeline) {
+    // Convert existing pipeline object to YAML string first
+    const existingYaml = stringify(ctx.existingPipeline)
+    doc = parseDocument(existingYaml, { keepSourceTokens: true })
+    hasExistingPipeline = true
+    console.log('🔄 Merging with existing pipeline from existingPipeline object')
   } else {
     doc = parseDocument(getBaseTemplate(ctx))
     console.log('📝 Creating new pipeline')
@@ -460,7 +468,7 @@ export const createPathBasedPipeline = (ctx: any) => {
   
   return { 
     yamlContent: finalContent, 
-    mergeStatus: ctx.existingPipelineContent ? 'merged' : 'overwritten'
+    mergeStatus: hasExistingPipeline ? 'merged' : 'overwritten'
   }
 }
 

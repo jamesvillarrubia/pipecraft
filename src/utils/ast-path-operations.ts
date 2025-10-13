@@ -265,24 +265,20 @@ export function ensurePathAndApply(
   // Check if path exists
   const existingValue = getPathValue(doc, path)
   
-  if (!existingValue && required) {
-    // Path doesn't exist and is required - create it
-    setPathValue(doc, path, value, document, commentBefore)
-    return
-  }
-  
-  if (!existingValue) {
+  if (!existingValue && !required) {
     // Path doesn't exist and not required - skip
     return
   }
   
-  // Path exists - apply operation
+  // Apply operation based on whether path exists or not
+  // For required paths that don't exist, we still respect the operation type
   switch (operation) {
     case 'set':
       setPathValue(doc, path, value, document, commentBefore)
       break
       
     case 'merge':
+      // Merge will handle non-existent paths by creating them
       mergePathValue(doc, path, value, document)
       break
       
@@ -291,7 +287,11 @@ export function ensurePathAndApply(
       break
       
     case 'preserve':
-      // Do nothing - keep existing value
+      // Only preserve if path exists, otherwise create it
+      if (!existingValue) {
+        setPathValue(doc, path, value, document, commentBefore)
+      }
+      // If exists, do nothing - keep existing value
       break
   }
 }
