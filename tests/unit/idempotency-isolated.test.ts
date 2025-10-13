@@ -206,6 +206,33 @@ describe('IdempotencyManager - Isolated', () => {
   })
 
   describe('shouldRegenerateFile', () => {
+    it('should return true when rebuild is disabled', async () => {
+      config.rebuild!.enabled = false
+      const manager = new IdempotencyManager(config, join(testDir, '.flowcraft-cache.json'))
+
+      const testFile = join(testDir, 'test.txt')
+      writeFileSync(testFile, 'content')
+
+      expect(await manager.shouldRegenerateFile(testFile)).toBe(true)
+    })
+
+    it('should return true when forceRegenerate is true', async () => {
+      config.rebuild!.forceRegenerate = true
+      const manager = new IdempotencyManager(config, join(testDir, '.flowcraft-cache.json'))
+
+      const testFile = join(testDir, 'test.txt')
+      writeFileSync(testFile, 'content')
+
+      expect(await manager.shouldRegenerateFile(testFile)).toBe(true)
+    })
+
+    it('should return true when no cache exists', async () => {
+      const testFile = join(testDir, 'test.txt')
+      writeFileSync(testFile, 'content')
+
+      expect(await idempotencyManager.shouldRegenerateFile(testFile)).toBe(true)
+    })
+
     it('should return true for file not in cache', async () => {
       const testFile = join(testDir, 'new-file.txt')
       writeFileSync(testFile, 'content')
