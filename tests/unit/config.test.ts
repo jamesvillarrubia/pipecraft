@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { writeFileSync, existsSync, readFileSync, rmSync } from 'fs'
+import { writeFileSync, existsSync, readFileSync, rmSync, mkdirSync } from 'fs'
 import { join } from 'path'
+import { tmpdir } from 'os'
 import { loadConfig, validateConfig } from '../../src/utils/config'
 import { TEST_DIR, FIXTURES_DIR } from '../setup'
 
@@ -30,9 +31,20 @@ describe('Config Utilities', () => {
       expect(config.domains).toHaveProperty('web')
     })
 
-    it.skip('should throw error when no config file found', () => {
-      // Skipped: Race condition with other tests deleting/creating config files
-      expect(() => loadConfig()).toThrow('No configuration file found')
+    it('should throw error when no config file found', () => {
+      // Use a unique temp directory to avoid race conditions
+      const uniqueTempDir = join(tmpdir(), `flowcraft-config-test-${Date.now()}`)
+      mkdirSync(uniqueTempDir, { recursive: true })
+
+      // Change to temp directory, run test, then restore
+      const originalCwd = process.cwd()
+      try {
+        process.chdir(uniqueTempDir)
+        expect(() => loadConfig()).toThrow('No configuration file found')
+      } finally {
+        process.chdir(originalCwd)
+        rmSync(uniqueTempDir, { recursive: true, force: true })
+      }
     })
 
     it('should load config from custom path', () => {
