@@ -10,6 +10,7 @@ import { IdempotencyManager } from '../utils/idempotency'
 import { VersionManager } from '../utils/versioning'
 import { loadConfig, validateConfig } from '../utils/config'
 import { FlowcraftConfig } from '../types'
+import { setupGitHubPermissions } from '../utils/github-setup'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -332,9 +333,25 @@ program
       console.log(`🔄 Returned to original branch: ${currentBranch}`)
       
       console.log('✅ Branch setup complete!')
-      
+
     } catch (error: any) {
       console.error('❌ Setup command failed:', error.message)
+      process.exit(1)
+    }
+  })
+
+// Setup GitHub command - Configure GitHub Actions permissions
+program
+  .command('setup-github')
+  .description('Configure GitHub Actions workflow permissions for FlowCraft')
+  .action(async () => {
+    try {
+      await setupGitHubPermissions()
+    } catch (error: any) {
+      console.error('❌ GitHub setup failed:', error.message)
+      if (error.stack) {
+        console.error(error.stack)
+      }
       process.exit(1)
     }
   })
