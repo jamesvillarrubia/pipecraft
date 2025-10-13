@@ -150,3 +150,4 @@ jobs:
           action: 'fast-forward'
           targetBranch: ${{ github.ref_name == 'develop' && 'staging' || github.ref_name == 'staging' && 'main' || 'main' }}
           sourceBranch: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
