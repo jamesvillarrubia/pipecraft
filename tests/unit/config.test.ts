@@ -20,15 +20,27 @@ describe('Config Utilities', () => {
     it('should load valid configuration from .flowcraftrc.json', () => {
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      writeFileSync(join(TEST_DIR, '.flowcraftrc.json'), configContent)
+      const testConfigPath = join(TEST_DIR, '.flowcraftrc.json')
+      writeFileSync(testConfigPath, configContent)
 
-      const config = loadConfig()
-      
-      expect(config).toBeDefined()
-      expect(config.ciProvider).toBe('github')
-      expect(config.mergeStrategy).toBe('fast-forward')
-      expect(config.domains).toHaveProperty('api')
-      expect(config.domains).toHaveProperty('web')
+      // Change to TEST_DIR so cosmiconfig can find the config file
+      const originalCwd = process.cwd()
+      try {
+        process.chdir(TEST_DIR)
+        const config = loadConfig()
+
+        expect(config).toBeDefined()
+        expect(config.ciProvider).toBe('github')
+        expect(config.mergeStrategy).toBe('fast-forward')
+        expect(config.domains).toHaveProperty('api')
+        expect(config.domains).toHaveProperty('web')
+      } finally {
+        if (existsSync(originalCwd)) {
+          process.chdir(originalCwd)
+        } else {
+          process.chdir(__dirname)
+        }
+      }
     })
 
     it('should throw error when no config file found', () => {

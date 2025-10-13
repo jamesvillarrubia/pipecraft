@@ -29,19 +29,10 @@ afterAll(() => {
 
 beforeEach(() => {
   // Reset test environment before each test
-  // Ensure TEST_DIR exists before trying to chdir
+  // Ensure TEST_DIR exists but DON'T chdir to it globally
+  // Individual tests should manage their own working directories
   if (!existsSync(TEST_DIR)) {
     mkdirSync(TEST_DIR, { recursive: true })
-  }
-  // Only change to TEST_DIR if it exists and current directory is valid
-  try {
-    if (existsSync(TEST_DIR)) {
-      process.chdir(TEST_DIR)
-    }
-  } catch (error) {
-    // If chdir fails, recreate the directory and try again
-    mkdirSync(TEST_DIR, { recursive: true })
-    process.chdir(TEST_DIR)
   }
 })
 

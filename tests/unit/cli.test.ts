@@ -39,7 +39,19 @@ describe('CLI Logic Tests', () => {
 
   afterEach(() => {
     // Restore original directory and cleanup
-    process.chdir(originalCwd)
+    try {
+      // Only chdir if the original directory still exists
+      if (existsSync(originalCwd)) {
+        process.chdir(originalCwd)
+      } else {
+        // Fallback to a safe directory if original doesn't exist
+        process.chdir(__dirname)
+      }
+    } catch (error) {
+      // If chdir fails, try to go to the test directory parent
+      process.chdir(__dirname)
+    }
+
     if (existsSync(testDir)) {
       rmSync(testDir, { recursive: true, force: true })
     }

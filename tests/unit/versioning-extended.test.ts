@@ -17,8 +17,13 @@ describe('VersionManager - Extended Coverage', () => {
   let originalCwd: string
 
   beforeEach(() => {
-    // Store original directory first
-    originalCwd = process.cwd()
+    // Store original directory first, but handle case where cwd doesn't exist
+    try {
+      originalCwd = process.cwd()
+    } catch (error) {
+      // If current directory doesn't exist, use __dirname
+      originalCwd = __dirname
+    }
 
     // Create unique temp directory
     testDir = join(tmpdir(), `flowcraft-version-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
@@ -69,10 +74,16 @@ describe('VersionManager - Extended Coverage', () => {
   afterEach(() => {
     // Restore original directory
     try {
-      process.chdir(originalCwd)
+      // Check if originalCwd exists before trying to chdir
+      if (existsSync(originalCwd)) {
+        process.chdir(originalCwd)
+      } else {
+        // If originalCwd doesn't exist, go to __dirname
+        process.chdir(__dirname)
+      }
     } catch (error) {
-      // If originalCwd doesn't exist, go to a safe location
-      process.chdir(tmpdir())
+      // If chdir fails, go to a safe location
+      process.chdir(__dirname)
     }
 
     // Clean up
