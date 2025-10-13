@@ -1,8 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { writeFileSync, existsSync, rmSync, readFileSync } from 'fs'
 import { join } from 'path'
-import { spawn } from 'child_process'
+import { execSync } from 'child_process'
 import { TEST_DIR, FIXTURES_DIR } from '../setup'
+
+// Get project root (two levels up from tests directory)
+const PROJECT_ROOT = join(__dirname, '../..')
 
 describe('End-to-End Workflow Generation', () => {
   beforeEach(() => {
@@ -177,29 +180,34 @@ describe('End-to-End Workflow Generation', () => {
 
 // Helper function to run CLI commands
 async function runCLI(args: string[]): Promise<{ exitCode: number, stdout: string, stderr: string }> {
-  return new Promise((resolve) => {
-    const child = spawn('node', ['../../src/cli/index.ts', ...args], {
+  // Get absolute path to CLI source from project root
+  const cliPath = join(PROJECT_ROOT, 'src/cli/index.ts')
+  
+  // Build command with tsx to run TypeScript directly
+  const command = `npx tsx "${cliPath}" ${args.map(arg => `"${arg}"`).join(' ')}`
+  
+  try {
+    const output = execSync(command, {
       cwd: TEST_DIR,
-      stdio: 'pipe'
+      encoding: 'utf8',
+      stdio: 'pipe',
+      env: { 
+        ...process.env,
+        NODE_PATH: join(PROJECT_ROOT, 'src')
+      },
+      shell: '/bin/bash'
     })
-
-    let stdout = ''
-    let stderr = ''
-
-    child.stdout?.on('data', (data) => {
-      stdout += data.toString()
-    })
-
-    child.stderr?.on('data', (data) => {
-      stderr += data.toString()
-    })
-
-    child.on('close', (code) => {
-      resolve({
-        exitCode: code || 0,
-        stdout,
-        stderr
-      })
-    })
-  })
+    
+    return {
+      exitCode: 0,
+      stdout: output,
+      stderr: ''
+    }
+  } catch (error: any) {
+    return {
+      exitCode: error.status || 1,
+      stdout: error.stdout?.toString() || '',
+      stderr: error.stderr?.toString() || error.message || ''
+    }
+  }
 }
