@@ -37,7 +37,23 @@ logs/
 # Coverage
 coverage/
 *.lcov
+coverage-*.txt
 
 # Development scripts
 flowcraft
+
+# Test artifacts
+test-temp/
+custom-output.yml
+custom-pipeline.yml
+
+# Backup files
+*.backup
+
+# Cache files
+.flowcraft-cache.json
+
+# Misc
+.lockor
+.actrc
 
