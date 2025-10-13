@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { writeFileSync, existsSync, rmSync, readFileSync } from 'fs'
+import { writeFileSync, existsSync, rmSync, readFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { IdempotencyManager } from '../../src/utils/idempotency'
 import { FlowcraftConfig } from '../../src/types'
@@ -88,8 +88,19 @@ describe('IdempotencyManager', () => {
       const configFile = join(TEST_DIR, '.flowcraftrc.json')
       writeFileSync(configFile, JSON.stringify(config, null, 2))
       
+      // Create mock template and generator directories to avoid checking project root
+      const templateDir = join(TEST_DIR, 'src', 'templates')
+      const generatorDir = join(TEST_DIR, 'src', 'generators')
+      mkdirSync(templateDir, { recursive: true })
+      mkdirSync(generatorDir, { recursive: true })
+      writeFileSync(join(templateDir, 'test.tpl.ts'), 'export const test = "template"')
+      writeFileSync(join(generatorDir, 'test.gen.ts'), 'export const test = "generator"')
+      
       // Create cache with current state
       await idempotencyManager.updateCache()
+      
+      // Small delay to ensure file system operations complete
+      await new Promise(resolve => setTimeout(resolve, 10))
       
       // Check for changes (should be false)
       expect(await idempotencyManager.hasChanges()).toBe(false)
