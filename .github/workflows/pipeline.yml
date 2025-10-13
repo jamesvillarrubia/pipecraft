@@ -74,12 +74,12 @@ jobs:
   # CHANGES DETECTION
   # =============================================================================
   # USER COMMENT 11
-  changes2:
+  changes:
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/detect-changes
         with:
-          baseRef: ${{ inputs.baseRef || epsilon }}
+          baseRef: ${{ inputs.baseRef || 'epsilon' }}
 
   # USER COMMENT 12
   fake-job-2:
@@ -131,8 +131,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/calculate-version
+        id: calculate-version
         with:
           baseRef: ${{ inputs.baseRef || 'epsilon' }}
+    outputs:
+      nextVersion: ${{ steps.calculate-version.outputs.nextVersion }}
 
   # USER COMMENT 16
 
@@ -200,17 +203,15 @@ jobs:
   createpr:
     ## SHOULD BE ANY BRANCH EXCEPT the final branch
     if: github.ref_name != 'epsilon'
-    needs: tag
+    needs: [ changes, version ]
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/create-pr
         with:
           sourceBranch: ${{ github.ref_name }}
-          targetBranch: ${{ github.ref_name == 'alpha' && 'beta' || github.ref_name ==
-            'beta' && 'gamma' || 'epsilon' }}
+          targetBranch: ${{ github.ref_name == 'alpha' && 'beta' || github.ref_name == 'beta' && 'gamma' || 'epsilon' }}
           title: 'Release ${{ needs.version.outputs.nextVersion }}'
-          body: 'Automated release PR for version ${{ needs.version.outputs.nextVersion
-            }}'
+          body: 'Automated release PR for version ${{ needs.version.outputs.nextVersion }}'
 
   branch:
     ## SHOULD BE THE NEXT BRANCH
@@ -220,8 +221,7 @@ jobs:
       - uses: ./.github/actions/manage-branch
         with:
           action: 'fast-forward'
-          targetBranch: ${{ github.ref_name == 'alpha' && 'beta' || github.ref_name ==
-            'beta' && 'gamma' || 'epsilon' }}
+          targetBranch: ${{ github.ref_name == 'alpha' && 'beta' || github.ref_name == 'beta' && 'gamma' || 'epsilon' }}
           sourceBranch: ${{ github.ref_name }}
 
   # USER COMMENT 24
@@ -233,9 +233,3 @@ jobs:
       - name: Fake Job
         run: |
           echo "Running fake job"
-  changes:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: ./.github/actions/detect-changes
-        with:
-          baseRef: ${{ inputs.baseRef || 'epsilon' }}

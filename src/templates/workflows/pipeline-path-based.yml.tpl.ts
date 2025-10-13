@@ -227,8 +227,11 @@ export const createPathBasedPipeline = (ctx: any) => {
         runs-on: ubuntu-latest
         steps:
           - uses: ./.github/actions/calculate-version
+            id: calculate-version
             with:
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
+        outputs:
+          nextVersion: \${{ steps.calculate-version.outputs.nextVersion }}
       `, ctx),
       required: true
     },
@@ -287,7 +290,7 @@ export const createPathBasedPipeline = (ctx: any) => {
       value: createValueFromString(`
         ## SHOULD BE ANY BRANCH EXCEPT the final branch
         if: github.ref_name != '${ctx.finalBranch || "main"}'
-        needs: tag
+        needs: [changes, version]
         runs-on: ubuntu-latest
         steps:
           - uses: ./.github/actions/create-pr
@@ -464,10 +467,15 @@ export const createPathBasedPipeline = (ctx: any) => {
   }
   
   // Generate final content with comment preservation
-  const finalContent = stringify(doc)
+  // Use lineWidth: 0 to prevent line wrapping of long expressions
+  // This keeps GitHub Actions expressions on a single line
+  const finalContent = stringify(doc, {
+    lineWidth: 0,
+    minContentWidth: 0
+  })
   
   return { 
-    yamlContent: finalContent, 
+    yamlContent: finalContent,
     mergeStatus: hasExistingPipeline ? 'merged' : 'overwritten'
   }
 }

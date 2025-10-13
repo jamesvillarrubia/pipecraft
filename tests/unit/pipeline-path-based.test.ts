@@ -469,7 +469,7 @@ jobs:
       // Check job dependencies
       expect(result.yamlContent).toContain('needs: changes') // version job
       expect(result.yamlContent).toContain('needs: version') // tag job
-      expect(result.yamlContent).toContain('needs: tag') // createpr job
+      expect(result.yamlContent).toContain('needs: [ changes, version ]') // createpr job
       expect(result.yamlContent).toContain('needs: createpr') // branch job
     })
     
