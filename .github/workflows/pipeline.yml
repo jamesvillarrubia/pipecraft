@@ -39,6 +39,11 @@ jobs:
     outputs:
       core: ${{ steps.detect.outputs.core }}
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: ./.github/actions/detect-changes
         id: detect
         with:
@@ -83,6 +88,11 @@ jobs:
     needs: [changes, test-core]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: ./.github/actions/calculate-version
         id: calculate-version
         with:
@@ -97,26 +107,43 @@ jobs:
     needs: version
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.nextVersion }}
+
   createpr:
     ## SHOULD BE ANY BRANCH EXCEPT the final branch
     if: github.ref_name != 'main'
     needs: [ changes, version ]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: ./.github/actions/create-pr
         with:
           sourceBranch: ${{ github.ref_name }}
           targetBranch: ${{ github.ref_name == 'develop' && 'staging' || github.ref_name == 'staging' && 'main' || 'main' }}
           title: 'Release ${{ needs.version.outputs.nextVersion }}'
           body: 'Automated release PR for version ${{ needs.version.outputs.nextVersion }}'
+
   branch:
     ## SHOULD BE THE NEXT BRANCH
     needs: createpr
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: ./.github/actions/manage-branch
         with:
           action: 'fast-forward'
