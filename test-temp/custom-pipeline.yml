@@ -1,0 +1,35 @@
+name: "Pipeline"
+on: { workflow_call: { inputs: { version: { description: The version to deploy, required: false, type: string }, baseRef: { description: The base reference for comparison, required: false, type: string } } }, workflow_dispatch: { inputs: { version: { description: The version to deploy, required: false, type: string }, baseRef: { description: The base reference for comparison, required: false, type: string } } }, pull_request: { branches: [ develop, staging, main ] } }
+jobs:
+  {
+    changes:
+      ## =============================================================================
+      #        # CHANGES DETECTION
+      #        # =============================================================================
+      { runs-on: ubuntu-latest, steps: [ { uses: ./.github/actions/detect-changes, with: { baseRef: "${{ inputs.baseRef || 'main' }}" } } ] },
+    version:
+      ## =============================================================================
+      #        # VERSIONING
+      #        # =============================================================================
+      { if: github.ref_name == 'develop', needs: changes, runs-on: ubuntu-latest, steps: [ { uses: ./.github/actions/calculate-version, id: calculate-version, with: { baseRef: "${{ inputs.baseRef || 'main' }}" } } ], outputs: { nextVersion: "${{ steps.calculate-version.outputs.nextVersion }}" } },
+    tag:
+      ## =============================================================================
+      #        # TAG & CREATE PR
+      #        # =============================================================================
+      { if: github.ref_name == 'develop', needs: version, runs-on: ubuntu-latest, steps: [ { uses: ./.github/actions/create-tag, with: { version: "${{ needs.version.outputs.nextVersion }}" } } ] },
+    createpr:
+      {
+        ## SHOULD BE ANY BRANCH EXCEPT the final branch
+        if: github.ref_name != 'main',
+        needs: [ changes, version ],
+        runs-on: ubuntu-latest,
+        steps: [ { uses: ./.github/actions/create-pr, with: { sourceBranch: "${{ github.ref_name }}", targetBranch: "${{ github.ref_name == 'develop' && 'staging' || github.ref_name == 'staging' && 'main' || 'main' }}", title: 'Release ${{ needs.version.outputs.nextVersion }}', body: 'Automated release PR for version ${{ needs.version.outputs.nextVersion }}' } } ]
+      },
+    branch:
+      {
+        ## SHOULD BE THE NEXT BRANCH
+        needs: createpr,
+        runs-on: ubuntu-latest,
+        steps: [ { uses: ./.github/actions/manage-branch, with: { action: 'fast-forward', targetBranch: "${{ github.ref_name == 'develop' && 'staging' || github.ref_name == 'staging' && 'main' || 'main' }}", sourceBranch: "${{ github.ref_name }}" } } ]
+      }
+  }

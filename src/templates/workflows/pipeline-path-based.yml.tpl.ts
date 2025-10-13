@@ -28,8 +28,8 @@ import dedent from 'dedent';
 const getBaseTemplate = (ctx: any) => {
   return dedent`
     name: "Pipeline"
-    on: {}
-    jobs: {}
+    on:
+    jobs:
   `
 }
 
