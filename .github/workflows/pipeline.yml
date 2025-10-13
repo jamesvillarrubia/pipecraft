@@ -20,6 +20,11 @@ on:
         description: The base reference for comparison
         required: false
         type: string
+  push:
+    branches:
+      - develop
+      - staging
+      - main
   pull_request:
     branches:
       - develop
