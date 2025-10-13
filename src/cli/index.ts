@@ -10,7 +10,6 @@ import { IdempotencyManager } from '../utils/idempotency'
 import { VersionManager } from '../utils/versioning'
 import { loadConfig, validateConfig } from '../utils/config'
 import { FlowcraftConfig } from '../types'
-import inquirer from 'inquirer'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
