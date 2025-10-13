@@ -144,6 +144,48 @@ function validateErrorHandling(actionPath) {
 }
 
 /**
+ * Validate GitHub CLI usage has GH_TOKEN set
+ */
+function validateGhToken(actionPath) {
+  const content = fs.readFileSync(actionPath, 'utf8');
+
+  // Check if action uses gh CLI commands
+  const ghCommands = ['gh pr', 'gh release', 'gh issue', 'gh workflow'];
+  const usesGhCli = ghCommands.some(cmd => content.includes(cmd));
+
+  if (!usesGhCli) {
+    return null;
+  }
+
+  // Parse YAML to check for env: GH_TOKEN in steps that use gh
+  try {
+    const doc = yaml.parse(content);
+    if (!doc.runs || !doc.runs.steps) {
+      return null;
+    }
+
+    for (const step of doc.runs.steps) {
+      if (step.run) {
+        const hasGhCommand = ghCommands.some(cmd => step.run.includes(cmd));
+        const hasGhToken = step.env && (step.env.GH_TOKEN || step.env.GITHUB_TOKEN);
+
+        if (hasGhCommand && !hasGhToken) {
+          const stepName = step.name || 'unnamed step';
+          return `Uses 'gh' CLI without GH_TOKEN env var in step '${stepName}'`;
+        }
+      }
+    }
+  } catch (e) {
+    // If YAML parsing fails, fall back to simple string check
+    if (usesGhCli && !content.includes('GH_TOKEN:') && !content.includes('GITHUB_TOKEN:')) {
+      return `Uses 'gh' CLI but no GH_TOKEN environment variable found`;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Validate workflow jobs
  */
 function validateWorkflow(workflowPath) {
@@ -169,7 +211,22 @@ function validateWorkflow(workflowPath) {
         // Check for local action usage
         if (step.uses && step.uses.startsWith('./')) {
           if (!hasCheckout) {
-            errors.push(`Job '${jobName}' step ${i + 1}: Local action '${step.uses}' used before checkout`);
+            // Check if the action itself has a checkout step
+            const actionPath = path.join('.github', 'actions', path.basename(step.uses), 'action.yml');
+            let actionHasCheckout = false;
+
+            try {
+              if (fs.existsSync(actionPath)) {
+                const actionContent = fs.readFileSync(actionPath, 'utf8');
+                actionHasCheckout = actionContent.includes('actions/checkout');
+              }
+            } catch (e) {
+              // Ignore errors reading action file
+            }
+
+            if (!actionHasCheckout) {
+              errors.push(`Job '${jobName}' step ${i + 1}: Local action '${step.uses}' used before checkout`);
+            }
           }
         }
       }
@@ -232,6 +289,12 @@ function validateCompositeAction(actionPath) {
   const errorHandlingWarning = validateErrorHandling(actionPath);
   if (errorHandlingWarning) {
     warnings.push(`${fileName}: ${errorHandlingWarning}`);
+  }
+
+  // GH_TOKEN validation
+  const ghTokenError = validateGhToken(actionPath);
+  if (ghTokenError) {
+    errors.push(`${fileName}: ${ghTokenError}`);
   }
 
   return { errors, warnings };
