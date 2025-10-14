@@ -30,6 +30,7 @@ runs:
         echo "base_branch=$base_branch" >> $GITHUB_ENV
 
     - name: Install Git
+      shell: bash
       run: |
         apt-get update && apt-get install -y git
 
