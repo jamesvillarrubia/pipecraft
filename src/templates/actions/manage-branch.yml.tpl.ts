@@ -37,7 +37,7 @@ const branchActionTemplate = (ctx: any) => {
           uses: actions/checkout@v4
           with:
             fetch-depth: 0
-            token: \${{ secrets.GITHUB_TOKEN }}
+            token: \${{ inputs.token }}
 
         - name: Validate Inputs
           id: validate

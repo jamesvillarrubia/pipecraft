@@ -1,9 +1,22 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cat:*)",
-      "Bash(npm run generate:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: add --apply and --force flags to setup-github command\n\nAdd ability to automatically apply GitHub Actions permission changes without interactive prompts. Useful for CI/CD pipelines and automated setup scripts.\n\nUsage:\n  flowcraft setup-github --apply   # Auto-apply changes\n  flowcraft setup-github --force   # Alias for --apply\n  flowcraft setup-github           # Interactive mode (default)\n\nChanges:\n- Add --apply and --force options to setup-github command\n- Implement getRequiredPermissionChanges() helper function\n- Update setupGitHubPermissions() to support auto-apply mode\n- Show clear output of what changes are being applied\n- Successfully tested: permissions updated from read to write\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(test:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nrefactor: rename project from FlowCraft to PipeCraft\n\nRename the entire project to PipeCraft to better align with the -craft naming convention (matching pullcraft). The new name emphasizes pipeline crafting and CI/CD automation.\n\nChanges:\n- Rename package from ''flowcraft'' to ''pipecraft''\n- Rename CLI command from ''flowcraft'' to ''pipecraft''\n- Rename config file from .flowcraftrc.json to .pipecraftrc.json\n- Update all documentation and branding\n- Update all source code references\n- Update all test files\n- Update all script files\n- Update GitHub Actions setup messaging\n\nThe functionality remains identical - only the branding has changed.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git rev-parse:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh workflow list:*)",
+      "Bash(gh run view:*)",
+      "Bash(git fetch:*)",
+      "Bash(pnpm build)",
+      "Bash(node:*)",
+      "Bash(pnpm pipecraft generate:*)",
+      "Bash(git restore:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: add per-branch autoMerge configuration for hybrid manual/auto workflow\n\nAdd support for configurable auto-merge behavior per target branch, allowing\nteams to choose when to automatically fast-forward branches vs requiring manual\nPR review.\n\nChanges:\n- Add autoMerge config option supporting both boolean and per-branch object\n- Update pipeline template to conditionally generate branch job based on config\n- Add branch output to manage-branch action for workflow triggering\n- Implement workflow dispatch triggering to run pipeline on target branch\n- Add logic to remove branch job when autoMerge is disabled\n\nConfiguration:\n- Set autoMerge per target branch in .pipecraftrc.json\n- Example: { \"staging\": true, \"main\": false }\n- Enables auto-merge to staging, manual review for production\n\nWorkflow behavior:\n- When autoMerge enabled: creates PR + auto fast-forward + triggers workflow\n- When autoMerge disabled: creates PR + waits for manual merge (human merge triggers workflow)\n- Uses GITHUB_TOKEN with gh workflow run (no PAT needed)\n- Branch job includes conditional if statement based on source branch\n\nThis solves the issue where GITHUB_TOKEN pushes don''t trigger workflows by\nexplicitly triggering them, while maintaining flexibility for manual review\nwhen needed (e.g., before production deploys).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(gh pr list:*)"
     ],
     "deny": [],
     "ask": []

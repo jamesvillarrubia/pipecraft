@@ -10,6 +10,7 @@ import { generate as generateChangesWorkflow } from '../templates/actions/detect
 import { generate as generateVersionWorkflow } from '../templates/actions/calculate-version.yml.tpl.js'
 import { generate as generateCreatePRWorkflow } from '../templates/actions/create-pr.yml.tpl.js'
 import { generate as generateBranchWorkflow } from '../templates/actions/manage-branch.yml.tpl.js'
+import { generate as generatePromoteBranchWorkflow } from '../templates/actions/promote-branch.yml.tpl.js'
 import { generate as generatePathBasedPipeline } from '../templates/workflows/pipeline-path-based.yml.tpl.js'
 
 const defaultConfig = {
@@ -65,7 +66,8 @@ export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPip
         generateTagWorkflow(ctx),
         generateVersionWorkflow(ctx),
         generateCreatePRWorkflow(ctx),
-        generateBranchWorkflow(ctx)
+        generateBranchWorkflow(ctx),
+        generatePromoteBranchWorkflow(ctx)
       ]).then(() => ctx)
     })
     .then((ctx) => {

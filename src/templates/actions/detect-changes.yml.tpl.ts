@@ -56,10 +56,6 @@ runs:
         echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
         echo "base_branch=$base_branch" >> $GITHUB_ENV
 
-    - name: Install Git
-      run: |
-        apt-get update && apt-get install -y git
-
     - name: Detect Changes
       uses: dorny/paths-filter@v3
       id: filter

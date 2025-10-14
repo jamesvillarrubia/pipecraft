@@ -36,19 +36,27 @@ const getBaseTemplate = (ctx: any) => {
 /**
  * Define which jobs Flowcraft owns vs user jobs
  */
-const PIPECRAFT_OWNED_JOBS = new Set([
-  'changes',
-  'version', 
-  'tag',
-  'createpr',
-  'branch'
-])
+const getPipecraftOwnedJobs = (branchFlow: string[]): Set<string> => {
+  const jobs = new Set([
+    'changes',
+    'version',
+    'tag'
+  ])
+
+  // Add promote jobs for each branch transition
+  for (let i = 0; i < branchFlow.length - 1; i++) {
+    const targetBranch = branchFlow[i + 1]
+    jobs.add(`promote-to-${targetBranch}`)
+  }
+
+  return jobs
+}
 
 /**
  * Check if a job is owned by Flowcraft
  */
-const isFlowcraftJob = (jobName: string): boolean => {
-  return PIPECRAFT_OWNED_JOBS.has(jobName)
+const isFlowcraftJob = (jobName: string, branchFlow: string[]): boolean => {
+  return getPipecraftOwnedJobs(branchFlow).has(jobName)
 }
 
 /**
@@ -161,6 +169,11 @@ export const createPathBasedPipeline = (ctx: any) => {
       value: createValueFromString(`
         runs-on: ubuntu-latest
         steps:
+          - name: Checkout Code
+            uses: actions/checkout@v4
+            with:
+              fetch-depth: 0
+
           - uses: ./.github/actions/detect-changes
             with:
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
@@ -226,12 +239,17 @@ export const createPathBasedPipeline = (ctx: any) => {
         needs: changes
         runs-on: ubuntu-latest
         steps:
+          - name: Checkout Code
+            uses: actions/checkout@v4
+            with:
+              fetch-depth: 0
+
           - uses: ./.github/actions/calculate-version
             id: calculate-version
             with:
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
         outputs:
-          nextVersion: \${{ steps.calculate-version.outputs.nextVersion }}
+          nextVersion: \${{ steps.calculate-version.outputs.version }}
       `, ctx),
       required: true
     },
@@ -272,64 +290,98 @@ export const createPathBasedPipeline = (ctx: any) => {
         needs: version
         runs-on: ubuntu-latest
         steps:
+          - name: Checkout Code
+            uses: actions/checkout@v4
+            with:
+              fetch-depth: 0
+
           - uses: ./.github/actions/create-tag
             with:
               version: \${{ needs.version.outputs.nextVersion }}
       `, ctx),
       commentBefore: `
         # =============================================================================
-        # TAG & CREATE PR
+        # TAG & PROMOTE
         # =============================================================================
       `,
       required: true
     },
-    
-    {
-      path: 'jobs.createpr',
-      operation: 'overwrite',
-      value: createValueFromString(`
-        ## SHOULD BE ANY BRANCH EXCEPT the final branch
-        if: github.ref_name != '${ctx.finalBranch || "main"}'
-        needs: [changes, version]
-        runs-on: ubuntu-latest
-        steps:
-          - uses: ./.github/actions/create-pr
-            with:
-              sourceBranch: \${{ github.ref_name }}
-              targetBranch: \${{ github.ref_name == '${branchFlow[0]}' && '${branchFlow[1] || branchFlow[0]}' || github.ref_name == '${branchFlow[1]}' && '${branchFlow[2] || branchFlow[1]}' || '${branchFlow[branchFlow.length - 1]}' }}
-              title: 'Release \${{ needs.version.outputs.nextVersion }}'
-              body: 'Automated release PR for version \${{ needs.version.outputs.nextVersion }}'
-      `, ctx),
-      required: true
-    },
-    
-    {
-      path: 'jobs.branch',
-      operation: 'overwrite',
-      value: createValueFromString(`
-        ## SHOULD BE THE NEXT BRANCH
-        needs: createpr
-        runs-on: ubuntu-latest
-        steps:
-          - uses: ./.github/actions/manage-branch
-            with:
-              action: 'fast-forward'
-              targetBranch: \${{ github.ref_name == '${branchFlow[0]}' && '${branchFlow[1] || branchFlow[0]}' || github.ref_name == '${branchFlow[1]}' && '${branchFlow[2] || branchFlow[1]}' || '${branchFlow[branchFlow.length - 1]}' }}
-              sourceBranch: \${{ github.ref_name }}
-      `, ctx),
-      required: true
-    },
+
+    // Generate promote-to-{target} jobs for each branch transition
+    ...(() => {
+      const autoMergeConfig = ctx.autoMerge || {}
+      const promoteJobs: PathOperationConfig[] = []
+
+      for (let i = 0; i < branchFlow.length - 1; i++) {
+        const sourceBranch = branchFlow[i]
+        const targetBranch = branchFlow[i + 1]
+        const jobName = `promote-to-${targetBranch}`
+
+        // Determine if this promotion should use auto-merge
+        const shouldAutoMerge = typeof autoMergeConfig === 'boolean'
+          ? autoMergeConfig
+          : autoMergeConfig[targetBranch] === true
+
+        promoteJobs.push({
+          path: `jobs.${jobName}`,
+          operation: 'overwrite' as const,
+          value: createValueFromString(`
+            if: github.ref_name == '${sourceBranch}'
+            needs: [changes, version, tag]
+            runs-on: ubuntu-latest
+            env:
+              GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+              GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+            steps:
+              - name: Checkout Code
+                uses: actions/checkout@v4
+                with:
+                  fetch-depth: 0
+
+              - uses: ./.github/actions/promote-branch
+                with:
+                  sourceBranch: ${sourceBranch}
+                  targetBranch: ${targetBranch}
+                  version: \${{ needs.version.outputs.nextVersion }}
+                  autoMerge: '${shouldAutoMerge}'
+                  token: \${{ secrets.GITHUB_TOKEN }}
+          `, ctx),
+          commentBefore: i === 0 ? `
+            # =============================================================================
+            # PROMOTION JOBS
+            # =============================================================================
+          ` : undefined,
+          required: true
+        })
+      }
+
+      return promoteJobs
+    })(),
     
 
   ]
-  
+
   // Helper function to get job keys in order
   const getJobKeysInOrder = (jobsNode: any): string[] => {
     if (!jobsNode || !jobsNode.items) return []
     return jobsNode.items.map((item: any) => item.key.value)
   }
-  
+
+  // Remove old createpr and branch jobs if they exist (migration from old template)
+  const jobsNode = doc.contents.get('jobs')
+  if (jobsNode) {
+    if (jobsNode.get('createpr')) {
+      console.log('🗑️  Removing old createpr job (migrating to promote jobs)')
+      jobsNode.delete('createpr')
+    }
+    if (jobsNode.get('branch')) {
+      console.log('🗑️  Removing old branch job (migrating to promote jobs)')
+      jobsNode.delete('branch')
+    }
+  }
+
   // Check if Flowcraft jobs already exist in user's pipeline
+  const PIPECRAFT_OWNED_JOBS = getPipecraftOwnedJobs(branchFlow)
   const existingFlowcraftJobs = new Set<string>()
   if (ctx.existingPipelineContent && doc.contents.get('jobs')) {
     const jobsNode = doc.contents.get('jobs')
@@ -397,7 +449,13 @@ export const createPathBasedPipeline = (ctx: any) => {
     }
     
     // Add any Flowcraft jobs that the user didn't have
-    const pipecraftJobOrder = ['changes', 'version', 'tag', 'createpr', 'branch']
+    const pipecraftJobOrder = ['changes', 'version', 'tag']
+    // Add promote jobs in order
+    for (let i = 0; i < branchFlow.length - 1; i++) {
+      const targetBranch = branchFlow[i + 1]
+      pipecraftJobOrder.push(`promote-to-${targetBranch}`)
+    }
+
     for (const jobName of pipecraftJobOrder) {
       if (!orderedJobs.has(jobName)) {
         // User didn't have this job - create it using operations

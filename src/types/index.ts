@@ -13,6 +13,7 @@ export interface FlowcraftConfig {
   initialBranch: string
   finalBranch: string
   branchFlow: string[]
+  autoMerge?: boolean | Record<string, boolean>  // Auto-merge per target branch (default: false)
   semver: {
     bumpRules: Record<string, string>
   }

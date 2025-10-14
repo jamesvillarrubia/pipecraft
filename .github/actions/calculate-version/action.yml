@@ -9,7 +9,7 @@ inputs:
     default: 'main'
 
 outputs:
-  nextVersion:
+  version:
     description: 'The determined version'
     value: ${{ steps.set_version.outputs.version }}
 
@@ -53,14 +53,17 @@ runs:
           echo "version=$TAG" >> $GITHUB_OUTPUT
         fi
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v3
-      with:
-        version: 8
+    - name: Set up minimal package.json
+      shell: bash
+      run: |
+        echo '{
+          "name": "temporary-lib",
+          "version": "0.0.0-release-it"
+        }' > package.json
 
     - name: Install dependencies
       shell: bash
-      run: pnpm install
+      run: npm install @release-it/conventional-changelog conventional-changelog-angular
 
     - name: Get version
       if: steps.get_version_old.outputs.version == ''

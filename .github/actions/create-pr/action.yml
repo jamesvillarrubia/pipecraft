@@ -40,12 +40,6 @@ runs:
         fetch-depth: 0
         token: ${{ inputs.token }}
 
-    - name: Configure Git
-      shell: bash
-      run: |
-        git config user.name github-actions
-        git config user.email github-actions@github.com
-
     - name: Check if PR Already Exists
       id: check-existing-pr
       shell: bash
@@ -85,23 +79,20 @@ runs:
           done
         fi
         
-        # Create the PR (returns URL)
-        set +e  # Don't exit on error so we can capture it
-        PR_URL=$(gh pr create --title "$TITLE" --body "$BODY" --head "$SOURCE" --base "$TARGET" $LABEL_ARGS 2>&1)
-        EXIT_CODE=$?
-        set -e
+        # Create the PR
+        PR_OUTPUT=$(gh pr create \--title "$TITLE" \--body "$BODY" \--head "$SOURCE" \--base "$TARGET" \$LABEL_ARGS \--json number,url --jq '.number,.url' 2>&1)
 
-        if [ $EXIT_CODE -eq 0 ] && [ -n "$PR_URL" ]; then
-          # Extract PR number from URL (e.g., https://github.com/owner/repo/pull/123)
-          PR_NUMBER=$(echo "$PR_URL" | grep -oP '/pull/\K\d+$' || echo "$PR_URL" | sed -n 's|.*/pull/\([0-9]*\).*|\1|p')
+        if echo "$PR_OUTPUT" | grep -q '"number":'; then
+          PR_NUMBER=$(echo "$PR_OUTPUT" | jq -r '.number')
+          PR_URL=$(echo "$PR_OUTPUT" | jq -r '.url')
           echo "prNumber=$PR_NUMBER" >> $GITHUB_OUTPUT
           echo "prUrl=$PR_URL" >> $GITHUB_OUTPUT
           echo "✅ Created PR #$PR_NUMBER"
           echo "🔗 URL: $PR_URL"
         else
           echo "❌ Failed to create PR"
-          echo "Error output: $PR_URL"
-          echo "Exit code: $EXIT_CODE"
+          echo "Error output:"
+          echo "$PR_OUTPUT"
           exit 1
         fi
 

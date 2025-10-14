@@ -15,10 +15,6 @@ inputs:
   branchName:
     description: 'Name for new branch (for create action)'
     required: false
-  token:
-    description: 'GitHub token for authentication'
-    required: false
-    default: ${{ github.token }}
 
 outputs:
   success:
@@ -36,12 +32,6 @@ runs:
       with:
         fetch-depth: 0
         token: ${{ inputs.token }}
-
-    - name: Configure Git
-      shell: bash
-      run: |
-        git config user.name github-actions
-        git config user.email github-actions@github.com
 
     - name: Validate Inputs
       id: validate

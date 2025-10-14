@@ -24,6 +24,10 @@ const createprActionTemplate = (ctx: any) => {
       labels:
         description: 'Comma-separated list of labels'
         required: false
+      token:
+        description: 'GitHub token for authentication'
+        required: false
+        default: \${{ github.token }}
 
     outputs:
       prNumber:
@@ -40,7 +44,7 @@ const createprActionTemplate = (ctx: any) => {
           uses: actions/checkout@v4
           with:
             fetch-depth: 0
-            token: \${{ secrets.GITHUB_TOKEN }}
+            token: \${{ inputs.token }}
 
         - name: Check if PR Already Exists
           id: check-existing-pr
@@ -88,17 +92,19 @@ const createprActionTemplate = (ctx: any) => {
               --head "\$SOURCE" \\
               --base "\$TARGET" \\
               \$LABEL_ARGS \\
-              --json number,url --jq '.number,.url' 2>/dev/null || echo "")
-            
-            if [ -n "\$PR_OUTPUT" ]; then
-              PR_NUMBER=$(echo "\$PR_OUTPUT" | head -n1)
-              PR_URL=$(echo "\$PR_OUTPUT" | tail -n1)
+              --json number,url --jq '.number,.url' 2>&1)
+
+            if echo "\$PR_OUTPUT" | grep -q '"number":'; then
+              PR_NUMBER=$(echo "\$PR_OUTPUT" | jq -r '.number')
+              PR_URL=$(echo "\$PR_OUTPUT" | jq -r '.url')
               echo "prNumber=\$PR_NUMBER" >> \$GITHUB_OUTPUT
               echo "prUrl=\$PR_URL" >> \$GITHUB_OUTPUT
               echo "✅ Created PR #\$PR_NUMBER"
               echo "🔗 URL: \$PR_URL"
             else
               echo "❌ Failed to create PR"
+              echo "Error output:"
+              echo "\$PR_OUTPUT"
               exit 1
             fi
 
