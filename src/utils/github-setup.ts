@@ -282,14 +282,18 @@ export async function updateBranchProtection(
   token: string
 ): Promise<void> {
   // Minimal branch protection to enable auto-merge
+  // GitHub requires at least ONE of the main protection types
   const protection: BranchProtectionRules = {
-    required_status_checks: null, // No required checks (user can add their own)
+    required_status_checks: {
+      strict: false,
+      contexts: [] // No specific checks required, but enables the feature
+    },
     enforce_admins: false,
     required_pull_request_reviews: null, // No required reviews for auto-merge branches
     restrictions: null,
     allow_force_pushes: false,
     allow_deletions: false,
-    required_linear_history: false,
+    required_linear_history: true,
     required_conversation_resolution: false
   }
 
@@ -314,6 +318,58 @@ export async function updateBranchProtection(
 }
 
 /**
+ * Enable auto-merge feature for the repository
+ */
+export async function enableAutoMerge(
+  owner: string,
+  repo: string,
+  token: string
+): Promise<boolean> {
+  // First check if auto-merge is already enabled
+  const checkResponse = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    }
+  )
+
+  if (checkResponse.ok) {
+    const repoData = await checkResponse.json()
+    if (repoData.allow_auto_merge === true) {
+      return false // Already enabled
+    }
+  }
+
+  // Enable auto-merge
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        allow_auto_merge: true
+      })
+    }
+  )
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to enable auto-merge: ${response.status} ${error}`)
+  }
+
+  return true // Was enabled
+}
+
+/**
  * Configure branch protection for branches that need auto-merge
  */
 export async function configureBranchProtection(
@@ -321,19 +377,34 @@ export async function configureBranchProtection(
   token: string,
   autoApply: boolean
 ): Promise<void> {
-  console.log('\n🔍 Checking branch protection configuration...')
+  console.log('\n🔍 Checking auto-merge configuration...')
 
   // Load config to get autoMerge settings
   let config: FlowcraftConfig
   try {
     config = loadConfig('.pipecraftrc.json') as FlowcraftConfig
   } catch (error) {
-    console.log('⚠️  Could not load .pipecraftrc.json - skipping branch protection setup')
+    console.log('⚠️  Could not load .pipecraftrc.json - skipping auto-merge setup')
     return
   }
 
   if (!config.autoMerge || !config.branchFlow) {
-    console.log('ℹ️  No autoMerge configuration found - skipping branch protection setup')
+    console.log('ℹ️  No autoMerge configuration found - skipping auto-merge setup')
+    return
+  }
+
+  // Enable repository-level auto-merge feature
+  try {
+    const wasEnabled = await enableAutoMerge(repoInfo.owner, repoInfo.repo, token)
+    if (wasEnabled) {
+      console.log('✅ Enabled auto-merge for repository')
+    } else {
+      console.log('✅ Auto-merge already enabled for repository')
+    }
+  } catch (error: any) {
+    console.error(`⚠️  Could not enable auto-merge: ${error.message}`)
+    console.log('   You can enable it manually at:')
+    console.log(`   https://github.com/${repoInfo.owner}/${repoInfo.repo}/settings`)
     return
   }
 
