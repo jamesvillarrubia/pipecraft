@@ -137,8 +137,8 @@ runs:
         else
           echo "❌ Failed to create PR"
           echo "Error output:"
-          printf '%s\
-' "$PR_OUTPUT"
+          printf "%s" "$PR_OUTPUT"
+          echo ""
           exit 1
         fi
 
