@@ -141,23 +141,20 @@ const promoteBranchActionTemplate = (ctx: any) => {
             # Disable error exit to capture gh pr create output even on failure
             set +e
 
-            # Create the PR with simple body
-            PR_OUTPUT=\$(gh pr create \\
+            # Create the PR - gh pr create returns the PR URL on success
+            PR_URL=\$(gh pr create \\
               --title "\$TITLE" \\
               --body "Release \$VERSION from \$SOURCE to \$TARGET" \\
               --head "\$TEMP_BRANCH" \\
-              --base "\$TARGET" \\
-              --json number,url 2>&1)
-
-            # Check if PR was created successfully by parsing JSON response
-            PR_NUMBER=\$(printf '%s' "\$PR_OUTPUT" | jq -r '.number' 2>/dev/null)
-            PR_CHECK_EXIT=\$?
+              --base "\$TARGET" 2>&1)
+            PR_EXIT_CODE=\$?
 
             # Re-enable error exit
             set -e
 
-            if [ \$PR_CHECK_EXIT -eq 0 ] && [ -n "\$PR_NUMBER" ] && [ "\$PR_NUMBER" != "null" ]; then
-              PR_URL=\$(printf '%s' "\$PR_OUTPUT" | jq -r '.url')
+            if [ \$PR_EXIT_CODE -eq 0 ] && [[ "\$PR_URL" =~ ^https://github.com/.*/pull/[0-9]+$ ]]; then
+              # Extract PR number from URL (e.g., https://github.com/owner/repo/pull/123)
+              PR_NUMBER=\$(echo "\$PR_URL" | grep -oE '[0-9]+$')
               echo "prNumber=\$PR_NUMBER" >> \$GITHUB_OUTPUT
               echo "prUrl=\$PR_URL" >> \$GITHUB_OUTPUT
               echo "✅ Created PR #\$PR_NUMBER"
@@ -165,7 +162,7 @@ const promoteBranchActionTemplate = (ctx: any) => {
             else
               echo "❌ Failed to create PR"
               echo "Error output:"
-              echo "\$PR_OUTPUT"
+              echo "\$PR_URL"
               exit 1
             fi
 
