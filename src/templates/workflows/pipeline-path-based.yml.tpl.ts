@@ -307,9 +307,16 @@ export const createPathBasedPipeline = (ctx: any) => {
       path: 'jobs.promote',
       operation: 'overwrite' as const,
       value: createValueFromString(`
+        # Runs on any branch that can promote (not the final branch)
+        # Waits for version/tag if they run, but doesn't fail if they're skipped
         if: |
-          ${branchFlow.slice(0, -1).map((branch: string) => `github.ref_name == '${branch}'`).join(' || ')}
-        needs: [changes]
+          \${{
+            always() &&
+            (${branchFlow.slice(0, -1).map((branch: string) => `github.ref_name == '${branch}'`).join(' || ')}) &&
+            needs.version.result != 'failure' &&
+            needs.tag.result != 'failure'
+          }}
+        needs: [changes, version, tag]
         runs-on: ubuntu-latest
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}

@@ -110,9 +110,16 @@ jobs:
         with:
           version: ${{ needs.version.outputs.nextVersion }}
   promote:
+    # Runs on any branch that can promote (not the final branch)
+    # Waits for version/tag if they run, but doesn't fail if they're skipped
     if: |
-      github.ref_name == 'develop' || github.ref_name == 'staging'
-    needs: [ changes ]
+      ${{
+        always() &&
+        (github.ref_name == 'develop' || github.ref_name == 'staging') &&
+        needs.version.result != 'failure' &&
+        needs.tag.result != 'failure'
+      }}
+    needs: [ changes, version, tag ]
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
