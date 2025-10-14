@@ -78,7 +78,7 @@ runs:
         # Get version and filter out warnings
         RAW_OUTPUT=$(npx release-it --ci --release-version 2>&1 || echo "")
         # Extract just the version number (last line that looks like a version)
-        VERSION=$(echo "$RAW_OUTPUT" | grep -E '^[0-9]+\\.[0-9]+\\.[0-9]+' | tail -1)
+        VERSION=$(echo "$RAW_OUTPUT" | grep -E '^[0-9]+\\.[0-9]+\\.[0-9]+' | tail -1 || true)
 
         if [[ "$RAW_OUTPUT" == *"No new version to release"* || -z "$VERSION" ]]; then
           echo "No new version to release"
