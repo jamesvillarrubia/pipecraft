@@ -24,6 +24,8 @@ program
   .description('CLI tool for managing trunk-based development workflows')
   .version('1.0.0')
 
+console.log("pipecraft edit")
+
 // Global options
 program
   .option('-c, --config <path>', 'path to config file', '.pipecraftrc.json')
