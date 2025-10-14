@@ -44,7 +44,7 @@ const tagActionTemplate = (ctx: any) => {
             VERSION="\${{ inputs.version }}"
             VERSION="\${VERSION#v}"  # Remove v prefix
 
-            if [[ ! "$VERSION" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
+            if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
               echo "❌ Version must be in format [v]x.y.z (e.g., 1.0.0 or v1.0.0)"
               exit 1
             fi
