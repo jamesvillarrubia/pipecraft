@@ -275,10 +275,12 @@ export function formatPreflightResults(checks: PreflightChecks): {
     'Your environment is ready to generate workflows!',
     '',
     'Next steps:',
-    '  1. Commit the generated workflows: git add .github && git commit -m "chore: add workflows"',
-    '  2. Push to remote: git push origin ' + getCurrentBranch(),
-    '  3. Set up GitHub tokens: flowcraft setup-github --verify',
-    '  4. Validate the pipeline: flowcraft validate:pipeline'
+    '  1. Validate the pipeline: flowcraft validate:pipeline',
+    '  2. Set up GitHub tokens: flowcraft setup-github --verify',
+    '  3. Commit the generated workflows: git add .github && git commit -m "chore: add workflows"',
+    '  4. Push to remote: git push origin ' + getCurrentBranch(),
+    '',
+    '⚠️  Important: Set up GitHub tokens (step 2) BEFORE pushing to ensure workflows run correctly!'
   ] : undefined
 
   return {
