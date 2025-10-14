@@ -40,14 +40,9 @@ const getPipecraftOwnedJobs = (branchFlow: string[]): Set<string> => {
   const jobs = new Set([
     'changes',
     'version',
-    'tag'
+    'tag',
+    'promote'  // Single promote job instead of multiple promote-to-{target} jobs
   ])
-
-  // Add promote jobs for each branch transition
-  for (let i = 0; i < branchFlow.length - 1; i++) {
-    const targetBranch = branchFlow[i + 1]
-    jobs.add(`promote-to-${targetBranch}`)
-  }
 
   return jobs
 }
@@ -307,56 +302,65 @@ export const createPathBasedPipeline = (ctx: any) => {
       required: true
     },
 
-    // Generate promote-to-{target} jobs for each branch transition
-    ...(() => {
-      const autoMergeConfig = ctx.autoMerge || {}
-      const promoteJobs: PathOperationConfig[] = []
+    // Generate single promotion job that handles all branch transitions dynamically
+    {
+      path: 'jobs.promote',
+      operation: 'overwrite' as const,
+      value: createValueFromString(`
+        if: |
+          ${branchFlow.slice(0, -1).map((branch: string) => `github.ref_name == '${branch}'`).join(' || ')}
+        needs: [changes]
+        runs-on: ubuntu-latest
+        env:
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+        steps:
+          - name: Checkout Code
+            uses: actions/checkout@v4
+            with:
+              fetch-depth: 0
 
-      for (let i = 0; i < branchFlow.length - 1; i++) {
-        const sourceBranch = branchFlow[i]
-        const targetBranch = branchFlow[i + 1]
-        const jobName = `promote-to-${targetBranch}`
+          - name: Determine target branch and auto-merge setting
+            id: determine-target
+            run: |
+              case "\${{ github.ref_name }}" in
+                ${branchFlow.slice(0, -1).map((sb: string, idx: number) => {
+                  const tb = branchFlow[idx + 1]
+                  const autoMergeConfig = ctx.autoMerge || {}
+                  const autoMerge = typeof autoMergeConfig === 'boolean'
+                    ? autoMergeConfig
+                    : autoMergeConfig[tb] === true
+                  return `"${sb}")
+                  echo "target=${tb}" >> $GITHUB_OUTPUT
+                  echo "autoMerge=${autoMerge}" >> $GITHUB_OUTPUT
+                  ;;`
+                }).join('\n                ')}
+              esac
 
-        // Determine if this promotion should use auto-merge
-        const shouldAutoMerge = typeof autoMergeConfig === 'boolean'
-          ? autoMergeConfig
-          : autoMergeConfig[targetBranch] === true
+          - name: Get version for promotion
+            id: get-version
+            run: |
+              # Get the latest tag for this promotion
+              VERSION=\$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+              echo "version=\${VERSION}" >> $GITHUB_OUTPUT
+              echo "Using version: \${VERSION}"
 
-        promoteJobs.push({
-          path: `jobs.${jobName}`,
-          operation: 'overwrite' as const,
-          value: createValueFromString(`
-            if: github.ref_name == '${sourceBranch}'
-            needs: [changes, version, tag]
-            runs-on: ubuntu-latest
-            env:
-              GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
-              GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
-            steps:
-              - name: Checkout Code
-                uses: actions/checkout@v4
-                with:
-                  fetch-depth: 0
-
-              - uses: ./.github/actions/promote-branch
-                with:
-                  sourceBranch: ${sourceBranch}
-                  targetBranch: ${targetBranch}
-                  version: \${{ needs.version.outputs.nextVersion }}
-                  autoMerge: '${shouldAutoMerge}'
-                  token: \${{ secrets.GITHUB_TOKEN }}
-          `, ctx),
-          commentBefore: i === 0 ? `
-            # =============================================================================
-            # PROMOTION JOBS
-            # =============================================================================
-          ` : undefined,
-          required: true
-        })
-      }
-
-      return promoteJobs
-    })(),
+          - uses: ./.github/actions/promote-branch
+            with:
+              sourceBranch: \${{ github.ref_name }}
+              targetBranch: \${{ steps.determine-target.outputs.target }}
+              version: \${{ steps.get-version.outputs.version }}
+              autoMerge: \${{ steps.determine-target.outputs.autoMerge }}
+              token: \${{ secrets.GITHUB_TOKEN }}
+      `, ctx),
+      commentBefore: `
+        # =============================================================================
+        # PROMOTION JOB - Single dynamic job that handles all branch promotions
+        # Uses latest git tag for version (version/tag jobs create tags on develop)
+        # =============================================================================
+      `,
+      required: true
+    },
     
 
   ]
@@ -377,6 +381,14 @@ export const createPathBasedPipeline = (ctx: any) => {
     if (jobsNode.get('branch')) {
       console.log('🗑️  Removing old branch job (migrating to promote jobs)')
       jobsNode.delete('branch')
+    }
+    // Remove old promote-to-{target} jobs (migrating to single promote job)
+    for (let i = 0; i < branchFlow.length - 1; i++) {
+      const oldJobName = `promote-to-${branchFlow[i + 1]}`
+      if (jobsNode.get(oldJobName)) {
+        console.log(`🗑️  Removing old ${oldJobName} job (migrating to single promote job)`)
+        jobsNode.delete(oldJobName)
+      }
     }
   }
 
@@ -449,12 +461,7 @@ export const createPathBasedPipeline = (ctx: any) => {
     }
     
     // Add any Flowcraft jobs that the user didn't have
-    const pipecraftJobOrder = ['changes', 'version', 'tag']
-    // Add promote jobs in order
-    for (let i = 0; i < branchFlow.length - 1; i++) {
-      const targetBranch = branchFlow[i + 1]
-      pipecraftJobOrder.push(`promote-to-${targetBranch}`)
-    }
+    const pipecraftJobOrder = ['changes', 'version', 'tag', 'promote']
 
     for (const jobName of pipecraftJobOrder) {
       if (!orderedJobs.has(jobName)) {

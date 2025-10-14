@@ -109,9 +109,10 @@ jobs:
       - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.nextVersion }}
-  promote-to-staging:
-    if: github.ref_name == 'develop'
-    needs: [ changes, version, tag ]
+  promote:
+    if: |
+      github.ref_name == 'develop' || github.ref_name == 'staging'
+    needs: [ changes ]
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -122,30 +123,32 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: ./.github/actions/promote-branch
-        with:
-          sourceBranch: develop
-          targetBranch: staging
-          version: ${{ needs.version.outputs.nextVersion }}
-          autoMerge: 'true'
-          token: ${{ secrets.GITHUB_TOKEN }}
-  promote-to-main:
-    if: github.ref_name == 'staging'
-    needs: [ changes, version, tag ]
-    runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Determine target branch and auto-merge setting
+        id: determine-target
+        run: |
+          case "${{ github.ref_name }}" in
+            "develop")
+              echo "target=staging" >> $GITHUB_OUTPUT
+              echo "autoMerge=true" >> $GITHUB_OUTPUT
+              ;;
+            "staging")
+              echo "target=main" >> $GITHUB_OUTPUT
+              echo "autoMerge=false" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Get version for promotion
+        id: get-version
+        run: |
+          # Get the latest tag for this promotion
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Using version: ${VERSION}"
 
       - uses: ./.github/actions/promote-branch
         with:
-          sourceBranch: staging
-          targetBranch: main
-          version: ${{ needs.version.outputs.nextVersion }}
-          autoMerge: 'false'
+          sourceBranch: ${{ github.ref_name }}
+          targetBranch: ${{ steps.determine-target.outputs.target }}
+          version: ${{ steps.get-version.outputs.version }}
+          autoMerge: ${{ steps.determine-target.outputs.autoMerge }}
           token: ${{ secrets.GITHUB_TOKEN }}
