@@ -166,21 +166,43 @@ const promoteBranchActionTemplate = (ctx: any) => {
               exit 1
             fi
 
-        - name: Enable Auto-Merge
-          if: inputs.autoMerge == 'true' && steps.check-pr.outputs.exists == 'false'
+        - name: Fast-Forward Merge (Auto-Merge)
+          if: inputs.autoMerge == 'true'
           shell: bash
           run: |
-            PR_NUMBER="\${{ steps.create-pr.outputs.prNumber }}"
+            SOURCE="\${{ inputs.sourceBranch }}"
+            TARGET="\${{ inputs.targetBranch }}"
+            VERSION="\${{ inputs.version }}"
 
-            echo "🔄 Enabling auto-merge for PR #\$PR_NUMBER"
+            echo "🚀 Fast-forwarding \$TARGET to \$SOURCE (maintaining linear history)"
 
-            # Enable auto-merge with squash strategy (ignore errors if branch protection not configured)
-            if gh pr merge "\$PR_NUMBER" --auto --squash 2>&1; then
-              echo "✅ Auto-merge enabled - PR will merge automatically when checks pass"
+            # Get the commit SHA from source branch
+            COMMIT_SHA=\$(git rev-parse \$SOURCE)
+            echo "Source commit: \$COMMIT_SHA"
+
+            # Fetch target branch
+            git fetch origin \$TARGET:\$TARGET 2>/dev/null || true
+
+            # Checkout target branch
+            git checkout \$TARGET
+
+            # Verify we can fast-forward (no divergent commits)
+            if git merge-base --is-ancestor \$TARGET \$SOURCE; then
+              echo "✅ Fast-forward is possible (linear history maintained)"
             else
-              echo "⚠️  Could not enable auto-merge (branch protection may not be configured)"
-              echo "ℹ️  PR created successfully - please merge manually or configure branch protection"
+              echo "❌ Cannot fast-forward - branches have diverged"
+              echo "Target branch has commits not in source branch"
+              exit 1
             fi
+
+            # Fast-forward merge (no merge commit)
+            git merge --ff-only \$SOURCE
+
+            # Push to remote
+            git push origin \$TARGET
+
+            echo "✅ Fast-forwarded \$TARGET to \$COMMIT_SHA"
+            echo "🔗 PR #\${{ steps.check-pr.outputs.number || steps.create-pr.outputs.prNumber }} remains open for audit trail"
 
         - name: Use Existing PR
           if: steps.check-pr.outputs.exists == 'true'
@@ -192,11 +214,7 @@ const promoteBranchActionTemplate = (ctx: any) => {
             echo "ℹ️  Using existing PR #\$PR_NUMBER"
             echo "🔗 URL: \$PR_URL"
 
-            # If autoMerge is enabled and not already set, enable it
-            if [ "\${{ inputs.autoMerge }}" == "true" ]; then
-              echo "🔄 Ensuring auto-merge is enabled"
-              gh pr merge "\$PR_NUMBER" --auto --squash 2>/dev/null || echo "Auto-merge already enabled or not available"
-            fi
+            # Note: Fast-forward merge happens in separate step if autoMerge is enabled
   `
 }
 
