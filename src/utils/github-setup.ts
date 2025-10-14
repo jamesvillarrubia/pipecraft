@@ -1,5 +1,7 @@
 import { execSync } from 'child_process'
 import { prompt } from '@featherscloud/pinion'
+import { loadConfig } from './config.js'
+import { FlowcraftConfig } from '../types/index.js'
 
 interface WorkflowPermissions {
   default_workflow_permissions: 'read' | 'write'
@@ -10,6 +12,24 @@ interface RepositoryInfo {
   owner: string
   repo: string
   remote: string
+}
+
+interface BranchProtectionRules {
+  required_status_checks: null | {
+    strict: boolean
+    contexts: string[]
+  }
+  enforce_admins: boolean
+  required_pull_request_reviews: null | {
+    dismiss_stale_reviews: boolean
+    require_code_owner_reviews: boolean
+    required_approving_review_count: number
+  }
+  restrictions: null
+  allow_force_pushes: boolean
+  allow_deletions: boolean
+  required_linear_history: boolean
+  required_conversation_resolution: boolean
 }
 
 /**
@@ -220,6 +240,165 @@ export async function promptPermissionChanges(
 }
 
 /**
+ * Get branch protection rules
+ */
+export async function getBranchProtection(
+  owner: string,
+  repo: string,
+  branch: string,
+  token: string
+): Promise<BranchProtectionRules | null> {
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/branches/${branch}/protection`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    }
+  )
+
+  if (response.status === 404) {
+    // Branch protection not configured
+    return null
+  }
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to get branch protection for ${branch}: ${response.status} ${error}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Update branch protection rules to enable auto-merge
+ */
+export async function updateBranchProtection(
+  owner: string,
+  repo: string,
+  branch: string,
+  token: string
+): Promise<void> {
+  // Minimal branch protection to enable auto-merge
+  const protection: BranchProtectionRules = {
+    required_status_checks: null, // No required checks (user can add their own)
+    enforce_admins: false,
+    required_pull_request_reviews: null, // No required reviews for auto-merge branches
+    restrictions: null,
+    allow_force_pushes: false,
+    allow_deletions: false,
+    required_linear_history: false,
+    required_conversation_resolution: false
+  }
+
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/branches/${branch}/protection`,
+    {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(protection)
+    }
+  )
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to update branch protection for ${branch}: ${response.status} ${error}`)
+  }
+}
+
+/**
+ * Configure branch protection for branches that need auto-merge
+ */
+export async function configureBranchProtection(
+  repoInfo: RepositoryInfo,
+  token: string,
+  autoApply: boolean
+): Promise<void> {
+  console.log('\n🔍 Checking branch protection configuration...')
+
+  // Load config to get autoMerge settings
+  let config: FlowcraftConfig
+  try {
+    config = loadConfig('.pipecraftrc.json') as FlowcraftConfig
+  } catch (error) {
+    console.log('⚠️  Could not load .pipecraftrc.json - skipping branch protection setup')
+    return
+  }
+
+  if (!config.autoMerge || !config.branchFlow) {
+    console.log('ℹ️  No autoMerge configuration found - skipping branch protection setup')
+    return
+  }
+
+  // Determine which branches need auto-merge
+  const autoMergeConfig = config.autoMerge
+  const branchesNeedingProtection: string[] = []
+
+  if (typeof autoMergeConfig === 'boolean') {
+    // If true for all, protect all intermediate branches
+    if (autoMergeConfig && config.branchFlow.length > 1) {
+      branchesNeedingProtection.push(...config.branchFlow.slice(1, -1))
+    }
+  } else if (typeof autoMergeConfig === 'object') {
+    // Check which branches have autoMerge enabled
+    for (const [branch, enabled] of Object.entries(autoMergeConfig)) {
+      if (enabled === true) {
+        branchesNeedingProtection.push(branch)
+      }
+    }
+  }
+
+  if (branchesNeedingProtection.length === 0) {
+    console.log('ℹ️  No branches configured for auto-merge - skipping branch protection setup')
+    return
+  }
+
+  console.log(`📋 Branches with auto-merge enabled: ${branchesNeedingProtection.join(', ')}`)
+
+  // Check each branch
+  for (const branch of branchesNeedingProtection) {
+    try {
+      const protection = await getBranchProtection(repoInfo.owner, repoInfo.repo, branch, token)
+
+      if (protection === null) {
+        // Branch protection not configured
+        if (autoApply) {
+          console.log(`🔧 Configuring branch protection for ${branch}...`)
+          await updateBranchProtection(repoInfo.owner, repoInfo.repo, branch, token)
+          console.log(`✅ Branch protection enabled for ${branch}`)
+        } else {
+          const response: any = await prompt({
+            type: 'confirm',
+            name: 'enableProtection',
+            message: `Enable branch protection for '${branch}' to support auto-merge?`,
+            default: true
+          } as any)
+
+          if (response.enableProtection) {
+            console.log(`🔧 Configuring branch protection for ${branch}...`)
+            await updateBranchProtection(repoInfo.owner, repoInfo.repo, branch, token)
+            console.log(`✅ Branch protection enabled for ${branch}`)
+          } else {
+            console.log(`⚠️  Skipped ${branch} - auto-merge will not work without branch protection`)
+          }
+        }
+      } else {
+        console.log(`✅ Branch protection already configured for ${branch}`)
+      }
+    } catch (error: any) {
+      console.error(`⚠️  Could not configure protection for ${branch}: ${error.message}`)
+    }
+  }
+}
+
+/**
  * Main setup function
  */
 export async function setupGitHubPermissions(autoApply: boolean = false): Promise<void> {
@@ -248,54 +427,61 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
   )
 
   let changes: Partial<WorkflowPermissions> | null | 'declined'
+  let permissionsAlreadyCorrect = false
 
   if (autoApply) {
     // Auto-apply mode: determine changes without prompting
     changes = getRequiredPermissionChanges(currentPermissions)
 
     if (changes === null) {
-      console.log('\n✨ Permissions are already configured correctly!')
-      return
-    }
-
-    // Show what will be applied
-    console.log('\n📋 Current GitHub Actions Workflow Permissions:')
-    console.log(`   Default permissions: ${currentPermissions.default_workflow_permissions}`)
-    console.log(`   Can create/approve PRs: ${currentPermissions.can_approve_pull_request_reviews ? 'Yes' : 'No'}`)
-    console.log('\n🔧 Applying required changes:')
-    if (changes.default_workflow_permissions) {
-      console.log(`   • Setting default permissions to: ${changes.default_workflow_permissions}`)
-    }
-    if (changes.can_approve_pull_request_reviews !== undefined) {
-      console.log(`   • Allowing PR creation/approval: ${changes.can_approve_pull_request_reviews}`)
+      console.log('\n✅ Workflow permissions are already configured correctly!')
+      permissionsAlreadyCorrect = true
+    } else {
+      // Show what will be applied
+      console.log('\n📋 Current GitHub Actions Workflow Permissions:')
+      console.log(`   Default permissions: ${currentPermissions.default_workflow_permissions}`)
+      console.log(`   Can create/approve PRs: ${currentPermissions.can_approve_pull_request_reviews ? 'Yes' : 'No'}`)
+      console.log('\n🔧 Applying required changes:')
+      if (changes.default_workflow_permissions) {
+        console.log(`   • Setting default permissions to: ${changes.default_workflow_permissions}`)
+      }
+      if (changes.can_approve_pull_request_reviews !== undefined) {
+        console.log(`   • Allowing PR creation/approval: ${changes.can_approve_pull_request_reviews}`)
+      }
     }
   } else {
     // Interactive mode: prompt for changes
     changes = await promptPermissionChanges(currentPermissions)
 
     if (changes === null) {
-      console.log('\n✨ No changes needed!')
-      return
-    }
-
-    if (changes === 'declined') {
+      console.log('\n✅ Workflow permissions are already configured correctly!')
+      permissionsAlreadyCorrect = true
+    } else if (changes === 'declined') {
       console.log('\n⚠️  Setup incomplete - permissions were not updated')
       console.log('💡 You can run this command again anytime or update permissions manually at:')
       console.log(`   https://github.com/${repoInfo.owner}/${repoInfo.repo}/settings/actions`)
-      return
+      // Still continue to check branch protection
+      permissionsAlreadyCorrect = true
     }
   }
 
-  // Apply changes
-  console.log('\n🔄 Updating repository settings...')
-  await updateWorkflowPermissions(
-    repoInfo.owner,
-    repoInfo.repo,
-    token,
-    changes
-  )
+  // Apply permission changes if needed
+  if (!permissionsAlreadyCorrect && changes && changes !== 'declined') {
+    console.log('\n🔄 Updating repository settings...')
+    await updateWorkflowPermissions(
+      repoInfo.owner,
+      repoInfo.repo,
+      token,
+      changes
+    )
 
-  console.log('✅ GitHub Actions permissions updated successfully!')
+    console.log('✅ GitHub Actions permissions updated successfully!')
+  }
+
+  // Configure branch protection for auto-merge
+  await configureBranchProtection(repoInfo, token, autoApply)
+
+  console.log('\n✨ Setup complete!')
   console.log('\n💡 You can verify the changes at:')
   console.log(`   https://github.com/${repoInfo.owner}/${repoInfo.repo}/settings/actions`)
 }
