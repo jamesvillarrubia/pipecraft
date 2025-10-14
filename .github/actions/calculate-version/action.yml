@@ -9,7 +9,7 @@ inputs:
     default: 'main'
 
 outputs:
-  nextVersion:
+  version:
     description: 'The determined version'
     value: ${{ steps.set_version.outputs.version }}
 
@@ -27,7 +27,6 @@ runs:
         node-version: 22
 
     - name: Configure Git
-      shell: bash
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -53,26 +52,25 @@ runs:
           echo "version=$TAG" >> $GITHUB_OUTPUT
         fi
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v3
-      with:
-        version: 8
+    - name: Set up minimal package.json
+      shell: bash
+      run: |
+        echo '{
+          "name": "temporary-lib",
+          "version": "0.0.0-release-it"
+        }' > package.json
 
     - name: Install dependencies
       shell: bash
-      run: pnpm install
+      run: npm install @release-it/conventional-changelog conventional-changelog-angular
 
     - name: Get version
       if: steps.get_version_old.outputs.version == ''
       id: get_version_new
       shell: bash
       run: |
-        # Get version and filter out warnings
-        RAW_OUTPUT=$(npx release-it --ci --release-version 2>&1 || echo "")
-        # Extract just the version number (last line that looks like a version)
-        VERSION=$(echo "$RAW_OUTPUT" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' | tail -1)
-
-        if [[ "$RAW_OUTPUT" == *"No new version to release"* || -z "$VERSION" ]]; then
+        VERSION=$(npx release-it --ci --release-version 2>&1 || echo "")
+        if [[ "$VERSION" == *"No new version to release"* || -z "$VERSION" ]]; then
           echo "No new version to release"
           echo "VERSION=" >> $GITHUB_ENV
           echo "version=" >> $GITHUB_OUTPUT

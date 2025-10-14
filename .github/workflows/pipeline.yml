@@ -38,20 +38,9 @@ on:
       - main
 jobs:
   changes:
-    ## =============================================================================
-    #        # CHANGES DETECTION
-    #        # =============================================================================
     runs-on: ubuntu-latest
-    outputs:
-      core: ${{ steps.detect.outputs.core }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - uses: ./.github/actions/detect-changes
-        id: detect
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
 
@@ -87,18 +76,10 @@ jobs:
         run: pnpm build
 
   version:
-    ## =============================================================================
-    #        # VERSIONING
-    #        # =============================================================================
     if: github.ref_name == 'develop'
-    needs: [changes, test-core]
+    needs: changes
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - uses: ./.github/actions/calculate-version
         id: calculate-version
         with:
@@ -106,52 +87,31 @@ jobs:
     outputs:
       nextVersion: ${{ steps.calculate-version.outputs.nextVersion }}
   tag:
-    ## =============================================================================
-    #        # TAG & CREATE PR
-    #        # =============================================================================
     if: github.ref_name == 'develop'
     needs: version
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.nextVersion }}
-          token: ${{ secrets.GITHUB_TOKEN }}
 
   createpr:
     ## SHOULD BE ANY BRANCH EXCEPT the final branch
     if: github.ref_name != 'main'
     needs: [ changes, version ]
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - uses: ./.github/actions/create-pr
         with:
           sourceBranch: ${{ github.ref_name }}
           targetBranch: ${{ github.ref_name == 'develop' && 'staging' || github.ref_name == 'staging' && 'main' || 'main' }}
           title: 'Release ${{ needs.version.outputs.nextVersion }}'
           body: 'Automated release PR for version ${{ needs.version.outputs.nextVersion }}'
-          token: ${{ secrets.GITHUB_TOKEN }}
-
   branch:
     ## SHOULD BE THE NEXT BRANCH
+    ## Automatically fast-forwards based on autoMerge configuration
     needs: createpr
+    if: github.ref_name == 'develop'
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -163,8 +123,16 @@ jobs:
           fetch-depth: 0
 
       - uses: ./.github/actions/manage-branch
+        id: manage-branch
         with:
           action: 'fast-forward'
           targetBranch: ${{ github.ref_name == 'develop' && 'staging' || github.ref_name == 'staging' && 'main' || 'main' }}
           sourceBranch: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger workflow on target branch
+        if: steps.manage-branch.outputs.success == 'true'
+        run: |
+          TARGET_BRANCH="${{ steps.manage-branch.outputs.branch }}"
+          echo "Triggering workflow on branch: $TARGET_BRANCH"
+          gh workflow run pipeline.yml --ref "$TARGET_BRANCH"

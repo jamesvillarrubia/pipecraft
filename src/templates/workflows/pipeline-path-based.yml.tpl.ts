@@ -302,33 +302,95 @@ export const createPathBasedPipeline = (ctx: any) => {
       `, ctx),
       required: true
     },
-    
-    {
-      path: 'jobs.branch',
-      operation: 'overwrite',
-      value: createValueFromString(`
-        ## SHOULD BE THE NEXT BRANCH
-        needs: createpr
-        runs-on: ubuntu-latest
-        steps:
-          - uses: ./.github/actions/manage-branch
-            with:
-              action: 'fast-forward'
-              targetBranch: \${{ github.ref_name == '${branchFlow[0]}' && '${branchFlow[1] || branchFlow[0]}' || github.ref_name == '${branchFlow[1]}' && '${branchFlow[2] || branchFlow[1]}' || '${branchFlow[branchFlow.length - 1]}' }}
-              sourceBranch: \${{ github.ref_name }}
-      `, ctx),
-      required: true
-    },
+
+    // Only include branch job if autoMerge is enabled for any target branch
+    ...(() => {
+      // Determine which branches have autoMerge enabled
+      const autoMergeConfig = ctx.autoMerge
+      const hasAutoMerge = typeof autoMergeConfig === 'boolean'
+        ? autoMergeConfig
+        : autoMergeConfig && Object.values(autoMergeConfig).some(v => v === true)
+
+      if (!hasAutoMerge) return []
+
+      // Build conditional logic for per-branch autoMerge
+      let ifCondition = ''
+      if (typeof autoMergeConfig === 'object') {
+        // Per-branch configuration
+        const conditions = branchFlow.slice(0, -1).map((sourceBranch: string, idx: number) => {
+          const targetBranch = branchFlow[idx + 1]
+          const shouldAutoMerge = autoMergeConfig[targetBranch]
+          if (shouldAutoMerge) {
+            return `github.ref_name == '${sourceBranch}'`
+          }
+          return null
+        }).filter(Boolean)
+
+        if (conditions.length > 0) {
+          ifCondition = conditions.join(' || ')
+        } else {
+          return [] // No branches have autoMerge enabled
+        }
+      }
+      // If boolean true, always run (no if condition needed beyond needs: createpr)
+
+      return [{
+        path: 'jobs.branch',
+        operation: 'overwrite' as const,
+        value: createValueFromString(`
+          ## SHOULD BE THE NEXT BRANCH
+          ## Automatically fast-forwards based on autoMerge configuration
+          needs: createpr
+          ${ifCondition ? `if: ${ifCondition}` : ''}
+          runs-on: ubuntu-latest
+          env:
+            GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+            GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+
+            - uses: ./.github/actions/manage-branch
+              id: manage-branch
+              with:
+                action: 'fast-forward'
+                targetBranch: \${{ github.ref_name == '${branchFlow[0]}' && '${branchFlow[1] || branchFlow[0]}' || github.ref_name == '${branchFlow[1]}' && '${branchFlow[2] || branchFlow[1]}' || '${branchFlow[branchFlow.length - 1]}' }}
+                sourceBranch: \${{ github.ref_name }}
+                token: \${{ secrets.GITHUB_TOKEN }}
+
+            - name: Trigger workflow on target branch
+              if: steps.manage-branch.outputs.success == 'true'
+              run: |
+                TARGET_BRANCH="\${{ steps.manage-branch.outputs.branch }}"
+                echo "Triggering workflow on branch: $TARGET_BRANCH"
+                gh workflow run pipeline.yml --ref "$TARGET_BRANCH"
+        `, ctx),
+        required: true
+      }]
+    })(),
     
 
   ]
-  
+
   // Helper function to get job keys in order
   const getJobKeysInOrder = (jobsNode: any): string[] => {
     if (!jobsNode || !jobsNode.items) return []
     return jobsNode.items.map((item: any) => item.key.value)
   }
-  
+
+  // Remove branch job if autoMerge is disabled for all branches
+  const autoMergeConfig = ctx.autoMerge
+  const hasAnyAutoMerge = typeof autoMergeConfig === 'boolean'
+    ? autoMergeConfig
+    : autoMergeConfig && Object.values(autoMergeConfig).some(v => v === true)
+
+  if (!hasAnyAutoMerge && doc.contents.get('jobs')?.get('branch')) {
+    console.log('🗑️  Removing branch job (autoMerge is disabled for all branches)')
+    doc.contents.get('jobs').delete('branch')
+  }
+
   // Check if Flowcraft jobs already exist in user's pipeline
   const existingFlowcraftJobs = new Set<string>()
   if (ctx.existingPipelineContent && doc.contents.get('jobs')) {

@@ -9,6 +9,10 @@
     "staging",
     "main"
   ],
+  "autoMerge": {
+    "staging": true,
+    "main": false
+  },
   "semver": {
     "bumpRules": {
       "feat": "minor",
