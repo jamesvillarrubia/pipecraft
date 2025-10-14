@@ -104,7 +104,7 @@ program
         console.log('🔍 Running pre-flight checks...\n')
 
         const checks = runPreflightChecks()
-        const { allPassed, output } = formatPreflightResults(checks)
+        const { allPassed, output, nextSteps } = formatPreflightResults(checks)
 
         console.log(output)
         console.log()
@@ -115,7 +115,14 @@ program
           process.exit(1)
         }
 
-        console.log('✅ All pre-flight checks passed!\n')
+        console.log('✅ All pre-flight checks passed!')
+
+        // Store next steps for later display (after successful generation)
+        if (nextSteps) {
+          (options as any)._nextSteps = nextSteps
+        }
+
+        console.log()
       }
 
       if (globalOptions.verbose) {
@@ -173,8 +180,15 @@ program
       // Update idempotency cache
       const idempotencyManager = new IdempotencyManager(config)
       await idempotencyManager.updateCache()
-      
+
       console.log(`✅ Generated workflows in: ${options.output}`)
+
+      // Display next steps if available
+      if ((options as any)._nextSteps) {
+        console.log()
+        const steps = (options as any)._nextSteps as string[]
+        steps.forEach((step: string) => console.log(step))
+      }
     } catch (error: any) {
       console.error('❌ Failed to generate workflows:', error.message)
       process.exit(1)

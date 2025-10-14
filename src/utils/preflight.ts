@@ -253,6 +253,7 @@ export function runPreflightChecks(): PreflightChecks {
 export function formatPreflightResults(checks: PreflightChecks): {
   allPassed: boolean
   output: string
+  nextSteps?: string[]
 } {
   const results: string[] = []
   let allPassed = true
@@ -269,8 +270,35 @@ export function formatPreflightResults(checks: PreflightChecks): {
     }
   }
 
+  // Provide next steps if all checks passed
+  const nextSteps: string[] | undefined = allPassed ? [
+    'Your environment is ready to generate workflows!',
+    '',
+    'Next steps:',
+    '  1. Commit the generated workflows: git add .github && git commit -m "chore: add workflows"',
+    '  2. Push to remote: git push origin ' + getCurrentBranch(),
+    '  3. Set up GitHub tokens: flowcraft setup-github --verify',
+    '  4. Validate the pipeline: flowcraft validate:pipeline'
+  ] : undefined
+
   return {
     allPassed,
-    output: results.join('\n')
+    output: results.join('\n'),
+    nextSteps
+  }
+}
+
+/**
+ * Get current git branch name
+ */
+function getCurrentBranch(): string {
+  try {
+    const branch = execSync('git branch --show-current', {
+      stdio: 'pipe',
+      encoding: 'utf8'
+    }).trim()
+    return branch || 'main'
+  } catch (error) {
+    return 'main'
   }
 }
