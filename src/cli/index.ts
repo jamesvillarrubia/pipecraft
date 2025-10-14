@@ -11,6 +11,7 @@ import { VersionManager } from '../utils/versioning'
 import { loadConfig, validateConfig } from '../utils/config'
 import { FlowcraftConfig } from '../types'
 import { setupGitHubPermissions } from '../utils/github-setup'
+import { runPreflightChecks, formatPreflightResults, checkNodeVersion } from '../utils/preflight'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -90,18 +91,38 @@ program
   .description('Generate CI/CD workflows from configuration')
   .option('-o, --output <path>', 'output directory for generated workflows', '.github/workflows')
   .option('--skip-unchanged', 'skip files that haven\'t changed')
+  .option('--skip-checks', 'skip pre-flight checks (not recommended)')
   .action(async (options) => {
     try {
       const globalOptions = program.opts()
       const configPath = globalOptions.config
       const pipelinePath = globalOptions.pipeline
       const outputPipelinePath = globalOptions.outputPipeline
-      
+
+      // Run pre-flight checks unless skipped
+      if (!options.skipChecks) {
+        console.log('🔍 Running pre-flight checks...\n')
+
+        const checks = runPreflightChecks()
+        const { allPassed, output } = formatPreflightResults(checks)
+
+        console.log(output)
+        console.log()
+
+        if (!allPassed) {
+          console.error('❌ Pre-flight checks failed. Fix the issues above and try again.')
+          console.error('   Or use --skip-checks to bypass (not recommended)\n')
+          process.exit(1)
+        }
+
+        console.log('✅ All pre-flight checks passed!\n')
+      }
+
       if (globalOptions.verbose) {
         console.log(`📖 Reading config from: ${configPath}`)
         console.log(`📖 Reading pipeline from: ${pipelinePath}`)
       }
-      
+
       // Load configuration
       const config = loadConfig(configPath) as FlowcraftConfig
       
