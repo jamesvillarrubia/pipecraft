@@ -411,13 +411,25 @@ pipecraft generate --skip-checks
 
 ## GitHub Actions Setup
 
-PipeCraft requires specific GitHub Actions permissions to function correctly. The `setup-github` command helps you configure these permissions easily.
+PipeCraft requires specific GitHub Actions permissions and repository settings to function correctly. The `setup-github` command helps you configure everything automatically.
 
-### Required Permissions
+### What Gets Configured
 
-PipeCraft workflows need:
-- **Default workflow permissions: write** - For creating tags and pushing changes
-- **Can create/approve pull requests: Yes** - For automated PR creation
+The `setup-github` command configures:
+
+1. **Workflow Permissions**
+   - Default workflow permissions: **write** (for creating tags and pushing changes)
+   - Can create/approve pull requests: **Yes** (for automated PR creation)
+
+2. **Repository Auto-Merge**
+   - Enables auto-merge feature at repository level
+   - Required for automatic promotion between branches
+
+3. **Branch Protection Rules** (for branches with auto-merge enabled)
+   - Status checks enabled (no specific checks required)
+   - Required linear history (prevents messy merges)
+   - No force pushes or branch deletion
+   - These rules are required for GitHub's auto-merge feature to work
 
 ### Usage
 
@@ -431,9 +443,10 @@ pipecraft setup-github
 
 The command will:
 1. Check your current repository permissions
-2. Show what permissions are needed
-3. Prompt you to apply each change
-4. Update the permissions if you accept
+2. Enable repository-level auto-merge if needed
+3. Configure branch protection for branches with `autoMerge: true` in config
+4. Prompt you to apply each change
+5. Update the settings if you accept
 
 **Auto-Apply Mode**
 
@@ -468,7 +481,16 @@ This mode is useful for:
    • Default permissions: write (for creating tags and pushing)
    • Can create/approve PRs: Yes (for automated PR creation)
 
-? Change default workflow permissions from "read" to "write"? (Y/n)
+? Change default workflow permissions from "read" to "write"? (Y/n) Yes
+
+🔍 Checking auto-merge configuration...
+✅ Enabled auto-merge for repository
+📋 Branches with auto-merge enabled: staging
+? Enable branch protection for 'staging' to support auto-merge? (Y/n) Yes
+🔧 Configuring branch protection for staging...
+✅ Branch protection enabled for staging
+
+✨ Setup complete!
 ```
 
 **Auto-apply mode:**
@@ -479,16 +501,18 @@ This mode is useful for:
 ✅ GitHub token found
 🔍 Fetching current workflow permissions...
 
-📋 Current GitHub Actions Workflow Permissions:
-   Default permissions: read
-   Can create/approve PRs: No
+✅ Workflow permissions are already configured correctly!
 
-🔧 Applying required changes:
-   • Setting default permissions to: write
-   • Allowing PR creation/approval: true
+🔍 Checking auto-merge configuration...
+✅ Enabled auto-merge for repository
+📋 Branches with auto-merge enabled: staging
+🔧 Configuring branch protection for staging...
+✅ Branch protection enabled for staging
 
-🔄 Updating repository settings...
-✅ GitHub Actions permissions updated successfully!
+✨ Setup complete!
+
+💡 You can verify the changes at:
+   https://github.com/user/repo/settings/actions
 ```
 
 ### Authentication
@@ -511,14 +535,34 @@ export GITHUB_TOKEN=ghp_your_token_here
 
 ### Manual Configuration
 
-You can also configure these permissions manually:
+You can also configure these settings manually:
 
+**Workflow Permissions:**
 1. Go to your repository on GitHub
 2. Navigate to **Settings** → **Actions** → **General**
 3. Under "Workflow permissions":
    - Select **Read and write permissions**
    - Check **Allow GitHub Actions to create and approve pull requests**
 4. Click **Save**
+
+**Repository Auto-Merge:**
+1. Navigate to **Settings** → **General**
+2. Scroll to "Pull Requests"
+3. Check **Allow auto-merge**
+4. Click **Save**
+
+**Branch Protection (for branches with auto-merge):**
+1. Navigate to **Settings** → **Branches**
+2. Click **Add branch protection rule** or edit existing rule
+3. In "Branch name pattern", enter the branch name (e.g., `staging`)
+4. Configure the following:
+   - Check **Require status checks to pass before merging**
+   - Leave status checks empty (or add your own)
+   - Check **Require linear history**
+   - Leave other options as needed
+5. Click **Create** or **Save changes**
+
+Note: Branch protection rules are required for auto-merge to work in GitHub.
 
 ## Configuration Options
 
