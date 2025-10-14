@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(cat:*)",
-      "Bash(npm run generate:*)"
+      "Bash(npm run generate:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: add --apply and --force flags to setup-github command\n\nAdd ability to automatically apply GitHub Actions permission changes without interactive prompts. Useful for CI/CD pipelines and automated setup scripts.\n\nUsage:\n  flowcraft setup-github --apply   # Auto-apply changes\n  flowcraft setup-github --force   # Alias for --apply\n  flowcraft setup-github           # Interactive mode (default)\n\nChanges:\n- Add --apply and --force options to setup-github command\n- Implement getRequiredPermissionChanges() helper function\n- Update setupGitHubPermissions() to support auto-apply mode\n- Show clear output of what changes are being applied\n- Successfully tested: permissions updated from read to write\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

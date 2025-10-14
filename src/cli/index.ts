@@ -379,9 +379,12 @@ program
 program
   .command('setup-github')
   .description('Configure GitHub Actions workflow permissions for FlowCraft')
-  .action(async () => {
+  .option('--apply', 'Automatically apply changes without prompting')
+  .option('--force', 'Alias for --apply')
+  .action(async (options) => {
     try {
-      await setupGitHubPermissions()
+      const autoApply = options.apply || options.force
+      await setupGitHubPermissions(autoApply)
     } catch (error: any) {
       console.error('❌ GitHub setup failed:', error.message)
       if (error.stack) {

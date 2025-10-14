@@ -123,6 +123,34 @@ export async function updateWorkflowPermissions(
 }
 
 /**
+ * Determine required permission changes without prompting
+ * Returns: changes object if changes needed, null if already correct
+ */
+export function getRequiredPermissionChanges(
+  currentPermissions: WorkflowPermissions
+): Partial<WorkflowPermissions> | null {
+  // Check if permissions are already correct
+  if (
+    currentPermissions.default_workflow_permissions === 'write' &&
+    currentPermissions.can_approve_pull_request_reviews === true
+  ) {
+    return null
+  }
+
+  const changes: Partial<WorkflowPermissions> = {}
+
+  if (currentPermissions.default_workflow_permissions !== 'write') {
+    changes.default_workflow_permissions = 'write'
+  }
+
+  if (!currentPermissions.can_approve_pull_request_reviews) {
+    changes.can_approve_pull_request_reviews = true
+  }
+
+  return Object.keys(changes).length > 0 ? changes : null
+}
+
+/**
  * Display current permissions and prompt for changes
  * Returns: changes object if user accepted changes, 'declined' if user declined, null if already correct
  */
@@ -194,7 +222,7 @@ export async function promptPermissionChanges(
 /**
  * Main setup function
  */
-export async function setupGitHubPermissions(): Promise<void> {
+export async function setupGitHubPermissions(autoApply: boolean = false): Promise<void> {
   console.log('🔍 Checking GitHub repository configuration...\n')
 
   // Get repository info
@@ -219,19 +247,43 @@ export async function setupGitHubPermissions(): Promise<void> {
     token
   )
 
-  // Prompt for changes
-  const changes = await promptPermissionChanges(currentPermissions)
+  let changes: Partial<WorkflowPermissions> | null | 'declined'
 
-  if (changes === null) {
-    console.log('\n✨ No changes needed!')
-    return
-  }
+  if (autoApply) {
+    // Auto-apply mode: determine changes without prompting
+    changes = getRequiredPermissionChanges(currentPermissions)
 
-  if (changes === 'declined') {
-    console.log('\n⚠️  Setup incomplete - permissions were not updated')
-    console.log('💡 You can run this command again anytime or update permissions manually at:')
-    console.log(`   https://github.com/${repoInfo.owner}/${repoInfo.repo}/settings/actions`)
-    return
+    if (changes === null) {
+      console.log('\n✨ Permissions are already configured correctly!')
+      return
+    }
+
+    // Show what will be applied
+    console.log('\n📋 Current GitHub Actions Workflow Permissions:')
+    console.log(`   Default permissions: ${currentPermissions.default_workflow_permissions}`)
+    console.log(`   Can create/approve PRs: ${currentPermissions.can_approve_pull_request_reviews ? 'Yes' : 'No'}`)
+    console.log('\n🔧 Applying required changes:')
+    if (changes.default_workflow_permissions) {
+      console.log(`   • Setting default permissions to: ${changes.default_workflow_permissions}`)
+    }
+    if (changes.can_approve_pull_request_reviews !== undefined) {
+      console.log(`   • Allowing PR creation/approval: ${changes.can_approve_pull_request_reviews}`)
+    }
+  } else {
+    // Interactive mode: prompt for changes
+    changes = await promptPermissionChanges(currentPermissions)
+
+    if (changes === null) {
+      console.log('\n✨ No changes needed!')
+      return
+    }
+
+    if (changes === 'declined') {
+      console.log('\n⚠️  Setup incomplete - permissions were not updated')
+      console.log('💡 You can run this command again anytime or update permissions manually at:')
+      console.log(`   https://github.com/${repoInfo.owner}/${repoInfo.repo}/settings/actions`)
+      return
+    }
   }
 
   // Apply changes
