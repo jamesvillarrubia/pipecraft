@@ -58,9 +58,10 @@ runs:
         VERSION_CLEAN="${VERSION#v}"
 
         # Replace placeholders in pattern
-        TEMP_BRANCH="${PATTERN//\{source\\}/$SOURCE}"
-        TEMP_BRANCH="${TEMP_BRANCH//\{target\\}/$TARGET}"
-        TEMP_BRANCH="${TEMP_BRANCH//\{version\\}/$VERSION_CLEAN}"
+        TEMP_BRANCH="$PATTERN"
+        TEMP_BRANCH="${TEMP_BRANCH//{source\}/$SOURCE}"
+        TEMP_BRANCH="${TEMP_BRANCH//{target\}/$TARGET}"
+        TEMP_BRANCH="${TEMP_BRANCH//{version\}/$VERSION_CLEAN}"
 
         echo "🌿 Creating temporary branch: $TEMP_BRANCH"
         echo "   From: $SOURCE"
