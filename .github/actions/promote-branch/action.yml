@@ -163,10 +163,13 @@ runs:
 
         echo "🔄 Enabling auto-merge for PR #$PR_NUMBER"
 
-        # Enable auto-merge with squash strategy
-        gh pr merge "$PR_NUMBER" --auto --squash
-
-        echo "✅ Auto-merge enabled - PR will merge automatically when checks pass"
+        # Enable auto-merge with squash strategy (ignore errors if branch protection not configured)
+        if gh pr merge "$PR_NUMBER" --auto --squash 2>&1; then
+          echo "✅ Auto-merge enabled - PR will merge automatically when checks pass"
+        else
+          echo "⚠️  Could not enable auto-merge (branch protection may not be configured)"
+          echo "ℹ️  PR created successfully - please merge manually or configure branch protection"
+        fi
 
     - name: Use Existing PR
       if: steps.check-pr.outputs.exists == 'true'
