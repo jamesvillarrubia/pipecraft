@@ -109,30 +109,9 @@ jobs:
       - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.nextVersion }}
-
-  createpr:
-    ## SHOULD BE ANY BRANCH EXCEPT the final branch
-    if: github.ref_name != 'main'
-    needs: [ changes, version ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: ./.github/actions/create-pr
-        with:
-          sourceBranch: ${{ github.ref_name }}
-          targetBranch: ${{ github.ref_name == 'develop' && 'staging' || github.ref_name == 'staging' && 'main' || 'main' }}
-          title: 'Release ${{ needs.version.outputs.nextVersion }}'
-          body: 'Automated release PR for version ${{ needs.version.outputs.nextVersion }}'
-          token: ${{ secrets.GITHUB_TOKEN }}
-  branch:
-    ## SHOULD BE THE NEXT BRANCH
-    ## Automatically fast-forwards based on autoMerge configuration
-    needs: createpr
+  promote-to-staging:
     if: github.ref_name == 'develop'
+    needs: [ changes, version, tag ]
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -143,17 +122,30 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: ./.github/actions/manage-branch
-        id: manage-branch
+      - uses: ./.github/actions/promote-branch
         with:
-          action: 'fast-forward'
-          targetBranch: ${{ github.ref_name == 'develop' && 'staging' || github.ref_name == 'staging' && 'main' || 'main' }}
-          sourceBranch: ${{ github.ref_name }}
+          sourceBranch: develop
+          targetBranch: staging
+          version: ${{ needs.version.outputs.nextVersion }}
+          autoMerge: 'true'
           token: ${{ secrets.GITHUB_TOKEN }}
+  promote-to-main:
+    if: github.ref_name == 'staging'
+    needs: [ changes, version, tag ]
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Trigger workflow on target branch
-        if: steps.manage-branch.outputs.success == 'true'
-        run: |
-          TARGET_BRANCH="${{ steps.manage-branch.outputs.branch }}"
-          echo "Triggering workflow on branch: $TARGET_BRANCH"
-          gh workflow run pipeline.yml --ref "$TARGET_BRANCH"
+      - uses: ./.github/actions/promote-branch
+        with:
+          sourceBranch: staging
+          targetBranch: main
+          version: ${{ needs.version.outputs.nextVersion }}
+          autoMerge: 'false'
+          token: ${{ secrets.GITHUB_TOKEN }}
