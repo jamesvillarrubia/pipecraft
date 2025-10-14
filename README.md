@@ -20,10 +20,12 @@ FlowCraft is a powerful CLI tool for automating trunk-based development workflow
   - [CLI Examples](#cli-examples)
   - [Configuration](#configuration)
 - [Commands](#commands)
+- [Pre-Flight Checks](#pre-flight-checks)
 - [Configuration Options](#configuration-options)
 - [Domain-Based Workflows](#domain-based-workflows)
 - [Version Management](#version-management)
 - [Examples](#examples)
+- [Roadmap & Future Features](#roadmap--future-features)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
@@ -32,6 +34,7 @@ FlowCraft is a powerful CLI tool for automating trunk-based development workflow
 ## Features
 
 - **Automatic CI/CD Pipeline Generation** - Generate GitHub Actions workflows tailored to your branch flow
+- **Pre-Flight Checks** - Validates prerequisites before generating workflows with helpful error messages
 - **Domain-Based Change Detection** - Smart path-based detection for monorepo architectures
 - **Semantic Versioning** - Automatic version bumping based on conventional commits
 - **Branch Flow Management** - Support for custom branch flows (develop → staging → main)
@@ -39,6 +42,7 @@ FlowCraft is a powerful CLI tool for automating trunk-based development workflow
 - **Idempotent Regeneration** - Only regenerate when configuration or templates change
 - **GitLab Support** - Works with both GitHub Actions and GitLab CI (configurable)
 - **Customizable Actions** - Define actions per branch merge (tests, deploys, version bumps)
+- **GitHub Setup Automation** - Automated token and repository setup validation
 
 ## Prerequisites
 
@@ -129,6 +133,28 @@ flowcraft init --with-versioning
 Generate CI/CD workflows based on your configuration:
 ```bash
 flowcraft generate
+```
+
+The generate command automatically runs pre-flight checks to validate:
+- Configuration file exists and is valid
+- Required fields are present (ciProvider, branchFlow, domains)
+- Current directory is a git repository
+- Git remote is configured
+- .github/workflows directory is writable
+
+If any check fails, you'll see helpful error messages with suggestions. Example output:
+```
+🔍 Running pre-flight checks...
+
+✅ Configuration found: /path/to/.flowcraftrc.json
+✅ Configuration is valid
+❌ Not in a git repository
+   💡 Initialize git: 'git init' or clone an existing repository
+```
+
+Skip pre-flight checks (not recommended):
+```bash
+flowcraft generate --skip-checks
 ```
 
 Force regeneration (bypass cache):
@@ -247,8 +273,10 @@ FlowCraft provides the following commands:
 | Command | Description | Options |
 |---------|-------------|---------|
 | `init` | Initialize FlowCraft configuration | `--interactive`, `--force`, `--with-versioning`, `--ci-provider`, `--merge-strategy`, `--initial-branch`, `--final-branch` |
-| `generate` | Generate CI/CD workflows | `--force`, `--dry-run`, `--config`, `--output-pipeline`, `--verbose` |
+| `generate` | Generate CI/CD workflows with pre-flight checks | `--skip-checks`, `--force`, `--dry-run`, `--config`, `--output-pipeline`, `--verbose` |
 | `validate` | Validate configuration file | `--config` |
+| `validate:pipeline` | Validate generated pipeline files | `--strict` |
+| `setup-github` | Configure GitHub tokens and repository | `--token`, `--verify` |
 | `verify` | Verify FlowCraft setup | None |
 | `version` | Version management commands | `--check`, `--bump`, `--release` |
 | `setup` | Create branches from branch flow | `--force` |
@@ -273,6 +301,12 @@ flowcraft init --interactive --with-versioning --ci-provider github
 # Generate workflows with custom paths
 flowcraft generate --config .flowcraft.json --output-pipeline workflows/ci.yml
 
+# Validate pipeline files
+flowcraft validate:pipeline
+
+# Setup GitHub token and verify configuration
+flowcraft setup-github --token ghp_yourtoken --verify
+
 # Validate before committing
 flowcraft validate && git commit -am "chore: update workflow config"
 
@@ -284,6 +318,92 @@ flowcraft version --release
 # Setup all branches for new repository
 flowcraft setup
 ```
+
+## Pre-Flight Checks
+
+FlowCraft includes comprehensive pre-flight validation to catch common errors before generating workflows. This helps new users avoid frustration and ensures your project is properly configured.
+
+### What Gets Checked
+
+When you run `flowcraft generate`, the following checks are automatically performed:
+
+1. **Configuration File Discovery**
+   - Searches for config using [cosmiconfig](https://github.com/davidtheclark/cosmiconfig)
+   - Looks in: `.flowcraftrc.json`, `.flowcraftrc`, `package.json` (flowcraft key)
+   - Searches parent directories recursively
+   - Shows the exact path where config was found
+
+2. **Configuration Validation**
+   - Verifies JSON syntax is valid
+   - Checks all required fields are present:
+     - `ciProvider` (github or gitlab)
+     - `branchFlow` (array of branch names)
+     - `domains` (at least one domain configured)
+   - Validates domain configuration has paths defined
+
+3. **Git Repository Check**
+   - Verifies current directory is a git repository
+   - Suggests running `git init` if not
+
+4. **Git Remote Check**
+   - Verifies git remote is configured
+   - Shows the remote URL
+   - Suggests adding a remote if missing
+
+5. **Write Permissions**
+   - Tests that `.github/workflows` directory can be created/written to
+   - Checks file system permissions
+
+### Example Pre-Flight Output
+
+**All checks passing:**
+```
+🔍 Running pre-flight checks...
+
+✅ Configuration found: /path/to/project/.flowcraftrc.json
+✅ Configuration is valid
+✅ Current directory is a git repository
+✅ Git remote configured: https://github.com/user/repo.git
+✅ .github/workflows directory is writable
+
+✅ All pre-flight checks passed!
+```
+
+**Checks failing with helpful suggestions:**
+```
+🔍 Running pre-flight checks...
+
+❌ No FlowCraft configuration found
+   💡 Run 'flowcraft init' to create a configuration file
+
+❌ Not in a git repository
+   💡 Initialize git: 'git init' or clone an existing repository
+
+❌ No git remote configured
+   💡 Add a remote: 'git remote add origin <url>'
+
+❌ Pre-flight checks failed. Fix the issues above and try again.
+   Or use --skip-checks to bypass (not recommended)
+```
+
+### Skipping Pre-Flight Checks
+
+While not recommended, you can skip pre-flight checks if needed:
+
+```bash
+flowcraft generate --skip-checks
+```
+
+**When you might skip checks:**
+- CI/CD environment with non-standard setup
+- Using FlowCraft in a script/automation
+- Advanced users who know the risks
+
+**Why you shouldn't skip:**
+- Prevents cryptic errors during generation
+- Saves time by catching issues early
+- Provides actionable error messages
+- Ensures consistent behavior across environments
 
 ## Configuration Options
 
@@ -630,6 +750,59 @@ Configuration with non-standard branch names:
 }
 ```
 
+## Roadmap & Future Features
+
+FlowCraft is actively being developed with plans for additional features and improvements:
+
+### Planned Features
+
+#### Enhanced GitLab Support
+- Full GitLab CI/CD pipeline generation (currently basic support)
+- GitLab-specific features (includes, extends, etc.)
+- GitLab merge request automation
+- GitLab runner configuration
+
+#### Additional Workflow Patterns
+- Feature branch workflows (Gitflow alternative)
+- Release branch workflows
+- Hotfix workflows
+- Custom workflow patterns via plugins
+
+#### Advanced Branch Management
+- Automatic conflict resolution strategies
+- Branch protection rule setup
+- PR template generation
+- Code review automation
+
+#### Extended CI/CD Providers
+- Azure DevOps Pipelines
+- Jenkins pipeline generation
+- CircleCI configuration
+- Bitbucket Pipelines
+
+#### Improved Developer Experience
+- Interactive CLI improvements
+- Better error messages and diagnostics
+- Configuration migration tools
+- Visual workflow editor (web-based)
+- Real-time workflow preview
+
+#### Enterprise Features
+- Team configuration templates
+- Organization-wide policy enforcement
+- Audit logging
+- RBAC integration
+- Self-hosted runner configuration
+
+### Contributing to the Roadmap
+
+Have a feature request? We'd love to hear from you!
+
+1. Check existing [feature requests](https://github.com/jamesvillarrubia/flowcraft/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
+2. [Open a new feature request](https://github.com/jamesvillarrubia/flowcraft/issues/new?labels=enhancement)
+3. Vote on existing feature requests with 👍
+4. Consider contributing! See [Contributing](#contributing)
+
 ## Troubleshooting
 
 ### Common Issues
@@ -639,6 +812,8 @@ Configuration with non-standard branch names:
 **Problem**: Running `flowcraft generate` doesn't create files.
 
 **Solutions**:
+- FlowCraft now runs automatic pre-flight checks that will catch most issues
+- Review the pre-flight check output for specific problems
 - Check if configuration is valid: `flowcraft validate`
 - Use `--force` to bypass cache: `flowcraft generate --force`
 - Use `--verbose` for detailed output: `flowcraft generate --verbose`
