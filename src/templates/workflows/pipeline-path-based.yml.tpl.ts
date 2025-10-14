@@ -161,6 +161,11 @@ export const createPathBasedPipeline = (ctx: any) => {
       value: createValueFromString(`
         runs-on: ubuntu-latest
         steps:
+          - name: Checkout Code
+            uses: actions/checkout@v4
+            with:
+              fetch-depth: 0
+
           - uses: ./.github/actions/detect-changes
             with:
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}

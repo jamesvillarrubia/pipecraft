@@ -12,7 +12,10 @@
       "Bash(node:*)",
       "Bash(pnpm pipecraft generate:*)",
       "Bash(git restore:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: add per-branch autoMerge configuration for hybrid manual/auto workflow\n\nAdd support for configurable auto-merge behavior per target branch, allowing\nteams to choose when to automatically fast-forward branches vs requiring manual\nPR review.\n\nChanges:\n- Add autoMerge config option supporting both boolean and per-branch object\n- Update pipeline template to conditionally generate branch job based on config\n- Add branch output to manage-branch action for workflow triggering\n- Implement workflow dispatch triggering to run pipeline on target branch\n- Add logic to remove branch job when autoMerge is disabled\n\nConfiguration:\n- Set autoMerge per target branch in .pipecraftrc.json\n- Example: { \"staging\": true, \"main\": false }\n- Enables auto-merge to staging, manual review for production\n\nWorkflow behavior:\n- When autoMerge enabled: creates PR + auto fast-forward + triggers workflow\n- When autoMerge disabled: creates PR + waits for manual merge (human merge triggers workflow)\n- Uses GITHUB_TOKEN with gh workflow run (no PAT needed)\n- Branch job includes conditional if statement based on source branch\n\nThis solves the issue where GITHUB_TOKEN pushes don''t trigger workflows by\nexplicitly triggering them, while maintaining flexibility for manual review\nwhen needed (e.g., before production deploys).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
