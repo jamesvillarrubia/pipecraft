@@ -130,6 +130,9 @@ const promoteBranchActionTemplate = (ctx: any) => {
               MERGE_TEXT="require manual approval"
             fi
 
+            # Disable error exit to capture gh pr create output even on failure
+            set +e
+
             # Create the PR with simple body
             PR_OUTPUT=\$(gh pr create \\
               --title "\$TITLE" \\
@@ -139,10 +142,10 @@ const promoteBranchActionTemplate = (ctx: any) => {
               --json number,url 2>&1)
 
             # Check if PR was created successfully by parsing JSON response
-            # Temporarily disable pipefail for this check
-            set +e
             PR_NUMBER=\$(printf '%s' "\$PR_OUTPUT" | jq -r '.number' 2>/dev/null)
             PR_CHECK_EXIT=\$?
+
+            # Re-enable error exit
             set -e
 
             if [ \$PR_CHECK_EXIT -eq 0 ] && [ -n "\$PR_NUMBER" ] && [ "\$PR_NUMBER" != "null" ]; then
