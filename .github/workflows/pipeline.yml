@@ -95,7 +95,7 @@ jobs:
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
     outputs:
-      nextVersion: ${{ steps.calculate-version.outputs.nextVersion }}
+      nextVersion: ${{ steps.calculate-version.outputs.version }}
   tag:
     if: github.ref_name == 'develop'
     needs: version

@@ -241,7 +241,7 @@ export const createPathBasedPipeline = (ctx: any) => {
             with:
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
         outputs:
-          nextVersion: \${{ steps.calculate-version.outputs.nextVersion }}
+          nextVersion: \${{ steps.calculate-version.outputs.version }}
       `, ctx),
       required: true
     },
