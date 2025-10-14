@@ -115,7 +115,7 @@ jobs:
     if: |
       ${{
         always() &&
-        (github.ref_name == 'develop' || github.ref_name == 'staging') &&
+        (github.ref_name == 'develop' || github.head_ref == 'develop' || github.ref_name == 'staging' || github.head_ref == 'staging') &&
         needs.version.result != 'failure' &&
         needs.tag.result != 'failure'
       }}
@@ -130,10 +130,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine target branch and auto-merge setting
+      - name: Determine source, target branch and auto-merge setting
         id: determine-target
         run: |
-          case "${{ github.ref_name }}" in
+          # Use head_ref for PRs, ref_name for push events
+          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+          echo "sourceBranch=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+
+          case "${BRANCH_NAME}" in
             "develop")
               echo "target=staging" >> $GITHUB_OUTPUT
               echo "autoMerge=true" >> $GITHUB_OUTPUT
@@ -154,7 +158,7 @@ jobs:
 
       - uses: ./.github/actions/promote-branch
         with:
-          sourceBranch: ${{ github.ref_name }}
+          sourceBranch: ${{ steps.determine-target.outputs.sourceBranch }}
           targetBranch: ${{ steps.determine-target.outputs.target }}
           version: ${{ steps.get-version.outputs.version }}
           autoMerge: ${{ steps.determine-target.outputs.autoMerge }}

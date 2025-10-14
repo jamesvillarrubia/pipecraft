@@ -1,0 +1,38 @@
+name: "Tag"
+
+on:
+  workflow_call:
+    inputs:
+      version: 
+        description: 'The version to deploy'
+        required: true
+        type: string
+  workflow_dispatch:
+
+jobs:
+  tag: 
+    if: github.ref_name == 'develop'
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Ensures full history for rebase
+    
+    - name: Create Tag
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        
+        NEWEST_VERSION=${{ inputs.version }}
+        LAST_TAG=$(git describe --tags --abbrev=0)
+
+        if [ "$LAST_TAG" != "$NEWEST_VERSION" ]; then
+          git tag $NEWEST_VERSION
+          git push origin $NEWEST_VERSION
+          
+          echo "Creating new tag for version: ${LAST_TAG} -> ${NEWEST_VERSION}"
+        else
+          echo "Version already tagged. Skipping tag step."
+        fi

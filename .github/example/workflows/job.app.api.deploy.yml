@@ -1,0 +1,127 @@
+name: "API:Job:Deploy"
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'The version to deploy'
+        required: true
+        type: string
+      project_id:
+        description: 'The project ID for the environment'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+    env: 
+      ENV: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+      API_DIR: "apps/api"
+      PROJECT_ID: ${{ inputs.project_id }}
+      REGION: "us-east4"
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+
+      - name: Debug Environment Variables
+        run: |
+          echo "PROJECT_ID from env: $PROJECT_ID"
+          echo "Input project_id: ${{ inputs.project_id }}"
+          echo "All environment variables:"
+          env | sort
+            
+
+      - name: Get SHA for "migration" tag
+        id: get-migration-sha
+        run: |
+          if git rev-parse refs/tags/migration >/dev/null 2>&1; then
+            echo "MIGRATION_SHA=$(git rev-parse refs/tags/_migration-${{ env.ENV }})"
+            echo "MIGRATION_SHA=$(git rev-parse refs/tags/_migration-${{ env.ENV }})" >> $GITHUB_ENV
+          else
+            echo "MIGRATION_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
+          fi
+
+      - name: Get changes in migrations folder
+        id: changed-files-migrations
+        uses: tj-actions/changed-files@v42
+        with:
+          files: apps/api/migrations/**
+          sha: ${{ env.MIGRATION_SHA }}
+
+
+      - name: Authenticate with Google
+        uses: 'google-github-actions/auth@v2'
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Build and Push Container
+        uses: whoan/docker-build-with-cache-action@v5
+        with:
+          username: _json_key
+          password: ${{ secrets.GCP_CREDENTIALS }}
+          registry: ${{ vars.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ vars.AR_REPO }}
+          image_name: api-${{ env.PROJECT_ID }}
+          image_tag: ${{ github.sha }}
+          context: .
+          dockerfile: ${{ env.API_DIR }}/Dockerfile
+
+      # - name: Deploy to Cloud Run with Migration
+      #   id: migration
+      #   if: steps.changed-files-migrations.outputs.any_changed == 'true' || github.event.inputs.migration_input == true
+      #   uses: google-github-actions/deploy-cloudrun@v2.0.0
+      #   with:
+      #     project_id: ${{ env.PROJECT_ID }}
+      #     service: api-${{ env.PROJECT_ID }}
+      #     region: ${{ env.REGION }}
+      #     image: ${{ vars.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ vars.AR_REPO }}/api-${{ env.PROJECT_ID }}:${{ github.sha }}
+      #     env_vars: |
+      #       MIGRATION=${{ toJson(github.event.inputs.migration_input) || steps.changed-files-migrations.outputs.any_changed }}
+      #       NODE_CONFIG_ENV=${{ env.ENV }}
+      #       SEED=false
+      #     no_traffic: true
+
+      # - name: Create Migration tag 
+      #   if: steps.migration.outcome == 'success'
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: require('./libs/cicd/upsertTag.cjs')({ github, context, tag:"_migration-${{ env.ENV }}" })
+
+      # - name: Seed Data to Instance
+      #   id: seed
+      #   if: steps.changed-files-migrations.outputs.any_changed == 'true' || github.event.inputs.migration_input == true
+      #   uses: google-github-actions/deploy-cloudrun@v2.0.0
+      #   with:
+      #     project_id: ${{ env.PROJECT_ID }}
+      #     service: api-${{ env.PROJECT_ID }}
+      #     region: ${{ env.REGION }}
+      #     image: ${{ vars.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ vars.AR_REPO }}/api-${{ env.PROJECT_ID }}:${{ github.sha }}
+      #     env_vars: |
+      #       MIGRATION=false
+      #       SEED=${{ github.ref_name == 'main' && 'false' || toJson(github.event.inputs.migration_input) || 'true' }}
+      #       NODE_CONFIG_ENV=${{ env.ENV }}
+      #     no_traffic: true
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2.6.1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          service: api-${{ env.PROJECT_ID }}
+          region: ${{ env.REGION }}
+          image: ${{ vars.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ vars.AR_REPO }}/api-${{ env.PROJECT_ID }}:${{ github.sha }}
+          env_vars: |
+            MIGRATION=false
+            SEED=false
+            NODE_CONFIG_ENV=${{ env.ENV }}
+
+      
+      # - name: Create Deployed Tag
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: require('./libs/cicd/upsertTag.cjs')({ github, context, tag:"_deployed-${{ env.ENV }}" })
+     

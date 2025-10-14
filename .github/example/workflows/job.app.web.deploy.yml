@@ -1,0 +1,96 @@
+name: Build and Deploy to Google Cloud Storage
+on:
+  workflow_call:
+    inputs:
+      project_id:
+        description: 'The project ID for the environment'
+        required: true
+        type: string
+      bucket:
+        description: 'The bucket to store the deployment'
+        required: true
+        type: string
+
+jobs:
+  build_and_push_image:
+    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    runs-on: ubuntu-latest
+    env:
+      WORKING_DIR: ./apps/interfaces/web
+      WEB_STORAGE: ${{ inputs.bucket }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate with Google
+        uses: 'google-github-actions/auth@v2'
+        with:
+          project_id: ${{ inputs.project_id }}
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('${{ env.WORKING_DIR }}/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-${{ env.WORKING_DIR }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile -F @madi/web
+
+      - name: Cache Next.js
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            ${{ github.workspace }}/${{ env.WORKING_DIR }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ env.WORKING_DIR }}-${{ hashFiles('${{ env.WORKING_DIR }}/pnpm-lock.yaml') }}-${{ hashFiles('${{ env.WORKING_DIR }}/**/*.js', '${{ env.WORKING_DIR }}/**/*.jsx', '${{ env.WORKING_DIR }}/**/*.ts', '${{ env.WORKING_DIR }}/**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ env.WORKING_DIR }}-${{ hashFiles('${{ env.WORKING_DIR }}/pnpm-lock.yaml') }}-
+
+      - name: Build the distribution
+        run: pnpm -F @madi/web run build;
+
+      - name: Store release SHA in JSON file
+        working-directory: ${{ env.WORKING_DIR }} 
+        run: |
+          mkdir -p ${{ env.WORKING_DIR }}/dist
+          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+          echo '{
+            "sha": "${{ github.sha }}",
+            "owner": "${{ github.repository_owner }}",
+            "repo": "'$REPO_NAME'",
+            "branch": "${{ github.ref_name }}"
+          }' > ${{ env.WORKING_DIR }}/dist/sha.json
+
+      - name: Download Built Documentation
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-build
+          path: ${{ env.WORKING_DIR }}/dist/docs
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+        with:
+          version: 'latest'
+          project_id: ${{ inputs.project_id }}
+
+      - name: 'Sync dist to bucket (delete the old files)'
+        run: |
+          gsutil -m -h "Cache-Control:public, max-age=0" rsync -d -r "${{ env.WORKING_DIR }}/dist" "gs://${{ env.WEB_STORAGE }}"
+
+## TODO:  Set max-age back up to 3600 when stack stabilizes.
+# gs://web-app-hq-madi-dev-4ebd7d92-7d0cb30c/

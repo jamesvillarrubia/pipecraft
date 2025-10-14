@@ -1,0 +1,27 @@
+name: Enforce PR Title as Commit Message
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  enforce-squash-message:
+    if: github.event.pull_request.merged == true && github.event.pull_request.merge_commit_sha != null
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check squash commit message
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          SHA="${{ github.event.pull_request.merge_commit_sha }}"
+          MESSAGE=$(git log -1 --pretty=%B $SHA)
+
+          echo "PR Title: $TITLE"
+          echo "Squash Commit Message: $MESSAGE"
+
+          if [[ "$MESSAGE" != "$TITLE" ]]; then
+            echo "❌ Commit message does not match PR title!"
+            exit 1
+          fi

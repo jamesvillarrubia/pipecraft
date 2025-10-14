@@ -1,0 +1,59 @@
+name: "PLUGIN:Base"
+
+on:
+  push:
+    paths:
+      - 'libs/plugins/base-class/**' # the plugin folder
+      - '.github/workflows/plugin.base**' # this file and any related workflows
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: "PLUGIN:Base:Publish to NPM"
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        registry-url: 'https://registry.npmjs.org'
+        cache: 'pnpm'
+
+    - name: Configure root NPM Authentication
+      run: |
+        echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc
+
+    - name: Install root dependencies
+      run: |
+        ls -la;
+        pnpm install --frozen-lockfile
+
+    - name: Get root version
+      id: get_version
+      run: |
+        VERSION=$(npx release-it --ci --dry-run | grep "New version" | awk '{print $NF}')
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+  
+    - name: Configure Plugin NPM Authentication
+      run: |
+        cd libs/plugins/base-class; 
+        echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc
+
+    - name: Install dependencies
+      run: |
+        pnpm install --frozen-lockfile -F madi-plg-base-class
+
+    - name: Release
+      run: |
+        cd libs/plugins/base-class;
+        npx release-it $VERSION --ci --dry-run;
