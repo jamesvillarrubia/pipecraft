@@ -319,6 +319,7 @@ export const createPathBasedPipeline = (ctx: any) => {
               targetBranch: \${{ github.ref_name == '${branchFlow[0]}' && '${branchFlow[1] || branchFlow[0]}' || github.ref_name == '${branchFlow[1]}' && '${branchFlow[2] || branchFlow[1]}' || '${branchFlow[branchFlow.length - 1]}' }}
               title: 'Release \${{ needs.version.outputs.nextVersion }}'
               body: 'Automated release PR for version \${{ needs.version.outputs.nextVersion }}'
+              token: \${{ secrets.GITHUB_TOKEN }}
       `, ctx),
       required: true
     },

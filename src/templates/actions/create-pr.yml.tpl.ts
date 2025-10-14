@@ -24,6 +24,10 @@ const createprActionTemplate = (ctx: any) => {
       labels:
         description: 'Comma-separated list of labels'
         required: false
+      token:
+        description: 'GitHub token for authentication'
+        required: false
+        default: \${{ github.token }}
 
     outputs:
       prNumber:
@@ -40,7 +44,7 @@ const createprActionTemplate = (ctx: any) => {
           uses: actions/checkout@v4
           with:
             fetch-depth: 0
-            token: \${{ secrets.GITHUB_TOKEN }}
+            token: \${{ inputs.token }}
 
         - name: Check if PR Already Exists
           id: check-existing-pr
