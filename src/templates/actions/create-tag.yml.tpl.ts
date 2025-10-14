@@ -40,19 +40,23 @@ const tagActionTemplate = (ctx: any) => {
               exit 1
             fi
             
-            # Validate version format (semantic versioning)
-            if [[ ! "\${{ inputs.version }}" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
-              echo "❌ Version must be in format x.y.z (e.g., 1.0.0)"
+            # Strip v prefix if present and validate version format
+            VERSION="\${{ inputs.version }}"
+            VERSION="\${VERSION#v}"  # Remove v prefix
+
+            if [[ ! "$VERSION" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
+              echo "❌ Version must be in format [v]x.y.z (e.g., 1.0.0 or v1.0.0)"
               exit 1
             fi
-            
-            echo "✅ Version format is valid: \${{ inputs.version }}"
+
+            echo "✅ Version format is valid: $VERSION"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
 
         - name: Create Tag
           id: tag
           shell: bash
           run: |
-            VERSION="\${{ inputs.version }}"
+            VERSION="\${{ steps.validate.outputs.version }}"
             PREFIX="\${{ inputs.tag_prefix }}"
             TAG_NAME="\${PREFIX}\${VERSION}"
             
