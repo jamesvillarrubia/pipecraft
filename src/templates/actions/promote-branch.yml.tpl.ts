@@ -139,8 +139,13 @@ const promoteBranchActionTemplate = (ctx: any) => {
               --json number,url 2>&1)
 
             # Check if PR was created successfully by parsing JSON response
-            if printf '%s' "\$PR_OUTPUT" | jq -e '.number' > /dev/null 2>&1; then
-              PR_NUMBER=\$(printf '%s' "\$PR_OUTPUT" | jq -r '.number')
+            # Temporarily disable pipefail for this check
+            set +e
+            PR_NUMBER=\$(printf '%s' "\$PR_OUTPUT" | jq -r '.number' 2>/dev/null)
+            PR_CHECK_EXIT=\$?
+            set -e
+
+            if [ \$PR_CHECK_EXIT -eq 0 ] && [ -n "\$PR_NUMBER" ] && [ "\$PR_NUMBER" != "null" ]; then
               PR_URL=\$(printf '%s' "\$PR_OUTPUT" | jq -r '.url')
               echo "prNumber=\$PR_NUMBER" >> \$GITHUB_OUTPUT
               echo "prUrl=\$PR_URL" >> \$GITHUB_OUTPUT
@@ -149,7 +154,7 @@ const promoteBranchActionTemplate = (ctx: any) => {
             else
               echo "❌ Failed to create PR"
               echo "Error output:"
-              echo "\$PR_OUTPUT" || echo "(empty or failed to print)"
+              echo "\$PR_OUTPUT"
               exit 1
             fi
 
