@@ -110,12 +110,13 @@ jobs:
         with:
           version: ${{ needs.version.outputs.nextVersion }}
   promote:
-    # Runs on any branch that can promote (not the final branch)
+    # Only runs on push events (not PRs) to branches that can promote
     # Waits for version/tag if they run, but doesn't fail if they're skipped
     if: |
       ${{
         always() &&
-        (github.ref_name == 'develop' || github.head_ref == 'develop' || github.ref_name == 'staging' || github.head_ref == 'staging') &&
+        github.event_name == 'push' &&
+        (github.ref_name == 'develop' || github.ref_name == 'staging') &&
         needs.version.result != 'failure' &&
         needs.tag.result != 'failure'
       }}
@@ -130,14 +131,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine source, target branch and auto-merge setting
+      - name: Determine target branch and auto-merge setting
         id: determine-target
         run: |
-          # Use head_ref for PRs, ref_name for push events
-          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
-          echo "sourceBranch=${BRANCH_NAME}" >> $GITHUB_OUTPUT
-
-          case "${BRANCH_NAME}" in
+          case "${{ github.ref_name }}" in
             "develop")
               echo "target=staging" >> $GITHUB_OUTPUT
               echo "autoMerge=true" >> $GITHUB_OUTPUT
@@ -158,7 +155,7 @@ jobs:
 
       - uses: ./.github/actions/promote-branch
         with:
-          sourceBranch: ${{ steps.determine-target.outputs.sourceBranch }}
+          sourceBranch: ${{ github.ref_name }}
           targetBranch: ${{ steps.determine-target.outputs.target }}
           version: ${{ steps.get-version.outputs.version }}
           autoMerge: ${{ steps.determine-target.outputs.autoMerge }}

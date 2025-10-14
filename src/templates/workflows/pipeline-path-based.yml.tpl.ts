@@ -307,12 +307,13 @@ export const createPathBasedPipeline = (ctx: any) => {
       path: 'jobs.promote',
       operation: 'overwrite' as const,
       value: createValueFromString(`
-        # Runs on any branch that can promote (not the final branch)
+        # Only runs on push events (not PRs) to branches that can promote
         # Waits for version/tag if they run, but doesn't fail if they're skipped
         if: |
           \${{
             always() &&
-            (${branchFlow.slice(0, -1).map((branch: string) => `github.ref_name == '${branch}' || github.head_ref == '${branch}'`).join(' || ')}) &&
+            github.event_name == 'push' &&
+            (${branchFlow.slice(0, -1).map((branch: string) => `github.ref_name == '${branch}'`).join(' || ')}) &&
             needs.version.result != 'failure' &&
             needs.tag.result != 'failure'
           }}
@@ -327,14 +328,10 @@ export const createPathBasedPipeline = (ctx: any) => {
             with:
               fetch-depth: 0
 
-          - name: Determine source, target branch and auto-merge setting
+          - name: Determine target branch and auto-merge setting
             id: determine-target
             run: |
-              # Use head_ref for PRs, ref_name for push events
-              BRANCH_NAME="\${{ github.head_ref || github.ref_name }}"
-              echo "sourceBranch=\${BRANCH_NAME}" >> $GITHUB_OUTPUT
-
-              case "\${BRANCH_NAME}" in
+              case "\${{ github.ref_name }}" in
                 ${branchFlow.slice(0, -1).map((sb: string, idx: number) => {
                   const tb = branchFlow[idx + 1]
                   const autoMergeConfig = ctx.autoMerge || {}
@@ -358,7 +355,7 @@ export const createPathBasedPipeline = (ctx: any) => {
 
           - uses: ./.github/actions/promote-branch
             with:
-              sourceBranch: \${{ steps.determine-target.outputs.sourceBranch }}
+              sourceBranch: \${{ github.ref_name }}
               targetBranch: \${{ steps.determine-target.outputs.target }}
               version: \${{ steps.get-version.outputs.version }}
               autoMerge: \${{ steps.determine-target.outputs.autoMerge }}
