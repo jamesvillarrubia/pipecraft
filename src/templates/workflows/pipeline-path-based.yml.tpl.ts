@@ -231,6 +231,11 @@ export const createPathBasedPipeline = (ctx: any) => {
         needs: changes
         runs-on: ubuntu-latest
         steps:
+          - name: Checkout Code
+            uses: actions/checkout@v4
+            with:
+              fetch-depth: 0
+
           - uses: ./.github/actions/calculate-version
             id: calculate-version
             with:
@@ -277,6 +282,11 @@ export const createPathBasedPipeline = (ctx: any) => {
         needs: version
         runs-on: ubuntu-latest
         steps:
+          - name: Checkout Code
+            uses: actions/checkout@v4
+            with:
+              fetch-depth: 0
+
           - uses: ./.github/actions/create-tag
             with:
               version: \${{ needs.version.outputs.nextVersion }}
@@ -298,6 +308,11 @@ export const createPathBasedPipeline = (ctx: any) => {
         needs: [changes, version]
         runs-on: ubuntu-latest
         steps:
+          - name: Checkout Code
+            uses: actions/checkout@v4
+            with:
+              fetch-depth: 0
+
           - uses: ./.github/actions/create-pr
             with:
               sourceBranch: \${{ github.ref_name }}
