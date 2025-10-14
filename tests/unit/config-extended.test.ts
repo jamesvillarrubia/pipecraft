@@ -16,7 +16,7 @@ describe('Config Utilities - Extended Coverage', () => {
   let originalCwd: string
 
   beforeEach(() => {
-    testDir = join(tmpdir(), `flowcraft-config-extended-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    testDir = join(tmpdir(), `pipecraft-config-extended-${Date.now()}-${Math.random().toString(36).slice(2)}`)
     mkdirSync(testDir, { recursive: true })
     originalCwd = process.cwd()
   })
@@ -40,7 +40,7 @@ describe('Config Utilities - Extended Coverage', () => {
   })
 
   describe('Config File Discovery', () => {
-    it('should find .flowcraftrc.json in current directory', () => {
+    it('should find .pipecraftrc.json in current directory', () => {
       // Change to test directory for this test
       process.chdir(testDir)
       const config: FlowcraftConfig = {
@@ -65,14 +65,14 @@ describe('Config Utilities - Extended Coverage', () => {
         }
       }
 
-      writeFileSync('.flowcraftrc.json', JSON.stringify(config, null, 2))
+      writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
 
       const loadedConfig = loadConfig()
       expect(loadedConfig).toBeDefined()
       expect(loadedConfig.ciProvider).toBe('github')
     })
 
-    it('should find .flowcraftrc (no extension)', () => {
+    it('should find .pipecraftrc (no extension)', () => {
       // Change to test directory for this test
       process.chdir(testDir)
       const config: FlowcraftConfig = {
@@ -97,19 +97,19 @@ describe('Config Utilities - Extended Coverage', () => {
         }
       }
 
-      writeFileSync('.flowcraftrc', JSON.stringify(config, null, 2))
+      writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
 
       const loadedConfig = loadConfig()
       expect(loadedConfig).toBeDefined()
     })
 
-    it('should find flowcraft config in package.json', () => {
+    it('should find pipecraft config in package.json', () => {
       // Change to test directory for this test
       process.chdir(testDir)
       const packageJson = {
         name: 'test-project',
         version: '1.0.0',
-        flowcraft: {
+        pipecraft: {
           ciProvider: 'github',
           mergeStrategy: 'fast-forward',
           requireConventionalCommits: true,
@@ -310,7 +310,7 @@ describe('Config Utilities - Extended Coverage', () => {
           forceRegenerate: false,
           watchMode: false,
           hashAlgorithm: 'sha256',
-          cacheFile: '.flowcraft-cache.json',
+          cacheFile: '.pipecraft-cache.json',
           ignorePatterns: ['*.md', 'docs/**']
         }
       }
@@ -393,7 +393,7 @@ describe('Config Utilities - Extended Coverage', () => {
     it('should throw for malformed JSON', () => {
       // Change to test directory for this test
       process.chdir(testDir)
-      writeFileSync('.flowcraftrc.json', '{ invalid: json }')
+      writeFileSync('.pipecraftrc.json', '{ invalid: json }')
 
       expect(() => loadConfig()).toThrow()
     })
@@ -404,7 +404,7 @@ describe('Config Utilities - Extended Coverage', () => {
         ciProvider: 'invalid'
       }
 
-      writeFileSync('.flowcraftrc.json', JSON.stringify(invalidConfig, null, 2))
+      writeFileSync('.pipecraftrc.json', JSON.stringify(invalidConfig, null, 2))
 
       expect(() => loadConfig()).toThrow()
     })

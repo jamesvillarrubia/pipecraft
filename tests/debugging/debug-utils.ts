@@ -87,7 +87,7 @@ export class GitHubWorkflowDebugger {
       headers: {
         'Authorization': `token ${this.token}`,
         'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'flowcraft-debugger'
+        'User-Agent': 'pipecraft-debugger'
       }
     });
 
@@ -132,7 +132,7 @@ export class GitHubWorkflowDebugger {
       headers: {
         'Authorization': `token ${this.token}`,
         'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'flowcraft-debugger'
+        'User-Agent': 'pipecraft-debugger'
       }
     });
 

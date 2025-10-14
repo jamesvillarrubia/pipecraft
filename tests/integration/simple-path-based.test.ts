@@ -9,7 +9,7 @@ import { parseDocument, stringify } from 'yaml'
 describe('Simple Path-Based Template Tests', () => {
   beforeEach(() => {
     // Clean up test files
-    const filesToClean = ['.flowcraft-cache.json']
+    const filesToClean = ['.pipecraft-cache.json']
     filesToClean.forEach(file => {
       const fullPath = join(TEST_DIR, file)
       if (existsSync(fullPath)) {
@@ -20,7 +20,7 @@ describe('Simple Path-Based Template Tests', () => {
 
   afterEach(() => {
     // Clean up after each test
-    const filesToClean = ['.flowcraft-cache.json']
+    const filesToClean = ['.pipecraft-cache.json']
     filesToClean.forEach(file => {
       const fullPath = join(TEST_DIR, file)
       if (existsSync(fullPath)) {
@@ -319,7 +319,7 @@ jobs:
         }
       }
 
-      const configPath = join(TEST_DIR, 'custom-flowcraftrc.json')
+      const configPath = join(TEST_DIR, 'custom-pipecraftrc.json')
       writeFileSync(configPath, JSON.stringify(customConfig, null, 2))
 
       // Test that the config can be loaded and parsed

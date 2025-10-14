@@ -100,9 +100,9 @@ describe('Pipeline Path-Based Template', () => {
       const originalOrder = getJobOrder(testFixtures.original)
       
       // Find positions of Flowcraft jobs
-      const flowcraftJobs = ['changes', 'version', 'tag', 'createpr', 'branch']
+      const pipecraftJobs = ['changes', 'version', 'tag', 'createpr', 'branch']
       
-      flowcraftJobs.forEach(job => {
+      pipecraftJobs.forEach(job => {
         const originalPos = originalOrder.indexOf(job)
         const generatedPos = generatedOrder.indexOf(job)
         
@@ -129,8 +129,8 @@ describe('Pipeline Path-Based Template', () => {
       const originalOrder = getJobOrder(testFixtures.original)
       
       // Find user jobs (non-Flowcraft jobs)
-      const flowcraftJobs = new Set(['changes', 'version', 'tag', 'createpr', 'branch'])
-      const userJobs = originalOrder.filter(job => !flowcraftJobs.has(job))
+      const pipecraftJobs = new Set(['changes', 'version', 'tag', 'createpr', 'branch'])
+      const userJobs = originalOrder.filter(job => !pipecraftJobs.has(job))
       
       userJobs.forEach(userJob => {
         const originalPos = originalOrder.indexOf(userJob)
@@ -309,11 +309,11 @@ describe('Pipeline Path-Based Template', () => {
       
       // Should have Flowcraft jobs in correct order
       const expectedOrder = ['changes', 'version', 'tag', 'createpr', 'branch']
-      const flowcraftJobs = generatedOrder.filter(job => 
+      const pipecraftJobs = generatedOrder.filter(job => 
         ['changes', 'version', 'tag', 'createpr', 'branch'].includes(job)
       )
       
-      expect(flowcraftJobs).toEqual(expectedOrder)
+      expect(pipecraftJobs).toEqual(expectedOrder)
     })
   })
   
@@ -361,13 +361,13 @@ jobs:
         generatedOrder.indexOf('user-job-1'),
         generatedOrder.indexOf('user-job-2')
       ]
-      const flowcraftJobPositions = [
+      const pipecraftJobPositions = [
         generatedOrder.indexOf('changes'),
         generatedOrder.indexOf('version')
       ]
       
       // Flowcraft jobs should come first, then user jobs (when no existing Flowcraft jobs)
-      expect(Math.min(...flowcraftJobPositions)).toBeLessThan(Math.max(...userJobPositions))
+      expect(Math.min(...pipecraftJobPositions)).toBeLessThan(Math.max(...userJobPositions))
     })
     
     it('should handle empty pipeline gracefully', () => {

@@ -21,7 +21,7 @@ describe('IdempotencyManager - Isolated', () => {
 
   beforeEach(() => {
     // Create unique temp directory for this test (not shared)
-    testDir = join(tmpdir(), `flowcraft-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    testDir = join(tmpdir(), `pipecraft-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
     mkdirSync(testDir, { recursive: true })
 
     // Create basic config
@@ -55,12 +55,12 @@ describe('IdempotencyManager - Isolated', () => {
         forceRegenerate: false,
         watchMode: false,
         hashAlgorithm: 'sha256',
-        cacheFile: join(testDir, '.flowcraft-cache.json'),
+        cacheFile: join(testDir, '.pipecraft-cache.json'),
         ignorePatterns: []
       }
     }
 
-    idempotencyManager = new IdempotencyManager(config, join(testDir, '.flowcraft-cache.json'))
+    idempotencyManager = new IdempotencyManager(config, join(testDir, '.pipecraft-cache.json'))
   })
 
   afterEach(() => {
@@ -117,14 +117,14 @@ describe('IdempotencyManager - Isolated', () => {
   describe('hasChanges', () => {
     it('should return true when rebuild is disabled', async () => {
       config.rebuild!.enabled = false
-      const manager = new IdempotencyManager(config, join(testDir, '.flowcraft-cache.json'))
+      const manager = new IdempotencyManager(config, join(testDir, '.pipecraft-cache.json'))
 
       expect(await manager.hasChanges()).toBe(true)
     })
 
     it('should return true when forceRegenerate is enabled', async () => {
       config.rebuild!.forceRegenerate = true
-      const manager = new IdempotencyManager(config, join(testDir, '.flowcraft-cache.json'))
+      const manager = new IdempotencyManager(config, join(testDir, '.pipecraft-cache.json'))
 
       expect(await manager.hasChanges()).toBe(true)
     })
@@ -135,7 +135,7 @@ describe('IdempotencyManager - Isolated', () => {
 
     it('should return false when cache exists and nothing changed', async () => {
       // Create config file
-      const configFile = join(testDir, '.flowcraftrc.json')
+      const configFile = join(testDir, '.pipecraftrc.json')
       writeFileSync(configFile, JSON.stringify(config, null, 2))
 
       // Update cache
@@ -148,7 +148,7 @@ describe('IdempotencyManager - Isolated', () => {
     it.skip('should return true when config file changes', async () => {
       // Skipped: The hasChanges implementation doesn't check config file directly in this way
       // Create config file
-      const configFile = join(testDir, '.flowcraftrc.json')
+      const configFile = join(testDir, '.pipecraftrc.json')
       writeFileSync(configFile, JSON.stringify(config, null, 2))
 
       // Update cache
@@ -165,17 +165,17 @@ describe('IdempotencyManager - Isolated', () => {
 
   describe('updateCache', () => {
     it('should create cache file', async () => {
-      const configFile = join(testDir, '.flowcraftrc.json')
+      const configFile = join(testDir, '.pipecraftrc.json')
       writeFileSync(configFile, JSON.stringify(config, null, 2))
 
       await idempotencyManager.updateCache()
 
-      const cacheFile = join(testDir, '.flowcraft-cache.json')
+      const cacheFile = join(testDir, '.pipecraft-cache.json')
       expect(existsSync(cacheFile)).toBe(true)
     })
 
     it('should include config hash in cache', async () => {
-      const configFile = join(testDir, '.flowcraftrc.json')
+      const configFile = join(testDir, '.pipecraftrc.json')
       writeFileSync(configFile, JSON.stringify(config, null, 2))
 
       await idempotencyManager.updateCache()
@@ -187,7 +187,7 @@ describe('IdempotencyManager - Isolated', () => {
     })
 
     it('should update existing cache', async () => {
-      const configFile = join(testDir, '.flowcraftrc.json')
+      const configFile = join(testDir, '.pipecraftrc.json')
       writeFileSync(configFile, JSON.stringify(config, null, 2))
 
       // First update
@@ -208,7 +208,7 @@ describe('IdempotencyManager - Isolated', () => {
   describe('shouldRegenerateFile', () => {
     it('should return true when rebuild is disabled', async () => {
       config.rebuild!.enabled = false
-      const manager = new IdempotencyManager(config, join(testDir, '.flowcraft-cache.json'))
+      const manager = new IdempotencyManager(config, join(testDir, '.pipecraft-cache.json'))
 
       const testFile = join(testDir, 'test.txt')
       writeFileSync(testFile, 'content')
@@ -218,7 +218,7 @@ describe('IdempotencyManager - Isolated', () => {
 
     it('should return true when forceRegenerate is true', async () => {
       config.rebuild!.forceRegenerate = true
-      const manager = new IdempotencyManager(config, join(testDir, '.flowcraft-cache.json'))
+      const manager = new IdempotencyManager(config, join(testDir, '.pipecraft-cache.json'))
 
       const testFile = join(testDir, 'test.txt')
       writeFileSync(testFile, 'content')
@@ -246,7 +246,7 @@ describe('IdempotencyManager - Isolated', () => {
 
       // Add to cache manually
       const cache = {
-        configHash: await idempotencyManager.calculateHash(join(testDir, '.flowcraftrc.json')),
+        configHash: await idempotencyManager.calculateHash(join(testDir, '.pipecraftrc.json')),
         files: {
           [testFile]: {
             hash: await idempotencyManager.calculateHash(testFile),
@@ -257,7 +257,7 @@ describe('IdempotencyManager - Isolated', () => {
         version: '1.0.0'
       }
 
-      const cacheFile = join(testDir, '.flowcraft-cache.json')
+      const cacheFile = join(testDir, '.pipecraft-cache.json')
       writeFileSync(cacheFile, JSON.stringify(cache, null, 2))
 
       // Reload manager to pick up cache
@@ -273,7 +273,7 @@ describe('IdempotencyManager - Isolated', () => {
       // Add to cache with original hash
       const originalHash = await idempotencyManager.calculateHash(testFile)
       const cache = {
-        configHash: await idempotencyManager.calculateHash(join(testDir, '.flowcraftrc.json')),
+        configHash: await idempotencyManager.calculateHash(join(testDir, '.pipecraftrc.json')),
         files: {
           [testFile]: {
             hash: originalHash,
@@ -284,7 +284,7 @@ describe('IdempotencyManager - Isolated', () => {
         version: '1.0.0'
       }
 
-      const cacheFile = join(testDir, '.flowcraft-cache.json')
+      const cacheFile = join(testDir, '.pipecraft-cache.json')
       writeFileSync(cacheFile, JSON.stringify(cache, null, 2))
 
       // Reload manager and modify file

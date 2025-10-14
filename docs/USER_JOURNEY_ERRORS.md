@@ -1,10 +1,10 @@
-# FlowCraft User Journey Error Analysis
+# PipeCraft User Journey Error Analysis
 
 This document maps out every failure point a new user might encounter and the error handling needed.
 
 ## Phase 1: Installation
 
-### Scenario A: User tries `npm install -g flowcraft`
+### Scenario A: User tries `npm install -g pipecraft`
 
 **Prerequisites Check:**
 - [ ] Node.js installed (>=18.0.0)
@@ -20,18 +20,18 @@ bash: npm: command not found
 
 # Error: Old Node version
 npm ERR! Unsupported engine
-→ Need: "FlowCraft requires Node.js >=18.0.0. Current: vX.X.X"
+→ Need: "PipeCraft requires Node.js >=18.0.0. Current: vX.X.X"
 
 # Error: Permission denied
 EACCES: permission denied
-→ Need: "Try: sudo npm install -g flowcraft OR use npx"
+→ Need: "Try: sudo npm install -g pipecraft OR use npx"
 
 # Error: Package not found (before published)
-404 Not Found - GET https://registry.npmjs.org/flowcraft
+404 Not Found - GET https://registry.npmjs.org/pipecraft
 → Need: "Use npx or install from source"
 ```
 
-### Scenario B: User tries `npx flowcraft`
+### Scenario B: User tries `npx pipecraft`
 
 **Prerequisites Check:**
 - [ ] Node.js installed
@@ -43,7 +43,7 @@ EACCES: permission denied
 # Same Node/npm errors as above
 ```
 
-## Phase 2: `flowcraft init`
+## Phase 2: `pipecraft init`
 
 ### User Location Check
 
@@ -52,21 +52,21 @@ EACCES: permission denied
 1. **❌ Not in git repo yet**
 ```bash
 cd ~/projects/my-new-project
-flowcraft init
+pipecraft init
 ```
 → Should work! (git not required for init)
 
 2. **❌ In git repo but no remote**
 ```bash
 git init
-flowcraft init
+pipecraft init
 ```
 → Should work! (remote not required for init)
 
 3. **✅ In git repo with remote**
 ```bash
 git clone <repo>
-flowcraft init
+pipecraft init
 ```
 → Should work!
 
@@ -80,8 +80,8 @@ flowcraft init
 
 **Error 1: Config Already Exists**
 ```bash
-flowcraft init
-# .flowcraftrc.json already exists
+pipecraft init
+# .pipecraftrc.json already exists
 ```
 → Need: "Config already exists. Use --force to overwrite or edit manually"
 
@@ -109,12 +109,12 @@ flowcraft init
 ```
 → Need: "At least one domain is required"
 
-## Phase 3: `flowcraft generate`
+## Phase 3: `pipecraft generate`
 
 ### Prerequisites Check
 
 **Must Have:**
-- [ ] Config file exists (.flowcraftrc.json)
+- [ ] Config file exists (.pipecraftrc.json)
 - [ ] Config is valid JSON
 - [ ] Config has required fields
 - [ ] In git repository (for git commands)
@@ -125,20 +125,20 @@ flowcraft init
 
 **Error 1: No Config File**
 ```bash
-flowcraft generate
+pipecraft generate
 # Error: Config file not found
 ```
 → Current: Generic error
-→ Need: "No configuration found. Run 'flowcraft init' first"
+→ Need: "No configuration found. Run 'pipecraft init' first"
 
 **Error 2: Invalid Config**
 ```bash
-# .flowcraftrc.json has syntax error
+# .pipecraftrc.json has syntax error
 {
   "ciProvider": "github",
   missing closing brace
 ```
-→ Need: "Invalid JSON in .flowcraftrc.json: <specific error>"
+→ Need: "Invalid JSON in .pipecraftrc.json: <specific error>"
 
 **Error 3: Missing Required Fields**
 ```bash
@@ -149,14 +149,14 @@ flowcraft generate
 **Error 4: Not in Git Repo**
 ```bash
 cd ~/not-a-git-repo
-flowcraft generate
+pipecraft generate
 ```
 → Need: "Must be in a git repository. Run 'git init' first"
 
 **Error 5: No Git Remote**
 ```bash
 git init  # But no remote added
-flowcraft generate
+pipecraft generate
 ```
 → Need: "No git remote found. Add remote: git remote add origin <url>"
 
@@ -170,9 +170,9 @@ flowcraft generate
 ```bash
 # Config specifies 'staging' but doesn't exist
 ```
-→ Need: "Branch 'staging' not found. Run 'flowcraft setup' to create branches"
+→ Need: "Branch 'staging' not found. Run 'pipecraft setup' to create branches"
 
-## Phase 4: `flowcraft setup-github`
+## Phase 4: `pipecraft setup-github`
 
 ### Prerequisites Check
 
@@ -186,7 +186,7 @@ flowcraft generate
 
 **Error 1: No Token**
 ```bash
-flowcraft setup-github
+pipecraft setup-github
 ```
 → Current: Good error message ✅
 → Shows: How to set GITHUB_TOKEN or use gh CLI
@@ -194,7 +194,7 @@ flowcraft setup-github
 **Error 2: Invalid Token**
 ```bash
 export GITHUB_TOKEN=invalid_token_123
-flowcraft setup-github
+pipecraft setup-github
 ```
 → Need: "GitHub API returned 401 Unauthorized. Check your token"
 
@@ -207,7 +207,7 @@ flowcraft setup-github
 **Error 4: Not a GitHub Repo**
 ```bash
 git remote add origin git@gitlab.com:user/repo.git
-flowcraft setup-github
+pipecraft setup-github
 ```
 → Current: Good error ✅
 → Shows: "Could not parse GitHub repository URL"
@@ -241,7 +241,7 @@ flowcraft setup-github
 ```bash
 # Workflow references 'staging' but doesn't exist
 ```
-→ Need: "Run 'flowcraft setup' to create all branches"
+→ Need: "Run 'pipecraft setup' to create all branches"
 
 **Error 3: Permissions Not Set**
 ```bash
@@ -278,39 +278,39 @@ flowcraft setup-github
 
 ```bash
 # Step 1: Install
-npm install -g flowcraft
+npm install -g pipecraft
 → Check: Node version
-→ Success: "FlowCraft installed! Run 'flowcraft init' to get started"
+→ Success: "PipeCraft installed! Run 'pipecraft init' to get started"
 
 # Step 2: Init
-flowcraft init
+pipecraft init
 → Check: Existing config? Warn before overwrite
 → Interactive: Guide through configuration
 → Validate: Branch names, domain paths
-→ Success: "Config created! Next: 'flowcraft generate'"
+→ Success: "Config created! Next: 'pipecraft generate'"
 
 # Step 3: Setup branches (optional but recommended)
-flowcraft setup
+pipecraft setup
 → Check: Git repo exists
 → Check: Git remote configured
 → Create: All branches from branchFlow
-→ Success: "Branches created! Next: 'flowcraft setup-github'"
+→ Success: "Branches created! Next: 'pipecraft setup-github'"
 
 # Step 4: Setup GitHub
-flowcraft setup-github
+pipecraft setup-github
 → Check: Git remote is GitHub
 → Check: Token available
 → Check: Token has permissions
 → Update: Repository settings
-→ Success: "GitHub configured! Next: 'flowcraft generate'"
+→ Success: "GitHub configured! Next: 'pipecraft generate'"
 
 # Step 5: Generate
-flowcraft generate
+pipecraft generate
 → Pre-flight checks:
   - Config valid?
   - In git repo?
   - Remote exists?
-  - Branches exist? (suggest 'flowcraft setup')
+  - Branches exist? (suggest 'pipecraft setup')
   - Can write to .github/?
 → Generate: Workflows and actions
 → Update: Idempotency cache
@@ -318,35 +318,35 @@ flowcraft generate
 
 # Step 6: First run
 git add .
-git commit -m "feat: add flowcraft workflows"
+git commit -m "feat: add pipecraft workflows"
 git push
 → Instructions: "Check Actions at: <repo>/actions"
-→ If fails: "Run 'flowcraft verify' to troubleshoot"
+→ If fails: "Run 'pipecraft verify' to troubleshoot"
 ```
 
-## New Command Idea: `flowcraft verify`
+## New Command Idea: `pipecraft verify`
 
 A troubleshooting command that checks everything:
 
 ```bash
-flowcraft verify
+pipecraft verify
 
-Checking FlowCraft setup...
+Checking PipeCraft setup...
 
 ✅ Node.js version: 20.0.0 (>= 18.0.0)
 ✅ Git repository: Yes
 ✅ Git remote: Yes (github.com/user/repo)
-✅ Config file: .flowcraftrc.json (valid)
+✅ Config file: .pipecraftrc.json (valid)
 ✅ Branches exist: develop, staging, main
 ✅ Workflows exist: .github/workflows/pipeline.yml
 ⚠️  GitHub Actions permissions: Not configured
-    → Run: flowcraft setup-github
+    → Run: pipecraft setup-github
 
 ✅ GitHub token: Found (GITHUB_TOKEN)
 ❌ Branches don't match config
     → Config expects: develop, staging, main
     → Repo has: main, master
-    → Run: flowcraft setup --force
+    → Run: pipecraft setup --force
 
 Summary: 7 passed, 1 warning, 1 error
 ```

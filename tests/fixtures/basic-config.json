@@ -32,7 +32,7 @@
     "forceRegenerate": false,
     "watchMode": false,
     "hashAlgorithm": "sha256",
-    "cacheFile": ".flowcraft-cache.json",
+    "cacheFile": ".pipecraft-cache.json",
     "ignorePatterns": ["node_modules/**", "dist/**"]
   },
   "versioning": {

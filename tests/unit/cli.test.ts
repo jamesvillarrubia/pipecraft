@@ -31,7 +31,7 @@ describe('CLI Logic Tests', () => {
 
   beforeEach(() => {
     // Create unique temp directory for this test
-    testDir = join(tmpdir(), `flowcraft-cli-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    testDir = join(tmpdir(), `pipecraft-cli-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
     mkdirSync(testDir, { recursive: true })
     originalCwd = process.cwd()
     process.chdir(testDir)
@@ -85,7 +85,7 @@ describe('CLI Logic Tests', () => {
         }
       }
 
-      const configPath = join(testDir, '.flowcraftrc.json')
+      const configPath = join(testDir, '.pipecraftrc.json')
       writeFileSync(configPath, JSON.stringify(config, null, 2))
 
       const loadedConfig = loadConfig(configPath)
@@ -182,12 +182,12 @@ describe('CLI Logic Tests', () => {
           forceRegenerate: false,
           watchMode: false,
           hashAlgorithm: 'sha256',
-          cacheFile: join(testDir, '.flowcraft-cache.json'),
+          cacheFile: join(testDir, '.pipecraft-cache.json'),
           ignorePatterns: []
         }
       }
 
-      const configPath = join(testDir, '.flowcraftrc.json')
+      const configPath = join(testDir, '.pipecraftrc.json')
       writeFileSync(configPath, JSON.stringify(config, null, 2))
     })
 
@@ -246,7 +246,7 @@ describe('CLI Logic Tests', () => {
 
     it('should update cache after generation', async () => {
       const idempotencyManager = new IdempotencyManager(config)
-      const cacheFile = join(testDir, '.flowcraft-cache.json')
+      const cacheFile = join(testDir, '.pipecraft-cache.json')
 
       // Cache shouldn't exist initially
       expect(existsSync(cacheFile)).toBe(false)
@@ -351,9 +351,9 @@ describe('CLI Logic Tests', () => {
         }
       } as FlowcraftConfig
 
-      writeFileSync(join(testDir, '.flowcraftrc.json'), JSON.stringify(config, null, 2))
+      writeFileSync(join(testDir, '.pipecraftrc.json'), JSON.stringify(config, null, 2))
 
-      expect(existsSync(join(testDir, '.flowcraftrc.json'))).toBe(true)
+      expect(existsSync(join(testDir, '.pipecraftrc.json'))).toBe(true)
     })
 
     it('should detect when workflow files exist', () => {
@@ -375,7 +375,7 @@ describe('CLI Logic Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle malformed config file', () => {
-      const configPath = join(testDir, '.flowcraftrc.json')
+      const configPath = join(testDir, '.pipecraftrc.json')
       writeFileSync(configPath, '{ invalid json }')
 
       expect(() => loadConfig(configPath)).toThrow()
@@ -439,9 +439,9 @@ describe('CLI Logic Tests', () => {
         }
       }
 
-      writeFileSync(join(testDir, '.flowcraftrc.json'), JSON.stringify(config, null, 2))
+      writeFileSync(join(testDir, '.pipecraftrc.json'), JSON.stringify(config, null, 2))
 
-      const loadedConfig = loadConfig(join(testDir, '.flowcraftrc.json'))
+      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc.json'))
       expect(loadedConfig.initialBranch).toBe('alpha')
       expect(loadedConfig.finalBranch).toBe('production')
       expect(loadedConfig.branchFlow).toHaveLength(4)
@@ -474,9 +474,9 @@ describe('CLI Logic Tests', () => {
         }
       }
 
-      writeFileSync(join(testDir, '.flowcraftrc.json'), JSON.stringify(config, null, 2))
+      writeFileSync(join(testDir, '.pipecraftrc.json'), JSON.stringify(config, null, 2))
 
-      const loadedConfig = loadConfig(join(testDir, '.flowcraftrc.json'))
+      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc.json'))
       expect(Object.keys(loadedConfig.domains)).toHaveLength(5)
     })
 
@@ -503,9 +503,9 @@ describe('CLI Logic Tests', () => {
         }
       }
 
-      writeFileSync(join(testDir, '.flowcraftrc.json'), JSON.stringify(config, null, 2))
+      writeFileSync(join(testDir, '.pipecraftrc.json'), JSON.stringify(config, null, 2))
 
-      const loadedConfig = loadConfig(join(testDir, '.flowcraftrc.json'))
+      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc.json'))
       expect(loadedConfig.ciProvider).toBe('gitlab')
     })
 
@@ -532,9 +532,9 @@ describe('CLI Logic Tests', () => {
         }
       }
 
-      writeFileSync(join(testDir, '.flowcraftrc.json'), JSON.stringify(config, null, 2))
+      writeFileSync(join(testDir, '.pipecraftrc.json'), JSON.stringify(config, null, 2))
 
-      const loadedConfig = loadConfig(join(testDir, '.flowcraftrc.json'))
+      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc.json'))
       expect(loadedConfig.mergeStrategy).toBe('merge')
     })
   })

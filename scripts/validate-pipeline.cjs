@@ -283,7 +283,7 @@ function validateCompositeAction(actionPath) {
  * Main validation function
  */
 function main() {
-  info('🔍 Validating FlowCraft Pipeline...\n');
+  info('🔍 Validating PipeCraft Pipeline...\n');
 
   let allErrors = [];
   let allWarnings = [];

@@ -122,5 +122,5 @@ export const generate = (ctx: PinionContext) =>
     .then((ctx) => ({ ...ctx, ...defaultConfig } as FlowcraftConfig))
     .then((config) => {
       const content = configTemplate(config)
-      return writeJSON(() => content, toFile('.flowcraftrc.json'))(ctx)
+      return writeJSON(() => content, toFile('.pipecraftrc.json'))(ctx)
     })

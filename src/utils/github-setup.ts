@@ -166,11 +166,11 @@ export async function promptPermissionChanges(
     currentPermissions.default_workflow_permissions === 'write' &&
     currentPermissions.can_approve_pull_request_reviews === true
   ) {
-    console.log('\n✅ Permissions are already configured correctly for FlowCraft!')
+    console.log('\n✅ Permissions are already configured correctly for PipeCraft!')
     return null
   }
 
-  console.log('\n⚠️  FlowCraft requires the following permissions:')
+  console.log('\n⚠️  PipeCraft requires the following permissions:')
   console.log('   • Default permissions: write (for creating tags and pushing)')
   console.log('   • Can create/approve PRs: Yes (for automated PR creation)')
 
@@ -189,7 +189,7 @@ export async function promptPermissionChanges(
     if (response.updatePermissions) {
       changes.default_workflow_permissions = 'write'
     } else {
-      console.log('⚠️  Warning: FlowCraft may not work correctly without write permissions')
+      console.log('⚠️  Warning: PipeCraft may not work correctly without write permissions')
       userDeclinedAnyChanges = true
     }
   }
@@ -206,7 +206,7 @@ export async function promptPermissionChanges(
     if (response.allowPRs) {
       changes.can_approve_pull_request_reviews = true
     } else {
-      console.log('⚠️  Warning: FlowCraft cannot create PRs without this permission')
+      console.log('⚠️  Warning: PipeCraft cannot create PRs without this permission')
       userDeclinedAnyChanges = true
     }
   }

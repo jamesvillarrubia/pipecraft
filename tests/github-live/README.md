@@ -247,4 +247,4 @@ gh api rate_limit
 - [GitHub CLI Documentation](https://cli.github.com/)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [GitHub API Documentation](https://docs.github.com/en/rest)
-- [Project Issues](https://github.com/your-org/flowcraft/issues)
+- [Project Issues](https://github.com/your-org/pipecraft/issues)

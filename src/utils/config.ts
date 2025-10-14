@@ -2,11 +2,11 @@ import { cosmiconfigSync } from 'cosmiconfig'
 import { FlowcraftConfig, DomainConfig } from '../types/index.js'  
 
 export const loadConfig = (configPath?: string) => {
-  const explorer = cosmiconfigSync('flowcraft')
+  const explorer = cosmiconfigSync('pipecraft')
   const result = configPath ? explorer.load(configPath) : explorer.search()
   
   if (!result) {
-    throw new Error(`No configuration file found. Expected: ${configPath || '.flowcraftrc.json'}`)
+    throw new Error(`No configuration file found. Expected: ${configPath || '.pipecraftrc.json'}`)
   }
   
   return result.config

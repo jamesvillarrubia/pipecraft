@@ -21,7 +21,7 @@ export class IdempotencyManager {
   private cacheFile: string
   private config: FlowcraftConfig
 
-  constructor(config: FlowcraftConfig, cacheFile = '.flowcraft-cache.json') {
+  constructor(config: FlowcraftConfig, cacheFile = '.pipecraft-cache.json') {
     this.config = config
     this.cacheFile = cacheFile
   }
@@ -124,7 +124,7 @@ export class IdempotencyManager {
     }
 
     // Check if config has changed
-    const configHash = await this.calculateHash('.flowcraftrc.json')
+    const configHash = await this.calculateHash('.pipecraftrc.json')
     if (cache.configHash !== configHash) {
       return true
     }
@@ -156,7 +156,7 @@ export class IdempotencyManager {
   async updateCache(): Promise<void> {
     const cache: RebuildCache = {
       files: {},
-      configHash: await this.calculateHash('.flowcraftrc.json'),
+      configHash: await this.calculateHash('.pipecraftrc.json'),
       lastGenerated: Date.now(),
       version: '1.0.0'
     }

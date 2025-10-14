@@ -1,5 +1,5 @@
 /**
- * Pre-flight checks for FlowCraft commands
+ * Pre-flight checks for PipeCraft commands
  * Validates environment and prerequisites before executing commands
  */
 
@@ -24,17 +24,17 @@ export interface PreflightChecks {
 
 /**
  * Check if config file exists using cosmiconfig
- * Searches for .flowcraftrc.json, .flowcraftrc, or package.json flowcraft key
+ * Searches for .pipecraftrc.json, .pipecraftrc, or package.json pipecraft key
  */
 export function checkConfigExists(): PreflightResult {
-  const explorer = cosmiconfigSync('flowcraft')
+  const explorer = cosmiconfigSync('pipecraft')
   const result = explorer.search()
 
   if (!result) {
     return {
       passed: false,
-      message: 'No FlowCraft configuration found',
-      suggestion: "Run 'flowcraft init' to create a configuration file"
+      message: 'No PipeCraft configuration found',
+      suggestion: "Run 'pipecraft init' to create a configuration file"
     }
   }
 
@@ -48,14 +48,14 @@ export function checkConfigExists(): PreflightResult {
  * Check if config file is valid and has required fields
  */
 export function checkConfigValid(): PreflightResult {
-  const explorer = cosmiconfigSync('flowcraft')
+  const explorer = cosmiconfigSync('pipecraft')
   const result = explorer.search()
 
   if (!result) {
     return {
       passed: false,
       message: 'No configuration file found',
-      suggestion: "Run 'flowcraft init' first"
+      suggestion: "Run 'pipecraft init' first"
     }
   }
 
@@ -70,7 +70,7 @@ export function checkConfigValid(): PreflightResult {
       return {
         passed: false,
         message: `Config is missing required fields: ${missingFields.join(', ')}`,
-        suggestion: "Run 'flowcraft init --force' to recreate config"
+        suggestion: "Run 'pipecraft init --force' to recreate config"
       }
     }
 
@@ -152,7 +152,7 @@ export function checkHasGitRemote(): PreflightResult {
       passed: true,
       message: `Git remote configured: ${remote}`,
       suggestion: !isGitHub
-        ? 'Note: FlowCraft is optimized for GitHub. GitLab support is experimental.'
+        ? 'Note: PipeCraft is optimized for GitHub. GitLab support is experimental.'
         : undefined
     }
   } catch (error) {
@@ -186,7 +186,7 @@ export function checkCanWriteGithubDir(): PreflightResult {
     // Directory exists, check if writable
     if (existsSync(workflowsDir)) {
       // Try to write a test file
-      const testFile = join(workflowsDir, '.flowcraft-test')
+      const testFile = join(workflowsDir, '.pipecraft-test')
       writeFileSync(testFile, 'test')
       unlinkSync(testFile)
 
@@ -275,8 +275,8 @@ export function formatPreflightResults(checks: PreflightChecks): {
     'Your environment is ready to generate workflows!',
     '',
     'Next steps:',
-    '  1. Validate the pipeline: flowcraft validate:pipeline',
-    '  2. Set up GitHub tokens: flowcraft setup-github --verify',
+    '  1. Validate the pipeline: pipecraft validate:pipeline',
+    '  2. Set up GitHub tokens: pipecraft setup-github --verify',
     '  3. Commit the generated workflows: git add .github && git commit -m "chore: add workflows"',
     '  4. Push to remote: git push origin ' + getCurrentBranch(),
     '',

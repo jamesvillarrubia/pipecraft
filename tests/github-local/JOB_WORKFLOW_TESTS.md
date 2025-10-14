@@ -293,4 +293,4 @@ act -W .github/workflows/job.changes.yml --env-file .env
 - [Act Documentation](https://github.com/nektos/act)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [Docker Documentation](https://docs.docker.com/)
-- [Project Issues](https://github.com/your-org/flowcraft/issues)
+- [Project Issues](https://github.com/your-org/pipecraft/issues)

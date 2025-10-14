@@ -8,7 +8,7 @@ import { TEST_DIR, FIXTURES_DIR } from '../setup'
 describe('Config Utilities', () => {
   beforeEach(() => {
     // Clean up any existing config files
-    const configFiles = ['.flowcraftrc.json', '.flowcraftrc', 'package.json']
+    const configFiles = ['.pipecraftrc.json', '.pipecraftrc', 'package.json']
     configFiles.forEach(file => {
       if (existsSync(join(TEST_DIR, file))) {
         rmSync(join(TEST_DIR, file))
@@ -17,10 +17,10 @@ describe('Config Utilities', () => {
   })
 
   describe('loadConfig', () => {
-    it('should load valid configuration from .flowcraftrc.json', () => {
+    it('should load valid configuration from .pipecraftrc.json', () => {
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      const testConfigPath = join(TEST_DIR, '.flowcraftrc.json')
+      const testConfigPath = join(TEST_DIR, '.pipecraftrc.json')
       writeFileSync(testConfigPath, configContent)
 
       // Change to TEST_DIR so cosmiconfig can find the config file
@@ -45,7 +45,7 @@ describe('Config Utilities', () => {
 
     it('should throw error when no config file found', () => {
       // Use a unique temp directory to avoid race conditions
-      const uniqueTempDir = join(tmpdir(), `flowcraft-config-test-${Date.now()}`)
+      const uniqueTempDir = join(tmpdir(), `pipecraft-config-test-${Date.now()}`)
       mkdirSync(uniqueTempDir, { recursive: true })
 
       // Change to temp directory, run test, then restore

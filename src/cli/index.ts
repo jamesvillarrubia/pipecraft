@@ -20,13 +20,13 @@ const program = new Command()
 
 // Configure the CLI
 program
-  .name('flowcraft')
+  .name('pipecraft')
   .description('CLI tool for managing trunk-based development workflows')
   .version('1.0.0')
 
 // Global options
 program
-  .option('-c, --config <path>', 'path to config file', '.flowcraftrc.json')
+  .option('-c, --config <path>', 'path to config file', '.pipecraftrc.json')
   .option('-p, --pipeline <path>', 'path to existing pipeline file for merging', '.github/workflows/pipeline.yml')
   .option('-o, --output-pipeline <path>', 'path to output pipeline file (for testing)', '.github/workflows/pipeline.yml')
   .option('-v, --verbose', 'verbose output')
@@ -36,7 +36,7 @@ program
 // Init command - Initialize configuration
 program
   .command('init')
-  .description('Initialize flowcraft configuration')
+  .description('Initialize pipecraft configuration')
   .option('-f, --force', 'overwrite existing config file')
   .option('-i, --interactive', 'run interactive setup wizard')
   .option('--with-versioning', 'include version management setup')
@@ -217,14 +217,14 @@ program
 // Verify command - Check if setup is correct
 program
   .command('verify')
-  .description('Verify that flowcraft is properly set up')
+  .description('Verify that pipecraft is properly set up')
   .action(async () => {
     try {
       const explorer = cosmiconfigSync('trunkflow')
       const result = explorer.search()
       
       if (!result) {
-        console.log('⚠️  No configuration file found. Run "flowcraft init" to get started.')
+        console.log('⚠️  No configuration file found. Run "pipecraft init" to get started.')
         process.exit(1)
       }
       
@@ -243,7 +243,7 @@ program
         if (fs.existsSync(workflowPath)) {
           console.log('✅ GitHub Actions workflows exist!')
         } else {
-          console.log('⚠️  GitHub Actions workflows not found. Run "flowcraft generate" to create them.')
+          console.log('⚠️  GitHub Actions workflows not found. Run "pipecraft generate" to create them.')
         }
       }
       
@@ -378,7 +378,7 @@ program
 // Setup GitHub command - Configure GitHub Actions permissions
 program
   .command('setup-github')
-  .description('Configure GitHub Actions workflow permissions for FlowCraft')
+  .description('Configure GitHub Actions workflow permissions for PipeCraft')
   .option('--apply', 'Automatically apply changes without prompting')
   .option('--force', 'Alias for --apply')
   .action(async (options) => {

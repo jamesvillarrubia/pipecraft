@@ -2,7 +2,7 @@
 
 Generated: Thu Oct  9 10:20:07 EDT 2025
 Project: Flowcraft
-Test Directory: /Users/james/Sites/published/flowcraft/tests
+Test Directory: /Users/james/Sites/published/pipecraft/tests
 
 ## Test Configuration
 
@@ -21,15 +21,15 @@ Test Directory: /Users/james/Sites/published/flowcraft/tests
 
 ### Test Files
 
-- `/Users/james/Sites/published/flowcraft/tests/unit/idempotency.test.ts`
-- `/Users/james/Sites/published/flowcraft/tests/unit/versioning.test.ts`
-- `/Users/james/Sites/published/flowcraft/tests/unit/tag-template.test.ts`
-- `/Users/james/Sites/published/flowcraft/tests/unit/config.test.ts`
-- `/Users/james/Sites/published/flowcraft/tests/integration/cli.test.ts`
-- `/Users/james/Sites/published/flowcraft/tests/run-debug-tests.sh`
-- `/Users/james/Sites/published/flowcraft/tests/debug-workflow.test.ts`
-- `/Users/james/Sites/published/flowcraft/tests/debug-workflows.sh`
-- `/Users/james/Sites/published/flowcraft/tests/e2e/workflow-generation.test.ts`
+- `/Users/james/Sites/published/pipecraft/tests/unit/idempotency.test.ts`
+- `/Users/james/Sites/published/pipecraft/tests/unit/versioning.test.ts`
+- `/Users/james/Sites/published/pipecraft/tests/unit/tag-template.test.ts`
+- `/Users/james/Sites/published/pipecraft/tests/unit/config.test.ts`
+- `/Users/james/Sites/published/pipecraft/tests/integration/cli.test.ts`
+- `/Users/james/Sites/published/pipecraft/tests/run-debug-tests.sh`
+- `/Users/james/Sites/published/pipecraft/tests/debug-workflow.test.ts`
+- `/Users/james/Sites/published/pipecraft/tests/debug-workflows.sh`
+- `/Users/james/Sites/published/pipecraft/tests/e2e/workflow-generation.test.ts`
 
 ## Usage Examples
 

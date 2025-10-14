@@ -38,8 +38,8 @@ beforeEach(() => {
 
 afterEach(() => {
   // Clean up after each test
-  if (existsSync(join(TEST_DIR, '.flowcraft-cache.json'))) {
-    rmSync(join(TEST_DIR, '.flowcraft-cache.json'))
+  if (existsSync(join(TEST_DIR, '.pipecraft-cache.json'))) {
+    rmSync(join(TEST_DIR, '.pipecraft-cache.json'))
   }
 })
 

@@ -8,13 +8,13 @@ import { parse } from 'yaml'
 import { createPathBasedPipeline } from '../../src/templates/workflows/pipeline-path-based.yml.tpl'
 
 describe('Path-Based Template Generation Tests', () => {
-  const testConfigPath = join(TEST_DIR, 'custom-flowcraftrc.json')
+  const testConfigPath = join(TEST_DIR, 'custom-pipecraftrc.json')
   const testPipelinePath = join(TEST_DIR, 'custom-pipeline.yml')
   const outputPath = join(TEST_DIR, '.github/workflows/pipeline.yml')
 
   beforeEach(() => {
     // Clean up test files
-    const filesToClean = [testConfigPath, testPipelinePath, outputPath, '.flowcraft-cache.json']
+    const filesToClean = [testConfigPath, testPipelinePath, outputPath, '.pipecraft-cache.json']
     filesToClean.forEach(file => {
       const fullPath = join(TEST_DIR, file)
       if (existsSync(fullPath)) {
@@ -28,7 +28,7 @@ describe('Path-Based Template Generation Tests', () => {
 
   afterEach(() => {
     // Clean up after each test
-    const filesToClean = [testConfigPath, testPipelinePath, outputPath, '.flowcraft-cache.json']
+    const filesToClean = [testConfigPath, testPipelinePath, outputPath, '.pipecraft-cache.json']
     filesToClean.forEach(file => {
       const fullPath = join(TEST_DIR, file)
       if (existsSync(fullPath)) {

@@ -36,7 +36,7 @@ const getBaseTemplate = (ctx: any) => {
 /**
  * Define which jobs Flowcraft owns vs user jobs
  */
-const FLOWCRAFT_OWNED_JOBS = new Set([
+const PIPECRAFT_OWNED_JOBS = new Set([
   'changes',
   'version', 
   'tag',
@@ -48,7 +48,7 @@ const FLOWCRAFT_OWNED_JOBS = new Set([
  * Check if a job is owned by Flowcraft
  */
 const isFlowcraftJob = (jobName: string): boolean => {
-  return FLOWCRAFT_OWNED_JOBS.has(jobName)
+  return PIPECRAFT_OWNED_JOBS.has(jobName)
 }
 
 /**
@@ -149,7 +149,7 @@ export const createPathBasedPipeline = (ctx: any) => {
     },
     
     // =============================================================================
-    // CORE FLOWCRAFT JOBS - Template-managed jobs that get updates
+    // CORE PIPECRAFT JOBS - Template-managed jobs that get updates
     // =============================================================================
     // These are the core Flowcraft jobs that should always use the latest template
     // version. Using 'overwrite' operation ensures users get bug fixes and improvements.
@@ -337,7 +337,7 @@ export const createPathBasedPipeline = (ctx: any) => {
       console.log('📋 Original job order:', getJobKeysInOrder(jobsNode))
       for (const item of jobsNode.items) {
         const jobName = item.key.value
-        if (FLOWCRAFT_OWNED_JOBS.has(jobName)) {
+        if (PIPECRAFT_OWNED_JOBS.has(jobName)) {
           existingFlowcraftJobs.add(jobName)
         }
       }
@@ -369,7 +369,7 @@ export const createPathBasedPipeline = (ctx: any) => {
         const item = jobsNode.items[i]
         const jobName = item.key.value
         
-        if (FLOWCRAFT_OWNED_JOBS.has(jobName)) {
+        if (PIPECRAFT_OWNED_JOBS.has(jobName)) {
           // This is a Flowcraft job - update it with the latest template content
           const operation = operations.find(op => op.path === `jobs.${jobName}`)
           if (operation) {
@@ -397,8 +397,8 @@ export const createPathBasedPipeline = (ctx: any) => {
     }
     
     // Add any Flowcraft jobs that the user didn't have
-    const flowcraftJobOrder = ['changes', 'version', 'tag', 'createpr', 'branch']
-    for (const jobName of flowcraftJobOrder) {
+    const pipecraftJobOrder = ['changes', 'version', 'tag', 'createpr', 'branch']
+    for (const jobName of pipecraftJobOrder) {
       if (!orderedJobs.has(jobName)) {
         // User didn't have this job - create it using operations
         const operation = operations.find(op => op.path === `jobs.${jobName}`)
@@ -435,7 +435,7 @@ export const createPathBasedPipeline = (ctx: any) => {
         // Collect all user jobs (non-Flowcraft jobs)
         for (const item of jobsNode.items) {
           const jobName = item.key.value
-          if (!FLOWCRAFT_OWNED_JOBS.has(jobName)) {
+          if (!PIPECRAFT_OWNED_JOBS.has(jobName)) {
             userJobs.set(jobName, item.value)
           }
         }

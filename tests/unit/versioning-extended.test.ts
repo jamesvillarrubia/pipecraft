@@ -26,7 +26,7 @@ describe('VersionManager - Extended Coverage', () => {
     }
 
     // Create unique temp directory
-    testDir = join(tmpdir(), `flowcraft-version-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    testDir = join(tmpdir(), `pipecraft-version-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
     mkdirSync(testDir, { recursive: true })
 
     // Change to test directory

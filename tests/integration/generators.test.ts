@@ -22,8 +22,8 @@ describe('Generator Integration Tests', () => {
   beforeEach(() => {
     // Clean up test directory
     const filesToClean = [
-      '.flowcraftrc.json',
-      '.flowcraft-cache.json',
+      '.pipecraftrc.json',
+      '.pipecraft-cache.json',
       '.github',
       'package.json',
       '.release-it.cjs',
@@ -69,7 +69,7 @@ describe('Generator Integration Tests', () => {
 
       await generateInit(ctx)
 
-      const configPath = join(TEST_DIR, '.flowcraftrc.json')
+      const configPath = join(TEST_DIR, '.pipecraftrc.json')
       expect(existsSync(configPath)).toBe(true)
 
       const rawContent = readFileSync(configPath, 'utf8')
@@ -115,7 +115,7 @@ describe('Generator Integration Tests', () => {
 
       await generateInit(ctx)
 
-      const configPath = join(TEST_DIR, '.flowcraftrc.json')
+      const configPath = join(TEST_DIR, '.pipecraftrc.json')
       const rawContent = readFileSync(configPath, 'utf8')
       let configContent = JSON.parse(rawContent)
       
@@ -159,7 +159,7 @@ describe('Generator Integration Tests', () => {
 
       await generateInit(ctx)
 
-      const configPath = join(TEST_DIR, '.flowcraftrc.json')
+      const configPath = join(TEST_DIR, '.pipecraftrc.json')
       const rawContent = readFileSync(configPath, 'utf8')
       
       // Should be valid JSON (may be double-encoded)

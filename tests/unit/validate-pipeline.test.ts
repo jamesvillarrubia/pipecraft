@@ -17,7 +17,7 @@ describe('Pipeline Validation Script', () => {
 
   beforeEach(() => {
     // Create unique temp directory for this test
-    testDir = join(tmpdir(), `flowcraft-validate-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    testDir = join(tmpdir(), `pipecraft-validate-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
     mkdirSync(testDir, { recursive: true })
     originalCwd = process.cwd()
     process.chdir(testDir)

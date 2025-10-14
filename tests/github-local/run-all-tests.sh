@@ -243,7 +243,7 @@ run_generation_tests() {
     
     if [ ${#missing_workflows[@]} -gt 0 ]; then
         print_status "FAILURE" "Missing workflow files: ${missing_workflows[*]}"
-        echo -e "${YELLOW}Please generate workflows first using: ./flowcraft generate${NC}"
+        echo -e "${YELLOW}Please generate workflows first using: ./pipecraft generate${NC}"
         return 1
     fi
     

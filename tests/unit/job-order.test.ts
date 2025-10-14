@@ -75,7 +75,7 @@ describe('Job Order Preservation', () => {
     
     try {
       // Generate pipeline using the CLI with test fixtures
-      execSync(`flowcraft generate --config ${testFixtures.config} --pipeline ${testFixtures.original} --output-pipeline ${testFixtures.generated}`, {
+      execSync(`pipecraft generate --config ${testFixtures.config} --pipeline ${testFixtures.original} --output-pipeline ${testFixtures.generated}`, {
         cwd: process.cwd(),
         stdio: 'pipe'
       })
@@ -110,9 +110,9 @@ describe('Job Order Preservation', () => {
     const generatedOrder = getJobOrder(testFixtures.generated)
     
     // Find positions of Flowcraft jobs in original
-    const flowcraftJobs = ['changes', 'version', 'tag', 'createpr', 'branch']
-    const originalFlowcraftPositions = flowcraftJobs.map(job => originalOrder.indexOf(job))
-    const generatedFlowcraftPositions = flowcraftJobs.map(job => generatedOrder.indexOf(job))
+    const pipecraftJobs = ['changes', 'version', 'tag', 'createpr', 'branch']
+    const originalFlowcraftPositions = pipecraftJobs.map(job => originalOrder.indexOf(job))
+    const generatedFlowcraftPositions = pipecraftJobs.map(job => generatedOrder.indexOf(job))
     
     // All Flowcraft jobs should be in the same positions
     originalFlowcraftPositions.forEach((originalPos, index) => {
@@ -127,8 +127,8 @@ describe('Job Order Preservation', () => {
     const generatedOrder = getJobOrder(testFixtures.generated)
     
     // Find user jobs (non-Flowcraft jobs)
-    const flowcraftJobs = new Set(['changes', 'version', 'tag', 'createpr', 'branch'])
-    const userJobs = originalOrder.filter(job => !flowcraftJobs.has(job))
+    const pipecraftJobs = new Set(['changes', 'version', 'tag', 'createpr', 'branch'])
+    const userJobs = originalOrder.filter(job => !pipecraftJobs.has(job))
     
     // Each user job should be in the same position
     userJobs.forEach(userJob => {

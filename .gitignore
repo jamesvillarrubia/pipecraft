@@ -41,7 +41,7 @@ coverage/
 coverage-*.txt
 
 # Development scripts
-flowcraft
+pipecraft
 
 # Test artifacts
 test-temp/
@@ -55,7 +55,7 @@ custom-pipeline.yml
 *.backup
 
 # Cache files
-.flowcraft-cache.json
+.pipecraft-cache.json
 
 # Misc
 .lockor

@@ -6,33 +6,33 @@
 
 ```bash
 # Interactive setup
-npx flowcraft init
+npx pipecraft init
 
 # Or with options
-npx flowcraft init --interactive
+npx pipecraft init --interactive
 ```
 
 ### 2. Generate Workflows
 
 ```bash
 # Generate GitHub Actions workflows
-npx flowcraft generate
+npx pipecraft generate
 
 # Generate with custom output directory
-npx flowcraft generate --output .github/workflows
+npx pipecraft generate --output .github/workflows
 
 # Dry run to see what would be generated
-npx flowcraft generate --dry-run
+npx pipecraft generate --dry-run
 ```
 
 ### 3. Validate Configuration
 
 ```bash
 # Validate your configuration
-npx flowcraft validate
+npx pipecraft validate
 
 # Verify everything is set up correctly
-npx flowcraft verify
+npx pipecraft verify
 ```
 
 ## Configuration Examples
@@ -95,7 +95,7 @@ npx flowcraft verify
 
 ### Generated GitHub Actions Workflows
 
-After running `flowcraft generate`, you'll get:
+After running `pipecraft generate`, you'll get:
 
 - **`pipeline.yml`**: Main orchestration workflow
 - **`job.changes.yml`**: Change detection workflow
@@ -183,27 +183,27 @@ After running `flowcraft generate`, you'll get:
 
 ## CLI Commands
 
-### `flowcraft init`
+### `pipecraft init`
 Initialize a new Flowcraft configuration.
 
 **Options:**
 - `--force`: Overwrite existing configuration
 - `--interactive`: Use interactive setup wizard
 
-### `flowcraft generate`
+### `pipecraft generate`
 Generate CI/CD workflows from configuration.
 
 **Options:**
 - `--output <path>`: Output directory for generated workflows
 - `--dry-run`: Show what would be generated without writing files
 
-### `flowcraft validate`
+### `pipecraft validate`
 Validate the configuration file.
 
-### `flowcraft verify`
+### `pipecraft verify`
 Check if Flowcraft is properly set up.
 
-### `flowcraft promote`
+### `pipecraft promote`
 Promote current branch to next environment.
 
 **Options:**
@@ -216,39 +216,39 @@ Promote current branch to next environment.
 ```bash
 # Initialize in existing project
 cd my-existing-project
-npx flowcraft init
+npx pipecraft init
 
 # Generate workflows
-npx flowcraft generate
+npx pipecraft generate
 
 # Commit the generated workflows
 git add .github/workflows/
-git commit -m "feat: add flowcraft workflows"
+git commit -m "feat: add pipecraft workflows"
 ```
 
 ### With Monorepos
 
 ```bash
 # Initialize with monorepo configuration
-npx flowcraft init
+npx pipecraft init
 # Select domains for your monorepo structure
 
 # Generate workflows
-npx flowcraft generate
+npx pipecraft generate
 
 # Verify setup
-npx flowcraft verify
+npx pipecraft verify
 ```
 
 ### With GitLab
 
 ```bash
 # Initialize with GitLab CI
-npx flowcraft init
+npx pipecraft init
 # Select "gitlab" as CI provider
 
 # Generate GitLab CI pipeline
-npx flowcraft generate
+npx pipecraft generate
 ```
 
 ## Troubleshooting
@@ -265,10 +265,10 @@ npx flowcraft generate
 2. **Workflows not generated**
    ```bash
    # Validate configuration first
-   npx flowcraft validate
+   npx pipecraft validate
    
    # Then generate workflows
-   npx flowcraft generate
+   npx pipecraft generate
    ```
 
 3. **Permission issues**
@@ -282,8 +282,8 @@ npx flowcraft generate
 
 ```bash
 # Run with verbose output
-npx flowcraft generate --verbose
+npx pipecraft generate --verbose
 
 # Dry run to see what would be generated
-npx flowcraft generate --dry-run
+npx pipecraft generate --dry-run
 ```
