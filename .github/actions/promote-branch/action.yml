@@ -63,7 +63,7 @@ runs:
         TEMP_BRANCH="${TEMP_BRANCH//{target\}/$TARGET}"
         TEMP_BRANCH="${TEMP_BRANCH//{version\}/$VERSION_CLEAN}"
 
-        echo "🌿 Creating temporary branch: $TEMP_BRANCH"
+        echo "🌿 Preparing temporary branch: $TEMP_BRANCH"
         echo "   From: $SOURCE"
         echo "   To: $TARGET"
         echo "   Version: $VERSION"
@@ -71,14 +71,22 @@ runs:
         # Ensure we're on the source branch
         git checkout "$SOURCE"
 
-        # Create temp branch from current commit
-        git checkout -b "$TEMP_BRANCH"
-
-        # Push temp branch to remote
-        git push origin "$TEMP_BRANCH"
+        # Check if temp branch already exists locally or remotely
+        if git show-ref --verify --quiet refs/heads/"$TEMP_BRANCH" || git ls-remote --heads origin "$TEMP_BRANCH" | grep -q "$TEMP_BRANCH"; then
+          echo "⚠️  Temp branch $TEMP_BRANCH already exists, using existing branch"
+          # Fetch and checkout existing branch
+          git fetch origin "$TEMP_BRANCH" 2>/dev/null || true
+          git checkout "$TEMP_BRANCH" 2>/dev/null || git checkout -b "$TEMP_BRANCH" origin/"$TEMP_BRANCH"
+        else
+          echo "📝 Creating new temp branch $TEMP_BRANCH"
+          # Create temp branch from current commit
+          git checkout -b "$TEMP_BRANCH"
+          # Push temp branch to remote
+          git push origin "$TEMP_BRANCH"
+        fi
 
         echo "tempBranch=$TEMP_BRANCH" >> $GITHUB_OUTPUT
-        echo "✅ Temporary branch created and pushed"
+        echo "✅ Temporary branch ready"
 
     - name: Check for Existing PR
       id: check-pr
