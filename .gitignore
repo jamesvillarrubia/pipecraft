@@ -20,6 +20,7 @@
 # IDE
 .vscode/
 .idea/
+.cursor/
 *.swp
 *.swo
 
@@ -45,8 +46,10 @@ flowcraft
 # Test artifacts
 test-temp/
 test-output/
+tests/debugging/debug-output/
 custom-output.yml
 custom-pipeline.yml
+*.test.log
 
 # Backup files
 *.backup
