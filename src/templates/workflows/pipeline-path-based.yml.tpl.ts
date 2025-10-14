@@ -8,7 +8,7 @@ import {
   createValueFromString,
   createValueFromObject,
   createValueFromArray
-} from '../../utils/ast-path-operations'
+} from '../../utils/ast-path-operations.js'
 import dedent from 'dedent';
 
 /**

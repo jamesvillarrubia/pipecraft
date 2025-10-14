@@ -6,12 +6,12 @@ import { runModule, prompt } from '@featherscloud/pinion'
 import { join } from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
-import { IdempotencyManager } from '../utils/idempotency'
-import { VersionManager } from '../utils/versioning'
-import { loadConfig, validateConfig } from '../utils/config'
-import { FlowcraftConfig } from '../types'
-import { setupGitHubPermissions } from '../utils/github-setup'
-import { runPreflightChecks, formatPreflightResults, checkNodeVersion } from '../utils/preflight'
+import { IdempotencyManager } from '../utils/idempotency.js'
+import { VersionManager } from '../utils/versioning.js'
+import { loadConfig, validateConfig } from '../utils/config.js'
+import { FlowcraftConfig } from '../types/index.js'
+import { setupGitHubPermissions } from '../utils/github-setup.js'
+import { runPreflightChecks, formatPreflightResults, checkNodeVersion } from '../utils/preflight.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

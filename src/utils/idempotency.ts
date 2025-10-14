@@ -1,7 +1,7 @@
 import { createHash } from 'crypto'
 import { readFileSync, existsSync, writeFileSync, statSync, rmSync } from 'fs'
 import { join } from 'path'
-import { FlowcraftConfig } from '../types'
+import { FlowcraftConfig } from '../types/index.js'
 
 export interface FileHash {
   path: string

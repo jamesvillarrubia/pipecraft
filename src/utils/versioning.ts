@@ -1,7 +1,7 @@
 import { execSync } from 'child_process'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import { FlowcraftConfig } from '../types'
+import { FlowcraftConfig } from '../types/index.js'
 
 export class VersionManager {
   private config: FlowcraftConfig

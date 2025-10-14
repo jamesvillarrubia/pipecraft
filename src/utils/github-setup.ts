@@ -124,10 +124,11 @@ export async function updateWorkflowPermissions(
 
 /**
  * Display current permissions and prompt for changes
+ * Returns: changes object if user accepted changes, 'declined' if user declined, null if already correct
  */
 export async function promptPermissionChanges(
   currentPermissions: WorkflowPermissions
-): Promise<Partial<WorkflowPermissions> | null> {
+): Promise<Partial<WorkflowPermissions> | null | 'declined'> {
   console.log('\n📋 Current GitHub Actions Workflow Permissions:')
   console.log(`   Default permissions: ${currentPermissions.default_workflow_permissions}`)
   console.log(`   Can create/approve PRs: ${currentPermissions.can_approve_pull_request_reviews ? 'Yes' : 'No'}`)
@@ -146,6 +147,7 @@ export async function promptPermissionChanges(
   console.log('   • Can create/approve PRs: Yes (for automated PR creation)')
 
   const changes: Partial<WorkflowPermissions> = {}
+  let userDeclinedAnyChanges = false
 
   // Ask about default permissions
   if (currentPermissions.default_workflow_permissions !== 'write') {
@@ -160,6 +162,7 @@ export async function promptPermissionChanges(
       changes.default_workflow_permissions = 'write'
     } else {
       console.log('⚠️  Warning: FlowCraft may not work correctly without write permissions')
+      userDeclinedAnyChanges = true
     }
   }
 
@@ -176,7 +179,13 @@ export async function promptPermissionChanges(
       changes.can_approve_pull_request_reviews = true
     } else {
       console.log('⚠️  Warning: FlowCraft cannot create PRs without this permission')
+      userDeclinedAnyChanges = true
     }
+  }
+
+  // If user declined all changes, return 'declined'
+  if (userDeclinedAnyChanges && Object.keys(changes).length === 0) {
+    return 'declined'
   }
 
   return Object.keys(changes).length > 0 ? changes : null
@@ -213,8 +222,15 @@ export async function setupGitHubPermissions(): Promise<void> {
   // Prompt for changes
   const changes = await promptPermissionChanges(currentPermissions)
 
-  if (!changes) {
+  if (changes === null) {
     console.log('\n✨ No changes needed!')
+    return
+  }
+
+  if (changes === 'declined') {
+    console.log('\n⚠️  Setup incomplete - permissions were not updated')
+    console.log('💡 You can run this command again anytime or update permissions manually at:')
+    console.log(`   https://github.com/${repoInfo.owner}/${repoInfo.repo}/settings/actions`)
     return
   }
 

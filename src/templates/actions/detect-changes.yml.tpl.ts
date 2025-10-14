@@ -1,7 +1,7 @@
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import fs from 'fs'
 import dedent from 'dedent'
-import { DomainConfig } from '../../types'
+import { DomainConfig } from '../../types/index.js'
 
 // Template for the Changes Detection GitHub Action
 const changesActionTemplate = (ctx: any) => {

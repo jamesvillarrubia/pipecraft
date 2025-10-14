@@ -1,8 +1,8 @@
 import { PinionContext, toFile, renderTemplate, prompt, when, writeJSON } from '@featherscloud/pinion'
 import { existsSync } from 'fs'
-import { IdempotencyManager } from '../utils/idempotency'
-import { VersionManager } from '../utils/versioning'
-import { FlowcraftConfig } from '../types'
+import { IdempotencyManager } from '../utils/idempotency.js'
+import { VersionManager } from '../utils/versioning.js'
+import { FlowcraftConfig } from '../types/index.js'
 
 const defaultConfig = {
   ciProvider: 'github' as const,

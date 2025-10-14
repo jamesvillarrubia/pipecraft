@@ -1,5 +1,5 @@
 import { cosmiconfigSync } from 'cosmiconfig'
-import { FlowcraftConfig, DomainConfig } from '../types'  
+import { FlowcraftConfig, DomainConfig } from '../types/index.js'  
 
 export const loadConfig = (configPath?: string) => {
   const explorer = cosmiconfigSync('flowcraft')
