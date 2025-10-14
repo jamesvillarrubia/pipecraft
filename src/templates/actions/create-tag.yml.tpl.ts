@@ -52,6 +52,12 @@ const tagActionTemplate = (ctx: any) => {
             echo "✅ Version format is valid: $VERSION"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+        - name: Configure Git
+          shell: bash
+          run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
         - name: Create Tag
           id: tag
           shell: bash
@@ -59,7 +65,7 @@ const tagActionTemplate = (ctx: any) => {
             VERSION="\${{ steps.validate.outputs.version }}"
             PREFIX="\${{ inputs.tag_prefix }}"
             TAG_NAME="\${PREFIX}\${VERSION}"
-            
+
             # Check if tag already exists
             if git tag -l | grep -q "^\${TAG_NAME}$"; then
               echo "⚠️  Tag \${TAG_NAME} already exists"
