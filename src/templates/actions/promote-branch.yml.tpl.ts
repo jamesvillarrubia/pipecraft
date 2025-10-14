@@ -138,9 +138,12 @@ const promoteBranchActionTemplate = (ctx: any) => {
               --base "\$TARGET" \\
               --json number,url 2>&1)
 
-            if echo "\$PR_OUTPUT" | jq -e '.number' > /dev/null 2>&1; then
-              PR_NUMBER=\$(echo "\$PR_OUTPUT" | jq -r '.number')
-              PR_URL=\$(echo "\$PR_OUTPUT" | jq -r '.url')
+            # Write output to file to avoid echo issues with special characters
+            echo "\$PR_OUTPUT" > /tmp/pr_output.txt
+
+            if jq -e '.number' /tmp/pr_output.txt > /dev/null 2>&1; then
+              PR_NUMBER=\$(jq -r '.number' /tmp/pr_output.txt)
+              PR_URL=\$(jq -r '.url' /tmp/pr_output.txt)
               echo "prNumber=\$PR_NUMBER" >> \$GITHUB_OUTPUT
               echo "prUrl=\$PR_URL" >> \$GITHUB_OUTPUT
               echo "✅ Created PR #\$PR_NUMBER"
@@ -148,7 +151,7 @@ const promoteBranchActionTemplate = (ctx: any) => {
             else
               echo "❌ Failed to create PR"
               echo "Error output:"
-              echo "\$PR_OUTPUT"
+              cat /tmp/pr_output.txt || echo "Could not read output file"
               exit 1
             fi
 
