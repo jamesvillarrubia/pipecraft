@@ -149,7 +149,7 @@ const promoteBranchActionTemplate = (ctx: any) => {
             else
               echo "❌ Failed to create PR"
               echo "Error output:"
-              printf '%s\n' "\$PR_OUTPUT"
+              printf '%s\\n' "\$PR_OUTPUT"
               exit 1
             fi
 
