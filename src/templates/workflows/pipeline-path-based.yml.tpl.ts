@@ -217,8 +217,13 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
       `,
       spaceBeforeComment: true,
       value: createValueFromString(`
-        if: github.ref_name == '${ctx.initialBranch || branchFlow[0]}'
-        needs: changes
+        if: |
+          \${{
+            github.ref_name == '${ctx.initialBranch || branchFlow[0]}' &&
+            always() &&
+            ${Object.keys(ctx.domains || {}).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' &&\n            ')}
+          }}
+        needs: [changes, ${Object.keys(ctx.domains || {}).map((domain: string) => `test-${domain}`).join(', ')}]
         runs-on: ubuntu-latest
         steps:
           - uses: ./.github/actions/calculate-version
