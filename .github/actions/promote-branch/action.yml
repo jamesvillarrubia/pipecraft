@@ -280,6 +280,28 @@ runs:
 
         echo "✅ Pipeline workflow triggered on $TARGET"
 
+    - name: Close PR and Delete Branch
+      if: steps.read-config.outputs.autoMerge == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        TEMP_BRANCH="${{ steps.create-temp.outputs.tempBranch }}"
+        PR_NUMBER="${{ steps.check-pr.outputs.prNumber || steps.create-pr.outputs.prNumber }}"
+
+        echo "🧹 Cleaning up temporary branch: $TEMP_BRANCH"
+
+        # Close the PR (it's already been fast-forward merged)
+        if [ -n "$PR_NUMBER" ]; then
+          gh pr close "$PR_NUMBER" --comment "Automatically merged via fast-forward. Closing PR and cleaning up release branch." || true
+          echo "✅ Closed PR #$PR_NUMBER"
+        fi
+
+        # Delete the temporary branch from remote
+        git push origin --delete "$TEMP_BRANCH" || echo "⚠️  Branch may already be deleted"
+
+        echo "✅ Deleted temporary branch $TEMP_BRANCH"
+
     - name: Use Existing PR
       if: steps.check-pr.outputs.exists == 'true'
       shell: bash
