@@ -104,3 +104,12 @@ runs:
       shell: bash
       run: |
         echo "Version determined: ${{ steps.set_version.outputs.version }}"
+
+    - name: Update workflow run name
+      shell: bash
+      run: |
+        if [ -n "${{ steps.set_version.outputs.version }}" ]; then
+          gh run --repo ${{ github.repository }} set-name "${{ github.ref_name }} (${{ steps.set_version.outputs.version }}) #${{ github.run_number }}"
+        fi
+      env:
+        GH_TOKEN: ${{ github.token }}
