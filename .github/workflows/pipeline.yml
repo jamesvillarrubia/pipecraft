@@ -108,11 +108,10 @@ jobs:
   #=============================================================================
   deploy-core:
     needs: [ version, changes ]
-    if: ${{ always() }}
+    if: ${{ needs.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Deploy core
-        if: ${{ needs.changes.outputs.core == 'true' }}
         run: |
           echo "Deploying core"
           echo "Replace this with your actual deploy commands"
