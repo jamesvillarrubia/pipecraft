@@ -38,7 +38,9 @@ const getPipecraftOwnedJobs = (branchFlow: string[], domains: Record<string, any
     'changes',
     'version',
     'tag',
-    'promote'  // Single promote job instead of multiple promote-to-{target} jobs
+    'promote',  // Single promote job instead of multiple promote-to-{target} jobs
+    'release',  // GitHub release creation on final branch
+    'publish'   // npm package publication on final branch
   ])
 
   // Add domain-based jobs (test-*, deploy-*, remote-test-*) based on flags
@@ -375,7 +377,87 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       `,
       required: true
     },
-    
+
+    // Generate release job for final branch (main)
+    {
+      path: 'jobs.release',
+      operation: 'overwrite' as const,
+      value: createValueFromString(`
+        # Create GitHub release on main branch after successful tests and versioning
+        if: \${{
+            always() &&
+            github.ref_name == '${ctx.finalBranch || branchFlow[branchFlow.length - 1]}' &&
+            (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+            needs.version.result == 'success' &&
+            (needs.tag.result == 'success' || needs.tag.result == 'skipped')
+            }}
+        needs: [ version, tag ]
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+            with:
+              fetch-depth: 0
+          - name: Create GitHub Release
+            env:
+              GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+            run: |
+              VERSION="\${{ needs.version.outputs.version }}"
+              echo "Creating GitHub release for $VERSION"
+
+              # Generate release notes from commits since last tag
+              PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+              if [ -n "$PREVIOUS_TAG" ]; then
+                RELEASE_NOTES=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s" --no-merges)
+              else
+                RELEASE_NOTES=$(git log --pretty=format:"- %s" --no-merges)
+              fi
+
+              # Create release
+              gh release create "$VERSION" \\
+                --title "Release $VERSION" \\
+                --notes "$RELEASE_NOTES" \\
+                --latest
+      `, ctx),
+      spaceBefore: true,
+      commentBefore: dedent`
+        =============================================================================
+         RELEASE & PUBLISH JOBS (Main Branch Only)
+        =============================================================================
+      `,
+      required: true
+    },
+
+    // Generate npm publish job for final branch (main)
+    {
+      path: 'jobs.publish',
+      operation: 'overwrite' as const,
+      value: createValueFromString(`
+        # Publish to npm on main branch after successful release
+        if: \${{
+            always() &&
+            github.ref_name == '${ctx.finalBranch || branchFlow[branchFlow.length - 1]}' &&
+            (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+            needs.release.result == 'success'
+            }}
+        needs: [ release ]
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-node@v4
+            with:
+              node-version: 22
+              registry-url: 'https://registry.npmjs.org'
+          - name: Install dependencies
+            run: npm ci
+          - name: Build package
+            run: npm run build
+          - name: Publish to npm
+            run: npm publish
+            env:
+              NODE_AUTH_TOKEN: \${{ secrets.NPM_TOKEN }}
+      `, ctx),
+      required: true
+    },
 
   ]
 
