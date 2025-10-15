@@ -407,3 +407,4 @@ if (!process.argv.slice(2).length) {
 }
 // Test comment for deploy job validation
 // Final test for deploy-core job
+// Test commit to trigger deploy-core job - Wed Oct 15 13:47:31 EDT 2025
