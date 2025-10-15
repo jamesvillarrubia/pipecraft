@@ -41,11 +41,12 @@ const getPipecraftOwnedJobs = (branchFlow: string[], domains: Record<string, any
     'promote'  // Single promote job instead of multiple promote-to-{target} jobs
   ])
 
-  // Add domain-based jobs (test-*, deploy-*, remote-test-*)
+  // Add domain-based jobs (test-*, deploy-*, remote-test-*) based on flags
   Object.keys(domains).forEach(domain => {
-    jobs.add(`test-${domain}`)
-    jobs.add(`deploy-${domain}`)
-    jobs.add(`remote-test-${domain}`)
+    const domainConfig = domains[domain]
+    if (domainConfig.test !== false) jobs.add(`test-${domain}`)
+    if (domainConfig.deploy === true) jobs.add(`deploy-${domain}`)
+    if (domainConfig.remoteTest === true) jobs.add(`remote-test-${domain}`)
   })
 
   return jobs
@@ -192,8 +193,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
     // Using 'preserve' operation to keep any existing user jobs while providing
     // template structure and examples for new users.
 
-    // Generate test jobs for each domain
-    ...Object.keys(ctx.domains || {}).sort().map((domain: string) => ({
+    // Generate test jobs for each domain (only if test: true)
+    ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => ({
       path: `jobs.test-${domain}`,
       operation: 'preserve' as const,
       value: createValueFromString(`
@@ -232,9 +233,9 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         if: \${{
             github.ref_name == '${ctx.initialBranch || branchFlow[0]}' &&
             always() &&
-            ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' &&\n            ')}
+            ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' &&\n            ')}
           }}
-        needs: [ changes, ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `test-${domain}`).join(', ')} ]
+        needs: [ changes, ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `test-${domain}`).join(', ')} ]
         runs-on: ubuntu-latest
         steps:
           - uses: ./.github/actions/calculate-version
@@ -248,8 +249,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       spaceBefore: true,
     },
     
-    // Generate deployment jobs for each domain
-    ...Object.keys(ctx.domains || {}).sort().map((domain: string) => ({
+    // Generate deployment jobs for each domain (only if deploy: true)
+    ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].deploy === true).map((domain: string) => ({
       path: `jobs.deploy-${domain}`,
       operation: 'preserve' as const,
       value: createValueFromString(`
@@ -275,8 +276,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       required: true
     })),
 
-    // Generate remote testing jobs for each domain
-    ...Object.keys(ctx.domains || {}).sort().map((domain: string) => ({
+    // Generate remote testing jobs for each domain (only if remoteTest: true)
+    ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].remoteTest === true).map((domain: string) => ({
       path: `jobs.remote-test-${domain}`,
       operation: 'preserve' as const,
       value: createValueFromString(`

@@ -93,21 +93,6 @@ jobs:
           baseRef: ${{ inputs.baseRef || 'main' }}
     outputs:
       version: ${{ steps.version.outputs.version }}
-
-  #=============================================================================
-  # DEPLOYMENT JOBS
-  #=============================================================================
-  deploy-cicd:
-    needs: [ version, changes ]
-    if: ${{ needs.changes.outputs.cicd == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      # TODO: Replace with your test test logic
-      - name: Deploy cicd
-        run: |
-          echo "Deploying cicd"
-          echo "Replace this with your actual deploy commands"
-          # Example: npm deploy -- --testPathPattern=cicd
   deploy-core:
     needs: [ version, changes ]
     if: ${{ needs.changes.outputs.core == 'true' }}
@@ -119,31 +104,6 @@ jobs:
           echo "Deploying core"
           echo "Replace this with your actual deploy commands"
           # Example: npm deploy -- --testPathPattern=core
-  deploy-test:
-    needs: [ version, changes ]
-    if: ${{ needs.changes.outputs.test == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      # TODO: Replace with your test test logic
-      - name: Deploy test
-        run: |
-          echo "Deploying test"
-          echo "Replace this with your actual deploy commands"
-          # Example: npm deploy -- --testPathPattern=test
-
-  #=============================================================================
-  # REMOTE TESTING JOBS
-  #=============================================================================
-  remote-test-cicd:
-    needs: [ deploy-cicd ]
-    runs-on: ubuntu-latest
-    steps:
-      # TODO: Replace with your test test logic
-      - name: Test cicd
-        run: |
-          echo "Testing cicd remotely"
-          echo "Replace this with your actual test commands"
-          # Example: npm test -- --testPathPattern=cicd
   remote-test-core:
     needs: [ deploy-core ]
     runs-on: ubuntu-latest
@@ -154,16 +114,6 @@ jobs:
           echo "Testing core remotely"
           echo "Replace this with your actual test commands"
           # Example: npm test -- --testPathPattern=core
-  remote-test-test:
-    needs: [ deploy-test ]
-    runs-on: ubuntu-latest
-    steps:
-      # TODO: Replace with your test test logic
-      - name: Test test
-        run: |
-          echo "Testing test remotely"
-          echo "Replace this with your actual test commands"
-          # Example: npm test -- --testPathPattern=test
 
   #=============================================================================
   # TAG & PROMOTE
