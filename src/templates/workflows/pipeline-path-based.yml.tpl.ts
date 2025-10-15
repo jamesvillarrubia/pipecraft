@@ -206,7 +206,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       spaceBeforeComment: true,
       value: createValueFromString(`
         if: \${{
-            github.ref_name == '${ctx.initialBranch || branchFlow[0]}' &&
+            always() &&
             (
               ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' && \n              ')}
             ) &&

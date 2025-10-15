@@ -76,7 +76,7 @@ jobs:
   # VERSIONING
   #=============================================================================
   version:
-    if: ${{ github.ref_name == 'develop' && ( needs.test-cicd.result != 'failure' && needs.test-core.result != 'failure' && needs.test-test.result != 'failure' ) && ( needs.test-cicd.result == 'success' || needs.test-core.result == 'success' || needs.test-test.result == 'success' ) }}
+    if: ${{ always() && ( needs.test-cicd.result != 'failure' && needs.test-core.result != 'failure' && needs.test-test.result != 'failure' ) && ( needs.test-cicd.result == 'success' || needs.test-core.result == 'success' || needs.test-test.result == 'success' ) }}
     needs: [ changes, test-cicd, test-core, test-test ]
     runs-on: ubuntu-latest
     steps:
