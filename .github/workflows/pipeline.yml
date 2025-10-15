@@ -46,11 +46,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/detect-changes
+        id: detect
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
+    outputs:
+      core: ${{ steps.detect.outputs.core }}
+
+      
   test-core:
     needs: changes
-    if: ${{ steps.changes.outputs.core == 'true' }}
+    if: ${{ needs.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

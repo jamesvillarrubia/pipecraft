@@ -163,8 +163,11 @@ export const createPathBasedPipeline = (ctx: any) => {
         runs-on: ubuntu-latest
         steps:
           - uses: ./.github/actions/detect-changes
+            id: detect
             with:
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
+        outputs:
+${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \${{ steps.detect.outputs.${domain} }}`).join('\n')}
       `, ctx),
       commentBefore: dedent`
         =============================================================================
