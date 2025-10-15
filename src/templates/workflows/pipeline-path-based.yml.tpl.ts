@@ -272,7 +272,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         =============================================================================
       ` : undefined,
       spaceBeforeComment: domain === Object.keys(ctx.domains || {}).sort()[0] ? true : undefined,
-      required: false
+      required: true
     })),
 
     // Generate remote testing jobs for each domain
@@ -298,7 +298,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         =============================================================================
       ` : undefined,
       spaceBeforeComment: domain === Object.keys(ctx.domains || {}).sort()[0] ? true : undefined,
-      required: false
+      required: true
     })),
     
     {
@@ -477,47 +477,74 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       }
     }
 
-    // Add section headers to first job in each category
-    // This ensures headers appear in the right place regardless of job order
+    // Add section headers and spacing to domain-based jobs
+    // This ensures headers appear in the right place and jobs have proper spacing
     const domainKeys = Object.keys(ctx.domains || {})
     if (domainKeys.length > 0) {
-      // Find first test-* job
-      const firstTestJob = finalJobsNode.items.find((item: any) =>
-        item.key?.toString().startsWith('test-')
-      )
-      if (firstTestJob && firstTestJob.key) {
-        (firstTestJob.key as any).commentBefore = `
+      let foundFirstTest = false
+      let foundFirstDeploy = false
+      let foundFirstRemoteTest = false
+
+      for (const item of finalJobsNode.items) {
+        const jobName = item.key?.toString()
+        if (!jobName) continue
+
+        // Skip if key is a string (can't add properties to primitive strings)
+        if (typeof item.key === 'string') continue
+
+        // Handle test-* jobs
+        if (jobName.startsWith('test-')) {
+          if (!foundFirstTest) {
+            // First test job gets the header
+            (item.key as any).commentBefore = `
 
 
 =============================================================================
  TESTING JOBS
 =============================================================================`
-      }
+            ;(item.key as any).spaceBefore = true
+            foundFirstTest = true
+          } else {
+            // Subsequent test jobs get a blank line
+            ;(item.key as any).spaceBefore = true
+          }
+        }
 
-      // Find first deploy-* job
-      const firstDeployJob = finalJobsNode.items.find((item: any) =>
-        item.key?.toString().startsWith('deploy-')
-      )
-      if (firstDeployJob && firstDeployJob.key) {
-        (firstDeployJob.key as any).commentBefore = `
+        // Handle deploy-* jobs
+        if (jobName.startsWith('deploy-')) {
+          if (!foundFirstDeploy) {
+            // First deploy job gets the header
+            (item.key as any).commentBefore = `
 
 
 =============================================================================
  DEPLOYMENT JOBS
 =============================================================================`
-      }
+            ;(item.key as any).spaceBefore = true
+            foundFirstDeploy = true
+          } else {
+            // Subsequent deploy jobs get a blank line
+            ;(item.key as any).spaceBefore = true
+          }
+        }
 
-      // Find first remote-test-* job
-      const firstRemoteTestJob = finalJobsNode.items.find((item: any) =>
-        item.key?.toString().startsWith('remote-test-')
-      )
-      if (firstRemoteTestJob && firstRemoteTestJob.key) {
-        (firstRemoteTestJob.key as any).commentBefore = `
+        // Handle remote-test-* jobs
+        if (jobName.startsWith('remote-test-')) {
+          if (!foundFirstRemoteTest) {
+            // First remote-test job gets the header
+            (item.key as any).commentBefore = `
 
 
 =============================================================================
  REMOTE TESTING JOBS
 =============================================================================`
+            ;(item.key as any).spaceBefore = true
+            foundFirstRemoteTest = true
+          } else {
+            // Subsequent remote-test jobs get a blank line
+            ;(item.key as any).spaceBefore = true
+          }
+        }
       }
     }
   }
