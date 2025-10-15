@@ -1,4 +1,11 @@
 name: "Pipeline"
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+
 on:
   workflow_call:
     inputs:
@@ -56,6 +63,7 @@ jobs:
           echo "Running tests for cicd domain"
           echo "Replace this with your actual test commands"
           # Example: npm test -- --testPathPattern=cicd
+
   test-core:
     needs: changes
     if: ${{ needs.changes.outputs.core == 'true' }}
@@ -67,6 +75,7 @@ jobs:
           echo "Running tests for core domain"
           echo "Replace this with your actual test commands"
           # Example: npm test -- --testPathPattern=core
+
   test-test:
     needs: changes
     if: ${{ needs.changes.outputs.test == 'true' }}
@@ -83,7 +92,19 @@ jobs:
   # VERSIONING
   #=============================================================================
   version:
-    if: ${{ github.ref_name == 'develop' && always() && needs.test-cicd.result != 'failure' && needs.test-core.result != 'failure' && needs.test-test.result != 'failure' }}
+    if: ${{ 
+      github.ref_name == 'develop' && 
+      (
+        needs.test-cicd.result != 'failure' && 
+        needs.test-core.result != 'failure' && 
+        needs.test-test.result != 'failure'
+      ) && 
+      ( 
+        needs.test-cicd.result == 'success' || 
+        needs.test-core.result == 'success' || 
+        needs.test-test.result == 'success' 
+      )
+      }}
     needs: [ changes, test-cicd, test-core, test-test ]
     runs-on: ubuntu-latest
     steps:
@@ -93,6 +114,10 @@ jobs:
           baseRef: ${{ inputs.baseRef || 'main' }}
     outputs:
       version: ${{ steps.version.outputs.version }}
+
+  #=============================================================================
+  # DEPLOYMENT JOBS
+  #=============================================================================
   deploy-core:
     needs: [ version, changes ]
     if: ${{ needs.changes.outputs.core == 'true' }}
@@ -104,6 +129,10 @@ jobs:
           echo "Deploying core"
           echo "Replace this with your actual deploy commands"
           # Example: npm deploy -- --testPathPattern=core
+
+  #=============================================================================
+  # REMOTE TESTING JOBS
+  #=============================================================================
   remote-test-core:
     needs: [ deploy-core ]
     runs-on: ubuntu-latest
@@ -118,9 +147,22 @@ jobs:
   #=============================================================================
   # TAG & PROMOTE
   #=============================================================================
+  # Needs all deploy and/or remote test jobs to succeed or be skipped
+  # Needs at least one domain to succeed
   tag:
-    if: github.ref_name == 'develop'
-    needs: version
+    needs: [ version, remote-test-core, deploy-core ]
+    if: ${{
+      always() &&
+      github.event_name == 'push' &&
+      (
+        needs.deploy-core.result != 'failure' && 
+        needs.remote-test-core.result != 'failure'
+      ) && 
+      ( 
+        needs.deploy-core.result == 'success' || 
+        needs.remote-test-core.result == 'success' 
+      )
+      }}
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/create-tag
@@ -133,8 +175,17 @@ jobs:
   promote:
     # Only runs on push events (not PRs) to branches that can promote
     # Waits for version/tag if they run, but doesn't fail if they're skipped
-    if: ${{ always() && github.event_name == 'push' && (github.ref_name == 'develop' || github.ref_name == 'staging') && needs.version.result != 'failure' && needs.tag.result != 'failure' }}
-    needs: [ changes, version, tag ]
+    # Needs all deploy and/or remote test jobs to succeed
+    if: ${{
+      always() &&
+      github.event_name == 'push' && 
+      needs.tag.result == 'success' && 
+      (
+        github.ref_name == 'develop' || 
+        github.ref_name == 'staging'
+      )
+      }}
+    needs: [ tag ]
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/promote-branch

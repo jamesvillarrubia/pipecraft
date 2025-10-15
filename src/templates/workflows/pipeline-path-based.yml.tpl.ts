@@ -1,5 +1,5 @@
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
-import { parseDocument, stringify } from 'yaml'
+import { parseDocument, stringify, Scalar } from 'yaml'
 import fs from 'fs'
 import {
   applyPathOperations,
@@ -265,14 +265,6 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
               echo "Replace this with your actual deploy commands"
               # Example: npm deploy -- --testPathPattern=${domain}
       `, ctx),
-      commentBefore: domain === Object.keys(ctx.domains || {}).sort()[0] ? dedent`
-
-
-        =============================================================================
-         DEPLOYMENT JOBS
-        =============================================================================
-      ` : undefined,
-      spaceBeforeComment: domain === Object.keys(ctx.domains || {}).sort()[0] ? true : undefined,
       required: true
     })),
 
@@ -291,14 +283,6 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
               echo "Replace this with your actual test commands"
               # Example: npm test -- --testPathPattern=${domain}
       `, ctx),
-      commentBefore: domain === Object.keys(ctx.domains || {}).sort()[0] ? dedent`
-
-
-        =============================================================================
-         REMOTE TESTING JOBS
-        =============================================================================
-      ` : undefined,
-      spaceBeforeComment: domain === Object.keys(ctx.domains || {}).sort()[0] ? true : undefined,
       required: true
     })),
     
@@ -363,8 +347,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
   const getJobKeysInOrder = (jobsNode: any): string[] => {
     if (!jobsNode || !jobsNode.items) return []
     return jobsNode.items
-      .filter((item: any) => item.key && item.key.value)
-      .map((item: any) => item.key.value)
+      .filter((item: any) => item.key)
+      .map((item: any) => item.key.toString())
   }
 
   // Unified approach: Use the operation system for all Pipecraft jobs
@@ -437,11 +421,16 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
   // For each job in the original order:
   // - If it's a Pipecraft job, use the newly created version from currentJobs
   // - If it's a user job, use the preserved version from userJobs
+  // IMPORTANT: Ensure all keys are Scalars (not strings) so we can add comments later
   for (const jobName of originalJobOrder) {
     if (PIPECRAFT_OWNED_JOBS.has(jobName)) {
       // It's a Pipecraft job - use the newly created version
       const item = currentJobs.get(jobName)
       if (item && jobsNode) {
+        // Ensure the key is a Scalar, not a string
+        if (typeof item.key === 'string') {
+          item.key = new Scalar(item.key)
+        }
         jobsNode.items.push(item)
       }
     } else {
@@ -456,6 +445,10 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
   // Add any new Pipecraft jobs that weren't in the original order (at the end)
   for (const [jobName, item] of currentJobs) {
     if (!originalJobOrder.includes(jobName) && jobsNode) {
+      // Ensure the key is a Scalar, not a string
+      if (typeof item.key === 'string') {
+        item.key = new Scalar(item.key)
+      }
       jobsNode.items.push(item)
     }
   }
@@ -515,7 +508,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         if (jobName.startsWith('deploy-')) {
           if (!foundFirstDeploy) {
             // First deploy job gets the header
-            (item.key as any).commentBefore = `
+            ;(item.key as any).commentBefore = `
 
 
 =============================================================================
@@ -533,7 +526,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         if (jobName.startsWith('remote-test-')) {
           if (!foundFirstRemoteTest) {
             // First remote-test job gets the header
-            (item.key as any).commentBefore = `
+            ;(item.key as any).commentBefore = `
 
 
 =============================================================================

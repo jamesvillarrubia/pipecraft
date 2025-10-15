@@ -190,13 +190,19 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue, docum
       node = document && document.createNode ? document.createNode(value) : createNode(value)
     }
 
-    // When commentBefore is provided, we need to create a Scalar key instead of a string key
+    // When commentBefore is provided, or when setting a job key (which may need comments added later),
+    // we need to create a Scalar key instead of a string key.
     // This is because YAML's set() method creates a plain string key by default,
-    // but comments can only be attached to Scalar objects
-    if (commentBefore) {
-      // Create a Scalar key with the comment
+    // but comments can only be attached to Scalar objects.
+    const isJobKey = pathParts.length === 2 && pathParts[0] === 'jobs'
+
+    if (commentBefore || isJobKey) {
+      // Create a Scalar key (with or without comment)
       const scalarKey = new Scalar(finalKey)
-      ;(scalarKey as any).commentBefore = commentBefore
+
+      if (commentBefore) {
+        ;(scalarKey as any).commentBefore = commentBefore
+      }
 
       // Add blank line before the comment if requested
       if (spaceBeforeComment) {
