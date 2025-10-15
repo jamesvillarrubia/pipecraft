@@ -221,6 +221,11 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
             id: version
             with:
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
+          - name: Update workflow run name
+            run: |
+              gh run --repo \${{ github.repository }} set-name "\${{ github.ref_name }} (\${{ steps.version.outputs.version }}) #\${{ github.run_number }}"
+            env:
+              GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         outputs:
           version: \${{ steps.version.outputs.version }}
       `, ctx),
