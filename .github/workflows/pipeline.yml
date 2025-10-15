@@ -117,7 +117,7 @@ jobs:
   #=============================================================================
   deploy-core:
     needs: [ version, changes ]
-    if: needs.changes.outputs.core == true
+    if: needs.changes.outputs.core
     runs-on: ubuntu-latest
     steps:
       # TODO: Replace with your test test logic
