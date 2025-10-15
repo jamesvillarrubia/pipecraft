@@ -94,34 +94,16 @@ export const createPathBasedPipeline = (ctx: any) => {
   
   // Apply path-based operations
   const operations: PathOperationConfig[] = [
-    
+
     // =============================================================================
-    // WORKFLOW INPUTS - Ensure required inputs exist for workflow calls
+    // WORKFLOW TRIGGERS - Define when the pipeline runs
     // =============================================================================
-    // These operations ensure that workflow_call and workflow_dispatch have the
-    // required inputs (version, baseRef) that Pipecraft needs to function.
-    // Using 'set' operation to ensure these inputs always exist with correct structure.
-    
-    {
-      path: 'on.workflow_call.inputs.version',
-      operation: 'set',
-      value: {
-        description: 'The version to deploy',
-        required: false,
-        type: 'string'
-      },
-      required: true
-    },
-    {
-      path: 'on.workflow_call.inputs.baseRef',
-      operation: 'set',
-      value: {
-        description: 'The base reference for comparison',
-        required: false,
-        type: 'string'
-      },
-      required: true
-    },
+    // The pipeline should only run on:
+    // 1. Push to develop/staging/main (from PR merge or promotion)
+    // 2. Manual trigger via workflow_dispatch
+    //
+    // NOT on pull_request events - we only want to run after the PR is merged
+
     {
       path: 'on.workflow_dispatch.inputs.version',
       operation: 'set',
@@ -142,17 +124,9 @@ export const createPathBasedPipeline = (ctx: any) => {
       },
       required: true
     },
-    
-    // =============================================================================
-    // BRANCH CONFIGURATION - Merge template branches with user branches
-    // =============================================================================
-    // Using 'merge' operation to preserve any custom branches the user has added
-    // while ensuring the template branches (from branchFlow) are included.
-    // This allows users to add custom branches without losing template functionality.
-    
     {
-      path: 'on.pull_request.branches',
-      operation: 'merge',
+      path: 'on.push.branches',
+      operation: 'set',
       value: branchFlow,
       required: true
     },
@@ -434,6 +408,14 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
   // Apply all operations in order - this creates/overwrites Pipecraft jobs
   // The 'overwrite' operation handles both create and update cases automatically
   applyPathOperations(doc.contents, operations, doc)
+
+  // Remove old trigger types that are no longer used (workflow_call, pull_request)
+  // We only want push and workflow_dispatch triggers
+  const onNode = doc.contents.get('on')
+  if (onNode && onNode.delete) {
+    onNode.delete('workflow_call')
+    onNode.delete('pull_request')
+  }
 
   // Now we need to reorder jobs to match the original order
   // Collect all current jobs (Pipecraft jobs that were just created)

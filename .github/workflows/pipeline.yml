@@ -1,15 +1,5 @@
 name: "Pipeline"
 on:
-  workflow_call:
-    inputs:
-      version:
-        description: The version to deploy
-        required: false
-        type: string
-      baseRef:
-        description: The base reference for comparison
-        required: false
-        type: string
   workflow_dispatch:
     inputs:
       version:
@@ -20,7 +10,7 @@ on:
         description: The base reference for comparison
         required: false
         type: string
-  pull_request:
+  push:
     branches:
       - develop
       - staging
