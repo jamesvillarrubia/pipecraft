@@ -169,6 +169,8 @@ const promoteBranchActionTemplate = (ctx: any) => {
         - name: Check for Existing PR
           id: check-pr
           shell: bash
+          env:
+            GH_TOKEN: \${{ inputs.token }}
           run: |
             TEMP_BRANCH="\${{ steps.create-temp.outputs.tempBranch }}"
             TARGET="\${{ steps.read-config.outputs.targetBranch }}"
@@ -193,6 +195,8 @@ const promoteBranchActionTemplate = (ctx: any) => {
           id: create-pr
           if: steps.check-pr.outputs.exists == 'false'
           shell: bash
+          env:
+            GH_TOKEN: \${{ inputs.token }}
           run: |
             TEMP_BRANCH="\${{ steps.create-temp.outputs.tempBranch }}"
             TARGET="\${{ steps.read-config.outputs.targetBranch }}"
