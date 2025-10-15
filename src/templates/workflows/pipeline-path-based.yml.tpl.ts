@@ -167,7 +167,6 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
          CHANGES DETECTION
         =============================================================================
       `,
-      spaceBeforeComment: true,
       required: true
     },
 
@@ -201,30 +200,34 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
          TESTING JOBS
         =============================================================================
       ` : undefined,
-      spaceBeforeComment: domain === Object.keys(ctx.domains || {}).sort()[0] ? true : undefined,
       required: true
     })),
     
     {
-      path: 'jobs.version',
+      path: 'jobs.version-gate',
       operation: 'overwrite',
       commentBefore: dedent`
         =============================================================================
          VERSIONING
         =============================================================================
       `,
-      spaceBeforeComment: true,
       value: createValueFromString(`
-        if: \${{
-            always() &&
-            (
-              ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' && \n              ')}
-            ) &&
-            (
-              ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result == 'success'`).join(' || \n              ')}
-            )
-            }}
         needs: [ changes, ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `test-${domain}`).join(', ')} ]
+        runs-on: ubuntu-latest
+        steps:
+          - name: Version gate passed
+            run: echo "Tests completed, proceeding to versioning and deployment"
+      `, ctx),
+      required: true,
+      spaceBefore: true,
+    },
+
+    {
+      path: 'jobs.version',
+      operation: 'overwrite',
+      value: createValueFromString(`
+        if: \${{ needs.version-gate.result == 'success' }}
+        needs: [ version-gate ]
         runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@v4
@@ -244,7 +247,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       path: `jobs.deploy-${domain}`,
       operation: 'overwrite' as const,
       value: createValueFromString(`
-        needs: [ changes ]
+        needs: [ version-gate, changes, version ]
         if: \${{ needs.changes.outputs.${domain} == 'true' }}
         runs-on: ubuntu-latest
         steps:
@@ -324,7 +327,6 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
          TAG & PROMOTE
         =============================================================================
       `,
-      spaceBeforeComment: true,
       required: true
     },
 
@@ -359,7 +361,6 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
          PROMOTION JOB
         =============================================================================
       `,
-      spaceBeforeComment: true,
       required: true
     },
     
