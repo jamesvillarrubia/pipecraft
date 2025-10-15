@@ -241,7 +241,25 @@ const promoteBranchActionTemplate = (ctx: any) => {
               exit 1
             fi
 
-        - name: Fast-Forward Merge (Auto-Merge)
+        - name: Enable PR Auto-Merge with Rebase (Manual Approval Required)
+          if: steps.read-config.outputs.autoMerge == 'false'
+          shell: bash
+          env:
+            GH_TOKEN: \${{ inputs.token }}
+          run: |
+            PR_NUMBER="\${{ steps.check-pr.outputs.prNumber || steps.create-pr.outputs.prNumber }}"
+            TARGET="\${{ steps.read-config.outputs.targetBranch }}"
+
+            echo "🔐 Enabling auto-merge with rebase for PR #\$PR_NUMBER (requires approval)"
+            echo "   This will fast-forward \$TARGET when approved, maintaining linear history"
+
+            # Enable auto-merge with rebase method (fast-forward, no merge commit)
+            gh pr merge "\$PR_NUMBER" --auto --rebase
+
+            echo "✅ Auto-merge enabled - PR will fast-forward merge when approved"
+            echo "⚠️  Manual approval required before merge completes"
+
+        - name: Fast-Forward Merge (Immediate Auto-Merge)
           if: steps.read-config.outputs.autoMerge == 'true'
           shell: bash
           run: |
@@ -277,7 +295,7 @@ const promoteBranchActionTemplate = (ctx: any) => {
             git push origin \$TARGET
 
             echo "✅ Fast-forwarded \$TARGET to \$COMMIT_SHA"
-            echo "🔗 PR #\${{ steps.check-pr.outputs.number || steps.create-pr.outputs.prNumber }} remains open for audit trail"
+            echo "📝 PR will be closed automatically for audit trail"
 
         - name: Trigger Pipeline Workflow on Target Branch
           if: steps.read-config.outputs.autoMerge == 'true'
@@ -286,14 +304,16 @@ const promoteBranchActionTemplate = (ctx: any) => {
             GH_TOKEN: \${{ inputs.token }}
           run: |
             TARGET="\${{ steps.read-config.outputs.targetBranch }}"
+            VERSION="\${{ steps.get-version.outputs.version }}"
 
-            echo "🔄 Triggering pipeline workflow on \$TARGET branch"
+            echo "🔄 Triggering pipeline workflow on \$TARGET branch with version \$VERSION"
 
             # Trigger the pipeline workflow on the target branch
             # This is necessary because GITHUB_TOKEN pushes don't trigger workflows by default
-            gh workflow run pipeline.yml --ref "\$TARGET"
+            # Pass the version so the run name is descriptive
+            gh workflow run pipeline.yml --ref "\$TARGET" --field version="\$VERSION"
 
-            echo "✅ Pipeline workflow triggered on \$TARGET"
+            echo "✅ Pipeline workflow triggered on \$TARGET with version \$VERSION"
 
         - name: Close PR and Delete Branch
           if: steps.read-config.outputs.autoMerge == 'true'

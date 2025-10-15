@@ -96,6 +96,16 @@ export const createPathBasedPipeline = (ctx: any) => {
   const operations: PathOperationConfig[] = [
 
     // =============================================================================
+    // WORKFLOW METADATA - Name and run identification
+    // =============================================================================
+    {
+      path: 'run-name',
+      operation: 'set',
+      value: `Pipeline: \${{ github.ref_name }} \${{ inputs.version && format('({0})', inputs.version) || '' }}`,
+      required: true
+    },
+
+    // =============================================================================
     // WORKFLOW TRIGGERS - Define when the pipeline runs
     // =============================================================================
     // The pipeline should only run on:

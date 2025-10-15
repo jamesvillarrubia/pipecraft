@@ -14,6 +14,7 @@ export interface PipecraftConfig {
   finalBranch: string
   branchFlow: string[]
   autoMerge?: boolean | Record<string, boolean>  // Auto-merge per target branch (default: false)
+  mergeMethod?: 'auto' | 'merge' | 'squash' | 'rebase' | Record<string, 'auto' | 'merge' | 'squash' | 'rebase'>  // Merge method per target branch (default: 'auto' which uses fast-forward for autoMerge=true)
   semver: {
     bumpRules: Record<string, string>
   }
