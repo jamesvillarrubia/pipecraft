@@ -148,11 +148,11 @@ jobs:
   #=============================================================================
   remote-test-core:
     needs: [ deploy-core, changes ]
-    if: ${{ needs.changes.outputs.core == 'true' }}
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      # TODO: Replace with your test test logic
       - name: Test core
+        if: ${{ needs.changes.outputs.core == 'true' && needs.deploy-core.result == 'success' }}
         run: |
           echo "Testing core remotely"
           echo "Replace this with your actual test commands"
