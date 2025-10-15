@@ -213,6 +213,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       `,
       value: createValueFromString(`
         needs: [ changes, ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `test-${domain}`).join(', ')} ]
+        if: \${{ always() && (${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result == 'success'`).join(' || ')}) && ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' && ')} }}
         runs-on: ubuntu-latest
         steps:
           - name: Version gate passed

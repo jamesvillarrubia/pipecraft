@@ -75,6 +75,7 @@ jobs:
           # Example: npm test -- --testPathPattern=test
   version-gate:
     needs: [ changes, test-cicd, test-core, test-test ]
+    if: ${{ always() && (needs.test-cicd.result == 'success' || needs.test-core.result == 'success' || needs.test-test.result == 'success') && needs.test-cicd.result != 'failure' && needs.test-core.result != 'failure' && needs.test-test.result != 'failure' }}
     runs-on: ubuntu-latest
     steps:
       - name: Version gate passed
