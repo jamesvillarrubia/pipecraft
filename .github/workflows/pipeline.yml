@@ -1,5 +1,5 @@
 name: "Pipeline"
-run-name: "${{ github.ref_name }} #${{ inputs.run_id || github.run_id }}${{ inputs.version && format(' - {0}', inputs.version) || '' }}"
+run-name: "${{ github.ref_name }} #${{ inputs.run_number || github.run_number }}${{ inputs.version && format(' - {0}', inputs.version) || '' }}"
 on:
   workflow_dispatch:
     inputs:
@@ -11,8 +11,8 @@ on:
         description: The base reference for comparison
         required: false
         type: string
-      run_id:
-        description: The original run ID from develop branch
+      run_number:
+        description: The original run number from develop branch
         required: false
         type: string
   push:
@@ -189,5 +189,5 @@ jobs:
         with:
           sourceBranch: ${{ github.ref_name }}
           version: ${{ needs.version.outputs.version }}
-          run_id: ${{ inputs.run_id || github.run_id }}
+          run_number: ${{ inputs.run_number || github.run_number }}
           token: ${{ secrets.GITHUB_TOKEN }}

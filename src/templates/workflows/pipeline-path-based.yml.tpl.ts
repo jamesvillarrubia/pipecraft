@@ -101,7 +101,7 @@ export const createPathBasedPipeline = (ctx: any) => {
     {
       path: 'run-name',
       operation: 'set',
-      value: `\${{ github.ref_name }} #\${{ inputs.run_id || github.run_id }}\${{ inputs.version && format(' - {0}', inputs.version) || '' }}`,
+      value: `\${{ github.ref_name }} #\${{ inputs.run_number || github.run_number }}\${{ inputs.version && format(' - {0}', inputs.version) || '' }}`,
       required: true
     },
 
@@ -135,10 +135,10 @@ export const createPathBasedPipeline = (ctx: any) => {
       required: true
     },
     {
-      path: 'on.workflow_dispatch.inputs.run_id',
+      path: 'on.workflow_dispatch.inputs.run_number',
       operation: 'set',
       value: {
-        description: 'The original run ID from develop branch',
+        description: 'The original run number from develop branch',
         required: false,
         type: 'string'
       },
@@ -364,7 +364,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
             with:
               sourceBranch: \${{ github.ref_name }}
               version: \${{ needs.version.outputs.version }}
-              run_id: \${{ inputs.run_id || github.run_id }}
+              run_number: \${{ inputs.run_number || github.run_number }}
               token: \${{ secrets.GITHUB_TOKEN }}
       `, ctx),
       spaceBefore: true,
