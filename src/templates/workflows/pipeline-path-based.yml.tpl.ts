@@ -101,7 +101,7 @@ export const createPathBasedPipeline = (ctx: any) => {
     {
       path: 'run-name',
       operation: 'set',
-      value: `\${{ github.ref_name }}\${{ inputs.version && format(' ({0})', inputs.version) || format(' ({0})', github.sha) }} #\${{ github.run_number }}`,
+      value: `\${{ github.ref_name }} (\${{ inputs.version || 'pending' }}) #\${{ github.run_number }}`,
       required: true
     },
 
