@@ -131,7 +131,8 @@ jobs:
   # REMOTE TESTING JOBS
   #=============================================================================
   remote-test-core:
-    needs: [ deploy-core ]
+    needs: [ deploy-core, changes ]
+    if: ${{ needs.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
     steps:
       # TODO: Replace with your test test logic
