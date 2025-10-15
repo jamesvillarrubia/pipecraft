@@ -567,12 +567,48 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
   // Generate final content with comment preservation
   // Use lineWidth: 0 to prevent line wrapping of long expressions
   // This keeps GitHub Actions expressions on a single line
-  const finalContent = stringify(doc, {
+  let finalContent = stringify(doc, {
     lineWidth: 0,
     minContentWidth: 0
   })
-  
-  return { 
+
+  // Post-process: Format long GitHub Actions conditionals for better readability
+  // The YAML library doesn't handle newlines well in flow scalars, so we format after stringify
+  finalContent = finalContent.replace(
+    /if: \$\{\{([^}]+)\}\}/g,
+    (match, condition) => {
+      // Only format if the condition is long enough to benefit from formatting
+      if (condition.length < 100) return match
+
+      let formatted = condition.trim()
+
+      // Step 1: Protect function calls like always() by replacing with placeholders
+      const functionCalls: string[] = []
+      formatted = formatted.replace(/(\w+)\(\)/g, (match: string) => {
+        const placeholder = `__FUNC_${functionCalls.length}__`
+        functionCalls.push(match)
+        return placeholder
+      })
+
+      // Step 2: Add line breaks for logical operators
+      formatted = formatted.replace(/\s+&&\s+/g, ' &&\n        ')
+      formatted = formatted.replace(/\s+\|\|\s+/g, ' ||\n        ')
+
+      // Step 3: Format grouping parentheses (now that function calls are protected)
+      formatted = formatted.replace(/\(\s*/g, '(\n        ')
+      formatted = formatted.replace(/\s*\)\s*(&&|\|\|)/g, '\n      ) $1')
+      formatted = formatted.replace(/\s*\)(\s*)$/g, '\n      )')
+
+      // Step 4: Restore function calls
+      functionCalls.forEach((funcCall, index) => {
+        formatted = formatted.replace(`__FUNC_${index}__`, funcCall)
+      })
+
+      return `if: $\{{\n        ${formatted}\n      }}`
+    }
+  )
+
+  return {
     yamlContent: finalContent,
     mergeStatus: hasExistingPipeline ? 'merged' : 'overwritten'
   }
