@@ -329,7 +329,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         if: \${{
             always() &&
             github.event_name == 'push' &&
-            needs.tag.result == 'success' &&
+            (needs.tag.result == 'success' || needs.tag.result == 'skipped') &&
             (
               ${branchFlow.slice(0, -1).map((branch: string) => `github.ref_name == '${branch}'`).join(' || \n              ')}
             )

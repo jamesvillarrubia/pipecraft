@@ -16,6 +16,7 @@ on:
       - staging
       - main
 jobs:
+
   
   #=============================================================================
   # CHANGES DETECTION
@@ -165,7 +166,10 @@ jobs:
     if: ${{
         always() &&
         github.event_name == 'push' &&
-        needs.tag.result == 'success' &&
+        (
+        needs.tag.result == 'success' ||
+        needs.tag.result == 'skipped'
+      ) &&
         (
         github.ref_name == 'develop' ||
         github.ref_name == 'staging'
