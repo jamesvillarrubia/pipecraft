@@ -316,7 +316,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
           needs: [ ${needsArray.join(', ')} ]
           if: \${{
               always() &&
-              github.event_name == 'push' &&
+              github.ref_name == '${ctx.initialBranch || branchFlow[0]}' &&
               (
                 ${noFailures}
               ) &&

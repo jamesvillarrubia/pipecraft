@@ -132,7 +132,7 @@ jobs:
     # Needs all deploy and/or remote test jobs to succeed or be skipped
     # Needs at least one domain to succeed
     needs: [ version, deploy-core, remote-test-core ]
-    if: ${{ always() && github.event_name == 'push' && ( needs.deploy-core.result != 'failure' && needs.remote-test-core.result != 'failure' ) && ( needs.deploy-core.result == 'success' || needs.remote-test-core.result == 'success' ) }}
+    if: ${{ always() && github.ref_name == 'develop' && ( needs.deploy-core.result != 'failure' && needs.remote-test-core.result != 'failure' ) && ( needs.deploy-core.result == 'success' || needs.remote-test-core.result == 'success' ) }}
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/create-tag
