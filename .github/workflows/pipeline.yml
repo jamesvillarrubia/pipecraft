@@ -107,7 +107,7 @@ jobs:
   # DEPLOYMENT JOBS
   #=============================================================================
   deploy-core:
-    needs: [ version, changes ]
+    needs: [ changes ]
     if: ${{ needs.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
     steps:
