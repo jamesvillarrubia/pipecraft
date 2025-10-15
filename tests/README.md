@@ -1,6 +1,6 @@
-# Flowcraft Test Suite
+# Pipecraft Test Suite
 
-This directory contains a comprehensive test suite for the Flowcraft project, organized by testing type and purpose.
+This directory contains a comprehensive test suite for the Pipecraft project, organized by testing type and purpose.
 
 ## 📁 Test Structure
 

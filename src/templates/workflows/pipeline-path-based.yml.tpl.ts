@@ -1,13 +1,10 @@
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import { parseDocument, stringify } from 'yaml'
 import fs from 'fs'
-import { 
-  applyPathOperations, 
-  ensurePathAndApply,
+import {
+  applyPathOperations,
   PathOperationConfig,
-  createValueFromString,
-  createValueFromObject,
-  createValueFromArray
+  createValueFromString
 } from '../../utils/ast-path-operations.js'
 import dedent from 'dedent';
 
@@ -34,7 +31,7 @@ const getBaseTemplate = (ctx: any) => {
 }
 
 /**
- * Define which jobs Flowcraft owns vs user jobs
+ * Define which jobs Pipecraft owns vs user jobs
  */
 const getPipecraftOwnedJobs = (branchFlow: string[]): Set<string> => {
   const jobs = new Set([
@@ -48,9 +45,9 @@ const getPipecraftOwnedJobs = (branchFlow: string[]): Set<string> => {
 }
 
 /**
- * Check if a job is owned by Flowcraft
+ * Check if a job is owned by Pipecraft
  */
-const isFlowcraftJob = (jobName: string, branchFlow: string[]): boolean => {
+const isPipecraftJob = (jobName: string, branchFlow: string[]): boolean => {
   return getPipecraftOwnedJobs(branchFlow).has(jobName)
 }
 
@@ -67,14 +64,15 @@ export const createPathBasedPipeline = (ctx: any) => {
   let hasExistingPipeline = false
   
   if (ctx.existingPipelineContent) {
-    // Parse the original YAML content with comment preservation
-    doc = parseDocument(ctx.existingPipelineContent, { keepSourceTokens: true })
+    // Parse the original YAML content WITHOUT source tokens
+    // This prevents old comments from being preserved when we rebuild
+    doc = parseDocument(ctx.existingPipelineContent)
     hasExistingPipeline = true
     console.log('🔄 Merging with existing pipeline from existingPipelineContent')
   } else if (ctx.existingPipeline) {
     // Convert existing pipeline object to YAML string first
     const existingYaml = stringify(ctx.existingPipeline)
-    doc = parseDocument(existingYaml, { keepSourceTokens: true })
+    doc = parseDocument(existingYaml)
     hasExistingPipeline = true
     console.log('🔄 Merging with existing pipeline from existingPipeline object')
   } else {
@@ -93,7 +91,7 @@ export const createPathBasedPipeline = (ctx: any) => {
     // WORKFLOW INPUTS - Ensure required inputs exist for workflow calls
     // =============================================================================
     // These operations ensure that workflow_call and workflow_dispatch have the
-    // required inputs (version, baseRef) that Flowcraft needs to function.
+    // required inputs (version, baseRef) that Pipecraft needs to function.
     // Using 'set' operation to ensure these inputs always exist with correct structure.
     
     {
@@ -154,9 +152,9 @@ export const createPathBasedPipeline = (ctx: any) => {
     // =============================================================================
     // CORE PIPECRAFT JOBS - Template-managed jobs that get updates
     // =============================================================================
-    // These are the core Flowcraft jobs that should always use the latest template
+    // These are the core Pipecraft jobs that should always use the latest template
     // version. Using 'overwrite' operation ensures users get bug fixes and improvements.
-    // These jobs are essential for Flowcraft functionality and should not be customized.
+    // These jobs are essential for Pipecraft functionality and should not be customized.
     
     {
       path: 'jobs.changes',
@@ -173,11 +171,12 @@ export const createPathBasedPipeline = (ctx: any) => {
             with:
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
       `, ctx),
-      commentBefore: `
-        # =============================================================================
-        # CHANGES DETECTION
-        # =============================================================================
+      commentBefore: dedent`
+        =============================================================================
+         CHANGES DETECTION
+        =============================================================================
       `,
+      spaceBeforeComment: true,
       required: true
     },
 
@@ -191,11 +190,6 @@ export const createPathBasedPipeline = (ctx: any) => {
     {
       path: 'jobs.testing-section',
       operation: 'preserve',
-      commentBefore: `
-        # =============================================================================
-        # TESTING JOBS
-        # =============================================================================
-      `,
       value: createValueFromString(`
         # =============================================================================
         # TESTING JOBS
@@ -224,11 +218,12 @@ export const createPathBasedPipeline = (ctx: any) => {
     {
       path: 'jobs.version',
       operation: 'overwrite',
-      commentBefore: `
-        # =============================================================================
-        # VERSIONING
-        # =============================================================================
+      commentBefore: dedent`
+        =============================================================================
+         VERSIONING
+        =============================================================================
       `,
+      spaceBeforeComment: true,
       value: createValueFromString(`
         if: github.ref_name == '${ctx.initialBranch || branchFlow[0]}'
         needs: changes
@@ -246,7 +241,8 @@ export const createPathBasedPipeline = (ctx: any) => {
         outputs:
           nextVersion: \${{ steps.calculate-version.outputs.version }}
       `, ctx),
-      required: true
+      required: true,
+      spaceBefore: true,
     },
     
     {
@@ -254,7 +250,7 @@ export const createPathBasedPipeline = (ctx: any) => {
       operation: 'preserve',
       value: createValueFromString(`
         # =============================================================================
-        # DEPLOYMENT JOBS
+        #  DEPLOYMENT JOBS
         # =============================================================================
         # Add your deployment jobs here
         # Example:
@@ -294,11 +290,13 @@ export const createPathBasedPipeline = (ctx: any) => {
             with:
               version: \${{ needs.version.outputs.nextVersion }}
       `, ctx),
-      commentBefore: `
-        # =============================================================================
-        # TAG & PROMOTE
-        # =============================================================================
+      spaceBefore: true,
+      commentBefore: dedent`
+        =============================================================================
+         TAG & PROMOTE
+        =============================================================================
       `,
+      spaceBeforeComment: true,
       required: true
     },
 
@@ -323,50 +321,18 @@ export const createPathBasedPipeline = (ctx: any) => {
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         steps:
-          - name: Checkout Code
-            uses: actions/checkout@v4
-            with:
-              fetch-depth: 0
-
-          - name: Determine target branch and auto-merge setting
-            id: determine-target
-            run: |
-              case "\${{ github.ref_name }}" in
-                ${branchFlow.slice(0, -1).map((sb: string, idx: number) => {
-                  const tb = branchFlow[idx + 1]
-                  const autoMergeConfig = ctx.autoMerge || {}
-                  const autoMerge = typeof autoMergeConfig === 'boolean'
-                    ? autoMergeConfig
-                    : autoMergeConfig[tb] === true
-                  return `"${sb}")
-                  echo "target=${tb}" >> $GITHUB_OUTPUT
-                  echo "autoMerge=${autoMerge}" >> $GITHUB_OUTPUT
-                  ;;`
-                }).join('\n                ')}
-              esac
-
-          - name: Get version for promotion
-            id: get-version
-            run: |
-              # Get the latest tag for this promotion
-              VERSION=\$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
-              echo "version=\${VERSION}" >> $GITHUB_OUTPUT
-              echo "Using version: \${VERSION}"
-
           - uses: ./.github/actions/promote-branch
             with:
               sourceBranch: \${{ github.ref_name }}
-              targetBranch: \${{ steps.determine-target.outputs.target }}
-              version: \${{ steps.get-version.outputs.version }}
-              autoMerge: \${{ steps.determine-target.outputs.autoMerge }}
               token: \${{ secrets.GITHUB_TOKEN }}
       `, ctx),
-      commentBefore: `
-        # =============================================================================
-        # PROMOTION JOB - Single dynamic job that handles all branch promotions
-        # Uses latest git tag for version (version/tag jobs create tags on develop)
-        # =============================================================================
+      spaceBefore: true,
+      commentBefore: dedent`
+        =============================================================================
+         PROMOTION JOB
+        =============================================================================
       `,
+      spaceBeforeComment: true,
       required: true
     },
     
@@ -376,169 +342,123 @@ export const createPathBasedPipeline = (ctx: any) => {
   // Helper function to get job keys in order
   const getJobKeysInOrder = (jobsNode: any): string[] => {
     if (!jobsNode || !jobsNode.items) return []
-    return jobsNode.items.map((item: any) => item.key.value)
+    return jobsNode.items
+      .filter((item: any) => item.key && item.key.value)
+      .map((item: any) => item.key.value)
   }
 
-  // Remove old createpr and branch jobs if they exist (migration from old template)
-  const jobsNode = doc.contents.get('jobs')
-  if (jobsNode) {
-    if (jobsNode.get('createpr')) {
-      console.log('🗑️  Removing old createpr job (migrating to promote jobs)')
-      jobsNode.delete('createpr')
-    }
-    if (jobsNode.get('branch')) {
-      console.log('🗑️  Removing old branch job (migrating to promote jobs)')
-      jobsNode.delete('branch')
-    }
-    // Remove old promote-to-{target} jobs (migrating to single promote job)
-    for (let i = 0; i < branchFlow.length - 1; i++) {
-      const oldJobName = `promote-to-${branchFlow[i + 1]}`
-      if (jobsNode.get(oldJobName)) {
-        console.log(`🗑️  Removing old ${oldJobName} job (migrating to single promote job)`)
-        jobsNode.delete(oldJobName)
-      }
-    }
-  }
+  // Unified approach: Use the operation system for all Pipecraft jobs
+  // The operation system already handles:
+  // - If key exists and is owned by Pipecraft → overwrite it
+  // - If key doesn't exist → create it
+  // - If key isn't part of Pipecraft → ignore it (via job filtering)
 
-  // Check if Flowcraft jobs already exist in user's pipeline
   const PIPECRAFT_OWNED_JOBS = getPipecraftOwnedJobs(branchFlow)
-  const existingFlowcraftJobs = new Set<string>()
-  if (ctx.existingPipelineContent && doc.contents.get('jobs')) {
+
+  // Capture original job order before any modifications
+  let originalJobOrder: string[] = []
+  if (doc.contents.get('jobs')) {
     const jobsNode = doc.contents.get('jobs')
     if (jobsNode && jobsNode.items) {
-      console.log('📋 Original job order:', getJobKeysInOrder(jobsNode))
+      originalJobOrder = getJobKeysInOrder(jobsNode)
+      console.log('📋 Original job order:', originalJobOrder)
+    }
+  }
+
+  // Collect user jobs (non-Pipecraft jobs) to preserve them
+  const userJobs = new Map<string, any>()
+  if (doc.contents.get('jobs')) {
+    const jobsNode = doc.contents.get('jobs')
+    if (jobsNode && jobsNode.items) {
       for (const item of jobsNode.items) {
-        const jobName = item.key.value
-        if (PIPECRAFT_OWNED_JOBS.has(jobName)) {
-          existingFlowcraftJobs.add(jobName)
+        const jobName = item.key?.toString() || item.key?.value
+        if (jobName && !PIPECRAFT_OWNED_JOBS.has(jobName)) {
+          userJobs.set(jobName, item.value)
         }
+      }
+      if (userJobs.size > 0) {
+        console.log(`📋 Preserving ${userJobs.size} user jobs: ${Array.from(userJobs.keys()).join(', ')}`)
       }
     }
   }
-  
-  if (existingFlowcraftJobs.size > 0) {
-    // User has existing Flowcraft jobs - preserve their positions
-    console.log(`📋 Found existing Flowcraft jobs: ${Array.from(existingFlowcraftJobs).join(', ')}`)
-    console.log('🔄 Preserving user\'s job positions and updating content')
-    
-    // Collect all jobs in their original order
-    const orderedJobs = new Map<string, any>()
-    if (doc.contents.get('jobs')) {
-      const jobsNode = doc.contents.get('jobs')
-      if (jobsNode && jobsNode.items) {
-        for (const item of jobsNode.items) {
-          const jobName = item.key.value
-          orderedJobs.set(jobName, item.value)
-        }
-      }
-    }
-    
-    
-    // Update Flowcraft jobs in place to preserve comment structure
-    const jobsNode = doc.contents.get('jobs')
-    if (jobsNode && jobsNode.items) {
-      for (let i = 0; i < jobsNode.items.length; i++) {
-        const item = jobsNode.items[i]
-        const jobName = item.key.value
-        
-        if (PIPECRAFT_OWNED_JOBS.has(jobName)) {
-          // This is a Flowcraft job - update it with the latest template content
-          const operation = operations.find(op => op.path === `jobs.${jobName}`)
-          if (operation) {
-            // Create the updated job content
-            let updatedJobValue
-            if (typeof operation.value === 'string') {
-              updatedJobValue = createValueFromString(operation.value, ctx)
-            } else if (typeof operation.value === 'object') {
-              updatedJobValue = createValueFromObject(operation.value, doc)
-            }
-            
-            // Replace the job value while preserving the key and any comments
-            jobsNode.items[i].value = updatedJobValue
-            jobsNode.items[i].commentBefore = operation?.commentBefore?.trim()
-            jobsNode.items[i].comment = operation?.comment?.trim()
-            jobsNode.items[i].spaceBefore = operation?.spaceBefore
-            jobsNode.items[i].tag = operation?.tag?.trim()
-            
 
+  // Clear the entire jobs section to rebuild in correct order
+  const jobsNode = doc.contents.get('jobs')
+  if (jobsNode && jobsNode.items) {
+    jobsNode.items = []
+    // Clear any orphaned comments that were attached to the jobs node
+    // When we parse YAML with comments and clear items, comments can become orphaned on the parent
+    delete (jobsNode as any).commentBefore
+    delete (jobsNode as any).comment
+  }
 
-          }
-        }
-        // User jobs are left unchanged
-      }
-    }
-    
-    // Add any Flowcraft jobs that the user didn't have
-    const pipecraftJobOrder = ['changes', 'version', 'tag', 'promote']
+  // Apply all operations in order - this creates/overwrites Pipecraft jobs
+  // The 'overwrite' operation handles both create and update cases automatically
+  applyPathOperations(doc.contents, operations, doc)
 
-    for (const jobName of pipecraftJobOrder) {
-      if (!orderedJobs.has(jobName)) {
-        // User didn't have this job - create it using operations
-        const operation = operations.find(op => op.path === `jobs.${jobName}`)
-        if (operation) {
-          let newJobValue
-          if (typeof operation.value === 'string') {
-            newJobValue = createValueFromString(operation.value, ctx)
-          } else if (typeof operation.value === 'object') {
-            newJobValue = createValueFromObject(operation.value, doc)
-          }
-          
-          // Apply commentBefore if provided
-          if (operation.commentBefore && newJobValue) {
-            newJobValue.commentBefore = operation.commentBefore.trim()
-          }
-          
-          jobsNode.set(jobName, newJobValue)
-        }
+  // Now we need to reorder jobs to match the original order
+  // Collect all current jobs (Pipecraft jobs that were just created)
+  const currentJobs = new Map<string, any>()
+  if (jobsNode && jobsNode.items) {
+    for (const item of jobsNode.items) {
+      const jobName = item.key?.toString()
+      if (jobName) {
+        currentJobs.set(jobName, item)
       }
     }
-    
-    // Apply non-job operations (like workflow_dispatch inputs)
-    const nonJobOperations = operations.filter(op => !op.path.startsWith('jobs.'))
-    applyPathOperations(doc.contents, nonJobOperations, doc)
-  } else {
-    // No existing Flowcraft jobs - build in correct order
-    console.log('📋 No existing Flowcraft jobs found - building in correct order')
-    
-    // Collect user jobs before clearing
-    const userJobs = new Map<string, any>()
-    if (doc.contents.get('jobs')) {
-      const jobsNode = doc.contents.get('jobs')
-      if (jobsNode && jobsNode.items) {
-        // Collect all user jobs (non-Flowcraft jobs)
-        for (const item of jobsNode.items) {
-          const jobName = item.key.value
-          if (!PIPECRAFT_OWNED_JOBS.has(jobName)) {
-            userJobs.set(jobName, item.value)
-          }
-        }
-        console.log(`📋 Preserved ${userJobs.size} user jobs`)
+  }
+
+  // Clear again to rebuild in correct order
+  if (jobsNode && jobsNode.items) {
+    jobsNode.items = []
+  }
+
+  // Rebuild jobs in original order
+  // For each job in the original order:
+  // - If it's a Pipecraft job, use the newly created version from currentJobs
+  // - If it's a user job, use the preserved version from userJobs
+  for (const jobName of originalJobOrder) {
+    if (PIPECRAFT_OWNED_JOBS.has(jobName)) {
+      // It's a Pipecraft job - use the newly created version
+      const item = currentJobs.get(jobName)
+      if (item && jobsNode) {
+        jobsNode.items.push(item)
       }
-    }
-    
-    // Clear the entire jobs section to rebuild in correct order
-    const jobsNode = doc.contents.get('jobs')
-    if (jobsNode && jobsNode.items) {
-      jobsNode.items = []
-    }
-    
-    // Apply all operations in order - this builds the Flowcraft jobs
-    applyPathOperations(doc.contents, operations, doc)
-    
-    // Re-insert user jobs after the operations
-    if (userJobs.size > 0 && jobsNode) {
-      for (const [jobName, jobValue] of userJobs) {
+    } else {
+      // It's a user job - re-insert from preserved values
+      const jobValue = userJobs.get(jobName)
+      if (jobValue && jobsNode) {
         jobsNode.set(jobName, jobValue)
       }
     }
   }
-  
-  // Log final job order
-  const finalJobsNode = doc.contents.get('jobs')
-  if (finalJobsNode) {
-    console.log('📋 Final job order:', getJobKeysInOrder(finalJobsNode))
+
+  // Add any new Pipecraft jobs that weren't in the original order (at the end)
+  for (const [jobName, item] of currentJobs) {
+    if (!originalJobOrder.includes(jobName) && jobsNode) {
+      jobsNode.items.push(item)
+    }
   }
   
+  // Log final job order (after operations are applied)
+  const finalJobsNode = doc.contents.get('jobs')
+  if (finalJobsNode && finalJobsNode.items && finalJobsNode.items.length > 0) {
+    const jobNames = getJobKeysInOrder(finalJobsNode)
+    if (jobNames.length > 0) {
+      console.log('📋 Final job order:', jobNames)
+    }
+
+    // Remove duplicate comment headers
+    // When we reuse existing job values, they may carry old comments from parsing
+    // We want to keep only the comments we explicitly set on keys
+    for (const item of finalJobsNode.items) {
+      if (item.value && (item.value as any).commentBefore) {
+        // Clear commentBefore from values - comments should only be on keys
+        delete (item.value as any).commentBefore
+      }
+    }
+  }
+
   // Generate final content with comment preservation
   // Use lineWidth: 0 to prevent line wrapping of long expressions
   // This keeps GitHub Actions expressions on a single line

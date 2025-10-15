@@ -25,6 +25,6 @@ if [ "$ORIGINAL_JOBS" = "$GENERATED_JOBS" ]; then
     exit 0
 else
     echo "❌ Job order differs!"
-    echo "🔧 Flowcraft jobs may have moved to incorrect positions"
+    echo "🔧 Pipecraft jobs may have moved to incorrect positions"
     exit 1
 fi

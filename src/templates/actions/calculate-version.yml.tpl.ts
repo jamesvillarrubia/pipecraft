@@ -5,7 +5,7 @@ import fs from 'fs'
 const versionActionTemplate = (ctx: any) => {
   return `name: 'Calculate Version'
 description: 'Calculate semantic version using release-it and conventional commits'
-author: 'Flowcraft'
+author: 'Pipecraft'
 
 inputs:
   baseRef:

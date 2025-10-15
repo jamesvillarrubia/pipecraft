@@ -6,7 +6,7 @@ import dedent from 'dedent'
 const createprActionTemplate = (ctx: any) => {
   return dedent`name: 'Create Pull Request'
     description: 'Create a pull request between source and target branches'
-    author: 'Flowcraft'
+    author: 'Pipecraft'
 
     inputs:
       sourceBranch:

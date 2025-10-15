@@ -261,7 +261,7 @@ describe('Path-Based Template Generation Tests', () => {
       expect(parsedYaml.jobs['fake-job-1']).toBeDefined()
       expect(parsedYaml.jobs['fake-job-2']).toBeDefined()
 
-      // Verify core Flowcraft jobs are updated/overwritten
+      // Verify core Pipecraft jobs are updated/overwritten
       expect(parsedYaml.jobs.changes).toBeDefined()
       expect(parsedYaml.jobs.version).toBeDefined()
       expect(parsedYaml.jobs.tag).toBeDefined()
@@ -399,7 +399,7 @@ describe('Path-Based Template Generation Tests', () => {
       expect(branches).toContain('epsilon')
     })
 
-    it('should correctly apply overwrite operations for core Flowcraft jobs', async () => {
+    it('should correctly apply overwrite operations for core Pipecraft jobs', async () => {
       const existingPipeline = {
         name: "Test Pipeline",
         on: { pull_request: { branches: ['develop'] } },

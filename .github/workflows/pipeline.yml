@@ -37,6 +37,11 @@ on:
       - staging
       - main
 jobs:
+
+  
+  #=============================================================================
+  # CHANGES DETECTION
+  #=============================================================================
   changes:
     runs-on: ubuntu-latest
     steps:
@@ -48,10 +53,6 @@ jobs:
       - uses: ./.github/actions/detect-changes
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
-
-  ## =============================================================================
-  #        # TESTING JOBS
-  #        # =============================================================================
   test-core:
     needs: changes
     if: needs.changes.outputs.core == 'true'
@@ -80,6 +81,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+  #=============================================================================
+  # VERSIONING
+  #=============================================================================
   version:
     if: github.ref_name == 'develop'
     needs: changes
@@ -96,6 +100,10 @@ jobs:
           baseRef: ${{ inputs.baseRef || 'main' }}
     outputs:
       nextVersion: ${{ steps.calculate-version.outputs.version }}
+
+  #=============================================================================
+  # TAG & PROMOTE
+  #=============================================================================
   tag:
     if: github.ref_name == 'develop'
     needs: version
@@ -109,6 +117,10 @@ jobs:
       - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.nextVersion }}
+
+  #=============================================================================
+  # PROMOTION JOB
+  #=============================================================================
   promote:
     # Only runs on push events (not PRs) to branches that can promote
     # Waits for version/tag if they run, but doesn't fail if they're skipped
@@ -126,37 +138,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Determine target branch and auto-merge setting
-        id: determine-target
-        run: |
-          case "${{ github.ref_name }}" in
-            "develop")
-              echo "target=staging" >> $GITHUB_OUTPUT
-              echo "autoMerge=true" >> $GITHUB_OUTPUT
-              ;;
-            "staging")
-              echo "target=main" >> $GITHUB_OUTPUT
-              echo "autoMerge=false" >> $GITHUB_OUTPUT
-              ;;
-          esac
-
-      - name: Get version for promotion
-        id: get-version
-        run: |
-          # Get the latest tag for this promotion
-          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "Using version: ${VERSION}"
-
       - uses: ./.github/actions/promote-branch
         with:
           sourceBranch: ${{ github.ref_name }}
-          targetBranch: ${{ steps.determine-target.outputs.target }}
-          version: ${{ steps.get-version.outputs.version }}
-          autoMerge: ${{ steps.determine-target.outputs.autoMerge }}
           token: ${{ secrets.GITHUB_TOKEN }}

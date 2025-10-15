@@ -60,7 +60,7 @@ describe('Pipeline Path-Based Template', () => {
   }
   
   describe('Job Order Preservation', () => {
-    it('should preserve job order when Flowcraft jobs exist', () => {
+    it('should preserve job order when Pipecraft jobs exist', () => {
       const originalContent = readFileSync(testFixtures.original, 'utf8')
       const config = JSON.parse(readFileSync(testFixtures.config, 'utf8'))
       
@@ -83,7 +83,7 @@ describe('Pipeline Path-Based Template', () => {
       expect(generatedOrder).toEqual(originalOrder)
     })
     
-    it('should maintain Flowcraft jobs in their original positions', () => {
+    it('should maintain Pipecraft jobs in their original positions', () => {
       const originalContent = readFileSync(testFixtures.original, 'utf8')
       const config = JSON.parse(readFileSync(testFixtures.config, 'utf8'))
       
@@ -99,7 +99,7 @@ describe('Pipeline Path-Based Template', () => {
       
       const originalOrder = getJobOrder(testFixtures.original)
       
-      // Find positions of Flowcraft jobs
+      // Find positions of Pipecraft jobs
       const pipecraftJobs = ['changes', 'version', 'tag', 'createpr', 'branch']
       
       pipecraftJobs.forEach(job => {
@@ -128,7 +128,7 @@ describe('Pipeline Path-Based Template', () => {
       
       const originalOrder = getJobOrder(testFixtures.original)
       
-      // Find user jobs (non-Flowcraft jobs)
+      // Find user jobs (non-Pipecraft jobs)
       const pipecraftJobs = new Set(['changes', 'version', 'tag', 'createpr', 'branch'])
       const userJobs = originalOrder.filter(job => !pipecraftJobs.has(job))
       
@@ -222,8 +222,8 @@ describe('Pipeline Path-Based Template', () => {
     })
   })
   
-  describe('Flowcraft Job Content', () => {
-    it('should update Flowcraft job content with latest template', () => {
+  describe('Pipecraft Job Content', () => {
+    it('should update Pipecraft job content with latest template', () => {
       const originalContent = readFileSync(testFixtures.original, 'utf8')
       const config = JSON.parse(readFileSync(testFixtures.config, 'utf8'))
       
@@ -234,7 +234,7 @@ describe('Pipeline Path-Based Template', () => {
       
       const result = createPathBasedPipeline(ctx)
       
-      // Check that Flowcraft jobs have the expected structure
+      // Check that Pipecraft jobs have the expected structure
       expect(result.yamlContent).toContain('runs-on: ubuntu-latest')
       expect(result.yamlContent).toContain('./.github/actions/detect-changes')
       expect(result.yamlContent).toContain('./.github/actions/calculate-version')
@@ -307,7 +307,7 @@ describe('Pipeline Path-Based Template', () => {
       const generatedJobsNode = (generatedDoc.contents as any).get('jobs')
       const generatedOrder = generatedJobsNode.items.map(item => item.key.value)
       
-      // Should have Flowcraft jobs in correct order
+      // Should have Pipecraft jobs in correct order
       const expectedOrder = ['changes', 'version', 'tag', 'createpr', 'branch']
       const pipecraftJobs = generatedOrder.filter(job => 
         ['changes', 'version', 'tag', 'createpr', 'branch'].includes(job)
@@ -318,7 +318,7 @@ describe('Pipeline Path-Based Template', () => {
   })
   
   describe('Edge Cases', () => {
-    it('should handle pipeline with no existing Flowcraft jobs', () => {
+    it('should handle pipeline with no existing Pipecraft jobs', () => {
       // Create a pipeline with only user jobs
       const userOnlyPipeline = `name: "User Pipeline"
 on:
@@ -346,7 +346,7 @@ jobs:
       const generatedJobsNode = (generatedDoc.contents as any).get('jobs')
       const generatedOrder = generatedJobsNode.items.map(item => item.key.value)
       
-      // Should preserve user jobs and add Flowcraft jobs
+      // Should preserve user jobs and add Pipecraft jobs
       expect(generatedOrder).toContain('user-job-1')
       expect(generatedOrder).toContain('user-job-2')
       expect(generatedOrder).toContain('changes')
@@ -355,7 +355,7 @@ jobs:
       expect(generatedOrder).toContain('createpr')
       expect(generatedOrder).toContain('branch')
       
-      // When no existing Flowcraft jobs, Flowcraft jobs are added first, then user jobs
+      // When no existing Pipecraft jobs, Pipecraft jobs are added first, then user jobs
       // This is the expected behavior based on the template logic
       const userJobPositions = [
         generatedOrder.indexOf('user-job-1'),
@@ -366,7 +366,7 @@ jobs:
         generatedOrder.indexOf('version')
       ]
       
-      // Flowcraft jobs should come first, then user jobs (when no existing Flowcraft jobs)
+      // Pipecraft jobs should come first, then user jobs (when no existing Pipecraft jobs)
       expect(Math.min(...pipecraftJobPositions)).toBeLessThan(Math.max(...userJobPositions))
     })
     

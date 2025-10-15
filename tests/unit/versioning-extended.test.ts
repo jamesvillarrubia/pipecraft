@@ -9,11 +9,11 @@ import { writeFileSync, existsSync, rmSync, mkdirSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { VersionManager } from '../../src/utils/versioning'
-import { FlowcraftConfig } from '../../src/types'
+import { PipecraftConfig } from '../../src/types'
 
 describe('VersionManager - Extended Coverage', () => {
   let testDir: string
-  let config: FlowcraftConfig
+  let config: PipecraftConfig
   let originalCwd: string
 
   beforeEach(() => {

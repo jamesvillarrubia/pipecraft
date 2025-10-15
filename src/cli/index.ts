@@ -9,7 +9,7 @@ import { dirname } from 'path'
 import { IdempotencyManager } from '../utils/idempotency.js'
 import { VersionManager } from '../utils/versioning.js'
 import { loadConfig, validateConfig } from '../utils/config.js'
-import { FlowcraftConfig } from '../types/index.js'
+import { PipecraftConfig } from '../types/index.js'
 import { setupGitHubPermissions } from '../utils/github-setup.js'
 import { runPreflightChecks, formatPreflightResults, checkNodeVersion } from '../utils/preflight.js'
 
@@ -133,7 +133,7 @@ program
       }
 
       // Load configuration
-      const config = loadConfig(configPath) as FlowcraftConfig
+      const config = loadConfig(configPath) as PipecraftConfig
       
       // Check idempotency if not forcing
       if (!globalOptions.force && !globalOptions.dryRun) {
@@ -154,7 +154,7 @@ program
         return
       }
       
-      await runModule(join(__dirname, '../generators/workflows.tpl.ts'), {
+      await runModule(join(__dirname, '../generators/workflows.tpl.js'), {
         cwd: process.cwd(),
         argv: process.argv,
         pipelinePath: pipelinePath,
@@ -265,7 +265,7 @@ program
   .action(async (options) => {
     try {
       const globalOptions = program.opts()
-      const config = loadConfig(globalOptions.config) as FlowcraftConfig
+      const config = loadConfig(globalOptions.config) as PipecraftConfig
       const versionManager = new VersionManager(config)
       
       if (options.check) {
@@ -313,7 +313,7 @@ program
       }
       
       // Load configuration
-      const config = loadConfig(configPath) as FlowcraftConfig
+      const config = loadConfig(configPath) as PipecraftConfig
       
       if (!config.branchFlow || config.branchFlow.length === 0) {
         console.log('⚠️  No branch flow configured in config file')

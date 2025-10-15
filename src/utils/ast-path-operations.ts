@@ -76,7 +76,7 @@ import { parseDocument, stringify, YAMLMap, YAMLSeq, Scalar, Node } from 'yaml'
  * - **Primitives**: strings, numbers, booleans
  * 
  * @fileoverview Path-based AST operations for precise YAML manipulation
- * @author Flowcraft Team
+ * @author Pipecraft Team
  * @version 1.0.0
  */
 
@@ -132,6 +132,7 @@ export interface PathOperationConfig {
   commentBefore?: string
   comment?: string
   spaceBefore?: boolean
+  spaceBeforeComment?: boolean
   tag?: string
 }
 
@@ -154,7 +155,7 @@ export interface PathOperationConfig {
  * // Results in: jobs: { changes: { 'runs-on': 'ubuntu-latest' } }
  * ```
  */
-export function setPathValue(doc: YAMLMap, path: string, value: PathValue, document?: any, commentBefore?: string): void {
+export function setPathValue(doc: YAMLMap, path: string, value: PathValue, document?: any, commentBefore?: string, spaceBeforeComment?: boolean): void {
   const pathParts = path.split('.')
   let current: Node = doc
   
@@ -188,13 +189,26 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue, docum
       // Value is not a node, create one
       node = document && document.createNode ? document.createNode(value) : createNode(value)
     }
-    
-    // Apply commentBefore if provided
-    if (commentBefore && node) {
-      node.commentBefore = commentBefore.trim()
+
+    // When commentBefore is provided, we need to create a Scalar key instead of a string key
+    // This is because YAML's set() method creates a plain string key by default,
+    // but comments can only be attached to Scalar objects
+    if (commentBefore) {
+      // Create a Scalar key with the comment
+      const scalarKey = new Scalar(finalKey)
+      ;(scalarKey as any).commentBefore = commentBefore
+
+      // Add blank line before the comment if requested
+      if (spaceBeforeComment) {
+        ;(scalarKey as any).spaceBefore = true
+      }
+
+      // Add the pair to the map with a Scalar key
+      current.add({ key: scalarKey, value: node })
+    } else {
+      // Normal case: use the simple set() method which creates a string key
+      current.set(finalKey, node)
     }
-    
-    current.set(finalKey, node)
   } else {
     throw new Error(`Cannot set ${finalKey} - parent is not a map`)
   }
@@ -256,40 +270,40 @@ export function getPathValue(doc: YAMLMap, path: string): Node | null {
  * ```
  */
 export function ensurePathAndApply(
-  doc: YAMLMap, 
+  doc: YAMLMap,
   config: PathOperationConfig,
   document?: any
 ): void {
-  const { path, operation, value, required = true, commentBefore } = config
-  
+  const { path, operation, value, required = true, commentBefore, spaceBeforeComment } = config
+
   // Check if path exists
   const existingValue = getPathValue(doc, path)
-  
+
   if (!existingValue && !required) {
     // Path doesn't exist and not required - skip
     return
   }
-  
+
   // Apply operation based on whether path exists or not
   // For required paths that don't exist, we still respect the operation type
   switch (operation) {
     case 'set':
-      setPathValue(doc, path, value, document, commentBefore)
+      setPathValue(doc, path, value, document, commentBefore, spaceBeforeComment)
       break
-      
+
     case 'merge':
       // Merge will handle non-existent paths by creating them
       mergePathValue(doc, path, value, document)
       break
-      
+
     case 'overwrite':
-      setPathValue(doc, path, value, document, commentBefore)
+      setPathValue(doc, path, value, document, commentBefore, spaceBeforeComment)
       break
-      
+
     case 'preserve':
       // Only preserve if path exists, otherwise create it
       if (!existingValue) {
-        setPathValue(doc, path, value, document, commentBefore)
+        setPathValue(doc, path, value, document, commentBefore, spaceBeforeComment)
       }
       // If exists, do nothing - keep existing value
       break

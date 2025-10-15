@@ -6,7 +6,7 @@ import dedent from 'dedent'
 const branchActionTemplate = (ctx: any) => {
   return dedent`name: 'Branch Management'
     description: 'Manage branches (fast-forward, create, delete)'
-    author: 'Flowcraft'
+    author: 'Pipecraft'
 
     inputs:
       action:

@@ -1,7 +1,7 @@
 import { createHash } from 'crypto'
 import { readFileSync, existsSync, writeFileSync, statSync, rmSync } from 'fs'
 import { join } from 'path'
-import { FlowcraftConfig } from '../types/index.js'
+import { PipecraftConfig } from '../types/index.js'
 
 export interface FileHash {
   path: string
@@ -19,9 +19,9 @@ export interface RebuildCache {
 
 export class IdempotencyManager {
   private cacheFile: string
-  private config: FlowcraftConfig
+  private config: PipecraftConfig
 
-  constructor(config: FlowcraftConfig, cacheFile = '.pipecraft-cache.json') {
+  constructor(config: PipecraftConfig, cacheFile = '.pipecraft-cache.json') {
     this.config = config
     this.cacheFile = cacheFile
   }

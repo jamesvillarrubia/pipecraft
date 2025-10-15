@@ -1,6 +1,6 @@
 name: 'Tag Version'
 description: 'Create and push a Git tag for a given version'
-author: 'Flowcraft'
+author: 'Pipecraft'
 
 inputs:
   version:

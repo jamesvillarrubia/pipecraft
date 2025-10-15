@@ -1,6 +1,6 @@
 name: 'Branch Management'
 description: 'Manage branches (fast-forward, create, delete)'
-author: 'Flowcraft'
+author: 'Pipecraft'
 
 inputs:
   action:

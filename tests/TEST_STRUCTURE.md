@@ -1,6 +1,6 @@
-# Flowcraft Test Structure
+# Pipecraft Test Structure
 
-This document outlines the complete test structure for the Flowcraft project.
+This document outlines the complete test structure for the Pipecraft project.
 
 ## 📁 Directory Structure
 

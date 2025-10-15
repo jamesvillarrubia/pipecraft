@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { writeFileSync, existsSync, rmSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { VersionManager } from '../../src/utils/versioning'
-import { FlowcraftConfig } from '../../src/types'
+import { PipecraftConfig } from '../../src/types'
 import { TEST_DIR, FIXTURES_DIR } from '../setup'
 
 // Mock execSync
@@ -11,7 +11,7 @@ vi.mock('child_process', () => ({
 }))
 
 describe('VersionManager', () => {
-  let config: FlowcraftConfig
+  let config: PipecraftConfig
   let versionManager: VersionManager
   let mockExecSync: any
 

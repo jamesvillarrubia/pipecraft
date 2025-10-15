@@ -6,7 +6,7 @@ export interface DomainConfig {
 }
 
 
-export interface FlowcraftConfig {
+export interface PipecraftConfig {
   ciProvider: 'github' | 'gitlab'
   mergeStrategy: 'fast-forward' | 'merge'
   requireConventionalCommits: boolean
@@ -44,7 +44,7 @@ export interface FlowcraftConfig {
   }
 }
 
-export interface FlowcraftContext {
+export interface PipecraftContext {
   projectName: string
   ciProvider: 'github' | 'gitlab'
   mergeStrategy: 'fast-forward' | 'merge'

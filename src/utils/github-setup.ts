@@ -1,7 +1,7 @@
 import { execSync } from 'child_process'
 import { prompt } from '@featherscloud/pinion'
 import { loadConfig } from './config.js'
-import { FlowcraftConfig } from '../types/index.js'
+import { PipecraftConfig } from '../types/index.js'
 
 interface WorkflowPermissions {
   default_workflow_permissions: 'read' | 'write'
@@ -380,9 +380,9 @@ export async function configureBranchProtection(
   console.log('\n🔍 Checking auto-merge configuration...')
 
   // Load config to get autoMerge settings
-  let config: FlowcraftConfig
+  let config: PipecraftConfig
   try {
-    config = loadConfig('.pipecraftrc.json') as FlowcraftConfig
+    config = loadConfig('.pipecraftrc.json') as PipecraftConfig
   } catch (error) {
     console.log('⚠️  Could not load .pipecraftrc.json - skipping auto-merge setup')
     return

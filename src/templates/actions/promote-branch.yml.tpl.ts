@@ -11,18 +11,17 @@ const promoteBranchActionTemplate = (ctx: any) => {
 
     inputs:
       sourceBranch:
-        description: 'Source branch to promote from'
-        required: true
-      targetBranch:
-        description: 'Target branch to promote to'
-        required: true
-      version:
-        description: 'Version being promoted (e.g., v1.2.3)'
-        required: true
-      autoMerge:
-        description: 'Enable GitHub auto-merge on the PR'
+        description: 'Source branch to promote from (defaults to github.ref_name)'
         required: false
-        default: 'false'
+        default: \${{ github.ref_name }}
+      version:
+        description: 'Version being promoted (e.g., v1.2.3, auto-detected from git tags if not provided)'
+        required: false
+        default: ''
+      configPath:
+        description: 'Path to .pipecraftrc.json config file'
+        required: false
+        default: '.pipecraftrc.json'
       tempBranchPattern:
         description: 'Pattern for temp branch name'
         required: false
@@ -42,6 +41,12 @@ const promoteBranchActionTemplate = (ctx: any) => {
       tempBranch:
         description: 'The temporary branch name'
         value: \${{ steps.create-temp.outputs.tempBranch }}
+      targetBranch:
+        description: 'The target branch determined from config'
+        value: \${{ steps.read-config.outputs.targetBranch }}
+      autoMerge:
+        description: 'The autoMerge setting for the target branch'
+        value: \${{ steps.read-config.outputs.autoMerge }}
 
     runs:
       using: 'composite'
@@ -52,13 +57,79 @@ const promoteBranchActionTemplate = (ctx: any) => {
             fetch-depth: 0
             token: \${{ inputs.token }}
 
+        - name: Read Config and Determine Target Branch
+          id: read-config
+          shell: bash
+          run: |
+            SOURCE="\${{ inputs.sourceBranch }}"
+            CONFIG_PATH="\${{ inputs.configPath }}"
+
+            echo "📖 Reading config from \$CONFIG_PATH"
+
+            # Check if config file exists
+            if [ ! -f "\$CONFIG_PATH" ]; then
+              echo "❌ Config file not found: \$CONFIG_PATH"
+              exit 1
+            fi
+
+            # Read branchFlow array from config
+            BRANCH_FLOW=\$(cat "\$CONFIG_PATH" | jq -r '.branchFlow | join(" ")')
+            echo "🔍 Branch flow: \$BRANCH_FLOW"
+
+            # Convert to array
+            IFS=' ' read -ra BRANCHES <<< "\$BRANCH_FLOW"
+
+            # Find current branch index and determine target
+            TARGET=""
+            for i in "\${!BRANCHES[@]}"; do
+              if [ "\${BRANCHES[\$i]}" == "\$SOURCE" ]; then
+                # Get next branch in flow
+                NEXT_INDEX=\$((i + 1))
+                if [ \$NEXT_INDEX -lt \${#BRANCHES[@]} ]; then
+                  TARGET="\${BRANCHES[\$NEXT_INDEX]}"
+                fi
+                break
+              fi
+            done
+
+            if [ -z "\$TARGET" ]; then
+              echo "❌ Could not determine target branch for source: \$SOURCE"
+              echo "   Branch flow: \$BRANCH_FLOW"
+              exit 1
+            fi
+
+            echo "✅ Target branch: \$TARGET"
+            echo "targetBranch=\$TARGET" >> \$GITHUB_OUTPUT
+
+            # Determine autoMerge setting for target branch
+            AUTO_MERGE=\$(cat "\$CONFIG_PATH" | jq -r ".autoMerge.\"\$TARGET\" // false")
+            echo "🔍 Auto-merge for \$TARGET: \$AUTO_MERGE"
+            echo "autoMerge=\$AUTO_MERGE" >> \$GITHUB_OUTPUT
+
+        - name: Get Version
+          id: get-version
+          shell: bash
+          run: |
+            VERSION_INPUT="\${{ inputs.version }}"
+
+            if [ -n "\$VERSION_INPUT" ]; then
+              VERSION="\$VERSION_INPUT"
+              echo "📌 Using provided version: \$VERSION"
+            else
+              # Auto-detect from git tags
+              VERSION=\$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+              echo "🏷️  Auto-detected version from tags: \$VERSION"
+            fi
+
+            echo "version=\$VERSION" >> \$GITHUB_OUTPUT
+
         - name: Create Temporary Branch
           id: create-temp
           shell: bash
           run: |
             SOURCE="\${{ inputs.sourceBranch }}"
-            TARGET="\${{ inputs.targetBranch }}"
-            VERSION="\${{ inputs.version }}"
+            TARGET="\${{ steps.read-config.outputs.targetBranch }}"
+            VERSION="\${{ steps.get-version.outputs.version }}"
             PATTERN="\${{ inputs.tempBranchPattern }}"
 
             # Remove 'v' prefix from version for branch name
@@ -100,7 +171,7 @@ const promoteBranchActionTemplate = (ctx: any) => {
           shell: bash
           run: |
             TEMP_BRANCH="\${{ steps.create-temp.outputs.tempBranch }}"
-            TARGET="\${{ inputs.targetBranch }}"
+            TARGET="\${{ steps.read-config.outputs.targetBranch }}"
 
             # Check if PR already exists from temp branch to target
             EXISTING_PR=\$(gh pr list --head "\$TEMP_BRANCH" --base "\$TARGET" --json number --jq '.[0].number' 2>/dev/null || echo "")
@@ -124,10 +195,10 @@ const promoteBranchActionTemplate = (ctx: any) => {
           shell: bash
           run: |
             TEMP_BRANCH="\${{ steps.create-temp.outputs.tempBranch }}"
-            TARGET="\${{ inputs.targetBranch }}"
+            TARGET="\${{ steps.read-config.outputs.targetBranch }}"
             SOURCE="\${{ inputs.sourceBranch }}"
-            VERSION="\${{ inputs.version }}"
-            AUTO_MERGE="\${{ inputs.autoMerge }}"
+            VERSION="\${{ steps.get-version.outputs.version }}"
+            AUTO_MERGE="\${{ steps.read-config.outputs.autoMerge }}"
 
             TITLE="🚀 Release \$VERSION to \$TARGET"
 
@@ -167,12 +238,12 @@ const promoteBranchActionTemplate = (ctx: any) => {
             fi
 
         - name: Fast-Forward Merge (Auto-Merge)
-          if: inputs.autoMerge == 'true'
+          if: steps.read-config.outputs.autoMerge == 'true'
           shell: bash
           run: |
             SOURCE="\${{ inputs.sourceBranch }}"
-            TARGET="\${{ inputs.targetBranch }}"
-            VERSION="\${{ inputs.version }}"
+            TARGET="\${{ steps.read-config.outputs.targetBranch }}"
+            VERSION="\${{ steps.get-version.outputs.version }}"
 
             echo "🚀 Fast-forwarding \$TARGET to \$SOURCE (maintaining linear history)"
 
@@ -203,6 +274,22 @@ const promoteBranchActionTemplate = (ctx: any) => {
 
             echo "✅ Fast-forwarded \$TARGET to \$COMMIT_SHA"
             echo "🔗 PR #\${{ steps.check-pr.outputs.number || steps.create-pr.outputs.prNumber }} remains open for audit trail"
+
+        - name: Trigger Pipeline Workflow on Target Branch
+          if: steps.read-config.outputs.autoMerge == 'true'
+          shell: bash
+          env:
+            GH_TOKEN: \${{ inputs.token }}
+          run: |
+            TARGET="\${{ steps.read-config.outputs.targetBranch }}"
+
+            echo "🔄 Triggering pipeline workflow on \$TARGET branch"
+
+            # Trigger the pipeline workflow on the target branch
+            # This is necessary because GITHUB_TOKEN pushes don't trigger workflows by default
+            gh workflow run pipeline.yml --ref "\$TARGET"
+
+            echo "✅ Pipeline workflow triggered on \$TARGET"
 
         - name: Use Existing PR
           if: steps.check-pr.outputs.exists == 'true'

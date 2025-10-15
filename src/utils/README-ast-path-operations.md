@@ -387,4 +387,4 @@ console.log('Result:', stringify(doc))
 
 ## 📄 License
 
-This library is part of the Flowcraft project and follows the same licensing terms.
+This library is part of the Pipecraft project and follows the same licensing terms.

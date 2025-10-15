@@ -11,12 +11,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { writeFileSync, existsSync, rmSync, readFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { IdempotencyManager } from '../../src/utils/idempotency'
-import { FlowcraftConfig } from '../../src/types'
+import { PipecraftConfig } from '../../src/types'
 import { tmpdir } from 'os'
 
 describe('IdempotencyManager - Isolated', () => {
   let testDir: string
-  let config: FlowcraftConfig
+  let config: PipecraftConfig
   let idempotencyManager: IdempotencyManager
 
   beforeEach(() => {

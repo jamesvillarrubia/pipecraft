@@ -5,7 +5,7 @@ import dedent from 'dedent'
 const tagActionTemplate = (ctx: any) => {
   return dedent`name: 'Tag Version'
     description: 'Create and push a Git tag for a given version'
-    author: 'Flowcraft'
+    author: 'Pipecraft'
 
     inputs:
       version:

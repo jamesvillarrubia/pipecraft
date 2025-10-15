@@ -2,7 +2,7 @@ import { PinionContext, toFile, renderTemplate, prompt, when, writeJSON } from '
 import { existsSync } from 'fs'
 import { IdempotencyManager } from '../utils/idempotency.js'
 import { VersionManager } from '../utils/versioning.js'
-import { FlowcraftConfig } from '../types/index.js'
+import { PipecraftConfig } from '../types/index.js'
 
 const defaultConfig = {
   ciProvider: 'github' as const,
@@ -42,7 +42,7 @@ const defaultConfig = {
   }
 }
 
-const configTemplate = (ctx: FlowcraftConfig) => {
+const configTemplate = (ctx: PipecraftConfig) => {
   const config = {
     ciProvider: ctx.ciProvider,
     mergeStrategy: ctx.mergeStrategy,
@@ -119,7 +119,7 @@ export const generate = (ctx: PinionContext) =>
         filter: (input: string) => input.split(',').map(b => b.trim())
       }
     ]))
-    .then((ctx) => ({ ...ctx, ...defaultConfig } as FlowcraftConfig))
+    .then((ctx) => ({ ...ctx, ...defaultConfig } as PipecraftConfig))
     .then((config) => {
       const content = configTemplate(config)
       return writeJSON(() => content, toFile('.pipecraftrc.json'))(ctx)

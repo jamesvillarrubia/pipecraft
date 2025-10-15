@@ -1,8 +1,8 @@
-# Flowcraft Usage Examples
+# Pipecraft Usage Examples
 
 ## Quick Start
 
-### 1. Initialize Flowcraft
+### 1. Initialize Pipecraft
 
 ```bash
 # Interactive setup
@@ -184,7 +184,7 @@ After running `pipecraft generate`, you'll get:
 ## CLI Commands
 
 ### `pipecraft init`
-Initialize a new Flowcraft configuration.
+Initialize a new Pipecraft configuration.
 
 **Options:**
 - `--force`: Overwrite existing configuration
@@ -201,7 +201,7 @@ Generate CI/CD workflows from configuration.
 Validate the configuration file.
 
 ### `pipecraft verify`
-Check if Flowcraft is properly set up.
+Check if Pipecraft is properly set up.
 
 ### `pipecraft promote`
 Promote current branch to next environment.

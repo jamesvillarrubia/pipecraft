@@ -17,7 +17,9 @@
       "Bash(git push:*)",
       "Bash(git commit:*)",
       "Bash(gh pr list:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Read(//private/tmp/**)",
+      "Bash(pnpm test:*)"
     ],
     "deny": [],
     "ask": []

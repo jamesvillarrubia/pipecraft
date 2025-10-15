@@ -85,7 +85,7 @@ describe('Job Order Preservation', () => {
     }
   })
   
-  it('should preserve job order when Flowcraft jobs exist', () => {
+  it('should preserve job order when Pipecraft jobs exist', () => {
     const originalOrder = getJobOrder(testFixtures.original)
     const generatedOrder = getJobOrder(testFixtures.generated)
     
@@ -105,19 +105,19 @@ describe('Job Order Preservation', () => {
     expect(comparison.matches).toBe(originalOrder.length)
   })
   
-  it('should maintain Flowcraft jobs in their original positions', () => {
+  it('should maintain Pipecraft jobs in their original positions', () => {
     const originalOrder = getJobOrder(testFixtures.original)
     const generatedOrder = getJobOrder(testFixtures.generated)
     
-    // Find positions of Flowcraft jobs in original
+    // Find positions of Pipecraft jobs in original
     const pipecraftJobs = ['changes', 'version', 'tag', 'createpr', 'branch']
-    const originalFlowcraftPositions = pipecraftJobs.map(job => originalOrder.indexOf(job))
-    const generatedFlowcraftPositions = pipecraftJobs.map(job => generatedOrder.indexOf(job))
+    const originalPipecraftPositions = pipecraftJobs.map(job => originalOrder.indexOf(job))
+    const generatedPipecraftPositions = pipecraftJobs.map(job => generatedOrder.indexOf(job))
     
-    // All Flowcraft jobs should be in the same positions
-    originalFlowcraftPositions.forEach((originalPos, index) => {
+    // All Pipecraft jobs should be in the same positions
+    originalPipecraftPositions.forEach((originalPos, index) => {
       if (originalPos !== -1) { // Job exists in original
-        expect(generatedFlowcraftPositions[index]).toBe(originalPos)
+        expect(generatedPipecraftPositions[index]).toBe(originalPos)
       }
     })
   })
@@ -126,7 +126,7 @@ describe('Job Order Preservation', () => {
     const originalOrder = getJobOrder(testFixtures.original)
     const generatedOrder = getJobOrder(testFixtures.generated)
     
-    // Find user jobs (non-Flowcraft jobs)
+    // Find user jobs (non-Pipecraft jobs)
     const pipecraftJobs = new Set(['changes', 'version', 'tag', 'createpr', 'branch'])
     const userJobs = originalOrder.filter(job => !pipecraftJobs.has(job))
     

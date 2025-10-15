@@ -9,7 +9,7 @@ import { writeFileSync, existsSync, rmSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { loadConfig, validateConfig } from '../../src/utils/config'
-import { FlowcraftConfig } from '../../src/types'
+import { PipecraftConfig } from '../../src/types'
 
 describe('Config Utilities - Extended Coverage', () => {
   let testDir: string
@@ -43,7 +43,7 @@ describe('Config Utilities - Extended Coverage', () => {
     it('should find .pipecraftrc.json in current directory', () => {
       // Change to test directory for this test
       process.chdir(testDir)
-      const config: FlowcraftConfig = {
+      const config: PipecraftConfig = {
         ciProvider: 'github',
         mergeStrategy: 'fast-forward',
         requireConventionalCommits: true,
@@ -75,7 +75,7 @@ describe('Config Utilities - Extended Coverage', () => {
     it('should find .pipecraftrc (no extension)', () => {
       // Change to test directory for this test
       process.chdir(testDir)
-      const config: FlowcraftConfig = {
+      const config: PipecraftConfig = {
         ciProvider: 'github',
         mergeStrategy: 'fast-forward',
         requireConventionalCommits: true,
@@ -263,7 +263,7 @@ describe('Config Utilities - Extended Coverage', () => {
 
   describe('Complex Configurations', () => {
     it('should validate config with all optional fields', () => {
-      const config: FlowcraftConfig = {
+      const config: PipecraftConfig = {
         ciProvider: 'gitlab',
         mergeStrategy: 'merge',
         requireConventionalCommits: false,
@@ -319,7 +319,7 @@ describe('Config Utilities - Extended Coverage', () => {
     })
 
     it('should handle config with 10+ domains', () => {
-      const config: FlowcraftConfig = {
+      const config: PipecraftConfig = {
         ciProvider: 'github',
         mergeStrategy: 'fast-forward',
         requireConventionalCommits: true,
@@ -355,7 +355,7 @@ describe('Config Utilities - Extended Coverage', () => {
     })
 
     it('should handle domain names with special characters', () => {
-      const config: FlowcraftConfig = {
+      const config: PipecraftConfig = {
         ciProvider: 'github',
         mergeStrategy: 'fast-forward',
         requireConventionalCommits: true,

@@ -29,7 +29,7 @@ const changesActionTemplate = (ctx: any) => {
 
   return `name: 'Detect Changes'
 description: 'Detect changes in different application domains based on file paths'
-author: 'Flowcraft'
+author: 'Pipecraft'
 
 inputs:
   baseRef:

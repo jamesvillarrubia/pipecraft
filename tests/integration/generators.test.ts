@@ -1,5 +1,5 @@
 /**
- * Integration tests for Flowcraft generators (init.tpl.ts and workflows.tpl.ts)
+ * Integration tests for Pipecraft generators (init.tpl.ts and workflows.tpl.ts)
  * 
  * These tests verify that:
  * 1. Init generator creates proper configuration files
@@ -15,7 +15,7 @@ import { TEST_DIR, FIXTURES_DIR } from '../setup'
 import { generate as generateInit } from '../../src/generators/init.tpl'
 import { generate as generateWorkflows } from '../../src/generators/workflows.tpl'
 import { PinionContext } from '@featherscloud/pinion'
-import { FlowcraftConfig } from '../../src/types'
+import { PipecraftConfig } from '../../src/types'
 import { parse as parseYAML } from 'yaml'
 
 describe('Generator Integration Tests', () => {
@@ -184,7 +184,7 @@ describe('Generator Integration Tests', () => {
   })
 
   describe('workflows.tpl.ts - Workflow Generation Orchestration', () => {
-    let testConfig: FlowcraftConfig
+    let testConfig: PipecraftConfig
 
     beforeEach(() => {
       // Load test config
@@ -193,7 +193,7 @@ describe('Generator Integration Tests', () => {
     })
 
     it('should generate all workflow files', async () => {
-      const ctx: PinionContext & { config?: FlowcraftConfig } = {
+      const ctx: PinionContext & { config?: PipecraftConfig } = {
         cwd: TEST_DIR,
         argv: ['generate'],
         pinion: {
@@ -227,7 +227,7 @@ describe('Generator Integration Tests', () => {
     })
 
     it('should generate valid YAML in pipeline file', async () => {
-      const ctx: PinionContext & { config?: FlowcraftConfig } = {
+      const ctx: PinionContext & { config?: PipecraftConfig } = {
         cwd: TEST_DIR,
         argv: ['generate'],
         pinion: {
@@ -261,8 +261,8 @@ describe('Generator Integration Tests', () => {
       expect(pipeline.jobs).toBeDefined()
     })
 
-    it('should include Flowcraft-managed jobs in pipeline', async () => {
-      const ctx: PinionContext & { config?: FlowcraftConfig } = {
+    it('should include Pipecraft-managed jobs in pipeline', async () => {
+      const ctx: PinionContext & { config?: PipecraftConfig } = {
         cwd: TEST_DIR,
         argv: ['generate'],
         pinion: {
@@ -288,7 +288,7 @@ describe('Generator Integration Tests', () => {
       const pipelineContent = readFileSync(pipelinePath, 'utf8')
       const pipeline = parseYAML(pipelineContent)
 
-      // Check for Flowcraft-managed jobs
+      // Check for Pipecraft-managed jobs
       expect(pipeline.jobs.changes).toBeDefined()
       expect(pipeline.jobs.version).toBeDefined()
       expect(pipeline.jobs.tag).toBeDefined()
@@ -315,7 +315,7 @@ jobs:
 `
       writeFileSync(existingPipelinePath, existingPipeline)
 
-      const ctx: PinionContext & { config?: FlowcraftConfig, pipelinePath?: string } = {
+      const ctx: PinionContext & { config?: PipecraftConfig, pipelinePath?: string } = {
         cwd: TEST_DIR,
         argv: ['generate'],
         pinion: {
@@ -341,17 +341,17 @@ jobs:
       // Should preserve custom job
       expect(pipeline.jobs['custom-job']).toBeDefined()
       
-      // Should add Flowcraft jobs
+      // Should add Pipecraft jobs
       expect(pipeline.jobs.changes).toBeDefined()
     })
 
     it('should use custom branch flow from config', async () => {
-      const customConfig: FlowcraftConfig = {
+      const customConfig: PipecraftConfig = {
         ...testConfig,
         branchFlow: ['alpha', 'beta', 'gamma', 'delta']
       }
 
-      const ctx: PinionContext & { config?: FlowcraftConfig } = {
+      const ctx: PinionContext & { config?: PipecraftConfig } = {
         cwd: TEST_DIR,
         argv: ['generate'],
         pinion: {
@@ -419,7 +419,7 @@ jobs:
     it('should output to custom pipeline path when specified', async () => {
       const customPipelinePath = join(TEST_DIR, 'custom-pipeline.yml')
       
-      const ctx: PinionContext & { config?: FlowcraftConfig, outputPipelinePath?: string } = {
+      const ctx: PinionContext & { config?: PipecraftConfig, outputPipelinePath?: string } = {
         cwd: TEST_DIR,
         argv: ['generate'],
         pinion: {
@@ -450,7 +450,7 @@ jobs:
     })
 
     it('should include workflow_dispatch trigger with inputs', async () => {
-      const ctx: PinionContext & { config?: FlowcraftConfig } = {
+      const ctx: PinionContext & { config?: PipecraftConfig } = {
         cwd: TEST_DIR,
         argv: ['generate'],
         pinion: {
@@ -483,7 +483,7 @@ jobs:
     })
 
     it('should include pull_request trigger', async () => {
-      const ctx: PinionContext & { config?: FlowcraftConfig } = {
+      const ctx: PinionContext & { config?: PipecraftConfig } = {
         cwd: TEST_DIR,
         argv: ['generate'],
         pinion: {
@@ -547,7 +547,7 @@ jobs:
     it('should handle missing pipeline file path gracefully', async () => {
       const testConfig = JSON.parse(readFileSync(join(FIXTURES_DIR, 'basic-config.json'), 'utf8'))
       
-      const ctx: PinionContext & { config?: FlowcraftConfig, pipelinePath?: string } = {
+      const ctx: PinionContext & { config?: PipecraftConfig, pipelinePath?: string } = {
         cwd: TEST_DIR,
         argv: ['generate'],
         pinion: {

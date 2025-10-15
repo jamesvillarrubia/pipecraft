@@ -1,6 +1,6 @@
 import { PinionContext, toFile, renderTemplate, loadJSON, when } from '@featherscloud/pinion'
 import { IdempotencyManager } from '../utils/idempotency.js'
-import { FlowcraftConfig } from '../types/index.js'
+import { PipecraftConfig } from '../types/index.js'
 import { readFileSync, existsSync } from 'fs'
 import { parse } from 'yaml'
 

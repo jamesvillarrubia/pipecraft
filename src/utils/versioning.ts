@@ -1,12 +1,12 @@
 import { execSync } from 'child_process'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import { FlowcraftConfig } from '../types/index.js'
+import { PipecraftConfig } from '../types/index.js'
 
 export class VersionManager {
-  private config: FlowcraftConfig
+  private config: PipecraftConfig
 
-  constructor(config: FlowcraftConfig) {
+  constructor(config: PipecraftConfig) {
     this.config = config
   }
 

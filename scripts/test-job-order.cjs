@@ -2,7 +2,7 @@
 
 /**
  * Test script to compare job order between original and generated pipelines
- * This ensures that Flowcraft jobs maintain their original positions
+ * This ensures that Pipecraft jobs maintain their original positions
  */
 
 const fs = require('fs');
@@ -84,7 +84,7 @@ function compareJobOrders(original, generated, testName) {
  * Main test function
  */
 function runJobOrderTests() {
-  console.log('🧪 Flowcraft Job Order Test Suite');
+  console.log('🧪 Pipecraft Job Order Test Suite');
   console.log('=====================================');
   
   const testCases = [
@@ -122,7 +122,7 @@ function runJobOrderTests() {
   console.log('================');
   if (allPassed) {
     console.log('✅ All job order tests PASSED!');
-    console.log('🎉 Flowcraft jobs are maintaining their original positions');
+    console.log('🎉 Pipecraft jobs are maintaining their original positions');
   } else {
     console.log('❌ Some job order tests FAILED!');
     console.log('🔧 Job positions are not being preserved correctly');

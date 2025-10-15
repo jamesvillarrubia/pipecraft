@@ -23,7 +23,7 @@ import { tmpdir } from 'os'
 import { loadConfig, validateConfig } from '../../src/utils/config'
 import { IdempotencyManager } from '../../src/utils/idempotency'
 import { VersionManager } from '../../src/utils/versioning'
-import { FlowcraftConfig } from '../../src/types'
+import { PipecraftConfig } from '../../src/types'
 
 describe('CLI Logic Tests', () => {
   let testDir: string
@@ -59,7 +59,7 @@ describe('CLI Logic Tests', () => {
 
   describe('Config Loading and Validation', () => {
     it('should load valid config file', () => {
-      const config: FlowcraftConfig = {
+      const config: PipecraftConfig = {
         ciProvider: 'github',
         mergeStrategy: 'fast-forward',
         requireConventionalCommits: true,
@@ -99,7 +99,7 @@ describe('CLI Logic Tests', () => {
     })
 
     it('should validate correct config', () => {
-      const config: FlowcraftConfig = {
+      const config: PipecraftConfig = {
         ciProvider: 'github',
         mergeStrategy: 'fast-forward',
         requireConventionalCommits: true,
@@ -150,7 +150,7 @@ describe('CLI Logic Tests', () => {
   })
 
   describe('Generate Command Logic', () => {
-    let config: FlowcraftConfig
+    let config: PipecraftConfig
 
     beforeEach(() => {
       config = {
@@ -266,7 +266,7 @@ describe('CLI Logic Tests', () => {
   })
 
   describe('Version Command Logic', () => {
-    let config: FlowcraftConfig
+    let config: PipecraftConfig
 
     beforeEach(() => {
       config = {
@@ -349,7 +349,7 @@ describe('CLI Logic Tests', () => {
         domains: {
           api: { paths: ['apps/api/**'], description: 'API' }
         }
-      } as FlowcraftConfig
+      } as PipecraftConfig
 
       writeFileSync(join(testDir, '.pipecraftrc.json'), JSON.stringify(config, null, 2))
 
@@ -414,7 +414,7 @@ describe('CLI Logic Tests', () => {
 
   describe('Configuration Edge Cases', () => {
     it('should handle custom branch names', () => {
-      const config: FlowcraftConfig = {
+      const config: PipecraftConfig = {
         ciProvider: 'github',
         mergeStrategy: 'fast-forward',
         requireConventionalCommits: true,
@@ -448,7 +448,7 @@ describe('CLI Logic Tests', () => {
     })
 
     it('should handle many domains', () => {
-      const config: FlowcraftConfig = {
+      const config: PipecraftConfig = {
         ciProvider: 'github',
         mergeStrategy: 'fast-forward',
         requireConventionalCommits: true,
@@ -481,7 +481,7 @@ describe('CLI Logic Tests', () => {
     })
 
     it('should handle gitlab CI provider', () => {
-      const config: FlowcraftConfig = {
+      const config: PipecraftConfig = {
         ciProvider: 'gitlab',
         mergeStrategy: 'fast-forward',
         requireConventionalCommits: true,
@@ -510,7 +510,7 @@ describe('CLI Logic Tests', () => {
     })
 
     it('should handle merge strategy', () => {
-      const config: FlowcraftConfig = {
+      const config: PipecraftConfig = {
         ciProvider: 'github',
         mergeStrategy: 'merge',
         requireConventionalCommits: true,
