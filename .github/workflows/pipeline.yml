@@ -23,6 +23,7 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/detect-changes
         id: detect
         with:
@@ -79,6 +80,7 @@ jobs:
     needs: [ changes, test-cicd, test-core, test-test ]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/calculate-version
         id: version
         with:
@@ -125,6 +127,7 @@ jobs:
     if: ${{ always() && github.ref_name == 'develop' && ( needs.deploy-core.result != 'failure' && needs.remote-test-core.result != 'failure' ) && ( needs.deploy-core.result == 'success' || needs.remote-test-core.result == 'success' ) }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.version }}
@@ -140,6 +143,7 @@ jobs:
     needs: [ tag ]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/promote-branch
         with:
           sourceBranch: ${{ github.ref_name }}

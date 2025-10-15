@@ -144,6 +144,7 @@ export const createPathBasedPipeline = (ctx: any) => {
       value: createValueFromString(`
         runs-on: ubuntu-latest
         steps:
+          - uses: actions/checkout@v4
           - uses: ./.github/actions/detect-changes
             id: detect
             with:
@@ -216,6 +217,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         needs: [ changes, ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `test-${domain}`).join(', ')} ]
         runs-on: ubuntu-latest
         steps:
+          - uses: actions/checkout@v4
           - uses: ./.github/actions/calculate-version
             id: version
             with:
@@ -300,6 +302,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
               }}
           runs-on: ubuntu-latest
           steps:
+            - uses: actions/checkout@v4
             - uses: ./.github/actions/create-tag
               with:
                 version: \${{ needs.version.outputs.version }}
@@ -334,6 +337,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         needs: [ tag ]
         runs-on: ubuntu-latest
         steps:
+          - uses: actions/checkout@v4
           - uses: ./.github/actions/promote-branch
             with:
               sourceBranch: \${{ github.ref_name }}
