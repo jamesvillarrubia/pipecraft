@@ -1,5 +1,5 @@
 name: "Pipeline"
-run-name: "${{ github.ref_name }} ${{ github.sha }}${{ inputs.version && format(' - {0}', inputs.version) || '' }}"
+run-name: "${{ github.ref_name }} #${{ inputs.run_id || github.run_id }}${{ inputs.version && format(' - {0}', inputs.version) || '' }}"
 on:
   workflow_dispatch:
     inputs:
@@ -9,6 +9,10 @@ on:
         type: string
       baseRef:
         description: The base reference for comparison
+        required: false
+        type: string
+      run_id:
+        description: The original run ID from develop branch
         required: false
         type: string
   push:
@@ -184,4 +188,6 @@ jobs:
       - uses: ./.github/actions/promote-branch
         with:
           sourceBranch: ${{ github.ref_name }}
+          version: ${{ needs.version.outputs.version }}
+          run_id: ${{ inputs.run_id || github.run_id }}
           token: ${{ secrets.GITHUB_TOKEN }}
