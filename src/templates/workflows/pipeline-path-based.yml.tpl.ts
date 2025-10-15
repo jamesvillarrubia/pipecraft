@@ -101,7 +101,7 @@ export const createPathBasedPipeline = (ctx: any) => {
     {
       path: 'run-name',
       operation: 'set',
-      value: `Pipeline: \${{ github.ref_name }} \${{ inputs.version && format('({0})', inputs.version) || '' }}`,
+      value: `\${{ github.ref_name }}\${{ inputs.version && format(' ({0})', inputs.version) || '' }} [\${{ github.run_number }}]: \${{ github.event.head_commit.message || 'Manual trigger' }}`,
       required: true
     },
 
@@ -229,9 +229,15 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
     },
     
     // Generate deployment jobs for each domain (only if deploy: true)
-    ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].deploy === true).map((domain: string) => ({
+    ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].deploy === true).map((domain: string, index: number) => ({
       path: `jobs.deploy-${domain}`,
       operation: 'overwrite' as const,
+      commentBefore: index === 0 ? dedent`
+        =============================================================================
+         DEPLOYMENT JOBS
+        =============================================================================
+      ` : undefined,
+      spaceBefore: index === 0 ? true : undefined,
       value: createValueFromString(`
         needs: [ version, changes ]
         if: \${{ always() && needs.version.result == 'success' && needs.changes.outputs.${domain} == 'true' }}
@@ -247,9 +253,15 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
     })),
 
     // Generate remote testing jobs for each domain (only if remoteTest: true)
-    ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].remoteTest === true).map((domain: string) => ({
+    ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].remoteTest === true).map((domain: string, index: number) => ({
       path: `jobs.remote-test-${domain}`,
       operation: 'overwrite' as const,
+      commentBefore: index === 0 ? dedent`
+        =============================================================================
+         REMOTE TESTING JOBS
+        =============================================================================
+      ` : undefined,
+      spaceBefore: index === 0 ? true : undefined,
       value: createValueFromString(`
         needs: [ deploy-${domain}, changes ]
         if: \${{ always() }}

@@ -1,6 +1,5 @@
 name: "Pipeline"
-# Test change for deploy flow validation
-run-name: "Pipeline: ${{ github.ref_name }} ${{ inputs.version && format('({0})', inputs.version) || '' }}"
+run-name: "${{ github.ref_name }}${{ inputs.version && format(' ({0})', inputs.version) || '' }} [${{ github.run_number }}]: ${{ github.event.head_commit.message || 'Manual trigger' }}"
 on:
   workflow_dispatch:
     inputs:
@@ -125,6 +124,7 @@ jobs:
           echo "Testing core remotely"
           echo "Replace this with your actual test commands"
           # Example: npm test -- --testPathPattern=core
+
   #=============================================================================
   # TAG & PROMOTE
   #=============================================================================
