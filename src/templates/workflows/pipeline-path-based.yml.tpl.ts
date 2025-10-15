@@ -204,7 +204,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
     })),
     
     {
-      path: 'jobs.version-gate',
+      path: 'jobs.version',
       operation: 'overwrite',
       commentBefore: dedent`
         =============================================================================
@@ -212,23 +212,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         =============================================================================
       `,
       value: createValueFromString(`
-        needs: [ changes, ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `test-${domain}`).join(', ')} ]
         if: \${{ always() && (${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result == 'success'`).join(' || ')}) && ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' && ')} }}
-        runs-on: ubuntu-latest
-        steps:
-          - name: Version gate passed
-            run: echo "Tests completed, proceeding to versioning and deployment"
-      `, ctx),
-      required: true,
-      spaceBefore: true,
-    },
-
-    {
-      path: 'jobs.version',
-      operation: 'overwrite',
-      value: createValueFromString(`
-        if: \${{ always() && needs.version-gate.result == 'success' }}
-        needs: [ version-gate ]
+        needs: [ changes, ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `test-${domain}`).join(', ')} ]
         runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@v4
@@ -248,8 +233,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       path: `jobs.deploy-${domain}`,
       operation: 'overwrite' as const,
       value: createValueFromString(`
-        needs: [ version-gate, changes, version ]
-        if: \${{ needs.changes.outputs.${domain} == 'true' }}
+        needs: [ version, changes ]
+        if: \${{ always() && needs.version.result == 'success' && needs.changes.outputs.${domain} == 'true' }}
         runs-on: ubuntu-latest
         steps:
           - name: Deploy ${domain}

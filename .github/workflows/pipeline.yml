@@ -73,16 +73,21 @@ jobs:
           echo "Running tests for test domain"
           echo "Replace this with your actual test commands"
           # Example: npm test -- --testPathPattern=test
-  version-gate:
-    needs: [ changes, test-cicd, test-core, test-test ]
-    if: ${{ always() && (needs.test-cicd.result == 'success' || needs.test-core.result == 'success' || needs.test-test.result == 'success') && needs.test-cicd.result != 'failure' && needs.test-core.result != 'failure' && needs.test-test.result != 'failure' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Version gate passed
-        run: echo "Tests completed, proceeding to versioning and deployment"
+
   version:
-    if: ${{ always() && needs.version-gate.result == 'success' }}
-    needs: [ version-gate ]
+    if: ${{ 
+        always() && (
+          needs.test-cicd.result == 'success' || 
+          needs.test-core.result == 'success' || 
+          needs.test-test.result == 'success'
+        ) && 
+        (
+          needs.test-cicd.result != 'failure' && 
+          needs.test-core.result != 'failure' && 
+          needs.test-test.result != 'failure'
+        )
+      }}
+    needs: [ changes, test-cicd, test-core, test-test ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,8 +102,8 @@ jobs:
   # DEPLOYMENT JOBS
   #=============================================================================
   deploy-core:
-    needs: [ version-gate, changes, version ]
-    if: ${{ needs.changes.outputs.core == 'true' }}
+    needs: [ changes, version ]
+    if: ${{ always() && needs.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Deploy core
@@ -112,11 +117,10 @@ jobs:
   #=============================================================================
   remote-test-core:
     needs: [ deploy-core, changes ]
-    if: ${{ always() }}
+    if: ${{ always() && needs.deploy-core.result == 'success' && needs.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Test core
-        if: ${{ needs.changes.outputs.core == 'true' && needs.deploy-core.result == 'success' }}
         run: |
           echo "Testing core remotely"
           echo "Replace this with your actual test commands"
