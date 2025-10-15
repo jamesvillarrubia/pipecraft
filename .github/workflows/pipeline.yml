@@ -45,17 +45,12 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - uses: ./.github/actions/detect-changes
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
   test-core:
     needs: changes
-    if: needs.changes.outputs.core == 'true'
+    if: ${{ steps.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -89,17 +84,12 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - uses: ./.github/actions/calculate-version
-        id: calculate-version
+        id: version
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
     outputs:
-      nextVersion: ${{ steps.calculate-version.outputs.version }}
+      version: ${{ steps.version.outputs.version }}
 
   #=============================================================================
   # TAG & PROMOTE
@@ -109,14 +99,9 @@ jobs:
     needs: version
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - uses: ./.github/actions/create-tag
         with:
-          version: ${{ needs.version.outputs.nextVersion }}
+          version: ${{ needs.version.outputs.version }}
 
   #=============================================================================
   # PROMOTION JOB
@@ -134,9 +119,6 @@ jobs:
       }}
     needs: [ changes, version, tag ]
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: ./.github/actions/promote-branch
         with:

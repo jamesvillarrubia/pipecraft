@@ -162,11 +162,6 @@ export const createPathBasedPipeline = (ctx: any) => {
       value: createValueFromString(`
         runs-on: ubuntu-latest
         steps:
-          - name: Checkout Code
-            uses: actions/checkout@v4
-            with:
-              fetch-depth: 0
-
           - uses: ./.github/actions/detect-changes
             with:
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
@@ -229,17 +224,12 @@ export const createPathBasedPipeline = (ctx: any) => {
         needs: changes
         runs-on: ubuntu-latest
         steps:
-          - name: Checkout Code
-            uses: actions/checkout@v4
-            with:
-              fetch-depth: 0
-
           - uses: ./.github/actions/calculate-version
-            id: calculate-version
+            id: version
             with:
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
         outputs:
-          nextVersion: \${{ steps.calculate-version.outputs.version }}
+          version: \${{ steps.version.outputs.version }}
       `, ctx),
       required: true,
       spaceBefore: true,
@@ -281,14 +271,9 @@ export const createPathBasedPipeline = (ctx: any) => {
         needs: version
         runs-on: ubuntu-latest
         steps:
-          - name: Checkout Code
-            uses: actions/checkout@v4
-            with:
-              fetch-depth: 0
-
           - uses: ./.github/actions/create-tag
             with:
-              version: \${{ needs.version.outputs.nextVersion }}
+              version: \${{ needs.version.outputs.version }}
       `, ctx),
       spaceBefore: true,
       commentBefore: dedent`
@@ -317,9 +302,6 @@ export const createPathBasedPipeline = (ctx: any) => {
           }}
         needs: [changes, version, tag]
         runs-on: ubuntu-latest
-        env:
-          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         steps:
           - uses: ./.github/actions/promote-branch
             with:
