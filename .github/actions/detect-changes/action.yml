@@ -12,6 +12,12 @@ outputs:
   core:
     description: 'Whether core domain has changes'
     value: ${{ steps.merge.outputs.core }}
+  test:
+    description: 'Whether test domain has changes'
+    value: ${{ steps.merge.outputs.test }}
+  cicd:
+    description: 'Whether cicd domain has changes'
+    value: ${{ steps.merge.outputs.cicd }}
 
 runs:
   using: 'composite'
@@ -37,12 +43,20 @@ runs:
         filters: |
           core:
             - 'src/**'
+          test:
+            - 'tests/**'
+          cicd:
+            - '.github/**'
 
     - name: Merge filter outputs
       id: merge
       shell: bash
       run: |
         echo "core=${{ contains(steps.filter.outputs.changes, 'core') }}" >> $GITHUB_OUTPUT
+        echo "test=${{ contains(steps.filter.outputs.changes, 'test') }}" >> $GITHUB_OUTPUT
+        echo "cicd=${{ contains(steps.filter.outputs.changes, 'cicd') }}" >> $GITHUB_OUTPUT
         
         echo "📋 Change Detection Results:"
         echo "  core: ${{ contains(steps.filter.outputs.changes, 'core') }}"
+        echo "  test: ${{ contains(steps.filter.outputs.changes, 'test') }}"
+        echo "  cicd: ${{ contains(steps.filter.outputs.changes, 'cicd') }}"

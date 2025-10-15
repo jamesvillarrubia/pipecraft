@@ -36,7 +36,19 @@
       "paths": [
         "src/**"
       ],
-      "description": "PipeCraft core library changes"
+      "description": "PipeCraft core changes"
+    },
+    "test": {
+      "paths": [
+        "tests/**"
+      ],
+      "description": "PipeCraft test changes"
+    },
+    "cicd": {
+      "paths": [
+        ".github/**"
+      ],
+      "description": "PipeCraft CI/CD changes"
     }
   },
   "versioning": {

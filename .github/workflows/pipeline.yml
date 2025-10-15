@@ -51,8 +51,8 @@ jobs:
           baseRef: ${{ inputs.baseRef || 'main' }}
     outputs:
       core: ${{ steps.detect.outputs.core }}
-
-      
+      test: ${{ steps.detect.outputs.test }}
+      cicd: ${{ steps.detect.outputs.cicd }}
   test-core:
     needs: changes
     if: ${{ needs.changes.outputs.core == 'true' }}
@@ -129,3 +129,31 @@ jobs:
         with:
           sourceBranch: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
+  test-test:
+    needs: changes
+    if: ${{ needs.changes.outputs.test == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # TODO: Replace with your test test logic
+      - name: Run test tests
+        run: |
+          echo "Running tests for test domain"
+          echo "Replace this with your actual test commands"
+          # Example: npm test -- --testPathPattern=test
+  test-cicd:
+    needs: changes
+    if: ${{ needs.changes.outputs.cicd == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # TODO: Replace with your cicd test logic
+      - name: Run cicd tests
+        run: |
+          echo "Running tests for cicd domain"
+          echo "Replace this with your actual test commands"
+          # Example: npm test -- --testPathPattern=cicd

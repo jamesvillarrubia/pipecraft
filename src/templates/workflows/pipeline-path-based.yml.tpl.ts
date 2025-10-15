@@ -184,34 +184,28 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
     // These sections are designed for user customizations (testing, deployment).
     // Using 'preserve' operation to keep any existing user jobs while providing
     // template structure and examples for new users.
-    
-    {
-      path: 'jobs.testing-section',
-      operation: 'preserve',
+
+    // Generate test jobs for each domain
+    ...Object.keys(ctx.domains || {}).map((domain: string) => ({
+      path: `jobs.test-${domain}`,
+      operation: 'preserve' as const,
       value: createValueFromString(`
-        # =============================================================================
-        # TESTING JOBS
-        # =============================================================================
-        # Add your testing jobs here
-        # Example:
-        # test-api: 
-        #   needs: changes
-        #   runs-on: ubuntu-latest
-        #   steps:
-        #     - name: Test API
-        #       run: |
-        #         echo "Run API tests"
-        #
-        # test-web:
-        #   needs: changes
-        #   runs-on: ubuntu-latest
-        #   steps:
-        #     - name: Test Web
-        #       run: |
-        #         echo "Run Web tests"
+        needs: changes
+        if: \${{ needs.changes.outputs.${domain} == 'true' }}
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout Code
+            uses: actions/checkout@v4
+
+          # TODO: Replace with your ${domain} test logic
+          - name: Run ${domain} tests
+            run: |
+              echo "Running tests for ${domain} domain"
+              echo "Replace this with your actual test commands"
+              # Example: npm test -- --testPathPattern=${domain}
       `, ctx),
-      required: false
-    },
+      required: true
+    })),
     
     {
       path: 'jobs.version',
