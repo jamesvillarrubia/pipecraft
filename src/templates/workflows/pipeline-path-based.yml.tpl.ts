@@ -33,13 +33,20 @@ const getBaseTemplate = (ctx: any) => {
 /**
  * Define which jobs Pipecraft owns vs user jobs
  */
-const getPipecraftOwnedJobs = (branchFlow: string[]): Set<string> => {
+const getPipecraftOwnedJobs = (branchFlow: string[], domains: Record<string, any> = {}): Set<string> => {
   const jobs = new Set([
     'changes',
     'version',
     'tag',
     'promote'  // Single promote job instead of multiple promote-to-{target} jobs
   ])
+
+  // Add domain-based jobs (test-*, deploy-*, remote-test-*)
+  Object.keys(domains).forEach(domain => {
+    jobs.add(`test-${domain}`)
+    jobs.add(`deploy-${domain}`)
+    jobs.add(`remote-test-${domain}`)
+  })
 
   return jobs
 }
@@ -167,7 +174,7 @@ export const createPathBasedPipeline = (ctx: any) => {
             with:
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
         outputs:
-${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \${{ steps.detect.outputs.${domain} }}`).join('\n')}
+${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${domain}: \${{ steps.detect.outputs.${domain} }}`).join('\n')}
       `, ctx),
       commentBefore: dedent`
         =============================================================================
@@ -186,7 +193,7 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
     // template structure and examples for new users.
 
     // Generate test jobs for each domain
-    ...Object.keys(ctx.domains || {}).map((domain: string, index: number) => ({
+    ...Object.keys(ctx.domains || {}).sort().map((domain: string) => ({
       path: `jobs.test-${domain}`,
       operation: 'preserve' as const,
       value: createValueFromString(`
@@ -201,14 +208,14 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
               echo "Replace this with your actual test commands"
               # Example: npm test -- --testPathPattern=${domain}
       `, ctx),
-      commentBefore: index === 0 ? dedent`
+      commentBefore: domain === Object.keys(ctx.domains || {}).sort()[0] ? dedent`
 
 
         =============================================================================
          TESTING JOBS
         =============================================================================
       ` : undefined,
-      spaceBeforeComment: index === 0 ? true : undefined,
+      spaceBeforeComment: domain === Object.keys(ctx.domains || {}).sort()[0] ? true : undefined,
       required: true
     })),
     
@@ -225,9 +232,9 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
         if: \${{
             github.ref_name == '${ctx.initialBranch || branchFlow[0]}' &&
             always() &&
-            ${Object.keys(ctx.domains || {}).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' &&\n            ')}
+            ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' &&\n            ')}
           }}
-        needs: [ changes, ${Object.keys(ctx.domains || {}).map((domain: string) => `test-${domain}`).join(', ')} ]
+        needs: [ changes, ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `test-${domain}`).join(', ')} ]
         runs-on: ubuntu-latest
         steps:
           - uses: ./.github/actions/calculate-version
@@ -242,7 +249,7 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
     },
     
     // Generate deployment jobs for each domain
-    ...Object.keys(ctx.domains || {}).map((domain: string, index: number) => ({
+    ...Object.keys(ctx.domains || {}).sort().map((domain: string) => ({
       path: `jobs.deploy-${domain}`,
       operation: 'preserve' as const,
       value: createValueFromString(`
@@ -257,19 +264,19 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
               echo "Replace this with your actual deploy commands"
               # Example: npm deploy -- --testPathPattern=${domain}
       `, ctx),
-      commentBefore: index === 0 ? dedent`
+      commentBefore: domain === Object.keys(ctx.domains || {}).sort()[0] ? dedent`
 
 
         =============================================================================
          DEPLOYMENT JOBS
         =============================================================================
       ` : undefined,
-      spaceBeforeComment: index === 0 ? true : undefined,
+      spaceBeforeComment: domain === Object.keys(ctx.domains || {}).sort()[0] ? true : undefined,
       required: false
     })),
 
     // Generate remote testing jobs for each domain
-    ...Object.keys(ctx.domains || {}).map((domain: string, index: number) => ({
+    ...Object.keys(ctx.domains || {}).sort().map((domain: string) => ({
       path: `jobs.remote-test-${domain}`,
       operation: 'preserve' as const,
       value: createValueFromString(`
@@ -283,14 +290,14 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
               echo "Replace this with your actual test commands"
               # Example: npm test -- --testPathPattern=${domain}
       `, ctx),
-      commentBefore: index === 0 ? dedent`
+      commentBefore: domain === Object.keys(ctx.domains || {}).sort()[0] ? dedent`
 
 
         =============================================================================
          REMOTE TESTING JOBS
         =============================================================================
       ` : undefined,
-      spaceBeforeComment: index === 0 ? true : undefined,
+      spaceBeforeComment: domain === Object.keys(ctx.domains || {}).sort()[0] ? true : undefined,
       required: false
     })),
     
@@ -365,7 +372,7 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
   // - If key doesn't exist → create it
   // - If key isn't part of Pipecraft → ignore it (via job filtering)
 
-  const PIPECRAFT_OWNED_JOBS = getPipecraftOwnedJobs(branchFlow)
+  const PIPECRAFT_OWNED_JOBS = getPipecraftOwnedJobs(branchFlow, ctx.domains)
 
   // Capture original job order before any modifications
   let originalJobOrder: string[] = []
@@ -467,6 +474,50 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
       if (item.value && (item.value as any).commentBefore) {
         // Clear commentBefore from values - comments should only be on keys
         delete (item.value as any).commentBefore
+      }
+    }
+
+    // Add section headers to first job in each category
+    // This ensures headers appear in the right place regardless of job order
+    const domainKeys = Object.keys(ctx.domains || {})
+    if (domainKeys.length > 0) {
+      // Find first test-* job
+      const firstTestJob = finalJobsNode.items.find((item: any) =>
+        item.key?.toString().startsWith('test-')
+      )
+      if (firstTestJob && firstTestJob.key) {
+        (firstTestJob.key as any).commentBefore = `
+
+
+=============================================================================
+ TESTING JOBS
+=============================================================================`
+      }
+
+      // Find first deploy-* job
+      const firstDeployJob = finalJobsNode.items.find((item: any) =>
+        item.key?.toString().startsWith('deploy-')
+      )
+      if (firstDeployJob && firstDeployJob.key) {
+        (firstDeployJob.key as any).commentBefore = `
+
+
+=============================================================================
+ DEPLOYMENT JOBS
+=============================================================================`
+      }
+
+      // Find first remote-test-* job
+      const firstRemoteTestJob = finalJobsNode.items.find((item: any) =>
+        item.key?.toString().startsWith('remote-test-')
+      )
+      if (firstRemoteTestJob && firstRemoteTestJob.key) {
+        (firstRemoteTestJob.key as any).commentBefore = `
+
+
+=============================================================================
+ REMOTE TESTING JOBS
+=============================================================================`
       }
     }
   }

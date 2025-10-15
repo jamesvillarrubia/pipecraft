@@ -51,9 +51,9 @@ jobs:
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
     outputs:
+      cicd: ${{ steps.detect.outputs.cicd }}
       core: ${{ steps.detect.outputs.core }}
       test: ${{ steps.detect.outputs.test }}
-      cicd: ${{ steps.detect.outputs.cicd }}
   test-test:
     needs: changes
     if: ${{ needs.changes.outputs.test == 'true' }}
@@ -65,6 +65,10 @@ jobs:
           echo "Running tests for test domain"
           echo "Replace this with your actual test commands"
           # Example: npm test -- --testPathPattern=test
+
+  #=============================================================================
+  # TESTING JOBS
+  #=============================================================================
   test-cicd:
     needs: changes
     if: ${{ needs.changes.outputs.cicd == 'true' }}
@@ -81,7 +85,7 @@ jobs:
     if: ${{ needs.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      # TODO: Replace with your cicd test logic
+      # TODO: Replace with your core test logic
       - name: Run core tests
         run: |
           echo "Running tests for core domain"
@@ -92,8 +96,8 @@ jobs:
   # VERSIONING
   #=============================================================================
   version:
-    if: ${{ github.ref_name == 'develop' && always() && needs.test-core.result != 'failure' && needs.test-test.result != 'failure' && needs.test-cicd.result != 'failure' }}
-    needs: [ changes, test-core, test-test, test-cicd ]
+    if: ${{ github.ref_name == 'develop' && always() && needs.test-cicd.result != 'failure' && needs.test-core.result != 'failure' && needs.test-test.result != 'failure' }}
+    needs: [ changes, test-cicd, test-core, test-test ]
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/calculate-version
@@ -114,27 +118,6 @@ jobs:
       - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.version }}
-  deploy-core:
-    needs: [ version, changes ]
-    if: ${{ needs.changes.outputs.core == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      # TODO: Replace with your test test logic
-      - name: Deploy core
-        run: |
-          echo "Deploying core"
-          echo "Replace this with your actual deploy commands"
-          # Example: npm deploy -- --testPathPattern=core
-  remote-test-core:
-    needs: [ deploy-core ]
-    runs-on: ubuntu-latest
-    steps:
-      # TODO: Replace with your test test logic
-      - name: Test core
-        run: |
-          echo "Testing core remotely"
-          echo "Replace this with your actual test commands"
-          # Example: npm test -- --testPathPattern=core
 
   #=============================================================================
   # PROMOTION JOB
