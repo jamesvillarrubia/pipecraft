@@ -36,6 +36,7 @@ on:
       - develop
       - staging
       - main
+
 jobs:
 
   
@@ -53,15 +54,11 @@ jobs:
       core: ${{ steps.detect.outputs.core }}
       test: ${{ steps.detect.outputs.test }}
       cicd: ${{ steps.detect.outputs.cicd }}
-
   test-test:
     needs: changes
     if: ${{ needs.changes.outputs.test == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
       # TODO: Replace with your test test logic
       - name: Run test tests
         run: |
@@ -73,56 +70,29 @@ jobs:
     if: ${{ needs.changes.outputs.cicd == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
       # TODO: Replace with your cicd test logic
       - name: Run cicd tests
         run: |
           echo "Running tests for cicd domain"
           echo "Replace this with your actual test commands"
           # Example: npm test -- --testPathPattern=cicd
-          
   test-core:
     needs: changes
     if: ${{ needs.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Run tests
-        run: pnpm test:run
-
-      - name: Build
-        run: pnpm build
+      # TODO: Replace with your cicd test logic
+      - name: Run core tests
+        run: |
+          echo "Running tests for core domain"
+          echo "Replace this with your actual test commands"
+          # Example: npm test -- --testPathPattern=core
 
   #=============================================================================
   # VERSIONING
   #=============================================================================
   version:
-    if: |
-      ${{
-        github.ref_name == 'develop' &&
-        always() &&
-        needs.test-core.result != 'failure' &&
-        needs.test-test.result != 'failure' &&
-        needs.test-cicd.result != 'failure'
-      }}
+    if: ${{ github.ref_name == 'develop' && always() && needs.test-core.result != 'failure' && needs.test-test.result != 'failure' && needs.test-cicd.result != 'failure' }}
     needs: [ changes, test-core, test-test, test-cicd ]
     runs-on: ubuntu-latest
     steps:
@@ -144,6 +114,27 @@ jobs:
       - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.version }}
+  deploy-core:
+    needs: [ version, changes ]
+    if: ${{ needs.changes.outputs.core == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      # TODO: Replace with your test test logic
+      - name: Deploy core
+        run: |
+          echo "Deploying core"
+          echo "Replace this with your actual deploy commands"
+          # Example: npm deploy -- --testPathPattern=core
+  remote-test-core:
+    needs: [ deploy-core ]
+    runs-on: ubuntu-latest
+    steps:
+      # TODO: Replace with your test test logic
+      - name: Test core
+        run: |
+          echo "Testing core remotely"
+          echo "Replace this with your actual test commands"
+          # Example: npm test -- --testPathPattern=core
 
   #=============================================================================
   # PROMOTION JOB
@@ -151,14 +142,7 @@ jobs:
   promote:
     # Only runs on push events (not PRs) to branches that can promote
     # Waits for version/tag if they run, but doesn't fail if they're skipped
-    if: |
-      ${{
-        always() &&
-        github.event_name == 'push' &&
-        (github.ref_name == 'develop' || github.ref_name == 'staging') &&
-        needs.version.result != 'failure' &&
-        needs.tag.result != 'failure'
-      }}
+    if: ${{ always() && github.event_name == 'push' && (github.ref_name == 'develop' || github.ref_name == 'staging') && needs.version.result != 'failure' && needs.tag.result != 'failure' }}
     needs: [ changes, version, tag ]
     runs-on: ubuntu-latest
     steps:
@@ -166,4 +150,3 @@ jobs:
         with:
           sourceBranch: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
-

@@ -19,7 +19,8 @@
       "Bash(gh pr list:*)",
       "Bash(cat:*)",
       "Read(//private/tmp/**)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(/dev/null)"
     ],
     "deny": [],
     "ask": []

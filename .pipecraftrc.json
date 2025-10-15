@@ -36,18 +36,23 @@
       "paths": [
         "src/**"
       ],
+      "test": true,
+      "deploy": true,
+      "remoteTest": true,
       "description": "PipeCraft core changes"
     },
     "test": {
       "paths": [
         "tests/**"
       ],
+      "test": true,
       "description": "PipeCraft test changes"
     },
     "cicd": {
       "paths": [
         ".github/**"
       ],
+      "test": true,
       "description": "PipeCraft CI/CD changes"
     }
   },

@@ -186,7 +186,7 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
     // template structure and examples for new users.
 
     // Generate test jobs for each domain
-    ...Object.keys(ctx.domains || {}).map((domain: string) => ({
+    ...Object.keys(ctx.domains || {}).map((domain: string, index: number) => ({
       path: `jobs.test-${domain}`,
       operation: 'preserve' as const,
       value: createValueFromString(`
@@ -194,9 +194,6 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
         if: \${{ needs.changes.outputs.${domain} == 'true' }}
         runs-on: ubuntu-latest
         steps:
-          - name: Checkout Code
-            uses: actions/checkout@v4
-
           # TODO: Replace with your ${domain} test logic
           - name: Run ${domain} tests
             run: |
@@ -204,6 +201,14 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
               echo "Replace this with your actual test commands"
               # Example: npm test -- --testPathPattern=${domain}
       `, ctx),
+      commentBefore: index === 0 ? dedent`
+
+
+        =============================================================================
+         TESTING JOBS
+        =============================================================================
+      ` : undefined,
+      spaceBeforeComment: index === 0 ? true : undefined,
       required: true
     })),
     
@@ -217,13 +222,12 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
       `,
       spaceBeforeComment: true,
       value: createValueFromString(`
-        if: |
-          \${{
+        if: \${{
             github.ref_name == '${ctx.initialBranch || branchFlow[0]}' &&
             always() &&
             ${Object.keys(ctx.domains || {}).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' &&\n            ')}
           }}
-        needs: [changes, ${Object.keys(ctx.domains || {}).map((domain: string) => `test-${domain}`).join(', ')}]
+        needs: [ changes, ${Object.keys(ctx.domains || {}).map((domain: string) => `test-${domain}`).join(', ')} ]
         runs-on: ubuntu-latest
         steps:
           - uses: ./.github/actions/calculate-version
@@ -237,33 +241,58 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
       spaceBefore: true,
     },
     
-    {
-      path: 'jobs.deployment-section',
-      operation: 'preserve',
+    // Generate deployment jobs for each domain
+    ...Object.keys(ctx.domains || {}).map((domain: string, index: number) => ({
+      path: `jobs.deploy-${domain}`,
+      operation: 'preserve' as const,
       value: createValueFromString(`
-        # =============================================================================
-        #  DEPLOYMENT JOBS
-        # =============================================================================
-        # Add your deployment jobs here
-        # Example:
-        # deploy-api:
-        #   needs: version
-        #   runs-on: ubuntu-latest
-        #   steps:
-        #     - name: Deploy API
-        #       run: |
-        #         echo "Deploy API to production"
-        #
-        # deploy-web:
-        #   needs: version
-        #   runs-on: ubuntu-latest
-        #   steps:
-        #     - name: Deploy Web
-        #       run: |
-        #         echo "Deploy Web to production"
+        needs: [ version, changes ]
+        if: \${{ needs.changes.outputs.${domain} == 'true' }}
+        runs-on: ubuntu-latest
+        steps:
+          # TODO: Replace with your test test logic
+          - name: Deploy ${domain}
+            run: |
+              echo "Deploying ${domain}"
+              echo "Replace this with your actual deploy commands"
+              # Example: npm deploy -- --testPathPattern=${domain}
       `, ctx),
+      commentBefore: index === 0 ? dedent`
+
+
+        =============================================================================
+         DEPLOYMENT JOBS
+        =============================================================================
+      ` : undefined,
+      spaceBeforeComment: index === 0 ? true : undefined,
       required: false
-    },
+    })),
+
+    // Generate remote testing jobs for each domain
+    ...Object.keys(ctx.domains || {}).map((domain: string, index: number) => ({
+      path: `jobs.remote-test-${domain}`,
+      operation: 'preserve' as const,
+      value: createValueFromString(`
+        needs: [ deploy-${domain} ]
+        runs-on: ubuntu-latest
+        steps:
+          # TODO: Replace with your test test logic
+          - name: Test ${domain}
+            run: |
+              echo "Testing ${domain} remotely"
+              echo "Replace this with your actual test commands"
+              # Example: npm test -- --testPathPattern=${domain}
+      `, ctx),
+      commentBefore: index === 0 ? dedent`
+
+
+        =============================================================================
+         REMOTE TESTING JOBS
+        =============================================================================
+      ` : undefined,
+      spaceBeforeComment: index === 0 ? true : undefined,
+      required: false
+    })),
     
     {
       path: 'jobs.tag',
@@ -294,15 +323,14 @@ ${Object.keys(ctx.domains || {}).map((domain: string) => `          ${domain}: \
       value: createValueFromString(`
         # Only runs on push events (not PRs) to branches that can promote
         # Waits for version/tag if they run, but doesn't fail if they're skipped
-        if: |
-          \${{
+        if: \${{
             always() &&
             github.event_name == 'push' &&
             (${branchFlow.slice(0, -1).map((branch: string) => `github.ref_name == '${branch}'`).join(' || ')}) &&
             needs.version.result != 'failure' &&
             needs.tag.result != 'failure'
           }}
-        needs: [changes, version, tag]
+        needs: [ changes, version, tag ]
         runs-on: ubuntu-latest
         steps:
           - uses: ./.github/actions/promote-branch
