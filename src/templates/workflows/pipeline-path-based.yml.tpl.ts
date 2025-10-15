@@ -244,12 +244,11 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       path: `jobs.deploy-${domain}`,
       operation: 'overwrite' as const,
       value: createValueFromString(`
-        needs: [ version, changes ]
-        if: \${{ always() }}
+        needs: [ changes ]
+        if: \${{ needs.changes.outputs.${domain} == 'true' }}
         runs-on: ubuntu-latest
         steps:
           - name: Deploy ${domain}
-            if: \${{ needs.changes.outputs.${domain} == 'true' }}
             run: |
               echo "Deploying ${domain}"
               echo "Replace this with your actual deploy commands"
