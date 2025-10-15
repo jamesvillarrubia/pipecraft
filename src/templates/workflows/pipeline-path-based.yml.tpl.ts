@@ -101,7 +101,7 @@ export const createPathBasedPipeline = (ctx: any) => {
     {
       path: 'run-name',
       operation: 'set',
-      value: `\${{ github.ref_name }}\${{ inputs.version && format(' ({0})', inputs.version) || '' }} [\${{ github.run_number }}]: \${{ github.event.head_commit.message || 'Manual trigger' }}`,
+      value: `\${{ github.ref_name }}\${{ inputs.version && format(' ({0})', inputs.version) || '' }} #\${{ github.run_number }}`,
       required: true
     },
 
