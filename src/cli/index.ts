@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 // PipeCraft CLI - Automated CI/CD pipeline generator
+// Test change for deploy flow validation
 import { Command } from 'commander'
 import { cosmiconfigSync } from 'cosmiconfig'
 import { runModule, prompt } from '@featherscloud/pinion'
