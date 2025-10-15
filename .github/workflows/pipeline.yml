@@ -117,11 +117,27 @@ jobs:
   #=============================================================================
   deploy-core:
     needs: [ version, changes ]
-    if: ${{ needs.changes.outputs.core == 'true' }}
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      # TODO: Replace with your test test logic
+      - name: Debug - Show all context
+        run: |
+          echo "=== NEEDS CONTEXT ==="
+          echo "needs.version.result: ${{ needs.version.result }}"
+          echo "needs.version.outputs.version: ${{ needs.version.outputs.version }}"
+          echo "needs.changes.result: ${{ needs.changes.result }}"
+          echo "needs.changes.outputs.core: ${{ needs.changes.outputs.core }}"
+          echo "needs.changes.outputs.test: ${{ needs.changes.outputs.test }}"
+          echo "needs.changes.outputs.cicd: ${{ needs.changes.outputs.cicd }}"
+          echo ""
+          echo "=== CONDITION EVALUATION ==="
+          echo "needs.changes.outputs.core == 'true': ${{ needs.changes.outputs.core == 'true' }}"
+          echo "needs.changes.outputs.core type: $(echo '${{ needs.changes.outputs.core }}' | cat -v)"
+          echo ""
+          echo "=== FULL NEEDS OBJECT ==="
+          echo '${{ toJSON(needs) }}'
       - name: Deploy core
+        if: ${{ needs.changes.outputs.core == 'true' }}
         run: |
           echo "Deploying core"
           echo "Replace this with your actual deploy commands"
