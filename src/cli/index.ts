@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+// PipeCraft CLI - Automated CI/CD pipeline generator
 import { Command } from 'commander'
 import { cosmiconfigSync } from 'cosmiconfig'
 import { runModule, prompt } from '@featherscloud/pinion'
