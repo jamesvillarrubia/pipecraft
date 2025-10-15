@@ -323,12 +323,12 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       path: 'jobs.promote',
       operation: 'overwrite' as const,
       value: createValueFromString(`
-        # Only runs on push events (not PRs) to branches that can promote
+        # Only runs on push or manual workflow_dispatch events to branches that can promote
         # Waits for version/tag if they run, but doesn't fail if they're skipped
         # Needs all deploy and/or remote test jobs to succeed
         if: \${{
             always() &&
-            github.event_name == 'push' &&
+            (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
             (needs.tag.result == 'success' || needs.tag.result == 'skipped') &&
             (
               ${branchFlow.slice(0, -1).map((branch: string) => `github.ref_name == '${branch}'`).join(' || \n              ')}
