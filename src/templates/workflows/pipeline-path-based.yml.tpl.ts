@@ -304,6 +304,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
           if: \${{
               always() &&
               github.ref_name == '${ctx.initialBranch || branchFlow[0]}' &&
+              needs.version.result == 'success' &&
               (
                 ${noFailures}
               ) &&
@@ -339,12 +340,13 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         if: \${{
             always() &&
             (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+            (needs.version.result == 'success' || needs.version.result == 'skipped') &&
             (needs.tag.result == 'success' || needs.tag.result == 'skipped') &&
             (
               ${branchFlow.slice(0, -1).map((branch: string) => `github.ref_name == '${branch}'`).join(' || \n              ')}
             )
             }}
-        needs: [ tag ]
+        needs: [ version, tag ]
         runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@v4

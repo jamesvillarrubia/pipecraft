@@ -135,6 +135,7 @@ jobs:
     if: ${{
         always() &&
         github.ref_name == 'develop' &&
+        needs.version.result == 'success' &&
         (
         needs.deploy-core.result != 'failure' &&
         needs.remote-test-core.result != 'failure'
@@ -164,6 +165,10 @@ jobs:
         github.event_name == 'workflow_dispatch'
       ) &&
         (
+        needs.version.result == 'success' ||
+        needs.version.result == 'skipped'
+      ) &&
+        (
         needs.tag.result == 'success' ||
         needs.tag.result == 'skipped'
       ) &&
@@ -172,7 +177,7 @@ jobs:
         github.ref_name == 'staging'
       )
       }}
-    needs: [ tag ]
+    needs: [ version, tag ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
