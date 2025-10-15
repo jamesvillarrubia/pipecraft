@@ -22,7 +22,9 @@
       "Bash(pnpm test:*)",
       "Bash(/dev/null)",
       "Bash(gh api:*)",
-      "Bash(gh pr merge:*)"
+      "Bash(gh pr merge:*)",
+      "Bash(xargs -I {} git show {}:.github/workflows/pipeline.yml)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

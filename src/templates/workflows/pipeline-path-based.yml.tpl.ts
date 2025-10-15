@@ -245,11 +245,11 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       operation: 'overwrite' as const,
       value: createValueFromString(`
         needs: [ version, changes ]
-        if: \${{ needs.changes.outputs.${domain} == 'true' }}
+        if: \${{ always() }}
         runs-on: ubuntu-latest
         steps:
-          # TODO: Replace with your test test logic
           - name: Deploy ${domain}
+            if: \${{ needs.changes.outputs.${domain} == 'true' }}
             run: |
               echo "Deploying ${domain}"
               echo "Replace this with your actual deploy commands"
@@ -263,11 +263,12 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       path: `jobs.remote-test-${domain}`,
       operation: 'overwrite' as const,
       value: createValueFromString(`
-        needs: [ deploy-${domain} ]
+        needs: [ deploy-${domain}, changes ]
+        if: \${{ always() }}
         runs-on: ubuntu-latest
         steps:
-          # TODO: Replace with your test test logic
           - name: Test ${domain}
+            if: \${{ needs.changes.outputs.${domain} == 'true' && needs.deploy-${domain}.result == 'success' }}
             run: |
               echo "Testing ${domain} remotely"
               echo "Replace this with your actual test commands"

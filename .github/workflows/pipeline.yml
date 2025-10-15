@@ -27,23 +27,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/detect-changes
+        id: detect
         with:
-          fetch-depth: 0
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          base: ${{ inputs.baseRef || 'main' }}
-          filters: |
-            core:
-              - 'src/**'
-            test:
-              - 'tests/**'
-            cicd:
-              - '.github/**'
+          baseRef: ${{ inputs.baseRef || 'main' }}
     outputs:
-      cicd: ${{ steps.filter.outputs.cicd }}
-      core: ${{ steps.filter.outputs.core }}
-      test: ${{ steps.filter.outputs.test }}
+      cicd: ${{ steps.detect.outputs.cicd }}
+      core: ${{ steps.detect.outputs.core }}
+      test: ${{ steps.detect.outputs.test }}
 
   #=============================================================================
   # TESTING JOBS
@@ -120,22 +111,6 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Debug - Show all context
-        run: |
-          echo "=== NEEDS CONTEXT ==="
-          echo "needs.version.result: ${{ needs.version.result }}"
-          echo "needs.version.outputs.version: ${{ needs.version.outputs.version }}"
-          echo "needs.changes.result: ${{ needs.changes.result }}"
-          echo "needs.changes.outputs.core: ${{ needs.changes.outputs.core }}"
-          echo "needs.changes.outputs.test: ${{ needs.changes.outputs.test }}"
-          echo "needs.changes.outputs.cicd: ${{ needs.changes.outputs.cicd }}"
-          echo ""
-          echo "=== CONDITION EVALUATION ==="
-          echo "needs.changes.outputs.core == 'true': ${{ needs.changes.outputs.core == 'true' }}"
-          echo "needs.changes.outputs.core type: $(echo '${{ needs.changes.outputs.core }}' | cat -v)"
-          echo ""
-          echo "=== FULL NEEDS OBJECT ==="
-          echo '${{ toJSON(needs) }}'
       - name: Deploy core
         if: ${{ needs.changes.outputs.core == 'true' }}
         run: |
