@@ -214,25 +214,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/create-release
         with:
-          fetch-depth: 0
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION="${{ needs.version.outputs.version }}"
-          echo "Creating GitHub release for $VERSION"
-
-          # Generate release notes from commits since last tag
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          if [ -n "$PREVIOUS_TAG" ]; then
-            RELEASE_NOTES=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s" --no-merges)
-          else
-            RELEASE_NOTES=$(git log --pretty=format:"- %s" --no-merges)
-          fi
-
-          # Create release
-          gh release create "$VERSION" \
-            --title "Release $VERSION" \
-            --notes "$RELEASE_NOTES" \
-            --latest
+          version: ${{ needs.version.outputs.version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
