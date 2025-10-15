@@ -11,13 +11,13 @@ inputs:
 outputs:
   core:
     description: 'Whether core domain has changes'
-    value: ${{ steps.merge.outputs.core }}
+    value: ${{ steps.filter.outputs.core }}
   test:
     description: 'Whether test domain has changes'
-    value: ${{ steps.merge.outputs.test }}
+    value: ${{ steps.filter.outputs.test }}
   cicd:
     description: 'Whether cicd domain has changes'
-    value: ${{ steps.merge.outputs.cicd }}
+    value: ${{ steps.filter.outputs.cicd }}
 
 runs:
   using: 'composite'
