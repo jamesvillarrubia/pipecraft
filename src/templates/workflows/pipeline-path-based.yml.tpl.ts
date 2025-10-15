@@ -39,8 +39,7 @@ const getPipecraftOwnedJobs = (branchFlow: string[], domains: Record<string, any
     'version',
     'tag',
     'promote',  // Single promote job instead of multiple promote-to-{target} jobs
-    'release',  // GitHub release creation on final branch
-    'publish'   // npm package publication on final branch
+    'release'   // GitHub release creation on final branch
   ])
 
   // Add domain-based jobs (test-*, deploy-*, remote-test-*) based on flags
@@ -421,41 +420,9 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       spaceBefore: true,
       commentBefore: dedent`
         =============================================================================
-         RELEASE & PUBLISH JOBS (Main Branch Only)
+         RELEASE JOB (Main Branch Only)
         =============================================================================
       `,
-      required: true
-    },
-
-    // Generate npm publish job for final branch (main)
-    {
-      path: 'jobs.publish',
-      operation: 'overwrite' as const,
-      value: createValueFromString(`
-        # Publish to npm on main branch after successful release
-        if: \${{
-            always() &&
-            github.ref_name == '${ctx.finalBranch || branchFlow[branchFlow.length - 1]}' &&
-            (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
-            needs.release.result == 'success'
-            }}
-        needs: [ release ]
-        runs-on: ubuntu-latest
-        steps:
-          - uses: actions/checkout@v4
-          - uses: actions/setup-node@v4
-            with:
-              node-version: 22
-              registry-url: 'https://registry.npmjs.org'
-          - name: Install dependencies
-            run: npm ci
-          - name: Build package
-            run: npm run build
-          - name: Publish to npm
-            run: npm publish
-            env:
-              NODE_AUTH_TOKEN: \${{ secrets.NPM_TOKEN }}
-      `, ctx),
       required: true
     },
 

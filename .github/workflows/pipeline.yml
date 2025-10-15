@@ -193,7 +193,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   #=============================================================================
-  # RELEASE & PUBLISH JOBS (Main Branch Only)
+  # RELEASE JOB (Main Branch Only)
   #=============================================================================
   release:
     # Create GitHub release on main branch after successful tests and versioning
@@ -236,31 +236,3 @@ jobs:
             --title "Release $VERSION" \
             --notes "$RELEASE_NOTES" \
             --latest
-
-  publish:
-    # Publish to npm on main branch after successful release
-    if: ${{
-        always() &&
-        github.ref_name == 'main' &&
-        (
-        github.event_name == 'push' ||
-        github.event_name == 'workflow_dispatch'
-      ) &&
-        needs.release.result == 'success'
-      }}
-    needs: [ release ]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: 'https://registry.npmjs.org'
-      - name: Install dependencies
-        run: npm ci
-      - name: Build package
-        run: npm run build
-      - name: Publish to npm
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
