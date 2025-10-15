@@ -232,9 +232,13 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       value: createValueFromString(`
         if: \${{
             github.ref_name == '${ctx.initialBranch || branchFlow[0]}' &&
-            always() &&
-            ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' &&\n            ')}
-          }}
+            (
+              ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' && \n              ')}
+            ) &&
+            (
+              ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result == 'success'`).join(' || \n              ')}
+            )
+            }}
         needs: [ changes, ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `test-${domain}`).join(', ')} ]
         runs-on: ubuntu-latest
         steps:
@@ -289,15 +293,44 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
     {
       path: 'jobs.tag',
       operation: 'overwrite',
-      value: createValueFromString(`
-        if: github.ref_name == '${ctx.initialBranch || branchFlow[0]}'
-        needs: version
-        runs-on: ubuntu-latest
-        steps:
-          - uses: ./.github/actions/create-tag
-            with:
-              version: \${{ needs.version.outputs.version }}
-      `, ctx),
+      value: (() => {
+        // Build list of deploy and remote-test jobs that tag depends on
+        const deployJobs = Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].deploy === true).map((domain: string) => `deploy-${domain}`)
+        const remoteTestJobs = Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].remoteTest === true).map((domain: string) => `remote-test-${domain}`)
+        const allDeployTestJobs = [...deployJobs, ...remoteTestJobs]
+
+        // Build needs array (version + all deploy/remote-test jobs)
+        const needsArray = ['version', ...allDeployTestJobs]
+
+        // Build conditional: no failures AND at least one success
+        const noFailures = allDeployTestJobs.length > 0
+          ? allDeployTestJobs.map((job: string) => `needs.${job}.result != 'failure'`).join(' && \n              ')
+          : 'true'
+        const atLeastOneSuccess = allDeployTestJobs.length > 0
+          ? allDeployTestJobs.map((job: string) => `needs.${job}.result == 'success'`).join(' || \n              ')
+          : 'true'
+
+        return createValueFromString(`
+          # Needs all deploy and/or remote test jobs to succeed or be skipped
+          # Needs at least one domain to succeed
+          needs: [ ${needsArray.join(', ')} ]
+          if: \${{
+              always() &&
+              github.event_name == 'push' &&
+              (
+                ${noFailures}
+              ) &&
+              (
+                ${atLeastOneSuccess}
+              )
+              }}
+          runs-on: ubuntu-latest
+          steps:
+            - uses: ./.github/actions/create-tag
+              with:
+                version: \${{ needs.version.outputs.version }}
+        `, ctx)
+      })(),
       spaceBefore: true,
       commentBefore: dedent`
         =============================================================================
@@ -315,14 +348,16 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       value: createValueFromString(`
         # Only runs on push events (not PRs) to branches that can promote
         # Waits for version/tag if they run, but doesn't fail if they're skipped
+        # Needs all deploy and/or remote test jobs to succeed
         if: \${{
             always() &&
             github.event_name == 'push' &&
-            (${branchFlow.slice(0, -1).map((branch: string) => `github.ref_name == '${branch}'`).join(' || ')}) &&
-            needs.version.result != 'failure' &&
-            needs.tag.result != 'failure'
-          }}
-        needs: [ changes, version, tag ]
+            needs.tag.result == 'success' &&
+            (
+              ${branchFlow.slice(0, -1).map((branch: string) => `github.ref_name == '${branch}'`).join(' || \n              ')}
+            )
+            }}
+        needs: [ tag ]
         runs-on: ubuntu-latest
         steps:
           - uses: ./.github/actions/promote-branch

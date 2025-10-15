@@ -1,11 +1,4 @@
 name: "Pipeline"
-
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-
-
 on:
   workflow_call:
     inputs:
@@ -92,19 +85,7 @@ jobs:
   # VERSIONING
   #=============================================================================
   version:
-    if: ${{ 
-      github.ref_name == 'develop' && 
-      (
-        needs.test-cicd.result != 'failure' && 
-        needs.test-core.result != 'failure' && 
-        needs.test-test.result != 'failure'
-      ) && 
-      ( 
-        needs.test-cicd.result == 'success' || 
-        needs.test-core.result == 'success' || 
-        needs.test-test.result == 'success' 
-      )
-      }}
+    if: ${{ github.ref_name == 'develop' && ( needs.test-cicd.result != 'failure' && needs.test-core.result != 'failure' && needs.test-test.result != 'failure' ) && ( needs.test-cicd.result == 'success' || needs.test-core.result == 'success' || needs.test-test.result == 'success' ) }}
     needs: [ changes, test-cicd, test-core, test-test ]
     runs-on: ubuntu-latest
     steps:
@@ -147,22 +128,11 @@ jobs:
   #=============================================================================
   # TAG & PROMOTE
   #=============================================================================
-  # Needs all deploy and/or remote test jobs to succeed or be skipped
-  # Needs at least one domain to succeed
   tag:
-    needs: [ version, remote-test-core, deploy-core ]
-    if: ${{
-      always() &&
-      github.event_name == 'push' &&
-      (
-        needs.deploy-core.result != 'failure' && 
-        needs.remote-test-core.result != 'failure'
-      ) && 
-      ( 
-        needs.deploy-core.result == 'success' || 
-        needs.remote-test-core.result == 'success' 
-      )
-      }}
+    # Needs all deploy and/or remote test jobs to succeed or be skipped
+    # Needs at least one domain to succeed
+    needs: [ version, deploy-core, remote-test-core ]
+    if: ${{ always() && github.event_name == 'push' && ( needs.deploy-core.result != 'failure' && needs.remote-test-core.result != 'failure' ) && ( needs.deploy-core.result == 'success' || needs.remote-test-core.result == 'success' ) }}
     runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/create-tag
@@ -176,15 +146,7 @@ jobs:
     # Only runs on push events (not PRs) to branches that can promote
     # Waits for version/tag if they run, but doesn't fail if they're skipped
     # Needs all deploy and/or remote test jobs to succeed
-    if: ${{
-      always() &&
-      github.event_name == 'push' && 
-      needs.tag.result == 'success' && 
-      (
-        github.ref_name == 'develop' || 
-        github.ref_name == 'staging'
-      )
-      }}
+    if: ${{ always() && github.event_name == 'push' && needs.tag.result == 'success' && ( github.ref_name == 'develop' || github.ref_name == 'staging' ) }}
     needs: [ tag ]
     runs-on: ubuntu-latest
     steps:
