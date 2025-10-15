@@ -227,7 +227,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       path: 'jobs.version',
       operation: 'overwrite',
       value: createValueFromString(`
-        if: \${{ needs.version-gate.result == 'success' }}
+        if: \${{ always() && needs.version-gate.result == 'success' }}
         needs: [ version-gate ]
         runs-on: ubuntu-latest
         steps:

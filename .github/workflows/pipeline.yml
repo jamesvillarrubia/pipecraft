@@ -81,7 +81,7 @@ jobs:
       - name: Version gate passed
         run: echo "Tests completed, proceeding to versioning and deployment"
   version:
-    if: ${{ needs.version-gate.result == 'success' }}
+    if: ${{ always() && needs.version-gate.result == 'success' }}
     needs: [ version-gate ]
     runs-on: ubuntu-latest
     steps:
