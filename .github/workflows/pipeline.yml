@@ -27,14 +27,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/detect-changes
-        id: detect
         with:
-          baseRef: ${{ inputs.baseRef || 'main' }}
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          base: ${{ inputs.baseRef || 'main' }}
+          filters: |
+            core:
+              - 'src/**'
+            test:
+              - 'tests/**'
+            cicd:
+              - '.github/**'
     outputs:
-      cicd: ${{ steps.detect.outputs.cicd }}
-      core: ${{ steps.detect.outputs.core }}
-      test: ${{ steps.detect.outputs.test }}
+      cicd: ${{ steps.filter.outputs.cicd }}
+      core: ${{ steps.filter.outputs.core }}
+      test: ${{ steps.filter.outputs.test }}
 
   #=============================================================================
   # TESTING JOBS
