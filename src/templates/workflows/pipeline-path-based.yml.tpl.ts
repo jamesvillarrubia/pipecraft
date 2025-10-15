@@ -242,7 +242,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
     // Generate deployment jobs for each domain (only if deploy: true)
     ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].deploy === true).map((domain: string) => ({
       path: `jobs.deploy-${domain}`,
-      operation: 'preserve' as const,
+      operation: 'overwrite' as const,
       value: createValueFromString(`
         needs: [ version, changes ]
         if: \${{ needs.changes.outputs.${domain} == 'true' }}
@@ -261,7 +261,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
     // Generate remote testing jobs for each domain (only if remoteTest: true)
     ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].remoteTest === true).map((domain: string) => ({
       path: `jobs.remote-test-${domain}`,
-      operation: 'preserve' as const,
+      operation: 'overwrite' as const,
       value: createValueFromString(`
         needs: [ deploy-${domain} ]
         runs-on: ubuntu-latest
