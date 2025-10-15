@@ -11,7 +11,7 @@
   ],
   "autoMerge": {
     "staging": true,
-    "main": false
+    "main": true
   },
   "semver": {
     "bumpRules": {
