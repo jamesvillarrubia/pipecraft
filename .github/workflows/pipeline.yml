@@ -1,5 +1,5 @@
 name: "Pipeline"
-run-name: "${{ inputs.version && format('{0} ({1}) #{2}', github.ref_name, inputs.version, github.run_number) || format('{0} #{1}', github.ref_name, github.run_number) }}"
+run-name: "${{ github.ref_name }} ${{ github.sha }}${{ inputs.version && format(' - {0}', inputs.version) || '' }}"
 on:
   workflow_dispatch:
     inputs:
