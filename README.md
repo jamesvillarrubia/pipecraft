@@ -1099,5 +1099,3 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 [Report Bug](https://github.com/jamesvillarrubia/pipecraft/issues) · [Request Feature](https://github.com/jamesvillarrubia/pipecraft/issues) · [Documentation](https://github.com/jamesvillarrubia/pipecraft/wiki)
 
 </div>
-# Test Promotion Flow
-# Test 2
