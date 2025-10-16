@@ -33,6 +33,13 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Set package version
+        run: |
+          TAG=${{ github.event.release.tag_name || inputs.tag }}
+          VERSION=${TAG#v}  # Remove 'v' prefix
+          echo "Setting package version to $VERSION"
+          npm version $VERSION --no-git-tag-version
+
       - name: Publish to npm
         run: npm publish --provenance --access public
         env:
