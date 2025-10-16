@@ -24,7 +24,10 @@
       "Bash(gh api:*)",
       "Bash(gh pr merge:*)",
       "Bash(xargs -I {} git show {}:.github/workflows/pipeline.yml)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(npm test)",
+      "Bash(pkill:*)",
+      "Bash(npm run build)"
     ],
     "deny": [],
     "ask": []
