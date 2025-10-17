@@ -1,11 +1,11 @@
-<img src="./assets/logo_banner.png" alt="PipeCraft Logo" width="auto">
+<img src="https://raw.githubusercontent.com/jamesvillarrubia/pipecraft/main/assets/logo_banner.png" alt="PipeCraft Logo" width="auto">
 
 # PipeCraft
 
-[![npm version](https://badge.fury.io/js/pipecraft.svg)](https://badge.fury.io/js/pipecraft)
+[![npm version](https://badge.fury.io/js/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
 [![License](https://img.shields.io/npm/l/pipecraft.svg)](https://github.com/jamesvillarrubia/pipecraft/blob/main/LICENSE)
 [![NPM downloads](https://img.shields.io/npm/dm/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
-[![Node.js Version](https://img.shields.io/node/v/pipecraft.svg)](https://nodejs.org/en/)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/en/)
 [![codecov](https://codecov.io/gh/jamesvillarrubia/pipecraft/branch/main/graph/badge.svg)](https://codecov.io/gh/jamesvillarrubia/pipecraft)
 
 **Pipeline Status:**
@@ -53,7 +53,7 @@ PipeCraft is a powerful CLI tool for automating trunk-based development workflow
 
 - Git
 - A GitHub or GitLab account
-- Node.js 18+ (for npm installation)
+- Node.js 18.0.0 or higher (for npm installation)
 
 ## Quick Start
 
@@ -156,6 +156,28 @@ If any check fails, you'll see helpful error messages with suggestions. Example 
 ❌ Not in a git repository
    💡 Initialize git: 'git init' or clone an existing repository
 ```
+
+**Output verbosity levels:**
+
+Normal mode (default) - Clean, actionable output:
+```bash
+pipecraft generate
+```
+Shows only essential information: pre-flight checks and completion status.
+
+Verbose mode - Shows file operations:
+```bash
+pipecraft generate --verbose
+```
+Includes file merge status, config paths, and workflow generation details.
+
+Debug mode - Full internal details:
+```bash
+pipecraft generate --debug
+```
+Includes everything from verbose mode plus internal debugging information like branch flow context, job ordering, and template operations.
+
+**Other options:**
 
 Skip pre-flight checks (not recommended):
 ```bash
@@ -278,7 +300,7 @@ PipeCraft provides the following commands:
 | Command | Description | Options |
 |---------|-------------|---------|
 | `init` | Initialize PipeCraft configuration | `--interactive`, `--force`, `--with-versioning`, `--ci-provider`, `--merge-strategy`, `--initial-branch`, `--final-branch` |
-| `generate` | Generate CI/CD workflows with pre-flight checks | `--skip-checks`, `--force`, `--dry-run`, `--config`, `--output-pipeline`, `--verbose` |
+| `generate` | Generate CI/CD workflows with pre-flight checks | `--skip-checks`, `--force`, `--dry-run`, `--config`, `--output-pipeline`, `--verbose`, `--debug` |
 | `validate` | Validate configuration file | `--config` |
 | `validate:pipeline` | Validate generated pipeline files | `--strict` |
 | `setup-github` | Configure GitHub Actions workflow permissions | `--apply`, `--force` |
@@ -293,7 +315,8 @@ Available for all commands:
 - `-c, --config <path>` - Path to config file (default: `.pipecraftrc.json`)
 - `-p, --pipeline <path>` - Path to existing pipeline file for merging
 - `-o, --output-pipeline <path>` - Path to output pipeline file
-- `-v, --verbose` - Verbose output
+- `-v, --verbose` - Verbose output (shows file operations and merge status)
+- `--debug` - Debug output (includes verbose output plus internal debugging details)
 - `--force` - Force operation even if unchanged
 - `--dry-run` - Show what would be done without making changes
 
@@ -305,6 +328,12 @@ pipecraft init --interactive --with-versioning --ci-provider github
 
 # Generate workflows with custom paths
 pipecraft generate --config .pipecraft.json --output-pipeline workflows/ci.yml
+
+# Generate with verbose output to see file operations
+pipecraft generate --verbose
+
+# Generate with debug output to see internal details
+pipecraft generate --debug
 
 # Validate pipeline files
 pipecraft validate:pipeline
@@ -980,6 +1009,7 @@ Have a feature request? We'd love to hear from you!
 - Check if configuration is valid: `pipecraft validate`
 - Use `--force` to bypass cache: `pipecraft generate --force`
 - Use `--verbose` for detailed output: `pipecraft generate --verbose`
+- Use `--debug` for full debugging output: `pipecraft generate --debug`
 - Verify file permissions in `.github/workflows/`
 
 #### 2. Configuration Validation Errors
@@ -1028,16 +1058,17 @@ If you encounter issues not covered here:
 
 1. Check the [GitHub Issues](https://github.com/jamesvillarrubia/pipecraft/issues)
 2. Enable verbose logging: `pipecraft generate --verbose`
-3. Validate your configuration: `pipecraft validate`
-4. [Open a new issue](https://github.com/jamesvillarrubia/pipecraft/issues/new) with:
+3. Enable debug logging for more detail: `pipecraft generate --debug`
+4. Validate your configuration: `pipecraft validate`
+5. [Open a new issue](https://github.com/jamesvillarrubia/pipecraft/issues/new) with:
    - PipeCraft version: `pipecraft --version`
    - Node version: `node --version`
    - Your configuration (sanitized)
-   - Full error output with `--verbose`
+   - Full error output with `--debug`
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for details on:
+Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/jamesvillarrubia/pipecraft/blob/main/CONTRIBUTING.md) for details on:
 
 - Code of conduct
 - Development setup
@@ -1080,7 +1111,7 @@ npm test tests/unit/config.test.ts
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/jamesvillarrubia/pipecraft/blob/main/LICENSE) file for details.
 
 ## Acknowledgments
 

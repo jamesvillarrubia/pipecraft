@@ -292,8 +292,8 @@ describe('Generator Integration Tests', () => {
       expect(pipeline.jobs.changes).toBeDefined()
       expect(pipeline.jobs.version).toBeDefined()
       expect(pipeline.jobs.tag).toBeDefined()
-      expect(pipeline.jobs.createpr).toBeDefined()
-      expect(pipeline.jobs.branch).toBeDefined()
+      expect(pipeline.jobs.promote).toBeDefined()
+      expect(pipeline.jobs.release).toBeDefined()
     })
 
     it('should merge with existing pipeline when provided', async () => {
@@ -482,7 +482,7 @@ jobs:
       expect(pipeline.on.workflow_dispatch.inputs.baseRef).toBeDefined()
     })
 
-    it('should include pull_request trigger', async () => {
+    it('should include push trigger with branch flow', async () => {
       const ctx: PinionContext & { config?: PipecraftConfig } = {
         cwd: TEST_DIR,
         argv: ['generate'],
@@ -509,7 +509,8 @@ jobs:
       const pipelineContent = readFileSync(pipelinePath, 'utf8')
       const pipeline = parseYAML(pipelineContent)
 
-      expect(pipeline.on.pull_request).toBeDefined()
+      expect(pipeline.on.push).toBeDefined()
+      expect(pipeline.on.push.branches).toBeDefined()
     })
   })
 

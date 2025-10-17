@@ -1,6 +1,7 @@
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import fs from 'fs'
 import dedent from 'dedent'
+import { logger } from '../../utils/logger.js'
 
 // Template for the Create PR GitHub Action
 const createprActionTemplate = (ctx: any) => {
@@ -141,7 +142,7 @@ export const generate = (ctx: PinionContext) =>
       const filePath = '.github/actions/create-pr/action.yml'
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
-      console.log(`${status} ${filePath}`)
+      logger.verbose(`${status} ${filePath}`)
       return ctx
     })
     .then(renderTemplate(createprActionTemplate, toFile('.github/actions/create-pr/action.yml')))

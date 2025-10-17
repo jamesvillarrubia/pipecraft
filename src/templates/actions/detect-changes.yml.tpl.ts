@@ -2,6 +2,7 @@ import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import fs from 'fs'
 import dedent from 'dedent'
 import { DomainConfig } from '../../types/index.js'
+import { logger } from '../../utils/logger.js'
 
 // Template for the Changes Detection GitHub Action
 const changesActionTemplate = (ctx: any) => {
@@ -81,7 +82,7 @@ export const generate = (ctx: PinionContext) =>
       const filePath = '.github/actions/detect-changes/action.yml'
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
-      console.log(`${status} ${filePath}`)
+      logger.verbose(`${status} ${filePath}`)
       return ctx
     })
     .then(renderTemplate(changesActionTemplate, toFile('.github/actions/detect-changes/action.yml')))

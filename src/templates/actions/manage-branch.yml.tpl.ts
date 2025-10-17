@@ -1,6 +1,7 @@
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import fs from 'fs'
 import dedent from 'dedent'
+import { logger } from '../../utils/logger.js'
 
 // Template for the Branch Management GitHub Action
 const branchActionTemplate = (ctx: any) => {
@@ -126,7 +127,7 @@ export const generate = (ctx: PinionContext) =>
       const filePath = '.github/actions/manage-branch/action.yml'
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
-      console.log(`${status} ${filePath}`)
+      logger.verbose(`${status} ${filePath}`)
       return ctx
     })
     .then(renderTemplate(branchActionTemplate, toFile('.github/actions/manage-branch/action.yml')))

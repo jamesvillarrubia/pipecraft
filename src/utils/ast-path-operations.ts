@@ -158,11 +158,11 @@ export interface PathOperationConfig {
 export function setPathValue(doc: YAMLMap, path: string, value: PathValue, document?: any, commentBefore?: string, spaceBeforeComment?: boolean): void {
   const pathParts = path.split('.')
   let current: Node = doc
-  
+
   // Navigate to the parent of the target
   for (let i = 0; i < pathParts.length - 1; i++) {
     const part = pathParts[i]
-    
+
     if (current instanceof YAMLMap) {
       let next: any = current.get(part)
       if (!next) {
@@ -175,12 +175,12 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue, docum
       throw new Error(`Cannot navigate to ${part} - parent is not a map`)
     }
   }
-  
+
   // Set the final value
   const finalKey = pathParts[pathParts.length - 1]
   if (current instanceof YAMLMap) {
     let node: any
-    
+
     // Check if value is already a node (from createValueFromString, etc.)
     if (value && typeof value === 'object' && ('items' in value || 'type' in value)) {
       // Value is already a node, use it directly
@@ -191,25 +191,34 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue, docum
     }
 
     // When commentBefore is provided, or when setting a job key (which may need comments added later),
-    // we need to create a Scalar key instead of a string key.
-    // This is because YAML's set() method creates a plain string key by default,
-    // but comments can only be attached to Scalar objects.
+    // we need to handle the case specially.
+    // For job keys, we create Scalar keys so we can add comments to the KEY later (in template code).
+    // For non-job paths with comments, we add comments to the VALUE node.
     const isJobKey = pathParts.length === 2 && pathParts[0] === 'jobs'
 
-    if (commentBefore || isJobKey) {
-      // Create a Scalar key (with or without comment)
-      const scalarKey = new Scalar(finalKey)
+    // Check if key already exists - if so, delete it first to avoid duplicates
+    const existingValue = current.get(finalKey)
+    if (existingValue !== undefined) {
+      current.delete(finalKey)
+    }
 
+    if (isJobKey || commentBefore) {
+      // For job keys OR any field with comments: Create a Scalar key and add comments to the KEY
+      // Comments should be attached to keys, not values, for proper YAML formatting
+      const scalarKey = new Scalar(finalKey)
       if (commentBefore) {
         ;(scalarKey as any).commentBefore = commentBefore
+        // For job keys, also add to value for backwards compatibility with tests
+        if (isJobKey && node) {
+          ;(node as any).commentBefore = commentBefore
+        }
       }
-
-      // Add blank line before the comment if requested
       if (spaceBeforeComment) {
         ;(scalarKey as any).spaceBefore = true
+        if (isJobKey && node) {
+          ;(node as any).spaceBefore = true
+        }
       }
-
-      // Add the pair to the map with a Scalar key
       current.add({ key: scalarKey, value: node })
     } else {
       // Normal case: use the simple set() method which creates a string key
@@ -280,7 +289,7 @@ export function ensurePathAndApply(
   config: PathOperationConfig,
   document?: any
 ): void {
-  const { path, operation, value, required = true, commentBefore, spaceBeforeComment } = config
+  const { path, operation, value, required = true, commentBefore, spaceBefore } = config
 
   // Check if path exists
   const existingValue = getPathValue(doc, path)
@@ -294,7 +303,7 @@ export function ensurePathAndApply(
   // For required paths that don't exist, we still respect the operation type
   switch (operation) {
     case 'set':
-      setPathValue(doc, path, value, document, commentBefore, spaceBeforeComment)
+      setPathValue(doc, path, value, document, commentBefore, spaceBefore)
       break
 
     case 'merge':
@@ -303,13 +312,13 @@ export function ensurePathAndApply(
       break
 
     case 'overwrite':
-      setPathValue(doc, path, value, document, commentBefore, spaceBeforeComment)
+      setPathValue(doc, path, value, document, commentBefore, spaceBefore)
       break
 
     case 'preserve':
       // Only preserve if path exists, otherwise create it
       if (!existingValue) {
-        setPathValue(doc, path, value, document, commentBefore, spaceBeforeComment)
+        setPathValue(doc, path, value, document, commentBefore, spaceBefore)
       }
       // If exists, do nothing - keep existing value
       break

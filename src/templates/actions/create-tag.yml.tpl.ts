@@ -1,6 +1,7 @@
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import fs from 'fs'
 import dedent from 'dedent'
+import { logger } from '../../utils/logger.js'
 // Template for the Tag GitHub Action
 const tagActionTemplate = (ctx: any) => {
   return dedent`name: 'Tag Version'
@@ -106,7 +107,7 @@ export const generate = (ctx: PinionContext) =>
       const filePath = '.github/actions/create-tag/action.yml'
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
-      console.log(`${status} ${filePath}`)
+      logger.verbose(`${status} ${filePath}`)
       return ctx
     })
     .then(renderTemplate(tagActionTemplate, toFile('.github/actions/create-tag/action.yml')))

@@ -3,6 +3,7 @@ import { IdempotencyManager } from '../utils/idempotency.js'
 import { PipecraftConfig } from '../types/index.js'
 import { readFileSync, existsSync } from 'fs'
 import { parse } from 'yaml'
+import { logger } from '../utils/logger.js'
 
 // Import individual workflow templates
 import { generate as generateTagWorkflow } from '../templates/actions/create-tag.yml.tpl.js'
@@ -42,8 +43,8 @@ const defaultConfig = {
 export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPipelinePath?: string, config?: any }) =>
   Promise.resolve(ctx)
     .then((ctx) => {
-      console.log('🔧 Generating GitHub Actions...')
-      
+      logger.info('🔧 Generating GitHub Actions...')
+
       // Load existing pipeline if provided
       let existingPipeline = null
       let existingPipelineContent = null
@@ -51,12 +52,12 @@ export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPip
         try {
           existingPipelineContent = readFileSync(ctx.pipelinePath, 'utf8')
           existingPipeline = parse(existingPipelineContent)
-          console.log(`📖 Loaded existing pipeline from: ${ctx.pipelinePath}`)
+          logger.verbose(`📖 Loaded existing pipeline from: ${ctx.pipelinePath}`)
         } catch (error) {
-          console.warn(`⚠️  Failed to load existing pipeline: ${error}`)
+          logger.warn(`⚠️  Failed to load existing pipeline: ${error}`)
         }
       }
-      
+
       return { ...ctx, ...defaultConfig, ...ctx.config, ...ctx, existingPipeline, existingPipelineContent, outputPipelinePath: ctx.outputPipelinePath }
     })
     .then((ctx) => {
@@ -75,6 +76,6 @@ export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPip
       return generatePathBasedPipeline(ctx)
     })
     .then((ctx) => {
-      console.log('✅ Generated workflows in: .github/workflows')
+      logger.success('✅ Generated workflows in: .github/workflows')
       return ctx
     })

@@ -1,12 +1,13 @@
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
-import { parseDocument, stringify, Scalar } from 'yaml'
+import { parseDocument, stringify, Scalar, YAMLMap } from 'yaml'
 import fs from 'fs'
 import {
   applyPathOperations,
   PathOperationConfig,
   createValueFromString
 } from '../../utils/ast-path-operations.js'
-import dedent from 'dedent';
+import dedent from 'dedent'
+import { logger } from '../../utils/logger.js'
 
 /**
  * Path-based pipeline generator
@@ -38,8 +39,8 @@ const getPipecraftOwnedJobs = (branchFlow: string[], domains: Record<string, any
     'changes',
     'version',
     'tag',
-    'promote',  // Single promote job instead of multiple promote-to-{target} jobs
-    'release'   // GitHub release creation on final branch
+    'promote',   // Promotion job - triggers workflow on next branch
+    'release'    // GitHub release creation on final branch
   ])
 
   // Add domain-based jobs (test-*, deploy-*, remote-test-*) based on flags
@@ -65,28 +66,33 @@ const isPipecraftJob = (jobName: string, branchFlow: string[]): boolean => {
  */
 export const createPathBasedPipeline = (ctx: any) => {
   const branchFlow = ctx.branchFlow || ['develop', 'staging', 'main']
-  console.log('🔍 Branch flow from context:', branchFlow)
-  console.log('🔍 Context keys:', Object.keys(ctx))
-  
+  logger.debug('🔍 Branch flow from context:', branchFlow)
+  logger.debug('🔍 Context keys:', Object.keys(ctx))
+
   // Use existing pipeline from context or start with base template
   let doc: any
   let hasExistingPipeline = false
-  
+
   if (ctx.existingPipelineContent) {
     // Parse the original YAML content WITHOUT source tokens
     // This prevents old comments from being preserved when we rebuild
     doc = parseDocument(ctx.existingPipelineContent)
+    // Clear any document-level comment that might have been at the top of the file
+    // We'll re-add the header comment via operations
+    if (doc.commentBefore) {
+      doc.commentBefore = undefined
+    }
     hasExistingPipeline = true
-    console.log('🔄 Merging with existing pipeline from existingPipelineContent')
+    logger.verbose('🔄 Merging with existing pipeline')
   } else if (ctx.existingPipeline) {
     // Convert existing pipeline object to YAML string first
     const existingYaml = stringify(ctx.existingPipeline)
     doc = parseDocument(existingYaml)
     hasExistingPipeline = true
-    console.log('🔄 Merging with existing pipeline from existingPipeline object')
+    logger.verbose('🔄 Merging with existing pipeline')
   } else {
     doc = parseDocument(getBaseTemplate(ctx))
-    console.log('📝 Creating new pipeline')
+    logger.verbose('📝 Creating new pipeline')
   }
   
   if (!doc.contents) {
@@ -97,11 +103,41 @@ export const createPathBasedPipeline = (ctx: any) => {
   const operations: PathOperationConfig[] = [
 
     // =============================================================================
+    // WORKFLOW HEADER COMMENT
+    // =============================================================================
+    {
+      path: 'name',
+      operation: 'preserve',
+      value: 'Pipeline',
+      required: true,
+      commentBefore: `=============================================================================
+ PIPECRAFT MANAGED WORKFLOW
+=============================================================================
+
+ ✅ YOU CAN CUSTOMIZE:
+   - test-*** jobs for each domain
+   - deploy-*** jobs for each domain
+   - remote-test-*** jobs for each domain
+   - Workflow name
+
+ ⚠️  PIPECRAFT MANAGES (do not modify):
+   - Workflow triggers, job dependencies, and conditionals
+   - Changes detection, version calculation, and tag creation
+   - CreatePR, branch management, promote, and release jobs
+
+ Running 'pipecraft generate' updates managed sections while preserving
+ your customizations in test/deploy/remote-test jobs.
+
+ 📖 Learn more: https://docs.pipecraft.dev
+=============================================================================`
+    },
+
+    // =============================================================================
     // WORKFLOW METADATA - Name and run identification
     // =============================================================================
     {
       path: 'run-name',
-      operation: 'set',
+      operation: 'preserve',
       value: `\${{ github.ref_name }} #\${{ inputs.run_number || github.run_number }}\${{ inputs.version && format(' - {0}', inputs.version) || '' }}`,
       required: true
     },
@@ -109,11 +145,24 @@ export const createPathBasedPipeline = (ctx: any) => {
     // =============================================================================
     // WORKFLOW TRIGGERS - Define when the pipeline runs
     // =============================================================================
-    // The pipeline should only run on:
-    // 1. Push to develop/staging/main (from PR merge or promotion)
-    // 2. Manual trigger via workflow_dispatch
+    // The pipeline runs on:
+    // 1. pull_request (opened/synchronize/reopened) targeting initial branch only
+    //    - Excludes 'closed' type to avoid duplicate runs when PR is merged
+    //    - Only targets initial branch (e.g., develop) to avoid duplicates
+    //    - Automated PRs (develop→staging, staging→main) don't trigger (wrong target)
+    //    - Only runs changes detection + tests (no versioning/tagging/promotion)
+    // 2. push to branch flow branches - Runs full pipeline after PR merge
+    //    - Includes versioning, tagging, PR creation to next branch, and promotion
+    // 3. workflow_dispatch - Manual trigger with full pipeline
+    // 4. workflow_call - Can be called from other workflows
     //
-    // NOT on pull_request events - we only want to run after the PR is merged
+    // Flow example:
+    //   feature/xyz → PR to develop → Tests run (targets develop ✓)
+    //   PR merged → Push to develop → Full pipeline (version + tag + createpr)
+    //   Pipecraft creates PR: develop → staging (targets staging, skipped ✓)
+    //   Auto-merge → Push to staging → Full pipeline continues
+    //   Pipecraft creates PR: staging → main (targets main, skipped ✓)
+    //   Auto-merge → Push to main → Full pipeline completes
 
     {
       path: 'on.workflow_dispatch.inputs.version',
@@ -146,9 +195,51 @@ export const createPathBasedPipeline = (ctx: any) => {
       required: true
     },
     {
+      path: 'on.workflow_call.inputs.version',
+      operation: 'set',
+      value: {
+        description: 'The version to deploy',
+        required: false,
+        type: 'string'
+      },
+      required: true
+    },
+    {
+      path: 'on.workflow_call.inputs.baseRef',
+      operation: 'set',
+      value: {
+        description: 'The base reference for comparison',
+        required: false,
+        type: 'string'
+      },
+      required: true
+    },
+    {
+      path: 'on.workflow_call.inputs.run_number',
+      operation: 'set',
+      value: {
+        description: 'The original run number from develop branch',
+        required: false,
+        type: 'string'
+      },
+      required: true
+    },
+    {
       path: 'on.push.branches',
       operation: 'set',
       value: branchFlow,
+      required: true
+    },
+    {
+      path: 'on.pull_request.types',
+      operation: 'set',
+      value: ['opened', 'synchronize', 'reopened'],
+      required: true
+    },
+    {
+      path: 'on.pull_request.branches',
+      operation: 'set',
+      value: [ctx.initialBranch || branchFlow[0]],
       required: true
     },
     
@@ -175,8 +266,9 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       `, ctx),
       commentBefore: dedent`
         =============================================================================
-         CHANGES DETECTION
+         CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
         =============================================================================
+         This job detects which domains have changed and sets outputs for downstream jobs.
       `,
       required: true
     },
@@ -208,8 +300,10 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
 
 
         =============================================================================
-         TESTING JOBS
+         TESTING JOBS (✅ Customize these with your test logic)
         =============================================================================
+         These jobs run tests for each domain when changes are detected.
+         Replace the TODO comments with your actual test commands.
       ` : undefined,
       required: true
     })),
@@ -219,11 +313,13 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       operation: 'overwrite',
       commentBefore: dedent`
         =============================================================================
-         VERSIONING
+         VERSIONING (⚠️  Managed by Pipecraft - do not modify)
         =============================================================================
+         Calculates the next version based on conventional commits and semver rules.
+         Only runs on push events (skipped on pull requests).
       `,
       value: createValueFromString(`
-        if: \${{ always() && (${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result == 'success'`).join(' || ')}) && ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' && ')} }}
+        if: \${{ always() && github.event_name != 'pull_request' && (${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result == 'success'`).join(' || ')}) && ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' && ')} }}
         needs: [ changes, ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `test-${domain}`).join(', ')} ]
         runs-on: ubuntu-latest
         steps:
@@ -245,8 +341,10 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       operation: 'overwrite' as const,
       commentBefore: index === 0 ? dedent`
         =============================================================================
-         DEPLOYMENT JOBS
+         DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
         =============================================================================
+         These jobs deploy each domain when changes are detected and tests pass.
+         Replace the TODO comments with your actual deployment commands.
       ` : undefined,
       spaceBefore: index === 0 ? true : undefined,
       value: createValueFromString(`
@@ -269,8 +367,10 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       operation: 'overwrite' as const,
       commentBefore: index === 0 ? dedent`
         =============================================================================
-         REMOTE TESTING JOBS
+         REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
         =============================================================================
+         These jobs test deployed services remotely after deployment succeeds.
+         Replace the TODO comments with your actual remote testing commands.
       ` : undefined,
       spaceBefore: index === 0 ? true : undefined,
       value: createValueFromString(`
@@ -314,6 +414,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
           needs: [ ${needsArray.join(', ')} ]
           if: \${{
               always() &&
+              github.event_name != 'pull_request' &&
               github.ref_name == '${ctx.initialBranch || branchFlow[0]}' &&
               needs.version.result == 'success' &&
               (
@@ -334,8 +435,10 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       spaceBefore: true,
       commentBefore: dedent`
         =============================================================================
-         TAG & PROMOTE
+         TAG & PROMOTE (⚠️  Managed by Pipecraft - do not modify)
         =============================================================================
+         Creates a git tag with the calculated version on the initial branch.
+         Only runs on push events after successful tests and deployments.
       `,
       required: true
     },
@@ -369,11 +472,11 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
               token: \${{ secrets.GITHUB_TOKEN }}
       `, ctx),
       spaceBefore: true,
-      commentBefore: dedent`
-        =============================================================================
-         PROMOTION JOB
-        =============================================================================
-      `,
+      commentBefore: `=============================================================================
+ PROMOTION JOB (⚠️  Managed by Pipecraft - do not modify)
+=============================================================================
+ Triggers the next branch's workflow after successful versioning and tagging.
+ Passes version and run_number to maintain traceability across branches.`,
       required: true
     },
 
@@ -400,11 +503,11 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
               token: \${{ secrets.GITHUB_TOKEN }}
       `, ctx),
       spaceBefore: true,
-      commentBefore: dedent`
-        =============================================================================
-         RELEASE JOB (Main Branch Only)
-        =============================================================================
-      `,
+      commentBefore: `=============================================================================
+ RELEASE JOB (⚠️  Managed by Pipecraft - do not modify)
+=============================================================================
+ Creates a GitHub release on the final branch with release notes.
+ Only runs after successful versioning and tagging on the final branch.`,
       required: true
     },
 
@@ -432,9 +535,12 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
     const jobsNode = doc.contents.get('jobs')
     if (jobsNode && jobsNode.items) {
       originalJobOrder = getJobKeysInOrder(jobsNode)
-      console.log('📋 Original job order:', originalJobOrder)
+      logger.debug('📋 Original job order:', originalJobOrder)
     }
   }
+
+  // Deprecated jobs that should be removed (old promotion strategy)
+  const DEPRECATED_JOBS = new Set(['createpr', 'branch'])
 
   // Collect user jobs (non-Pipecraft jobs) to preserve them
   const userJobs = new Map<string, any>()
@@ -443,37 +549,55 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
     if (jobsNode && jobsNode.items) {
       for (const item of jobsNode.items) {
         const jobName = item.key?.toString() || item.key?.value
-        if (jobName && !PIPECRAFT_OWNED_JOBS.has(jobName)) {
+        // Skip deprecated jobs - don't preserve them
+        if (jobName && !PIPECRAFT_OWNED_JOBS.has(jobName) && !DEPRECATED_JOBS.has(jobName)) {
           userJobs.set(jobName, item.value)
         }
       }
       if (userJobs.size > 0) {
-        console.log(`📋 Preserving ${userJobs.size} user jobs: ${Array.from(userJobs.keys()).join(', ')}`)
+        logger.verbose(`📋 Preserving ${userJobs.size} user jobs: ${Array.from(userJobs.keys()).join(', ')}`)
       }
     }
   }
 
-  // Clear the entire jobs section to rebuild in correct order
+  // To ensure proper key order (name, run-name, on, jobs), we need to:
+  // 1. Extract all values we care about
+  // 2. Clear the document
+  // 3. Re-add them in the correct order
+
+  // Save existing values that should be preserved
+  const existingOn = doc.contents.get('on')
+  const existingJobs = doc.contents.get('jobs')
+
+  // Clear the document to rebuild with correct key order
+  doc.contents.items = []
+
+  // Apply root-level operations to set name, run-name, on
+  const rootOperations = operations.filter(op => !op.path.startsWith('jobs.'))
+  applyPathOperations(doc.contents, rootOperations, doc)
+
+  // If 'on' wasn't set by operations but existed before, restore it
+  if (!doc.contents.has('on') && existingOn) {
+    doc.contents.set('on', existingOn)
+  }
+
+  // Ensure 'jobs' key exists (will be populated later)
+  if (!doc.contents.has('jobs')) {
+    doc.contents.set('jobs', new YAMLMap())
+  }
+
+  // Clear the jobs section to rebuild in correct order
   const jobsNode = doc.contents.get('jobs')
   if (jobsNode && jobsNode.items) {
     jobsNode.items = []
     // Clear any orphaned comments that were attached to the jobs node
-    // When we parse YAML with comments and clear items, comments can become orphaned on the parent
     delete (jobsNode as any).commentBefore
     delete (jobsNode as any).comment
   }
 
-  // Apply all operations in order - this creates/overwrites Pipecraft jobs
-  // The 'overwrite' operation handles both create and update cases automatically
-  applyPathOperations(doc.contents, operations, doc)
-
-  // Remove old trigger types that are no longer used (workflow_call, pull_request)
-  // We only want push and workflow_dispatch triggers
-  const onNode = doc.contents.get('on')
-  if (onNode && onNode.delete) {
-    onNode.delete('workflow_call')
-    onNode.delete('pull_request')
-  }
+  // Apply job operations
+  const jobOperations = operations.filter(op => op.path.startsWith('jobs.'))
+  applyPathOperations(doc.contents, jobOperations, doc)
 
   // Now we need to reorder jobs to match the original order
   // Collect all current jobs (Pipecraft jobs that were just created)
@@ -496,8 +620,15 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
   // For each job in the original order:
   // - If it's a Pipecraft job, use the newly created version from currentJobs
   // - If it's a user job, use the preserved version from userJobs
+  // - Skip deprecated jobs
   // IMPORTANT: Ensure all keys are Scalars (not strings) so we can add comments later
   for (const jobName of originalJobOrder) {
+    // Skip deprecated jobs
+    if (DEPRECATED_JOBS.has(jobName)) {
+      logger.verbose(`🗑️  Removing deprecated job: ${jobName}`)
+      continue
+    }
+
     if (PIPECRAFT_OWNED_JOBS.has(jobName)) {
       // It's a Pipecraft job - use the newly created version
       const item = currentJobs.get(jobName)
@@ -533,7 +664,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
   if (finalJobsNode && finalJobsNode.items && finalJobsNode.items.length > 0) {
     const jobNames = getJobKeysInOrder(finalJobsNode)
     if (jobNames.length > 0) {
-      console.log('📋 Final job order:', jobNames)
+      logger.debug('📋 Final job order:', jobNames)
     }
 
     // Remove duplicate comment headers
@@ -697,7 +828,7 @@ export const generate = (ctx: PinionContext & { existingPipeline?: any, outputPi
       // Provide user feedback about file operation
       const outputPath = ctx.outputPipelinePath || '.github/workflows/pipeline.yml'
       const status = ctx.mergeStatus === 'merged' ? '🔄 Merged with existing' : '📝 Created new'
-      console.log(`${status} ${outputPath}`)
+      logger.verbose(`${status} ${outputPath}`)
       return ctx
     })
     .then(renderTemplate(

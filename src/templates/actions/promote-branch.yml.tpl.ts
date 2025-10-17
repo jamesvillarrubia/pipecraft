@@ -1,6 +1,7 @@
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import fs from 'fs'
 import dedent from 'dedent'
+import { logger } from '../../utils/logger.js'
 
 // Template for the Promote Branch GitHub Action
 // This action handles branch promotions via temporary branches + PRs
@@ -358,7 +359,7 @@ export const generate = (ctx: PinionContext) =>
       const filePath = '.github/actions/promote-branch/action.yml'
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
-      console.log(`${status} ${filePath}`)
+      logger.verbose(`${status} ${filePath}`)
       return ctx
     })
     .then(renderTemplate(promoteBranchActionTemplate, toFile('.github/actions/promote-branch/action.yml')))
