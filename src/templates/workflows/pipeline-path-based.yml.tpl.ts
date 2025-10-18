@@ -74,14 +74,10 @@ export const createPathBasedPipeline = (ctx: any) => {
   let hasExistingPipeline = false
 
   if (ctx.existingPipelineContent) {
-    // Parse the original YAML content WITHOUT source tokens
-    // This prevents old comments from being preserved when we rebuild
+    // Parse the original YAML content to preserve structure and comments
     doc = parseDocument(ctx.existingPipelineContent)
-    // Clear any document-level comment that might have been at the top of the file
-    // We'll re-add the header comment via operations
-    if (doc.commentBefore) {
-      doc.commentBefore = undefined
-    }
+    // Note: We save document-level comments later and selectively restore them
+    // Don't clear doc.commentBefore here - we'll handle it after saving
     hasExistingPipeline = true
     logger.verbose('🔄 Merging with existing pipeline')
   } else if (ctx.existingPipeline) {
@@ -553,6 +549,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
   const DEPRECATED_JOBS = new Set(['createpr', 'branch'])
 
   // Collect user jobs (non-Pipecraft jobs) to preserve them
+  // Save the entire item (key, value, and comments) not just the value
   const userJobs = new Map<string, any>()
   if (doc.contents.get('jobs')) {
     const jobsNode = doc.contents.get('jobs')
@@ -561,7 +558,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         const jobName = item.key?.toString() || item.key?.value
         // Skip deprecated jobs - don't preserve them
         if (jobName && !PIPECRAFT_OWNED_JOBS.has(jobName) && !DEPRECATED_JOBS.has(jobName)) {
-          userJobs.set(jobName, item.value)
+          // Save the entire item to preserve comments on keys
+          userJobs.set(jobName, item)
         }
       }
       if (userJobs.size > 0) {
@@ -580,6 +578,10 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
   const existingRunName = doc.contents.get('run-name')
   const existingOn = doc.contents.get('on')
   const existingJobs = doc.contents.get('jobs')
+
+  // Save jobs node comments (before we rebuild)
+  const jobsNodeCommentBefore = existingJobs ? (existingJobs as any).commentBefore : undefined
+  const jobsNodeComment = existingJobs ? (existingJobs as any).comment : undefined
 
   // Save document-level comments (user comments at the top)
   // Note: YAML stores document-level comments on doc.commentBefore, not doc.contents.commentBefore
@@ -658,28 +660,31 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
 
   // Replace values for preserve operations that had existing values
   // This maintains the order and comments from operations, but uses the preserved values
-  if (existingName !== undefined && existingName !== null) {
-    // Find the 'name' key and replace its value
-    const nameIndex = doc.contents.items.findIndex((item: any) => {
-      const key = item.key
-      if (typeof key === 'string') return key === 'name'
-      if (key && typeof key.value === 'string') return key.value === 'name'
-      return false
-    })
-    if (nameIndex >= 0) {
-      doc.contents.items[nameIndex].value = existingName
+  // Only do this if there was an actual existing pipeline (not from base template)
+  if (hasExistingPipeline) {
+    if (existingName !== undefined && existingName !== null) {
+      // Find the 'name' key and replace its value
+      const nameIndex = doc.contents.items.findIndex((item: any) => {
+        const key = item.key
+        if (typeof key === 'string') return key === 'name'
+        if (key && typeof key.value === 'string') return key.value === 'name'
+        return false
+      })
+      if (nameIndex >= 0) {
+        doc.contents.items[nameIndex].value = existingName
+      }
     }
-  }
-  if (existingRunName !== undefined && existingRunName !== null) {
-    // Find the 'run-name' key and replace its value
-    const runNameIndex = doc.contents.items.findIndex((item: any) => {
-      const key = item.key
-      if (typeof key === 'string') return key === 'run-name'
-      if (key && typeof key.value === 'string') return key.value === 'run-name'
-      return false
-    })
-    if (runNameIndex >= 0) {
-      doc.contents.items[runNameIndex].value = existingRunName
+    if (existingRunName !== undefined && existingRunName !== null) {
+      // Find the 'run-name' key and replace its value
+      const runNameIndex = doc.contents.items.findIndex((item: any) => {
+        const key = item.key
+        if (typeof key === 'string') return key === 'run-name'
+        if (key && typeof key.value === 'string') return key.value === 'run-name'
+        return false
+      })
+      if (runNameIndex >= 0) {
+        doc.contents.items[runNameIndex].value = existingRunName
+      }
     }
   }
 
@@ -708,11 +713,9 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
 
   // Clear the jobs section to rebuild in correct order
   const jobsNode = doc.contents.get('jobs')
+  
   if (jobsNode && jobsNode.items) {
     jobsNode.items = []
-    // Clear any orphaned comments that were attached to the jobs node
-    delete (jobsNode as any).commentBefore
-    delete (jobsNode as any).comment
   }
 
   // Apply job operations
@@ -760,10 +763,14 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         jobsNode.items.push(item)
       }
     } else {
-      // It's a user job - re-insert from preserved values
-      const jobValue = userJobs.get(jobName)
-      if (jobValue && jobsNode) {
-        jobsNode.set(jobName, jobValue)
+      // It's a user job - re-insert the entire item (with comments)
+      const jobItem = userJobs.get(jobName)
+      if (jobItem && jobsNode) {
+        // Ensure the key is a Scalar, not a string
+        if (typeof jobItem.key === 'string') {
+          jobItem.key = new Scalar(jobItem.key)
+        }
+        jobsNode.items.push(jobItem)
       }
     }
   }
@@ -779,21 +786,35 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
     }
   }
   
-  // Log final job order (after operations are applied)
+  // Get the final jobs node to restore comments
   const finalJobsNode = doc.contents.get('jobs')
+  
+  // Restore user comments on the jobs node (if they weren't Pipecraft comments)
+  if (jobsNodeCommentBefore && !isPipecraftComment(jobsNodeCommentBefore) && finalJobsNode) {
+    ;(finalJobsNode as any).commentBefore = jobsNodeCommentBefore
+    logger.debug('✅ Restored comment to jobs node')
+  }
+  if (jobsNodeComment && !isPipecraftComment(jobsNodeComment) && finalJobsNode) {
+    ;(finalJobsNode as any).comment = jobsNodeComment
+  }
+  
+  // Log final job order (after operations are applied)
   if (finalJobsNode && finalJobsNode.items && finalJobsNode.items.length > 0) {
     const jobNames = getJobKeysInOrder(finalJobsNode)
     if (jobNames.length > 0) {
       logger.debug('📋 Final job order:', jobNames)
     }
 
-    // Remove duplicate comment headers
-    // When we reuse existing job values, they may carry old comments from parsing
-    // We want to keep only the comments we explicitly set on keys
+    // Remove duplicate Pipecraft comment headers from values
+    // When we reuse existing job values, they may carry old Pipecraft comments from parsing
+    // We want to clear Pipecraft comments but preserve user comments
     for (const item of finalJobsNode.items) {
       if (item.value && (item.value as any).commentBefore) {
-        // Clear commentBefore from values - comments should only be on keys
-        delete (item.value as any).commentBefore
+        const valueComment = (item.value as any).commentBefore
+        // Only clear if it's a Pipecraft-managed comment
+        if (isPipecraftComment(valueComment)) {
+          delete (item.value as any).commentBefore
+        }
       }
     }
 
