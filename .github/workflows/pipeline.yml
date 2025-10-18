@@ -19,6 +19,7 @@
 # 📖 Learn more: https://docs.pipecraft.dev
 #=============================================================================
 name: Pipeline
+
 run-name: "${{ github.ref_name }} #${{ inputs.run_number || github.run_number }}${{ inputs.version && format(' - {0}', inputs.version) || '' }}"
 on:
   workflow_dispatch:
@@ -124,7 +125,6 @@ jobs:
   # Calculates the next version based on conventional commits and semver rules.
   # Only runs on push events (skipped on pull requests).
   version:
-
     if: ${{
         always() &&
         github.event_name != 'pull_request' &&
@@ -152,7 +152,6 @@ jobs:
   # DEPLOYMENT JOBS
   #=============================================================================
   deploy-core:
-
     needs: [ version, changes ]
     if: ${{ always() && needs.version.result == 'success' && needs.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
@@ -167,7 +166,6 @@ jobs:
   # REMOTE TESTING JOBS
   #=============================================================================
   remote-test-core:
-
     needs: [ deploy-core, changes ]
     if: ${{ always() }}
     runs-on: ubuntu-latest
@@ -185,7 +183,6 @@ jobs:
   # Creates a git tag with the calculated version on the initial branch.
   # Only runs on push events after successful tests and deployments.
   tag:
-
     # Needs all deploy and/or remote test jobs to succeed or be skipped
     # Needs at least one domain to succeed
     needs: [ version, deploy-core, remote-test-core ]
@@ -216,7 +213,6 @@ jobs:
   # Triggers the next branch's workflow after successful versioning and tagging.
   # Passes version and run_number to maintain traceability across branches.
   promote:
-
     # Only runs on push or manual workflow_dispatch events to branches that can promote
     # Waits for version/tag if they run, but doesn't fail if they're skipped
     # Needs all deploy and/or remote test jobs to succeed

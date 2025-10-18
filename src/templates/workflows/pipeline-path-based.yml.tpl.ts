@@ -104,32 +104,19 @@ export const createPathBasedPipeline = (ctx: any) => {
 
     // =============================================================================
     // WORKFLOW HEADER COMMENT
+    // Note: This comment should be preserved if user has custom comments at
+    // document level, only job-level managed headers should replace user comments
     // =============================================================================
     {
       path: 'name',
       operation: 'preserve',
-      value: 'Pipeline',
-      required: true,
-      commentBefore: `=============================================================================
- PIPECRAFT MANAGED WORKFLOW
-=============================================================================
-
- ✅ YOU CAN CUSTOMIZE:
-   - test-*** jobs for each domain
-   - deploy-*** jobs for each domain
-   - remote-test-*** jobs for each domain
-   - Workflow name
-
- ⚠️  PIPECRAFT MANAGES (do not modify):
-   - Workflow triggers, job dependencies, and conditionals
-   - Changes detection, version calculation, and tag creation
-   - CreatePR, branch management, promote, and release jobs
-
- Running 'pipecraft generate' updates managed sections while preserving
- your customizations in test/deploy/remote-test jobs.
-
- 📖 Learn more: https://docs.pipecraft.dev
-=============================================================================`
+      value: (() => {
+        const nameScalar = new Scalar('Pipeline')
+        nameScalar.type = Scalar.QUOTE_DOUBLE
+        return nameScalar
+      })(),
+      required: true
+      // Note: No commentBefore here - we'll add it only if no user comment exists
     },
 
     // =============================================================================
@@ -138,8 +125,13 @@ export const createPathBasedPipeline = (ctx: any) => {
     {
       path: 'run-name',
       operation: 'preserve',
-      value: `\${{ github.ref_name }} #\${{ inputs.run_number || github.run_number }}\${{ inputs.version && format(' - {0}', inputs.version) || '' }}`,
-      required: true
+      value: (() => {
+        const runNameScalar = new Scalar(`\${{ github.ref_name }} #\${{ inputs.run_number || github.run_number }}\${{ inputs.version && format(' - {0}', inputs.version) || '' }}`)
+        runNameScalar.type = Scalar.QUOTE_DOUBLE
+        return runNameScalar
+      })(),
+      required: true,
+      spaceBefore: true
     },
 
     // =============================================================================
@@ -163,6 +155,15 @@ export const createPathBasedPipeline = (ctx: any) => {
     //   Auto-merge → Push to staging → Full pipeline continues
     //   Pipecraft creates PR: staging → main (targets main, skipped ✓)
     //   Auto-merge → Push to main → Full pipeline completes
+
+    // Ensure 'on' key exists with proper spacing (nested operations below will populate it)
+    {
+      path: 'on',
+      operation: 'set',
+      value: {},
+      required: true,
+      spaceBefore: true
+    },
 
     {
       path: 'on.workflow_dispatch.inputs.version',
@@ -249,7 +250,16 @@ export const createPathBasedPipeline = (ctx: any) => {
     // These are the core Pipecraft jobs that should always use the latest template
     // version. Using 'overwrite' operation ensures users get bug fixes and improvements.
     // These jobs are essential for Pipecraft functionality and should not be customized.
-    
+
+    // Ensure 'jobs' key exists with proper spacing (nested operations below will populate it)
+    {
+      path: 'jobs',
+      operation: 'set',
+      value: {},
+      required: true,
+      spaceBefore: true
+    },
+
     {
       path: 'jobs.changes',
       operation: 'overwrite',
@@ -565,9 +575,44 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
   // 2. Clear the document
   // 3. Re-add them in the correct order
 
-  // Save existing values that should be preserved
+  // Save existing values and comments that should be preserved
+  const existingName = doc.contents.get('name')
+  const existingRunName = doc.contents.get('run-name')
   const existingOn = doc.contents.get('on')
   const existingJobs = doc.contents.get('jobs')
+
+  // Save document-level comments (user comments at the top)
+  // Note: YAML stores document-level comments on doc.commentBefore, not doc.contents.commentBefore
+  const docCommentBefore = (doc as any).commentBefore
+  const docComment = (doc as any).comment
+
+  // Save user comments on keys (but not Pipecraft-managed comments)
+  const savedComments = new Map<string, { commentBefore?: string; comment?: string }>()
+
+  const isPipecraftComment = (comment: string | undefined): boolean => {
+    if (!comment) return false
+    const lowerComment = comment.toLowerCase()
+    return lowerComment.includes('pipecraft') ||
+           lowerComment.includes('managed by pipecraft') ||
+           lowerComment.includes('do not modify')
+  }
+
+  for (const item of doc.contents.items) {
+    const keyName = typeof item.key === 'string' ? item.key : item.key?.value
+    if (keyName) {
+      const keyCommentBefore = (item.key as any)?.commentBefore
+      const keyComment = (item.key as any)?.comment
+
+      // Only save non-Pipecraft comments
+      if ((keyCommentBefore && !isPipecraftComment(keyCommentBefore)) ||
+          (keyComment && !isPipecraftComment(keyComment))) {
+        savedComments.set(keyName, {
+          commentBefore: keyCommentBefore && !isPipecraftComment(keyCommentBefore) ? keyCommentBefore : undefined,
+          comment: keyComment && !isPipecraftComment(keyComment) ? keyComment : undefined
+        })
+      }
+    }
+  }
 
   // Clear the document to rebuild with correct key order
   doc.contents.items = []
@@ -576,15 +621,90 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
   const rootOperations = operations.filter(op => !op.path.startsWith('jobs.'))
   applyPathOperations(doc.contents, rootOperations, doc)
 
-  // If 'on' wasn't set by operations but existed before, restore it
-  if (!doc.contents.has('on') && existingOn) {
-    doc.contents.set('on', existingOn)
+  // Restore document-level comments (user comments at the top of file)
+  // Only restore if they're not Pipecraft comments
+  const hasUserDocComment = docCommentBefore && !isPipecraftComment(docCommentBefore)
+
+  if (hasUserDocComment) {
+    ;(doc as any).commentBefore = docCommentBefore
+  } else {
+    // No user comment at document level, add Pipecraft workflow header
+    const pipecraftHeader = `=============================================================================
+ PIPECRAFT MANAGED WORKFLOW
+=============================================================================
+
+ ✅ YOU CAN CUSTOMIZE:
+   - test-*** jobs for each domain
+   - deploy-*** jobs for each domain
+   - remote-test-*** jobs for each domain
+   - Workflow name
+
+ ⚠️  PIPECRAFT MANAGES (do not modify):
+   - Workflow triggers, job dependencies, and conditionals
+   - Changes detection, version calculation, and tag creation
+   - CreatePR, branch management, promote, and release jobs
+
+ Running 'pipecraft generate' updates managed sections while preserving
+ your customizations in test/deploy/remote-test jobs.
+
+ 📖 Learn more: https://docs.pipecraft.dev
+=============================================================================`
+    ;(doc as any).commentBefore = pipecraftHeader
   }
 
-  // Ensure 'jobs' key exists (will be populated later)
-  if (!doc.contents.has('jobs')) {
-    doc.contents.set('jobs', new YAMLMap())
+  if (docComment && !isPipecraftComment(docComment)) {
+    ;(doc as any).comment = docComment
   }
+
+  // Replace values for preserve operations that had existing values
+  // This maintains the order and comments from operations, but uses the preserved values
+  if (existingName !== undefined && existingName !== null) {
+    // Find the 'name' key and replace its value
+    const nameIndex = doc.contents.items.findIndex((item: any) => {
+      const key = item.key
+      if (typeof key === 'string') return key === 'name'
+      if (key && typeof key.value === 'string') return key.value === 'name'
+      return false
+    })
+    if (nameIndex >= 0) {
+      doc.contents.items[nameIndex].value = existingName
+    }
+  }
+  if (existingRunName !== undefined && existingRunName !== null) {
+    // Find the 'run-name' key and replace its value
+    const runNameIndex = doc.contents.items.findIndex((item: any) => {
+      const key = item.key
+      if (typeof key === 'string') return key === 'run-name'
+      if (key && typeof key.value === 'string') return key.value === 'run-name'
+      return false
+    })
+    if (runNameIndex >= 0) {
+      doc.contents.items[runNameIndex].value = existingRunName
+    }
+  }
+
+  // Restore user comments on keys (but don't overwrite Pipecraft comments)
+  for (const item of doc.contents.items) {
+    const keyName = typeof item.key === 'string' ? item.key : item.key?.value
+    if (keyName && savedComments.has(keyName)) {
+      const saved = savedComments.get(keyName)!
+      const currentKey = item.key
+
+      // Only restore user comments if current comment is Pipecraft-managed or missing
+      const currentCommentBefore = (currentKey as any)?.commentBefore
+      const currentComment = (currentKey as any)?.comment
+
+      if (saved.commentBefore && (!currentCommentBefore || !isPipecraftComment(currentCommentBefore))) {
+        ;(currentKey as any).commentBefore = saved.commentBefore
+      }
+      if (saved.comment && (!currentComment || !isPipecraftComment(currentComment))) {
+        ;(currentKey as any).comment = saved.comment
+      }
+    }
+  }
+
+  // Note: We don't restore 'on' or 'jobs' here because the operations already created them
+  // with proper spacing. Restoring them would overwrite the Scalar keys and lose spacing.
 
   // Clear the jobs section to rebuild in correct order
   const jobsNode = doc.contents.get('jobs')

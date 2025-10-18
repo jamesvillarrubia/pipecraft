@@ -202,9 +202,9 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue, docum
       current.delete(finalKey)
     }
 
-    if (isJobKey || commentBefore) {
-      // For job keys OR any field with comments: Create a Scalar key and add comments to the KEY
-      // Comments should be attached to keys, not values, for proper YAML formatting
+    if (isJobKey || commentBefore || spaceBeforeComment) {
+      // For job keys OR any field with comments/spacing: Create a Scalar key
+      // Comments and spacing should be attached to keys, not values, for proper YAML formatting
       const scalarKey = new Scalar(finalKey)
       if (commentBefore) {
         ;(scalarKey as any).commentBefore = commentBefore
