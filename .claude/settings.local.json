@@ -45,7 +45,11 @@
       "Bash(killall:*)",
       "Bash(pnpm pipecraft:*)",
       "Bash(pnpm test:unit:*)",
-      "Bash(timeout 120 pnpm test:*)"
+      "Bash(timeout 120 pnpm test:*)",
+      "Bash(pgrep:*)",
+      "Read(//dev/**)",
+      "Bash(pnpm test:coverage:*)",
+      "Bash(LOG_LEVEL=verbose pnpm test:*)"
     ],
     "deny": [],
     "ask": []
