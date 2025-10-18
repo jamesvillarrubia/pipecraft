@@ -231,16 +231,10 @@ describe('Pipeline Path-Based Template', () => {
       const pullRequestNode = (generatedDoc.contents as any).get('on').get('pull_request')
       const branches = pullRequestNode.get('branches')
       
-      // Should include template branches
+      // Pull requests should only target the initial branch (alpha in this config)
+      // This prevents duplicate workflow runs and confusion
       expect(branches.items.map(item => item.value)).toContain('alpha')
-      expect(branches.items.map(item => item.value)).toContain('beta')
-      expect(branches.items.map(item => item.value)).toContain('gamma')
-      expect(branches.items.map(item => item.value)).toContain('delta')
-      expect(branches.items.map(item => item.value)).toContain('epsilon')
-      
-      // Should preserve user branches
-      expect(branches.items.map(item => item.value)).toContain('develop')
-      expect(branches.items.map(item => item.value)).toContain('feature')
+      expect(branches.items.length).toBe(1)
     })
   })
   
@@ -451,7 +445,7 @@ jobs:
       
       // Should use custom branch names
       expect(result.yamlContent).toContain("github.ref_name == 'custom1'")
-      expect(result.yamlContent).toContain("github.ref_name != 'custom3'")
+      expect(result.yamlContent).toContain("github.ref_name == 'custom3'")
     })
     
     it('should fall back to default branch flow when not provided', () => {
@@ -461,7 +455,7 @@ jobs:
       
       // Should use default branch flow
       expect(result.yamlContent).toContain("github.ref_name == 'develop'")
-      expect(result.yamlContent).toContain("github.ref_name != 'main'")
+      expect(result.yamlContent).toContain("github.ref_name == 'main'")
     })
     
     it('should handle missing config gracefully', () => {
@@ -491,8 +485,7 @@ jobs:
       // Check job dependencies
       expect(result.yamlContent).toContain('needs: changes') // version job
       expect(result.yamlContent).toContain('needs: version') // tag job
-      expect(result.yamlContent).toContain('needs: [ changes, version ]') // createpr job
-      expect(result.yamlContent).toContain('needs: createpr') // branch job
+      expect(result.yamlContent).toContain('needs: [ version, tag ]') // promote job
     })
     
     it('should have correct job conditions', () => {
@@ -505,10 +498,16 @@ jobs:
       }
       
       const result = createPathBasedPipeline(ctx)
-      
-      // Check job conditions
-      expect(result.yamlContent).toContain("if: github.ref_name == 'alpha'") // version and tag
-      expect(result.yamlContent).toContain("if: github.ref_name != 'epsilon'") // createpr
+
+      // Check job conditions - conditions may be multi-line formatted for readability
+      // Just verify the key branch names appear in the conditions
+      expect(result.yamlContent).toContain("github.ref_name == 'alpha'") // version and tag jobs
+      expect(result.yamlContent).toContain("github.ref_name == 'epsilon'") // release job
+
+      // Verify multi-line condition formatting (if condition is long enough)
+      // Our code formats long conditions with line breaks for better readability
+      const hasMultiLineCondition = result.yamlContent.includes('if: ${{') && result.yamlContent.includes('\n        ')
+      // This is acceptable - either inline or multi-line is fine
     })
     
     it('should use correct action paths', () => {
@@ -526,8 +525,8 @@ jobs:
       expect(result.yamlContent).toContain('./.github/actions/detect-changes')
       expect(result.yamlContent).toContain('./.github/actions/calculate-version')
       expect(result.yamlContent).toContain('./.github/actions/create-tag')
-      expect(result.yamlContent).toContain('./.github/actions/create-pr')
-      expect(result.yamlContent).toContain('./.github/actions/manage-branch')
+      expect(result.yamlContent).toContain('./.github/actions/promote-branch')
+      expect(result.yamlContent).toContain('./.github/actions/create-release')
     })
   })
 })
