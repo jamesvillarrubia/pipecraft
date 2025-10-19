@@ -38,7 +38,10 @@ interface BranchProtectionRules {
 export function getRepositoryInfo(): RepositoryInfo {
   try {
     // Get the remote URL
-    const remoteUrl = execSync('git remote get-url origin', { encoding: 'utf8' }).trim()
+    const remoteUrl = execSync('git remote get-url origin', { 
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'ignore'] // Suppress stderr
+    }).trim()
 
     // Parse GitHub URL
     // Supports: https://github.com/owner/repo.git, git@github.com:owner/repo.git

@@ -110,7 +110,7 @@ export function checkConfigValid(): PreflightResult {
 export function checkInGitRepo(): PreflightResult {
   try {
     execSync('git rev-parse --is-inside-work-tree', {
-      stdio: 'pipe',
+      stdio: ['pipe', 'pipe', 'ignore'], // Suppress stderr to avoid "not a git repository" errors
       encoding: 'utf8'
     })
 
@@ -133,7 +133,7 @@ export function checkInGitRepo(): PreflightResult {
 export function checkHasGitRemote(): PreflightResult {
   try {
     const remote = execSync('git remote get-url origin', {
-      stdio: 'pipe',
+      stdio: ['pipe', 'pipe', 'ignore'], // Suppress stderr
       encoding: 'utf8'
     }).trim()
 
@@ -296,7 +296,7 @@ export function formatPreflightResults(checks: PreflightChecks): {
 function getCurrentBranch(): string {
   try {
     const branch = execSync('git branch --show-current', {
-      stdio: 'pipe',
+      stdio: ['pipe', 'pipe', 'ignore'], // Suppress stderr
       encoding: 'utf8'
     }).trim()
     return branch || 'main'

@@ -191,7 +191,10 @@ npx commitlint --edit $1`
    */
   validateConventionalCommits(): boolean {
     try {
-      const result = execSync('git log --oneline -10', { encoding: 'utf8' })
+      const result = execSync('git log --oneline -10', { 
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'ignore'] // Suppress stderr to avoid "not a git repository" errors in tests
+      })
       const commits = result.split('\n').filter(line => line.trim())
       
       // Check if commits follow conventional format
@@ -208,7 +211,10 @@ npx commitlint --edit $1`
    */
   getCurrentVersion(): string {
     try {
-      const result = execSync('git describe --tags --abbrev=0', { encoding: 'utf8' })
+      const result = execSync('git describe --tags --abbrev=0', { 
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'ignore'] // Suppress stderr to avoid "not a git repository" errors in tests
+      })
       return result.trim().replace('v', '')
     } catch (error) {
       return '0.0.0'

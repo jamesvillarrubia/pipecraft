@@ -18,7 +18,8 @@ import { PinionContext } from '@featherscloud/pinion'
 import { PipecraftConfig } from '../../src/types'
 import { parse as parseYAML } from 'yaml'
 
-describe('Generator Integration Tests', () => {
+// Run tests serially to avoid race conditions with shared test-temp directory
+describe.sequential('Generator Integration Tests', () => {
   beforeEach(() => {
     // Clean up test directory
     const filesToClean = [
