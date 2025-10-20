@@ -34,7 +34,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/jamesvillarrubia/pipecraft/tree/develop/docs-site/',
+          editUrl: 'https://github.com/jamesvillarrubia/pipecraft/tree/develop/docs/',
           showLastUpdateTime: true,
           showLastUpdateAuthor: true,
         },
