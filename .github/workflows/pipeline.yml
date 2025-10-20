@@ -79,6 +79,7 @@ jobs:
       cicd: ${{ steps.detect.outputs.cicd }}
       core: ${{ steps.detect.outputs.core }}
       test: ${{ steps.detect.outputs.test }}
+      docs: ${{ steps.detect.outputs.docs }}
 
   #=============================================================================
   # TESTING JOBS
@@ -88,36 +89,117 @@ jobs:
     if: ${{ needs.changes.outputs.cicd == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      # TODO: Replace with your cicd test logic
-      - name: Run cicd tests
-        run: |
-          echo "Running tests for cicd domain"
-          echo "Replace this with your actual test commands"
-          # Example: npm test -- --testPathPattern=cicd
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate pipeline workflow
+        run: node tests/tools/validation/validate-pipeline.cjs
 
   test-core:
     needs: changes
     if: ${{ needs.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      # TODO: Replace with your core test logic
-      - name: Run core tests
-        run: |
-          echo "Running tests for core domain"
-          echo "Replace this with your actual test commands"
-          # Example: npm test -- --testPathPattern=core
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build TypeScript
+        run: pnpm run build
+
+      - name: Run unit tests
+        run: pnpm run test:run tests/unit
+
+      - name: Run integration tests
+        run: pnpm run test:run tests/integration
 
   test-test:
     needs: changes
     if: ${{ needs.changes.outputs.test == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      # TODO: Replace with your test test logic
-      - name: Run test tests
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build TypeScript
+        run: pnpm run build
+
+      - name: Run e2e tests
+        run: pnpm run test:run tests/e2e
+
+  test-docs:
+    needs: changes
+    if: ${{ needs.changes.outputs.docs == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
         run: |
-          echo "Running tests for test domain"
-          echo "Replace this with your actual test commands"
-          # Example: npm test -- --testPathPattern=test
+          pnpm install --frozen-lockfile
+          cd docs-site && pnpm install --frozen-lockfile
+
+      - name: Build TypeScript
+        run: pnpm run build
+
+      - name: Generate API Documentation
+        run: cd docs-site && pnpm run typedoc
+
+      - name: Build Docusaurus site
+        run: cd docs-site && pnpm run build
+        env:
+          NODE_ENV: production
 
   #=============================================================================
   # VERSIONING (⚠️  Managed by Pipecraft - do not modify)
@@ -131,13 +213,15 @@ jobs:
         (
         needs.test-cicd.result == 'success' ||
         needs.test-core.result == 'success' ||
-        needs.test-test.result == 'success'
+        needs.test-test.result == 'success' ||
+        needs.test-docs.result == 'success'
       ) &&
         needs.test-cicd.result != 'failure' &&
         needs.test-core.result != 'failure' &&
-        needs.test-test.result != 'failure'
+        needs.test-test.result != 'failure' &&
+        needs.test-docs.result != 'failure'
       }}
-    needs: [ changes, test-cicd, test-core, test-test ]
+    needs: [ changes, test-cicd, test-core, test-test, test-docs ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -162,6 +246,61 @@ jobs:
           echo "Replace this with your actual deploy commands"
           # Example: npm deploy -- --testPathPattern=core
 
+  deploy-docs:
+    needs: [ version, changes ]
+    if: ${{ always() && needs.version.result == 'success' && needs.changes.outputs.docs == 'true' && github.ref_name == 'main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          cd docs-site && pnpm install --frozen-lockfile
+
+      - name: Build TypeScript
+        run: pnpm run build
+
+      - name: Generate API Documentation
+        run: cd docs-site && pnpm run typedoc
+
+      - name: Build Docusaurus site
+        run: cd docs-site && pnpm run build
+        env:
+          NODE_ENV: production
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs-site/build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
   #=============================================================================
   # REMOTE TESTING JOBS
   #=============================================================================
@@ -185,7 +324,7 @@ jobs:
   tag:
     # Needs all deploy and/or remote test jobs to succeed or be skipped
     # Needs at least one domain to succeed
-    needs: [ version, deploy-core, remote-test-core ]
+    needs: [ version, deploy-core, deploy-docs, remote-test-core ]
     if: ${{
         always() &&
         github.event_name != 'pull_request' &&
@@ -193,10 +332,12 @@ jobs:
         needs.version.result == 'success' &&
         (
         needs.deploy-core.result != 'failure' &&
+        needs.deploy-docs.result != 'failure' &&
         needs.remote-test-core.result != 'failure'
       ) &&
         (
         needs.deploy-core.result == 'success' ||
+        needs.deploy-docs.result == 'success' ||
         needs.remote-test-core.result == 'success'
       )
       }}
@@ -261,6 +402,7 @@ jobs:
         github.event_name == 'workflow_dispatch'
       ) &&
         needs.version.result == 'success' &&
+        needs.version.outputs.version != '' &&
         (
         needs.tag.result == 'success' ||
         needs.tag.result == 'skipped'

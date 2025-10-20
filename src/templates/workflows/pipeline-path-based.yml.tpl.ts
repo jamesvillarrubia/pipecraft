@@ -553,6 +553,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
             github.ref_name == '${ctx.finalBranch || branchFlow[branchFlow.length - 1]}' &&
             (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
             needs.version.result == 'success' &&
+            needs.version.outputs.version != '' &&
             (needs.tag.result == 'success' || needs.tag.result == 'skipped')
             }}
         needs: [ version, tag ]

@@ -135,6 +135,8 @@ describe('Path-Based Template Generation Tests', () => {
       // Verify release job exists and targets final branch
       expect(parsedYaml.jobs.release).toBeDefined()
       expect(parsedYaml.jobs.release.if).toContain('epsilon')
+      // Verify release job checks for non-empty version
+      expect(parsedYaml.jobs.release.if).toContain("needs.version.outputs.version != ''")
     })
 
     it('should merge with existing pipeline file containing user customizations', async () => {

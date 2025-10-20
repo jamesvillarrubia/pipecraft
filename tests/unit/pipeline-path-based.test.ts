@@ -503,6 +503,9 @@ jobs:
       // Just verify the key branch names appear in the conditions
       expect(result.yamlContent).toContain("github.ref_name == 'alpha'") // version and tag jobs
       expect(result.yamlContent).toContain("github.ref_name == 'epsilon'") // release job
+      
+      // Verify release job checks for non-empty version output
+      expect(result.yamlContent).toContain("needs.version.outputs.version != ''")
 
       // Verify multi-line condition formatting (if condition is long enough)
       // Our code formats long conditions with line breaks for better readability
