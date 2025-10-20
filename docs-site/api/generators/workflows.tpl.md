@@ -50,7 +50,7 @@ await generate({
 
 > **generate**(`ctx`): `Promise`\<`any`\>
 
-Defined in: [generators/workflows.tpl.ts:136](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/generators/workflows.tpl.ts#L136)
+Defined in: [generators/workflows.tpl.ts:136](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/generators/workflows.tpl.ts#L136)
 
 Workflows generator main entry point.
 

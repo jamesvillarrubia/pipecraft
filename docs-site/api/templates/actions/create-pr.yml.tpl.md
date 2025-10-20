@@ -17,7 +17,7 @@ automating branch promotion in trunk-based development workflows.
 
 > **generate**(`ctx`): `Promise`\<`any`\>
 
-Defined in: [templates/actions/create-pr.yml.tpl.ts:158](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/templates/actions/create-pr.yml.tpl.ts#L158)
+Defined in: [templates/actions/create-pr.yml.tpl.ts:158](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/templates/actions/create-pr.yml.tpl.ts#L158)
 
 Generator entry point for create-pr composite action.
 

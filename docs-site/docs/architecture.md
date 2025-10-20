@@ -409,7 +409,7 @@ pipecraft/
 ### YAML Parsing
 
 - **AST parsing**: ~10-50ms depending on file size
-- **Comment preservation**: Minimal overhead (<5ms)
+- **Comment preservation**: Minimal overhead (less than 5ms)
 - **Trade-off**: Worth it for user customization support
 
 ### GitHub API
@@ -447,8 +447,8 @@ pipecraft/
 
 - Test individual functions in isolation
 - Mock external dependencies (fs, git, GitHub API)
-- Fast execution (<100ms per test)
-- High coverage target (>80%)
+- Fast execution (less than 100ms per test)
+- High coverage target (greater than 80%)
 
 ### Integration Tests
 

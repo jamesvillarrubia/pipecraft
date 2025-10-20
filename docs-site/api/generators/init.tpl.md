@@ -41,7 +41,7 @@ respect user input and allow customization.
 
 > **generate**(`ctx`): `Promise`\<`PinionContext`\>
 
-Defined in: [generators/init.tpl.ts:162](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/generators/init.tpl.ts#L162)
+Defined in: [generators/init.tpl.ts:162](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/generators/init.tpl.ts#L162)
 
 Init generator main entry point.
 

@@ -24,7 +24,7 @@ on how to resolve them.
 
 ### PreflightChecks
 
-Defined in: [utils/preflight.ts:47](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L47)
+Defined in: [utils/preflight.ts:47](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L47)
 
 Collection of all pre-flight check results.
 
@@ -37,7 +37,7 @@ before workflows can be generated.
 
 > **canWriteGithubDir**: [`PreflightResult`](#preflightresult)
 
-Defined in: [utils/preflight.ts:61](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L61)
+Defined in: [utils/preflight.ts:61](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L61)
 
 .github/workflows directory is writable
 
@@ -45,7 +45,7 @@ Defined in: [utils/preflight.ts:61](https://github.com/jamesvillarrubia/pipecraf
 
 > **configExists**: [`PreflightResult`](#preflightresult)
 
-Defined in: [utils/preflight.ts:49](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L49)
+Defined in: [utils/preflight.ts:49](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L49)
 
 Configuration file exists and is discoverable
 
@@ -53,7 +53,7 @@ Configuration file exists and is discoverable
 
 > **configValid**: [`PreflightResult`](#preflightresult)
 
-Defined in: [utils/preflight.ts:52](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L52)
+Defined in: [utils/preflight.ts:52](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L52)
 
 Configuration file is valid and has required fields
 
@@ -61,7 +61,7 @@ Configuration file is valid and has required fields
 
 > **hasGitRemote**: [`PreflightResult`](#preflightresult)
 
-Defined in: [utils/preflight.ts:58](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L58)
+Defined in: [utils/preflight.ts:58](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L58)
 
 Git remote (origin) is configured
 
@@ -69,7 +69,7 @@ Git remote (origin) is configured
 
 > **inGitRepo**: [`PreflightResult`](#preflightresult)
 
-Defined in: [utils/preflight.ts:55](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L55)
+Defined in: [utils/preflight.ts:55](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L55)
 
 Current directory is a git repository
 
@@ -77,7 +77,7 @@ Current directory is a git repository
 
 ### PreflightResult
 
-Defined in: [utils/preflight.ts:30](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L30)
+Defined in: [utils/preflight.ts:30](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L30)
 
 Result of a single pre-flight check.
 
@@ -90,7 +90,7 @@ for resolving failures.
 
 > **message**: `string`
 
-Defined in: [utils/preflight.ts:35](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L35)
+Defined in: [utils/preflight.ts:35](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L35)
 
 Human-readable description of the check result
 
@@ -98,7 +98,7 @@ Human-readable description of the check result
 
 > **passed**: `boolean`
 
-Defined in: [utils/preflight.ts:32](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L32)
+Defined in: [utils/preflight.ts:32](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L32)
 
 Whether the check passed
 
@@ -106,7 +106,7 @@ Whether the check passed
 
 > `optional` **suggestion**: `string`
 
-Defined in: [utils/preflight.ts:38](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L38)
+Defined in: [utils/preflight.ts:38](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L38)
 
 Optional suggestion for resolving failures
 
@@ -116,7 +116,7 @@ Optional suggestion for resolving failures
 
 > **checkCanWriteGithubDir**(): [`PreflightResult`](#preflightresult)
 
-Defined in: [utils/preflight.ts:310](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L310)
+Defined in: [utils/preflight.ts:310](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L310)
 
 Check if .github/workflows directory exists and is writable.
 
@@ -153,7 +153,7 @@ if (!result.passed) {
 
 > **checkConfigExists**(): [`PreflightResult`](#preflightresult)
 
-Defined in: [utils/preflight.ts:86](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L86)
+Defined in: [utils/preflight.ts:86](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L86)
 
 Check if PipeCraft configuration file exists.
 
@@ -187,7 +187,7 @@ if (!result.passed) {
 
 > **checkConfigValid**(): [`PreflightResult`](#preflightresult)
 
-Defined in: [utils/preflight.ts:126](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L126)
+Defined in: [utils/preflight.ts:126](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L126)
 
 Check if configuration file is valid and contains required fields.
 
@@ -221,7 +221,7 @@ if (!result.passed) {
 
 > **checkHasGitRemote**(): [`PreflightResult`](#preflightresult)
 
-Defined in: [utils/preflight.ts:251](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L251)
+Defined in: [utils/preflight.ts:251](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L251)
 
 Check if git remote named 'origin' is configured.
 
@@ -259,7 +259,7 @@ if (!result.passed) {
 
 > **checkInGitRepo**(): [`PreflightResult`](#preflightresult)
 
-Defined in: [utils/preflight.ts:205](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L205)
+Defined in: [utils/preflight.ts:205](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L205)
 
 Check if current directory is inside a git repository.
 
@@ -293,7 +293,7 @@ if (!result.passed) {
 
 > **checkNodeVersion**(`minVersion`): [`PreflightResult`](#preflightresult)
 
-Defined in: [utils/preflight.ts:377](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L377)
+Defined in: [utils/preflight.ts:377](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L377)
 
 Check if Node.js version meets minimum requirement.
 
@@ -336,7 +336,7 @@ if (!result.passed) {
 
 > **formatPreflightResults**(`checks`): `object`
 
-Defined in: [utils/preflight.ts:470](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L470)
+Defined in: [utils/preflight.ts:470](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L470)
 
 Format pre-flight check results for human-readable display.
 
@@ -396,7 +396,7 @@ if (allPassed && nextSteps) {
 
 > **runPreflightChecks**(): [`PreflightChecks`](#preflightchecks)
 
-Defined in: [utils/preflight.ts:431](https://github.com/jamesvillarrubia/pipecraft/blob/cb845e32e411a81bc157107558e393368b42ccf5/src/utils/preflight.ts#L431)
+Defined in: [utils/preflight.ts:431](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/preflight.ts#L431)
 
 Run all pre-flight checks for workflow generation.
 
