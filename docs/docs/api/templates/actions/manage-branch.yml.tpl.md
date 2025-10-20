@@ -1,9 +1,3 @@
-[**pipecraft v0.0.0-releaseit**](../../README.md)
-
-***
-
-[pipecraft](../../README.md) / templates/actions/manage-branch.yml.tpl
-
 # templates/actions/manage-branch.yml.tpl
 
 Manage Branch Action Template
@@ -19,7 +13,7 @@ branch creation, and deletion. Core utility for trunk-based development workflow
 function generate(ctx): Promise<any>;
 ```
 
-Defined in: [templates/actions/manage-branch.yml.tpl.ts:143](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/templates/actions/manage-branch.yml.tpl.ts#L143)
+Defined in: [templates/actions/manage-branch.yml.tpl.ts:143](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/templates/actions/manage-branch.yml.tpl.ts#L143)
 
 Generator entry point for manage-branch composite action.
 

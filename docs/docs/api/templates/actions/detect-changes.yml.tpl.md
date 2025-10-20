@@ -1,9 +1,3 @@
-[**pipecraft v0.0.0-releaseit**](../../README.md)
-
-***
-
-[pipecraft](../../README.md) / templates/actions/detect-changes.yml.tpl
-
 # templates/actions/detect-changes.yml.tpl
 
 Detect Changes Action Template
@@ -58,7 +52,7 @@ jobs:
 function generate(ctx): Promise<any>;
 ```
 
-Defined in: [templates/actions/detect-changes.yml.tpl.ts:174](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/templates/actions/detect-changes.yml.tpl.ts#L174)
+Defined in: [templates/actions/detect-changes.yml.tpl.ts:174](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/templates/actions/detect-changes.yml.tpl.ts#L174)
 
 Generator entry point for detect-changes composite action.
 

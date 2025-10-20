@@ -1,9 +1,3 @@
-[**pipecraft v0.0.0-releaseit**](../../README.md)
-
-***
-
-[pipecraft](../../README.md) / templates/actions/calculate-version.yml.tpl
-
 # templates/actions/calculate-version.yml.tpl
 
 Calculate Version Action Template
@@ -52,7 +46,7 @@ jobs:
 function generate(ctx): Promise<any>;
 ```
 
-Defined in: [templates/actions/calculate-version.yml.tpl.ts:168](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/templates/actions/calculate-version.yml.tpl.ts#L168)
+Defined in: [templates/actions/calculate-version.yml.tpl.ts:168](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/templates/actions/calculate-version.yml.tpl.ts#L168)
 
 Generator entry point for calculate-version composite action.
 

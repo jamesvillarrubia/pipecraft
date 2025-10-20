@@ -1,9 +1,3 @@
-[**pipecraft v0.0.0-releaseit**](../README.md)
-
-***
-
-[pipecraft](../README.md) / generators/workflows.tpl
-
 # generators/workflows.tpl
 
 Workflows Template Generator
@@ -52,7 +46,7 @@ await generate({
 function generate(ctx): Promise<any>;
 ```
 
-Defined in: [generators/workflows.tpl.ts:136](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/generators/workflows.tpl.ts#L136)
+Defined in: [generators/workflows.tpl.ts:136](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/generators/workflows.tpl.ts#L136)
 
 Workflows generator main entry point.
 

@@ -1,9 +1,3 @@
-[**pipecraft v0.0.0-releaseit**](../../README.md)
-
-***
-
-[pipecraft](../../README.md) / templates/actions/promote-branch.yml.tpl
-
 # templates/actions/promote-branch.yml.tpl
 
 Promote Branch Action Template
@@ -19,7 +13,7 @@ temporary branch and pull request. Handles auto-merge and cleanup for trunk flow
 function generate(ctx): Promise<any>;
 ```
 
-Defined in: [templates/actions/promote-branch.yml.tpl.ts:385](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/templates/actions/promote-branch.yml.tpl.ts#L385)
+Defined in: [templates/actions/promote-branch.yml.tpl.ts:385](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/templates/actions/promote-branch.yml.tpl.ts#L385)
 
 Generator entry point for promote-branch composite action.
 

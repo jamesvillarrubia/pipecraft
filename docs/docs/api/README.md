@@ -1,8 +1,4 @@
-**pipecraft v0.0.0-releaseit**
-
-***
-
-# pipecraft v0.0.0-releaseit
+# pipecraft
 
 ## Modules
 

@@ -1,9 +1,3 @@
-[**pipecraft v0.0.0-releaseit**](../../README.md)
-
-***
-
-[pipecraft](../../README.md) / templates/actions/create-tag.yml.tpl
-
 # templates/actions/create-tag.yml.tpl
 
 Create Tag Action Template
@@ -19,7 +13,7 @@ GitHub releases. Used after version calculation to tag the codebase with semanti
 function generate(ctx): Promise<any>;
 ```
 
-Defined in: [templates/actions/create-tag.yml.tpl.ts:124](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/templates/actions/create-tag.yml.tpl.ts#L124)
+Defined in: [templates/actions/create-tag.yml.tpl.ts:124](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/templates/actions/create-tag.yml.tpl.ts#L124)
 
 Generator entry point for create-tag composite action.
 

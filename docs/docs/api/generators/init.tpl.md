@@ -1,9 +1,3 @@
-[**pipecraft v0.0.0-releaseit**](../README.md)
-
-***
-
-[pipecraft](../README.md) / generators/init.tpl
-
 # generators/init.tpl
 
 Init Template Generator
@@ -43,7 +37,7 @@ respect user input and allow customization.
 function generate(ctx): Promise<PinionContext>;
 ```
 
-Defined in: [generators/init.tpl.ts:162](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/generators/init.tpl.ts#L162)
+Defined in: [generators/init.tpl.ts:162](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/generators/init.tpl.ts#L162)
 
 Init generator main entry point.
 
