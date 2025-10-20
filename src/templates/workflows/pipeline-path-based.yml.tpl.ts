@@ -1,3 +1,68 @@
+/**
+ * Path-Based Pipeline Template Generator
+ * 
+ * The core template that generates the main CI/CD pipeline workflow for PipeCraft.
+ * This is the most complex template in the system, responsible for creating a
+ * GitHub Actions workflow that orchestrates the entire trunk-based development flow.
+ * 
+ * ## Key Responsibilities
+ * 
+ * 1. **Change Detection**: Generates jobs to detect which domains (api, web, libs, etc.) changed
+ * 2. **Test Execution**: Creates domain-specific test jobs based on changes
+ * 3. **Version Management**: Integrates semantic versioning for staging/production branches
+ * 4. **Branch Promotion**: Auto-promotes code through branch flow (develop → staging → main)
+ * 5. **User Job Preservation**: Maintains user-added custom jobs during regeneration
+ * 6. **Comment Preservation**: Retains user comments when updating workflows
+ * 
+ * ## Intelligent Merging
+ * 
+ * The generator distinguishes between:
+ * - **Pipecraft-owned jobs**: `changes`, `version`, `tag`, `promote`, `release`, `test-*`, `deploy-*`
+ * - **User jobs**: Any jobs not owned by Pipecraft
+ * 
+ * During regeneration:
+ * - Pipecraft jobs are completely replaced with template versions
+ * - User jobs are preserved exactly as-is
+ * - User comments are maintained
+ * - Job order is intelligently managed (Pipecraft jobs first, then user jobs)
+ * 
+ * ## Architecture
+ * 
+ * Uses AST-based path operations for surgical YAML manipulation:
+ * - Parse existing workflow into AST
+ * - Apply precise path-based operations
+ * - Preserve formatting and comments
+ * - Rebuild YAML maintaining structure
+ * 
+ * @module templates/workflows/pipeline-path-based.yml.tpl
+ * 
+ * @example
+ * ```typescript
+ * import { generate } from './templates/workflows/pipeline-path-based.yml.tpl.js'
+ * 
+ * // Initial generation
+ * await generate({
+ *   cwd: '/path/to/project',
+ *   branchFlow: ['develop', 'staging', 'main'],
+ *   domains: {
+ *     api: { paths: ['src/api/**'], test: true },
+ *     web: { paths: ['src/web/**'], test: true }
+ *   }
+ * })
+ * 
+ * // Incremental update (preserves user jobs)
+ * await generate({
+ *   cwd: '/path/to/project',
+ *   existingPipeline: parsedYAML,
+ *   existingPipelineContent: rawYAMLString,
+ *   branchFlow: ['develop', 'staging', 'main'],
+ *   domains: { ... }
+ * })
+ * ```
+ * 
+ * @see {@link module:utils/ast-path-operations} for YAML manipulation details
+ */
+
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import { parseDocument, stringify, Scalar, YAMLMap } from 'yaml'
 import fs from 'fs'
@@ -8,15 +73,6 @@ import {
 } from '../../utils/ast-path-operations.js'
 import dedent from 'dedent'
 import { logger } from '../../utils/logger.js'
-
-/**
- * Path-based pipeline generator
- * 
- * Uses precise AST path operations to:
- * - Ensure required paths exist
- * - Set/merge/overwrite specific values
- * - Preserve user customizations while ensuring template requirements
- */
 
 
 /**
@@ -953,7 +1009,56 @@ const loadExistingPipeline = (filePath: string): string | null => {
 }
 
 /**
- * Main export - path-based pipeline generator
+ * Main pipeline generator entry point.
+ * 
+ * Generates the complete GitHub Actions pipeline workflow with intelligent
+ * merging of existing user customizations.
+ * 
+ * @param {PinionContext & { existingPipeline?: any, outputPipelinePath?: string }} ctx - Generator context
+ * @param {any} [ctx.existingPipeline] - Parsed existing pipeline YAML for merging
+ * @param {string} [ctx.existingPipelineContent] - Raw existing pipeline content for comment preservation
+ * @param {string} [ctx.outputPipelinePath] - Custom output path (default: .github/workflows/pipeline.yml)
+ * @param {string[]} ctx.branchFlow - Branch flow sequence (e.g., ['develop', 'staging', 'main'])
+ * @param {Record<string, DomainConfig>} ctx.domains - Domain configurations for change detection
+ * @param {string} [ctx.ciProvider] - CI provider ('github' or 'gitlab')
+ * @param {string} [ctx.mergeStrategy] - Merge strategy ('fast-forward' or 'merge')
+ * @returns {Promise<PinionContext>} Updated context with generated YAML
+ * 
+ * @throws {Error} If pipeline file cannot be written
+ * @throws {Error} If existing pipeline cannot be parsed
+ * 
+ * @example
+ * ```typescript
+ * // Generate new pipeline
+ * await generate({
+ *   cwd: '/path/to/project',
+ *   branchFlow: ['develop', 'main'],
+ *   domains: {
+ *     api: { paths: ['src/api/**'], test: true }
+ *   }
+ * })
+ * 
+ * // Update existing pipeline (preserves user jobs)
+ * const existing = parseDocument(readFileSync('pipeline.yml', 'utf8'))
+ * await generate({
+ *   cwd: '/path/to/project',
+ *   existingPipeline: existing,
+ *   existingPipelineContent: readFileSync('pipeline.yml', 'utf8'),
+ *   branchFlow: ['develop', 'staging', 'main'],
+ *   domains: { ... }
+ * })
+ * ```
+ * 
+ * @note The generator performs these steps:
+ * 1. Calls `createPathBasedPipeline()` to build the workflow
+ * 2. Logs merge status (new vs. merged)
+ * 3. Writes the final YAML to the output path
+ * 
+ * The heavy lifting is done by `createPathBasedPipeline()` which handles:
+ * - Job generation based on domains and branch flow
+ * - User job preservation and merging
+ * - Comment preservation from existing pipeline
+ * - Intelligent job ordering
  */
 export const generate = (ctx: PinionContext & { existingPipeline?: any, outputPipelinePath?: string }) =>
   Promise.resolve(ctx)
