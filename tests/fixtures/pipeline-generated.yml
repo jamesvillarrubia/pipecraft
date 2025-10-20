@@ -95,8 +95,8 @@ jobs:
   # =============================================================================
   # Add your testing jobs here
   # Example:
-  # test-api: 
-  #   needs: branch
+  # test-api:
+  #   needs: changes
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Test API
@@ -104,7 +104,7 @@ jobs:
   #         echo "Run API tests"
   #
   # test-web:
-  #   needs: branch
+  #   needs: changes
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Test Web
@@ -160,7 +160,7 @@ jobs:
   # DEPLOYMENT JOBS
   # =============================================================================
   deploy-api:
-    needs: branch
+    needs: version
     runs-on: ubuntu-latest
     steps:
       - name: Deploy API
@@ -176,8 +176,8 @@ jobs:
           echo "Running fake job"
 
   # =============================================================================
-  # TAG & CREATE PR
-  # =============================================================================     
+  # TAG & PROMOTE
+  # =============================================================================
   tag:
     if: github.ref_name == 'alpha'
     needs: version
@@ -197,32 +197,33 @@ jobs:
         run: |
           echo "Running fake job"
 
-  createpr:
-    ## SHOULD BE ANY BRANCH EXCEPT the final branch
+  # =============================================================================
+  # PROMOTION JOB
+  # =============================================================================
+  promote:
     if: github.ref_name != 'epsilon'
-    needs: tag
+    needs: [ version, tag ]
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/create-pr
+      - uses: ./.github/actions/promote-branch
         with:
           sourceBranch: ${{ github.ref_name }}
-          targetBranch: ${{ github.ref_name == 'alpha' && 'beta' || github.ref_name ==
-            'beta' && 'gamma' || 'epsilon' }}
-          title: 'Release ${{ needs.version.outputs.nextVersion }}'
-          body: 'Automated release PR for version ${{ needs.version.outputs.nextVersion
-            }}'
+          version: ${{ needs.version.outputs.nextVersion }}
+          run_number: ${{ inputs.run_number || github.run_number }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-  branch:
-    ## SHOULD BE THE NEXT BRANCH
-    needs: createpr
+  # =============================================================================
+  # RELEASE JOB
+  # =============================================================================
+  release:
+    if: github.ref_name == 'epsilon'
+    needs: [ version, tag ]
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/manage-branch
+      - uses: ./.github/actions/create-release
         with:
-          action: 'fast-forward'
-          targetBranch: ${{ github.ref_name == 'alpha' && 'beta' || github.ref_name ==
-            'beta' && 'gamma' || 'epsilon' }}
-          sourceBranch: ${{ github.ref_name }}
+          version: ${{ needs.version.outputs.nextVersion }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   # USER COMMENT 24
 

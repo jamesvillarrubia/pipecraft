@@ -102,7 +102,10 @@ describe('VersionManager', () => {
       const version = versionManager.getCurrentVersion()
       
       expect(version).toBe('1.2.3')
-      expect(mockExecSync).toHaveBeenCalledWith('git describe --tags --abbrev=0', { encoding: 'utf8' })
+      expect(mockExecSync).toHaveBeenCalledWith('git describe --tags --abbrev=0', { 
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'ignore']
+      })
     })
 
     it('should return default version when no tags exist', () => {

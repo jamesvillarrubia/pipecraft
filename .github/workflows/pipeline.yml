@@ -1,7 +1,42 @@
-name: "Pipeline"
+#=============================================================================
+# PIPECRAFT MANAGED WORKFLOW
+#=============================================================================
+
+# ✅ YOU CAN CUSTOMIZE:
+#   - test-*** jobs for each domain
+#   - deploy-*** jobs for each domain
+#   - remote-test-*** jobs for each domain
+#   - Workflow name
+
+# ⚠️  PIPECRAFT MANAGES (do not modify):
+#   - Workflow triggers, job dependencies, and conditionals
+#   - Changes detection, version calculation, and tag creation
+#   - CreatePR, branch management, promote, and release jobs
+
+# Running 'pipecraft generate' updates managed sections while preserving
+# your customizations in test/deploy/remote-test jobs.
+
+# 📖 Learn more: https://docs.pipecraft.dev
+#=============================================================================
+name: Pipeline
+
 run-name: "${{ github.ref_name }} #${{ inputs.run_number || github.run_number }}${{ inputs.version && format(' - {0}', inputs.version) || '' }}"
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: The version to deploy
+        required: false
+        type: string
+      baseRef:
+        description: The base reference for comparison
+        required: false
+        type: string
+      run_number:
+        description: The original run number from develop branch
+        required: false
+        type: string
+  workflow_call:
     inputs:
       version:
         description: The version to deploy
@@ -20,11 +55,18 @@ on:
       - develop
       - staging
       - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - develop
 jobs:
-
   #=============================================================================
-  # CHANGES DETECTION
+  # CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
   #=============================================================================
+  # This job detects which domains have changed and sets outputs for downstream jobs.
   changes:
     runs-on: ubuntu-latest
     steps:
@@ -77,18 +119,23 @@ jobs:
           echo "Replace this with your actual test commands"
           # Example: npm test -- --testPathPattern=test
 
+  #=============================================================================
+  # VERSIONING (⚠️  Managed by Pipecraft - do not modify)
+  #=============================================================================
+  # Calculates the next version based on conventional commits and semver rules.
+  # Only runs on push events (skipped on pull requests).
   version:
     if: ${{
-        always() && (
-          needs.test-cicd.result == 'success' ||
-          needs.test-core.result == 'success' ||
-          needs.test-test.result == 'success'
-        ) &&
+        always() &&
+        github.event_name != 'pull_request' &&
         (
-          needs.test-cicd.result != 'failure' &&
-          needs.test-core.result != 'failure' &&
-          needs.test-test.result != 'failure'
-        )
+        needs.test-cicd.result == 'success' ||
+        needs.test-core.result == 'success' ||
+        needs.test-test.result == 'success'
+      ) &&
+        needs.test-cicd.result != 'failure' &&
+        needs.test-core.result != 'failure' &&
+        needs.test-test.result != 'failure'
       }}
     needs: [ changes, test-cicd, test-core, test-test ]
     runs-on: ubuntu-latest
@@ -105,8 +152,8 @@ jobs:
   # DEPLOYMENT JOBS
   #=============================================================================
   deploy-core:
-    needs: [ changes, version ]
-    if: ${{ always() && needs.changes.outputs.core == 'true'  && needs.version.result == 'success' }}
+    needs: [ version, changes ]
+    if: ${{ always() && needs.version.result == 'success' && needs.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Deploy core
@@ -120,24 +167,28 @@ jobs:
   #=============================================================================
   remote-test-core:
     needs: [ deploy-core, changes ]
-    if: ${{ always() && needs.deploy-core.result == 'success' && needs.changes.outputs.core == 'true' }}
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Test core
+        if: ${{ needs.changes.outputs.core == 'true' && needs.deploy-core.result == 'success' }}
         run: |
           echo "Testing core remotely"
           echo "Replace this with your actual test commands"
           # Example: npm test -- --testPathPattern=core
 
   #=============================================================================
-  # TAG & PROMOTE
+  # TAG & PROMOTE (⚠️  Managed by Pipecraft - do not modify)
   #=============================================================================
+  # Creates a git tag with the calculated version on the initial branch.
+  # Only runs on push events after successful tests and deployments.
   tag:
     # Needs all deploy and/or remote test jobs to succeed or be skipped
     # Needs at least one domain to succeed
     needs: [ version, deploy-core, remote-test-core ]
     if: ${{
         always() &&
+        github.event_name != 'pull_request' &&
         github.ref_name == 'develop' &&
         needs.version.result == 'success' &&
         (
@@ -155,9 +206,12 @@ jobs:
       - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.version }}
+
   #=============================================================================
-  # PROMOTION JOB
+  # PROMOTION JOB (⚠️  Managed by Pipecraft - do not modify)
   #=============================================================================
+  # Triggers the next branch's workflow after successful versioning and tagging.
+  # Passes version and run_number to maintain traceability across branches.
   promote:
     # Only runs on push or manual workflow_dispatch events to branches that can promote
     # Waits for version/tag if they run, but doesn't fail if they're skipped
@@ -193,8 +247,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   #=============================================================================
-  # RELEASE JOB (Main Branch Only)
+  # RELEASE JOB (⚠️  Managed by Pipecraft - do not modify)
   #=============================================================================
+  # Creates a GitHub release on the final branch with release notes.
+  # Only runs after successful versioning and tagging on the final branch.
   release:
     # Create GitHub release on main branch after successful tests and versioning
     if: ${{

@@ -74,7 +74,7 @@ runs:
 
       // Run validator
       const result = execSync(
-        `node ${join(originalCwd, 'scripts/validate-pipeline.cjs')}`,
+        `node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`,
         { encoding: 'utf8', cwd: testDir }
       )
 
@@ -110,7 +110,7 @@ jobs:
 
       try {
         execSync(
-          `node ${join(originalCwd, 'scripts/validate-pipeline.cjs')}`,
+          `node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`,
           { encoding: 'utf8', cwd: testDir, stdio: 'pipe' }
         )
         expect.fail('Should have failed validation')
@@ -147,7 +147,7 @@ jobs:
       writeFileSync(join(testDir, '.github/workflows/test.yml'), workflow)
 
       const result = execSync(
-        `node ${join(originalCwd, 'scripts/validate-pipeline.cjs')}`,
+        `node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`,
         { encoding: 'utf8', cwd: testDir }
       )
 
@@ -181,7 +181,7 @@ runs:
 
       try {
         execSync(
-          `node ${join(originalCwd, 'scripts/validate-pipeline.cjs')}`,
+          `node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`,
           { encoding: 'utf8', cwd: testDir, stdio: 'pipe' }
         )
         expect.fail('Should have failed validation')
@@ -216,7 +216,7 @@ runs:
       writeFileSync(join(testDir, '.github/actions/test-action/action.yml'), action)
 
       const result = execSync(
-        `node ${join(originalCwd, 'scripts/validate-pipeline.cjs')}`,
+        `node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`,
         { encoding: 'utf8', cwd: testDir }
       )
 
@@ -248,7 +248,7 @@ runs:
       writeFileSync(join(testDir, '.github/actions/test-action/action.yml'), action)
 
       const result = execSync(
-        `node ${join(originalCwd, 'scripts/validate-pipeline.cjs')}`,
+        `node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`,
         { encoding: 'utf8', cwd: testDir }
       )
 
@@ -280,7 +280,7 @@ jobs:
       writeFileSync(join(testDir, '.github/workflows/test.yml'), workflow)
 
       const result = execSync(
-        `node ${join(originalCwd, 'scripts/validate-pipeline.cjs')}`,
+        `node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`,
         { encoding: 'utf8', cwd: testDir }
       )
 
@@ -321,7 +321,7 @@ jobs:
       writeFileSync(join(testDir, '.github/workflows/test.yml'), workflow)
 
       const result = execSync(
-        `node ${join(originalCwd, 'scripts/validate-pipeline.cjs')}`,
+        `node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`,
         { encoding: 'utf8', cwd: testDir }
       )
 
@@ -348,7 +348,7 @@ jobs:
       writeFileSync(join(testDir, '.github/workflows/test.yml'), workflow)
 
       const result = execSync(
-        `node ${join(originalCwd, 'scripts/validate-pipeline.cjs')}`,
+        `node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`,
         { encoding: 'utf8', cwd: testDir }
       )
 
@@ -373,7 +373,7 @@ jobs:
       writeFileSync(join(testDir, '.github/workflows/test.yml'), workflow)
 
       const result = execSync(
-        `node ${join(originalCwd, 'scripts/validate-pipeline.cjs')}`,
+        `node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`,
         { encoding: 'utf8', cwd: testDir }
       )
 

@@ -1,0 +1,61 @@
+# Source files (only ship dist/)
+src/
+tests/
+*.test.ts
+*.spec.ts
+
+# Heavy assets
+assets/
+
+# Build artifacts
+coverage/
+.nyc_output/
+test-output/
+test-temp/
+
+# Development files
+.github/
+.vscode/
+.cursor/
+.claude/
+docs/
+examples/
+scripts/
+
+# Config files
+.eslintrc*
+eslint.config.js
+.prettierrc*
+prettier.config.*
+tsconfig*.json
+vitest.config.*
+.release-it.cjs
+
+# Documentation
+*.md
+!README.md
+
+# Environment and cache
+.env*
+*.log
+.pipecraft-cache.json
+.pipecraftrc.json
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Lock files
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Misc
+*.backup
+.actrc
+.lockor

@@ -1,8 +1,23 @@
+/**
+ * Manage Branch Action Template
+ * 
+ * Generates a composite action for branch operations including fast-forward merges,
+ * branch creation, and deletion. Core utility for trunk-based development workflows.
+ * 
+ * @module templates/actions/manage-branch.yml.tpl
+ */
+
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import fs from 'fs'
 import dedent from 'dedent'
+import { logger } from '../../utils/logger.js'
 
-// Template for the Branch Management GitHub Action
+/**
+ * Generates the manage-branch composite action YAML content.
+ * 
+ * @param {any} ctx - Context (not currently used)
+ * @returns {string} YAML content for the composite action
+ */
 const branchActionTemplate = (ctx: any) => {
   return dedent`name: 'Branch Management'
     description: 'Manage branches (fast-forward, create, delete)'
@@ -119,6 +134,12 @@ const branchActionTemplate = (ctx: any) => {
             fi`
 };
 
+/**
+ * Generator entry point for manage-branch composite action.
+ * 
+ * @param {PinionContext} ctx - Pinion generator context
+ * @returns {Promise<PinionContext>} Updated context after file generation
+ */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
     .then((ctx) => {
@@ -126,7 +147,7 @@ export const generate = (ctx: PinionContext) =>
       const filePath = '.github/actions/manage-branch/action.yml'
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
-      console.log(`${status} ${filePath}`)
+      logger.verbose(`${status} ${filePath}`)
       return ctx
     })
     .then(renderTemplate(branchActionTemplate, toFile('.github/actions/manage-branch/action.yml')))

@@ -1,9 +1,23 @@
+/**
+ * Promote Branch Action Template
+ * 
+ * Generates a composite action that promotes code from one branch to another via
+ * temporary branch and pull request. Handles auto-merge and cleanup for trunk flow.
+ * 
+ * @module templates/actions/promote-branch.yml.tpl
+ */
+
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import fs from 'fs'
 import dedent from 'dedent'
+import { logger } from '../../utils/logger.js'
 
-// Template for the Promote Branch GitHub Action
-// This action handles branch promotions via temporary branches + PRs
+/**
+ * Generates the promote-branch composite action YAML content.
+ * 
+ * @param {any} ctx - Context (not currently used)
+ * @returns {string} YAML content for the composite action
+ */
 const promoteBranchActionTemplate = (ctx: any) => {
   return dedent`name: 'Promote Branch'
     description: 'Promote code from source to target branch via temporary branch + PR'
@@ -351,6 +365,12 @@ const promoteBranchActionTemplate = (ctx: any) => {
   `
 }
 
+/**
+ * Generator entry point for promote-branch composite action.
+ * 
+ * @param {PinionContext} ctx - Pinion generator context
+ * @returns {Promise<PinionContext>} Updated context after file generation
+ */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
     .then((ctx) => {
@@ -358,7 +378,7 @@ export const generate = (ctx: PinionContext) =>
       const filePath = '.github/actions/promote-branch/action.yml'
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
-      console.log(`${status} ${filePath}`)
+      logger.verbose(`${status} ${filePath}`)
       return ctx
     })
     .then(renderTemplate(promoteBranchActionTemplate, toFile('.github/actions/promote-branch/action.yml')))

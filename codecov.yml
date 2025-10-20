@@ -1,0 +1,48 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 75%
+        threshold: 2%
+    patch:
+      default:
+        target: 75%
+
+component_management:
+  default_rules:
+    # Default thresholds inherited by all components
+    statuses:
+      - type: project
+        target: 75%
+      - type: patch
+        target: 75%
+
+  individual_components:
+    # Core domain - main source code
+    - component_id: core
+      name: "Core"
+      paths:
+        - src/**
+      flag_regexes:
+        - ^core$
+
+    # Test domain - test infrastructure
+    - component_id: test
+      name: "Tests"
+      paths:
+        - tests/**
+      flag_regexes:
+        - ^test$
+
+    # CI/CD domain - GitHub Actions and pipeline
+    - component_id: cicd
+      name: "CI/CD"
+      paths:
+        - .github/**
+      flag_regexes:
+        - ^cicd$
+
+comment:
+  layout: "reach,diff,flags,components"
+  show_carryforward_flags: false
+  after_n_builds: 1

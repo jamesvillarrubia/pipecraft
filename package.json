@@ -7,6 +7,13 @@
   "bin": {
     "pipecraft": "./dist/cli/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/cli/index.ts",
@@ -24,9 +31,13 @@
     "pipecraft": "tsx src/cli/index.ts",
     "init": "tsx src/cli/index.ts init --interactive",
     "generate": "tsx src/cli/index.ts generate",
-    "verify": "tsx src/cli/index.ts verify"
+    "verify": "tsx src/cli/index.ts verify",
+    "docs:build": "cd docs-site && pnpm run build",
+    "docs:dev": "cd docs-site && pnpm run start",
+    "docs:serve": "cd docs-site && pnpm run serve",
+    "docs:typedoc": "cd docs-site && pnpm run typedoc",
+    "docs:deploy": "npm run build && cd docs-site && pnpm run typedoc && pnpm run build"
   },
-  "private": true,
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.24.0",
@@ -41,6 +52,7 @@
     "commander": "^14.0.1",
     "conventional-changelog-angular": "latest",
     "cosmiconfig": "^9.0.0",
+    "docusaurus-plugin-typedoc": "^1.4.2",
     "eslint": "^9.24.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
@@ -49,6 +61,8 @@
     "globals": "^16.0.0",
     "prettier": "^2.8.8",
     "release-it": "^18.1.2",
+    "typedoc": "^0.28.14",
+    "typedoc-plugin-markdown": "^4.9.0",
     "vitest": "^2.1.8"
   },
   "dependencies": {

@@ -1,7 +1,75 @@
 #!/usr/bin/env node
 
-// PipeCraft CLI - Automated CI/CD pipeline generator
-// Test change for deploy flow validation
+/**
+ * PipeCraft Command-Line Interface
+ *
+ * Main CLI entry point for PipeCraft - automated CI/CD pipeline generator for
+ * trunk-based development workflows. This CLI provides commands for:
+ *
+ * - **init**: Initialize PipeCraft configuration interactively or with flags
+ * - **generate**: Generate GitHub Actions workflows from configuration
+ * - **validate**: Validate existing workflows and configuration
+ * - **verify**: Verify pipeline structure and job order
+ * - **setup**: Configure GitHub repository permissions and settings
+ * - **version**: Display version information
+ *
+ * ## Command Overview
+ *
+ * ### init
+ * Creates .pipecraftrc.json configuration file with project settings.
+ * Can run interactively or accept flags for automation.
+ *
+ * ### generate
+ * Generates GitHub Actions workflows based on configuration:
+ * - Main pipeline workflow (.github/workflows/pipeline.yml)
+ * - Reusable actions (.github/actions/*)
+ * - Idempotent regeneration (only when config/templates change)
+ *
+ * ### validate
+ * Validates workflow YAML syntax and structure, checks for common issues.
+ *
+ * ### verify
+ * Verifies pipeline job order and dependencies are correct.
+ *
+ * ### setup
+ * Configures GitHub repository:
+ * - Workflow permissions (read/write)
+ * - Branch protection rules
+ * - Auto-merge settings
+ *
+ * ## Global Options
+ * - `-c, --config <path>`: Path to config file (default: .pipecraftrc.json)
+ * - `-v, --verbose`: Verbose output
+ * - `--debug`: Debug output (maximum detail)
+ * - `--force`: Force regeneration even if unchanged
+ * - `--dry-run`: Show what would be done without making changes
+ *
+ * ## Examples
+ *
+ * ```bash
+ * # Initialize configuration interactively
+ * pipecraft init --interactive
+ *
+ * # Generate workflows
+ * pipecraft generate
+ *
+ * # Generate with version management
+ * pipecraft init --with-versioning
+ * pipecraft generate
+ *
+ * # Validate existing workflows
+ * pipecraft validate
+ *
+ * # Setup GitHub repository
+ * pipecraft setup --verify
+ *
+ * # Debug mode
+ * pipecraft generate --debug
+ * ```
+ *
+ * @module cli
+ */
+
 import { Command } from 'commander'
 import { cosmiconfigSync } from 'cosmiconfig'
 import { runModule, prompt } from '@featherscloud/pinion'
@@ -14,6 +82,7 @@ import { loadConfig, validateConfig } from '../utils/config.js'
 import { PipecraftConfig } from '../types/index.js'
 import { setupGitHubPermissions } from '../utils/github-setup.js'
 import { runPreflightChecks, formatPreflightResults, checkNodeVersion } from '../utils/preflight.js'
+import { logger } from '../utils/logger.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -34,6 +103,7 @@ program
   .option('-p, --pipeline <path>', 'path to existing pipeline file for merging', '.github/workflows/pipeline.yml')
   .option('-o, --output-pipeline <path>', 'path to output pipeline file (for testing)', '.github/workflows/pipeline.yml')
   .option('-v, --verbose', 'verbose output')
+  .option('--debug', 'debug output (includes all verbose output plus additional debugging info)')
   .option('--force', 'force regeneration even if files unchanged')
   .option('--dry-run', 'show what would be done without making changes')
 
@@ -103,56 +173,59 @@ program
       const pipelinePath = globalOptions.pipeline
       const outputPipelinePath = globalOptions.outputPipeline
 
+      // Set logger level based on flags
+      if (globalOptions.debug) {
+        logger.setLevel('debug')
+      } else if (globalOptions.verbose) {
+        logger.setLevel('verbose')
+      }
+
       // Run pre-flight checks unless skipped
       if (!options.skipChecks) {
-        console.log('🔍 Running pre-flight checks...\n')
+        logger.info('🔍 Running pre-flight checks...\n')
 
         const checks = runPreflightChecks()
         const { allPassed, output, nextSteps } = formatPreflightResults(checks)
 
-        console.log(output)
-        console.log()
+        logger.info(output)
+        logger.info('')
 
         if (!allPassed) {
-          console.error('❌ Pre-flight checks failed. Fix the issues above and try again.')
-          console.error('   Or use --skip-checks to bypass (not recommended)\n')
+          logger.error('❌ Pre-flight checks failed. Fix the issues above and try again.')
+          logger.error('   Or use --skip-checks to bypass (not recommended)\n')
           process.exit(1)
         }
 
-        console.log('✅ All pre-flight checks passed!')
+        logger.info('✅ All pre-flight checks passed!')
 
         // Store next steps for later display (after successful generation)
         if (nextSteps) {
           (options as any)._nextSteps = nextSteps
         }
 
-        console.log()
+        logger.info('')
       }
 
-      if (globalOptions.verbose) {
-        console.log(`📖 Reading config from: ${configPath}`)
-        console.log(`📖 Reading pipeline from: ${pipelinePath}`)
-      }
+      logger.verbose(`📖 Reading config from: ${configPath}`)
+      logger.verbose(`📖 Reading pipeline from: ${pipelinePath}`)
 
       // Load configuration
       const config = loadConfig(configPath) as PipecraftConfig
-      
+
       // Check idempotency if not forcing
       if (!globalOptions.force && !globalOptions.dryRun) {
         const idempotencyManager = new IdempotencyManager(config)
-        
+
         if (!(await idempotencyManager.hasChanges())) {
-          console.log('ℹ️  No changes detected. Use --force to regenerate anyway.')
+          logger.info('ℹ️  No changes detected. Use --force to regenerate anyway.')
           return
         }
-        
-        if (globalOptions.verbose) {
-          console.log('🔄 Changes detected, regenerating workflows...')
-        }
+
+        logger.verbose('🔄 Changes detected, regenerating workflows...')
       }
-      
+
       if (globalOptions.dryRun) {
-        console.log('🔍 Dry run mode - would generate workflows')
+        logger.info('🔍 Dry run mode - would generate workflows')
         return
       }
       
@@ -185,16 +258,16 @@ program
       const idempotencyManager = new IdempotencyManager(config)
       await idempotencyManager.updateCache()
 
-      console.log(`✅ Generated workflows in: ${options.output}`)
+      logger.success(`✅ Generated workflows in: ${options.output}`)
 
       // Display next steps if available
       if ((options as any)._nextSteps) {
-        console.log()
+        logger.info('')
         const steps = (options as any)._nextSteps as string[]
-        steps.forEach((step: string) => console.log(step))
+        steps.forEach((step: string) => logger.info(step))
       }
     } catch (error: any) {
-      console.error('❌ Failed to generate workflows:', error.message)
+      logger.error('❌ Failed to generate workflows:', error.message)
       process.exit(1)
     }
   })

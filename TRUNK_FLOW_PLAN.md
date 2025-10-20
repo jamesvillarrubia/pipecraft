@@ -1,7 +1,30 @@
 # Trunk-Based Flow Plan for PipeCraft
 
+> **⚠️ FUTURE ROADMAP - NOT CURRENT IMPLEMENTATION**
+>
+> This document describes **planned future enhancements** to PipeCraft's trunk-based workflow.
+> For the **currently implemented** workflow, see [docs/CURRENT_TRUNK_FLOW.md](docs/CURRENT_TRUNK_FLOW.md).
+>
+> **Current Status**:
+> - ✅ **Phase 1 Implemented**: Basic PR-based promotion (develop → staging → main)
+> - 🚧 **Phase 2-4 Planned**: Temporary branches, environment deployments, multiple flow patterns
+>
+> Last Updated: 2025-01-19
+
 ## Vision
+
 PipeCraft generates GitHub Actions workflows that support **trunk-based delivery** with configurable promotion gates. Code flows automatically from an initial branch through intermediate branches to a final branch, with optional manual approval gates.
+
+### Current vs. Planned
+
+| Feature | Current (v1.x) | Planned (v2.x) |
+|---------|---------------|----------------|
+| Direct PR promotion | ✅ Implemented | ✅ Keep |
+| Temporary branches | ❌ Not implemented | 🚧 Planned |
+| Manual approval gates | ⚠️ Via PR approval only | 🚧 Environment approvals |
+| Auto-merge | ✅ Per-branch config | ✅ Keep + enhance |
+| Multiple flow patterns | ❌ Only one pattern | 🚧 Planned |
+| GitLab support | ❌ GitHub only | 🚧 Planned |
 
 ## Why Temporary Branches Are REQUIRED
 
