@@ -1,9 +1,23 @@
+/**
+ * Promote Branch Action Template
+ * 
+ * Generates a composite action that promotes code from one branch to another via
+ * temporary branch and pull request. Handles auto-merge and cleanup for trunk flow.
+ * 
+ * @module templates/actions/promote-branch.yml.tpl
+ */
+
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import fs from 'fs'
 import dedent from 'dedent'
+import { logger } from '../../utils/logger.js'
 
-// Template for the Promote Branch GitHub Action
-// This action handles branch promotions via temporary branches + PRs
+/**
+ * Generates the promote-branch composite action YAML content.
+ * 
+ * @param {any} ctx - Context (not currently used)
+ * @returns {string} YAML content for the composite action
+ */
 const promoteBranchActionTemplate = (ctx: any) => {
   return dedent`name: 'Promote Branch'
     description: 'Promote code from source to target branch via temporary branch + PR'
@@ -16,6 +30,10 @@ const promoteBranchActionTemplate = (ctx: any) => {
         default: \${{ github.ref_name }}
       version:
         description: 'Version being promoted (e.g., v1.2.3, auto-detected from git tags if not provided)'
+        required: false
+        default: ''
+      run_number:
+        description: 'The original run number from develop branch for traceability'
         required: false
         default: ''
       configPath:
@@ -305,13 +323,20 @@ const promoteBranchActionTemplate = (ctx: any) => {
           run: |
             TARGET="\${{ steps.read-config.outputs.targetBranch }}"
             VERSION="\${{ steps.get-version.outputs.version }}"
+            RUN_NUMBER="\${{ inputs.run_number }}"
 
             echo "🔄 Triggering pipeline workflow on \$TARGET branch with version \$VERSION"
 
             # Trigger the pipeline workflow on the target branch
             # This is necessary because GITHUB_TOKEN pushes don't trigger workflows by default
-            # Pass the version so the run name is descriptive
-            gh workflow run pipeline.yml --ref "\$TARGET" --field version="\$VERSION"
+            # Pass the version and run_number to maintain traceability across branches
+            WORKFLOW_ARGS=(--ref "\$TARGET" --field version="\$VERSION")
+            if [ -n "\$RUN_NUMBER" ]; then
+              WORKFLOW_ARGS+=(--field run_number="\$RUN_NUMBER")
+              echo "   Run number: \$RUN_NUMBER (for traceability)"
+            fi
+            
+            gh workflow run pipeline.yml "\${WORKFLOW_ARGS[@]}"
 
             echo "✅ Pipeline workflow triggered on \$TARGET with version \$VERSION"
 
@@ -351,6 +376,12 @@ const promoteBranchActionTemplate = (ctx: any) => {
   `
 }
 
+/**
+ * Generator entry point for promote-branch composite action.
+ * 
+ * @param {PinionContext} ctx - Pinion generator context
+ * @returns {Promise<PinionContext>} Updated context after file generation
+ */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
     .then((ctx) => {
@@ -358,7 +389,7 @@ export const generate = (ctx: PinionContext) =>
       const filePath = '.github/actions/promote-branch/action.yml'
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
-      console.log(`${status} ${filePath}`)
+      logger.verbose(`${status} ${filePath}`)
       return ctx
     })
     .then(renderTemplate(promoteBranchActionTemplate, toFile('.github/actions/promote-branch/action.yml')))

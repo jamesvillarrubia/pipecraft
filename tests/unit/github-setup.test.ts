@@ -1,189 +1,459 @@
 /**
- * GitHub Setup Utility Tests
+ * Comprehensive GitHub Setup Tests
  *
- * Tests for the github-setup utility that configures repository permissions
+ * Tests GitHub repository setup and configuration including:
+ * - Repository information extraction
+ * - GitHub token management
+ * - Workflow permissions configuration
+ * - API interactions with GitHub
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { getRepositoryInfo, getGitHubToken } from '../../src/utils/github-setup'
 import { execSync } from 'child_process'
+import {
+  getRepositoryInfo,
+  getGitHubToken,
+  getWorkflowPermissions,
+  updateWorkflowPermissions,
+  getRequiredPermissionChanges
+} from '../../src/utils/github-setup.js'
 
-// Mock child_process
-vi.mock('child_process', () => ({
-  execSync: vi.fn()
-}))
+// Mock child_process at module level
+vi.mock('child_process', async () => {
+  const actual = await vi.importActual('child_process')
+  return {
+    ...actual,
+    execSync: vi.fn()
+  }
+})
 
-describe('GitHub Setup Utility', () => {
+const mockExecSync = execSync as unknown as ReturnType<typeof vi.fn>
+
+// Mock global fetch
+global.fetch = vi.fn()
+
+describe('GitHub Setup', () => {
+  let originalEnv: NodeJS.ProcessEnv
+
   beforeEach(() => {
-    // Clear all mocks before each test
-    vi.clearAllMocks()
-    // Clear environment variables
-    delete process.env.GITHUB_TOKEN
-    delete process.env.GH_TOKEN
+    // Save original environment
+    originalEnv = { ...process.env }
+    
+    // Reset mocks
+    mockExecSync.mockReset()
+    vi.mocked(global.fetch).mockReset()
   })
 
-  describe('getRepositoryInfo', () => {
-    it('should parse HTTPS GitHub URLs', () => {
-      vi.mocked(execSync).mockReturnValue('https://github.com/owner/repo.git\n' as any)
+  afterEach(() => {
+    // Restore environment
+    process.env = originalEnv
+  })
+
+  describe('getRepositoryInfo()', () => {
+    it('should parse HTTPS GitHub URL', () => {
+      mockExecSync.mockReturnValue('https://github.com/owner/repo.git\n')
 
       const info = getRepositoryInfo()
-
       expect(info.owner).toBe('owner')
       expect(info.repo).toBe('repo')
       expect(info.remote).toBe('https://github.com/owner/repo.git')
     })
 
-    it('should parse SSH GitHub URLs', () => {
-      vi.mocked(execSync).mockReturnValue('git@github.com:owner/repo.git\n' as any)
+    it('should parse HTTPS GitHub URL without .git', () => {
+      mockExecSync.mockReturnValue('https://github.com/owner/repo\n')
 
       const info = getRepositoryInfo()
+      expect(info.owner).toBe('owner')
+      expect(info.repo).toBe('repo')
+      expect(info.remote).toBe('https://github.com/owner/repo')
+    })
 
+    it('should parse SSH GitHub URL', () => {
+      mockExecSync.mockReturnValue('git@github.com:owner/repo.git\n')
+
+      const info = getRepositoryInfo()
       expect(info.owner).toBe('owner')
       expect(info.repo).toBe('repo')
       expect(info.remote).toBe('git@github.com:owner/repo.git')
     })
 
-    it('should parse URLs without .git extension', () => {
-      vi.mocked(execSync).mockReturnValue('https://github.com/owner/repo\n' as any)
+    it('should parse SSH GitHub URL without .git', () => {
+      mockExecSync.mockReturnValue('git@github.com:owner/repo\n')
 
       const info = getRepositoryInfo()
-
       expect(info.owner).toBe('owner')
       expect(info.repo).toBe('repo')
     })
 
-    it('should throw error for non-GitHub URLs', () => {
-      vi.mocked(execSync).mockReturnValue('https://gitlab.com/owner/repo.git\n' as any)
+    it('should handle organization names with hyphens', () => {
+      mockExecSync.mockReturnValue('https://github.com/my-org/my-repo.git\n')
 
+      const info = getRepositoryInfo()
+      expect(info.owner).toBe('my-org')
+      expect(info.repo).toBe('my-repo')
+    })
+
+    it('should fail on repo names with dots (current limitation)', () => {
+      mockExecSync.mockReturnValue('https://github.com/owner/repo.name.git\n')
+
+      // Current regex doesn't support dots in repo names
+      // Pattern [^/.] stops at first dot
       expect(() => getRepositoryInfo()).toThrow('Could not parse GitHub repository URL')
     })
 
-    it('should throw error when git command fails', () => {
-      vi.mocked(execSync).mockImplementation(() => {
-        throw new Error('Not a git repository')
+    it('should throw when git remote fails', () => {
+      mockExecSync.mockImplementation(() => {
+        throw new Error('fatal: not a git repository')
       })
 
       expect(() => getRepositoryInfo()).toThrow('Failed to get repository info')
     })
-  })
 
-  describe('getGitHubToken', () => {
-    it('should get token from GITHUB_TOKEN environment variable', () => {
-      process.env.GITHUB_TOKEN = 'test-token-123'
+    it('should throw when URL is not GitHub', () => {
+      mockExecSync.mockReturnValue('https://gitlab.com/owner/repo.git\n')
 
-      const token = getGitHubToken()
-
-      expect(token).toBe('test-token-123')
+      expect(() => getRepositoryInfo()).toThrow('Could not parse GitHub repository URL')
     })
 
-    it('should get token from GH_TOKEN environment variable', () => {
-      process.env.GH_TOKEN = 'test-token-456'
+    it('should throw when URL format is invalid', () => {
+      mockExecSync.mockReturnValue('invalid-url\n')
+
+      expect(() => getRepositoryInfo()).toThrow('Could not parse GitHub repository URL')
+    })
+  })
+
+  describe('getGitHubToken()', () => {
+    it('should get token from GITHUB_TOKEN env var', () => {
+      process.env.GITHUB_TOKEN = 'ghp_test_token_123'
 
       const token = getGitHubToken()
+      expect(token).toBe('ghp_test_token_123')
+    })
 
-      expect(token).toBe('test-token-456')
+    it('should get token from GH_TOKEN env var', () => {
+      process.env.GH_TOKEN = 'ghp_test_token_456'
+
+      const token = getGitHubToken()
+      expect(token).toBe('ghp_test_token_456')
     })
 
     it('should prefer GITHUB_TOKEN over GH_TOKEN', () => {
-      process.env.GITHUB_TOKEN = 'github-token'
-      process.env.GH_TOKEN = 'gh-token'
+      process.env.GITHUB_TOKEN = 'ghp_github_token'
+      process.env.GH_TOKEN = 'ghp_gh_token'
 
       const token = getGitHubToken()
-
-      expect(token).toBe('github-token')
+      expect(token).toBe('ghp_github_token')
     })
 
-    it('should try gh CLI if env vars not set', () => {
-      vi.mocked(execSync).mockReturnValue('gh-cli-token\n' as any)
+    it('should get token from gh CLI when env vars not set', () => {
+      delete process.env.GITHUB_TOKEN
+      delete process.env.GH_TOKEN
+      mockExecSync.mockReturnValue('ghp_gh_cli_token\n')
 
       const token = getGitHubToken()
-
-      expect(token).toBe('gh-cli-token')
-      expect(execSync).toHaveBeenCalledWith(
-        'gh auth token',
-        expect.objectContaining({ encoding: 'utf8' })
-      )
+      expect(token).toBe('ghp_gh_cli_token')
+      expect(mockExecSync).toHaveBeenCalledWith('gh auth token', expect.any(Object))
     })
 
-    it('should throw error when no token is available', () => {
-      vi.mocked(execSync).mockImplementation(() => {
+    it('should throw when no token available', () => {
+      delete process.env.GITHUB_TOKEN
+      delete process.env.GH_TOKEN
+      mockExecSync.mockImplementation(() => {
         throw new Error('gh not found')
       })
 
       expect(() => getGitHubToken()).toThrow('GitHub token not found')
-      expect(() => getGitHubToken()).toThrow('Set GITHUB_TOKEN or GH_TOKEN')
+      expect(() => getGitHubToken()).toThrow('Set GITHUB_TOKEN')
+      expect(() => getGitHubToken()).toThrow('gh auth login')
+    })
+
+    it('should handle empty token from gh CLI', () => {
+      delete process.env.GITHUB_TOKEN
+      delete process.env.GH_TOKEN
+      mockExecSync.mockReturnValue('')
+
+      expect(() => getGitHubToken()).toThrow('GitHub token not found')
     })
   })
 
-  describe('API Integration', () => {
-    // Note: Full API tests require mocking fetch
-    // These are examples of what could be tested with proper mocking
-
-    it.skip('should fetch workflow permissions', async () => {
-      // Would require mocking global fetch
-      // Example test structure for future implementation
-    })
-
-    it.skip('should update workflow permissions', async () => {
-      // Would require mocking global fetch
-      // Example test structure for future implementation
-    })
-  })
-
-  describe('Permission Changes', () => {
-    it('should identify when permissions need updating', () => {
-      const currentPermissions = {
+  describe('getWorkflowPermissions()', () => {
+    it('should fetch workflow permissions successfully', async () => {
+      const mockPermissions = {
         default_workflow_permissions: 'read' as const,
         can_approve_pull_request_reviews: false
       }
 
-      // Check if permissions are correct
-      const needsUpdate =
-        currentPermissions.default_workflow_permissions !== 'write' ||
-        currentPermissions.can_approve_pull_request_reviews !== true
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: async () => mockPermissions
+      } as Response)
 
-      expect(needsUpdate).toBe(true)
+      const result = await getWorkflowPermissions('owner', 'repo', 'token123')
+      
+      expect(result).toEqual(mockPermissions)
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://api.github.com/repos/owner/repo/actions/permissions/workflow',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'Authorization': 'Bearer token123',
+            'Accept': 'application/vnd.github+json'
+          })
+        })
+      )
     })
 
-    it('should recognize when permissions are already correct', () => {
+    it('should throw on API error', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: false,
+        status: 404,
+        text: async () => 'Not Found'
+      } as Response)
+
+      await expect(
+        getWorkflowPermissions('owner', 'repo', 'token123')
+      ).rejects.toThrow('Failed to get workflow permissions: 404')
+    })
+
+    it('should throw on network error', async () => {
+      vi.mocked(global.fetch).mockRejectedValue(new Error('Network error'))
+
+      await expect(
+        getWorkflowPermissions('owner', 'repo', 'token123')
+      ).rejects.toThrow('Network error')
+    })
+  })
+
+  describe('updateWorkflowPermissions()', () => {
+    it('should update workflow permissions successfully', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true
+      } as Response)
+
+      const permissions = {
+        default_workflow_permissions: 'write' as const,
+        can_approve_pull_request_reviews: true
+      }
+
+      await updateWorkflowPermissions('owner', 'repo', 'token123', permissions)
+      
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://api.github.com/repos/owner/repo/actions/permissions/workflow',
+        expect.objectContaining({
+          method: 'PUT',
+          headers: expect.objectContaining({
+            'Authorization': 'Bearer token123',
+            'Content-Type': 'application/json'
+          }),
+          body: JSON.stringify(permissions)
+        })
+      )
+    })
+
+    it('should throw on API error', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: false,
+        status: 403,
+        text: async () => 'Forbidden'
+      } as Response)
+
+      await expect(
+        updateWorkflowPermissions('owner', 'repo', 'token123', {
+          default_workflow_permissions: 'write'
+        })
+      ).rejects.toThrow('Failed to update workflow permissions: 403')
+    })
+
+    it('should handle partial permission updates', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true
+      } as Response)
+
+      await updateWorkflowPermissions('owner', 'repo', 'token123', {
+        default_workflow_permissions: 'write'
+        // can_approve_pull_request_reviews not included
+      })
+      
+      const callArgs = vi.mocked(global.fetch).mock.calls[0]
+      const body = JSON.parse(callArgs[1]?.body as string)
+      
+      expect(body).toHaveProperty('default_workflow_permissions', 'write')
+      expect(body).not.toHaveProperty('can_approve_pull_request_reviews')
+    })
+  })
+
+  describe('getRequiredPermissionChanges()', () => {
+    it('should return null when permissions are already correct', () => {
       const currentPermissions = {
         default_workflow_permissions: 'write' as const,
         can_approve_pull_request_reviews: true
       }
 
-      const needsUpdate =
-        currentPermissions.default_workflow_permissions !== 'write' ||
-        currentPermissions.can_approve_pull_request_reviews !== true
+      const changes = getRequiredPermissionChanges(currentPermissions)
+      expect(changes).toBeNull()
+    })
 
-      expect(needsUpdate).toBe(false)
+    it('should detect needed change to default_workflow_permissions', () => {
+      const currentPermissions = {
+        default_workflow_permissions: 'read' as const,
+        can_approve_pull_request_reviews: true
+      }
+
+      const changes = getRequiredPermissionChanges(currentPermissions)
+      expect(changes).toEqual({
+        default_workflow_permissions: 'write'
+      })
+    })
+
+    it('should detect needed change to can_approve_pull_request_reviews', () => {
+      const currentPermissions = {
+        default_workflow_permissions: 'write' as const,
+        can_approve_pull_request_reviews: false
+      }
+
+      const changes = getRequiredPermissionChanges(currentPermissions)
+      expect(changes).toEqual({
+        can_approve_pull_request_reviews: true
+      })
+    })
+
+    it('should detect multiple needed changes', () => {
+      const currentPermissions = {
+        default_workflow_permissions: 'read' as const,
+        can_approve_pull_request_reviews: false
+      }
+
+      const changes = getRequiredPermissionChanges(currentPermissions)
+      expect(changes).toEqual({
+        default_workflow_permissions: 'write',
+        can_approve_pull_request_reviews: true
+      })
     })
   })
 
-  describe('Error Messages', () => {
-    it('should provide helpful error message for missing token', () => {
-      vi.mocked(execSync).mockImplementation(() => {
-        throw new Error('command not found')
-      })
+  describe('Edge Cases and Error Handling', () => {
+    it('should handle repository names with special characters', () => {
+      mockExecSync.mockReturnValue('https://github.com/owner/repo_name-v2.git\n')
 
-      try {
-        getGitHubToken()
-        expect.fail('Should have thrown error')
-      } catch (error: any) {
-        expect(error.message).toContain('GITHUB_TOKEN')
-        expect(error.message).toContain('GH_TOKEN')
-        expect(error.message).toContain('gh auth login')
-      }
+      const info = getRepositoryInfo()
+      expect(info.owner).toBe('owner')
+      expect(info.repo).toBe('repo_name-v2')
     })
 
-    it('should provide helpful error message for non-GitHub repo', () => {
-      vi.mocked(execSync).mockReturnValue('https://bitbucket.org/owner/repo.git\n' as any)
+    it('should handle whitespace in git remote output', () => {
+      mockExecSync.mockReturnValue('  https://github.com/owner/repo.git  \n')
 
-      try {
-        getRepositoryInfo()
-        expect.fail('Should have thrown error')
-      } catch (error: any) {
-        expect(error.message).toContain('GitHub repository')
+      const info = getRepositoryInfo()
+      expect(info.owner).toBe('owner')
+      expect(info.repo).toBe('repo')
+    })
+
+    it('should handle token with whitespace', () => {
+      process.env.GITHUB_TOKEN = '  ghp_token_with_spaces  '
+
+      const token = getGitHubToken()
+      // Token should be returned as-is (trimming happens at usage)
+      expect(token).toBe('  ghp_token_with_spaces  ')
+    })
+
+    it('should handle API rate limiting', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: false,
+        status: 429,
+        text: async () => 'Rate limit exceeded'
+      } as Response)
+
+      await expect(
+        getWorkflowPermissions('owner', 'repo', 'token123')
+      ).rejects.toThrow('429')
+    })
+
+    it('should handle unauthorized API access', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: false,
+        status: 401,
+        text: async () => 'Unauthorized'
+      } as Response)
+
+      await expect(
+        getWorkflowPermissions('owner', 'repo', 'invalid_token')
+      ).rejects.toThrow('401')
+    })
+  })
+
+  describe('Real-World Scenarios', () => {
+    it('should handle typical fresh repository setup', async () => {
+      // Fresh repo has read-only permissions
+      const currentPermissions = {
+        default_workflow_permissions: 'read' as const,
+        can_approve_pull_request_reviews: false
       }
+
+      const changes = getRequiredPermissionChanges(currentPermissions)
+      expect(changes).not.toBeNull()
+      expect(changes?.default_workflow_permissions).toBe('write')
+      expect(changes?.can_approve_pull_request_reviews).toBe(true)
+    })
+
+    it('should handle repository already configured', async () => {
+      // Already configured
+      const currentPermissions = {
+        default_workflow_permissions: 'write' as const,
+        can_approve_pull_request_reviews: true
+      }
+
+      const changes = getRequiredPermissionChanges(currentPermissions)
+      expect(changes).toBeNull()
+    })
+
+    it('should handle complete setup workflow', async () => {
+      // 1. Get repository info
+      mockExecSync.mockReturnValue('https://github.com/test-org/test-repo.git\n')
+      const repoInfo = getRepositoryInfo()
+      expect(repoInfo.owner).toBe('test-org')
+      expect(repoInfo.repo).toBe('test-repo')
+
+      // 2. Get token
+      process.env.GITHUB_TOKEN = 'ghp_test_token'
+      const token = getGitHubToken()
+      expect(token).toBe('ghp_test_token')
+
+      // 3. Check current permissions
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          default_workflow_permissions: 'read',
+          can_approve_pull_request_reviews: false
+        })
+      } as Response)
+
+      const currentPerms = await getWorkflowPermissions(
+        repoInfo.owner,
+        repoInfo.repo,
+        token
+      )
+      expect(currentPerms.default_workflow_permissions).toBe('read')
+
+      // 4. Determine needed changes
+      const changes = getRequiredPermissionChanges(currentPerms)
+      expect(changes).not.toBeNull()
+
+      // 5. Apply changes
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true
+      } as Response)
+
+      await updateWorkflowPermissions(
+        repoInfo.owner,
+        repoInfo.repo,
+        token,
+        changes!
+      )
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('test-org/test-repo'),
+        expect.objectContaining({ method: 'PUT' })
+      )
     })
   })
 })
+

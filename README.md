@@ -1,11 +1,11 @@
-<img src="./assets/logo_banner.png" alt="PipeCraft Logo" width="auto">
+<img src="https://raw.githubusercontent.com/jamesvillarrubia/pipecraft/main/assets/logo_banner.png" alt="PipeCraft Logo" width="auto">
 
 # PipeCraft
 
-[![npm version](https://badge.fury.io/js/pipecraft.svg)](https://badge.fury.io/js/pipecraft)
+[![npm version](https://badge.fury.io/js/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
 [![License](https://img.shields.io/npm/l/pipecraft.svg)](https://github.com/jamesvillarrubia/pipecraft/blob/main/LICENSE)
 [![NPM downloads](https://img.shields.io/npm/dm/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
-[![Node.js Version](https://img.shields.io/node/v/pipecraft.svg)](https://nodejs.org/en/)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/en/)
 [![codecov](https://codecov.io/gh/jamesvillarrubia/pipecraft/branch/main/graph/badge.svg)](https://codecov.io/gh/jamesvillarrubia/pipecraft)
 
 **Pipeline Status:**
@@ -30,6 +30,7 @@ PipeCraft is a powerful CLI tool for automating trunk-based development workflow
 - [Domain-Based Workflows](#domain-based-workflows)
 - [Version Management](#version-management)
 - [Examples](#examples)
+- [Documentation](#documentation)
 - [Roadmap & Future Features](#roadmap--future-features)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
@@ -45,21 +46,23 @@ PipeCraft is a powerful CLI tool for automating trunk-based development workflow
 - **Branch Flow Management** - Support for custom branch flows (develop → staging → main)
 - **Fast-Forward Merging** - Automatic branch management with configurable merge strategies
 - **Idempotent Regeneration** - Only regenerate when configuration or templates change
-- **GitLab Support** - Works with both GitHub Actions and GitLab CI (configurable)
+- **User Job Preservation** - Regenerates pipelines while preserving your custom jobs and comments
 - **Customizable Actions** - Define actions per branch merge (tests, deploys, version bumps)
 - **GitHub Setup Automation** - Automated token and repository setup validation
 
+> **Note**: This release focuses on GitHub Actions workflows. GitLab CI/CD support is [planned](#roadmap--future-features) for a future release. Currently, the `ciProvider` field accepts `'gitlab'` but generates GitHub Actions syntax.
+
 ## Prerequisites
 
-- Git
-- A GitHub or GitLab account
-- Node.js 18+ (for npm installation)
+- **Git** - Version control system
+- **GitHub Account** - For GitHub Actions workflows
+- **Node.js 18.0.0 or higher** - For npm installation
 
 ## Quick Start
 
 1. Initialize PipeCraft in your project:
    ```bash
-   npx pipecraft init --interactive
+   npx pipecraft init
    ```
 
 2. Generate your CI/CD workflows:
@@ -118,20 +121,17 @@ PipeCraft provides several commands to manage your trunk-based development workf
 
 #### 1. Initialize Configuration
 
-Start with an interactive setup wizard:
+Create a basic configuration with default settings:
 ```bash
-pipecraft init --interactive
+pipecraft init
 ```
 
-Or create a basic configuration:
+Force overwrite existing configuration:
 ```bash
-pipecraft init --ci-provider github --initial-branch develop --final-branch main
+pipecraft init --force
 ```
 
-Include version management setup:
-```bash
-pipecraft init --with-versioning
-```
+> **Note**: The `init` command currently generates a default configuration file with standard trunk flow settings (develop → staging → main). You can then edit the `.pipecraftrc.json` file to customize branch names, domains, and other settings.
 
 #### 2. Generate Workflows
 
@@ -156,6 +156,28 @@ If any check fails, you'll see helpful error messages with suggestions. Example 
 ❌ Not in a git repository
    💡 Initialize git: 'git init' or clone an existing repository
 ```
+
+**Output verbosity levels:**
+
+Normal mode (default) - Clean, actionable output:
+```bash
+pipecraft generate
+```
+Shows only essential information: pre-flight checks and completion status.
+
+Verbose mode - Shows file operations:
+```bash
+pipecraft generate --verbose
+```
+Includes file merge status, config paths, and workflow generation details.
+
+Debug mode - Full internal details:
+```bash
+pipecraft generate --debug
+```
+Includes everything from verbose mode plus internal debugging information like branch flow context, job ordering, and template operations.
+
+**Other options:**
 
 Skip pre-flight checks (not recommended):
 ```bash
@@ -275,16 +297,17 @@ Example `.pipecraftrc.json`:
 
 PipeCraft provides the following commands:
 
-| Command | Description | Options |
-|---------|-------------|---------|
-| `init` | Initialize PipeCraft configuration | `--interactive`, `--force`, `--with-versioning`, `--ci-provider`, `--merge-strategy`, `--initial-branch`, `--final-branch` |
-| `generate` | Generate CI/CD workflows with pre-flight checks | `--skip-checks`, `--force`, `--dry-run`, `--config`, `--output-pipeline`, `--verbose` |
+| Command | Description | Key Options |
+|---------|-------------|-------------|
+| `init` | Initialize PipeCraft configuration | `--force` |
+| `generate` | Generate CI/CD workflows with pre-flight checks | `--skip-checks`, `--force`, `--dry-run`, `--config`, `--output-pipeline`, `--verbose`, `--debug` |
 | `validate` | Validate configuration file | `--config` |
-| `validate:pipeline` | Validate generated pipeline files | `--strict` |
 | `setup-github` | Configure GitHub Actions workflow permissions | `--apply`, `--force` |
 | `verify` | Verify PipeCraft setup | None |
 | `version` | Version management commands | `--check`, `--bump`, `--release` |
 | `setup` | Create branches from branch flow | `--force` |
+
+> **Note**: All commands support global options like `--verbose` and `--debug` for detailed output.
 
 ### Global Options
 
@@ -293,21 +316,25 @@ Available for all commands:
 - `-c, --config <path>` - Path to config file (default: `.pipecraftrc.json`)
 - `-p, --pipeline <path>` - Path to existing pipeline file for merging
 - `-o, --output-pipeline <path>` - Path to output pipeline file
-- `-v, --verbose` - Verbose output
+- `-v, --verbose` - Verbose output (shows file operations and merge status)
+- `--debug` - Debug output (includes verbose output plus internal debugging details)
 - `--force` - Force operation even if unchanged
 - `--dry-run` - Show what would be done without making changes
 
 ### Command Examples
 
 ```bash
-# Initialize with all options
-pipecraft init --interactive --with-versioning --ci-provider github
+# Initialize configuration (creates .pipecraftrc.json with defaults)
+pipecraft init
 
 # Generate workflows with custom paths
 pipecraft generate --config .pipecraft.json --output-pipeline workflows/ci.yml
 
-# Validate pipeline files
-pipecraft validate:pipeline
+# Generate with verbose output to see file operations
+pipecraft generate --verbose
+
+# Generate with debug output to see internal details
+pipecraft generate --debug
 
 # Setup GitHub Actions permissions (interactive mode)
 pipecraft setup-github
@@ -315,12 +342,16 @@ pipecraft setup-github
 # Setup GitHub Actions permissions (auto-apply mode)
 pipecraft setup-github --apply
 
-# Validate before committing
+# Validate configuration before committing
 pipecraft validate && git commit -am "chore: update workflow config"
 
-# Check version and create release
+# Check what version would be bumped to
 pipecraft version --check
+
+# Bump version based on conventional commits
 pipecraft version --bump
+
+# Create a full release with tag and changelog
 pipecraft version --release
 
 # Setup all branches for new repository
@@ -913,49 +944,71 @@ Configuration with non-standard branch names:
 }
 ```
 
+## Documentation
+
+PipeCraft provides comprehensive documentation for different aspects of the project:
+
+### Core Documentation
+
+- **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - System architecture overview, design patterns, and component interactions
+- **[CURRENT_TRUNK_FLOW.md](./docs/CURRENT_TRUNK_FLOW.md)** - Current implemented trunk-based development workflow
+- **[ERROR_HANDLING.md](./docs/ERROR_HANDLING.md)** - Error handling strategies and common error scenarios
+- **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** - Complete testing guide with examples and best practices
+
+### Development Documentation
+
+- **[tests/README.md](./tests/README.md)** - Test structure and organization
+- **[docs/REPO_CLEANUP_PLAN.md](./docs/REPO_CLEANUP_PLAN.md)** - Repository organization and structure
+
+### Planning Documents
+
+- **[TRUNK_FLOW_PLAN.md](./TRUNK_FLOW_PLAN.md)** - Future roadmap for trunk flow variations *(future plans, not current implementation)*
+
+### Quick Links
+
+- **Architecture**: Understand how PipeCraft works internally
+- **Current Trunk Flow**: See what's implemented in this release
+- **Testing Guide**: Learn how to test PipeCraft or contribute tests
+- **Error Handling**: Debug issues and understand error messages
+
 ## Roadmap & Future Features
 
-PipeCraft is actively being developed with plans for additional features and improvements:
+PipeCraft is actively being developed with plans for additional features and improvements.
+
+### Current Release (v1.x)
+
+This release focuses on a **solid, working trunk-based development workflow** for GitHub Actions with:
+
+✅ **Develop → Staging → Main** branch flow  
+✅ **Domain-based change detection** for monorepos  
+✅ **Semantic versioning** with conventional commits  
+✅ **User job preservation** during regeneration  
+✅ **Pre-flight checks** for smooth setup  
+✅ **Comprehensive documentation** and testing  
+
+See [CURRENT_TRUNK_FLOW.md](./docs/CURRENT_TRUNK_FLOW.md) for details on what's implemented.
 
 ### Planned Features
 
-#### Enhanced GitLab Support
-- Full GitLab CI/CD pipeline generation (currently basic support)
-- GitLab-specific features (includes, extends, etc.)
-- GitLab merge request automation
-- GitLab runner configuration
+The roadmap is documented in [TRUNK_FLOW_PLAN.md](./TRUNK_FLOW_PLAN.md). Key planned features include:
 
-#### Additional Workflow Patterns
-- Feature branch workflows (Gitflow alternative)
-- Release branch workflows
-- Hotfix workflows
-- Custom workflow patterns via plugins
+#### Short Term (v2.x)
+- **Enhanced GitLab Support** - Full GitLab CI/CD pipeline generation
+- **Interactive Configuration** - Interactive `init` command with prompts
+- **Additional Flow Variations** - Gitflow, release branches, hotfix workflows
+- **CLI Improvements** - Better error messages, configuration migration tools
 
-#### Advanced Branch Management
-- Automatic conflict resolution strategies
-- Branch protection rule setup
-- PR template generation
-- Code review automation
+#### Medium Term (v3.x)
+- **Extended CI/CD Providers** - Azure DevOps, Jenkins, CircleCI, Bitbucket
+- **Advanced Branch Management** - Conflict resolution, PR templates
+- **Visual Workflow Editor** - Web-based workflow configuration tool
 
-#### Extended CI/CD Providers
-- Azure DevOps Pipelines
-- Jenkins pipeline generation
-- CircleCI configuration
-- Bitbucket Pipelines
+#### Long Term (v4.x+)
+- **Enterprise Features** - Team templates, policy enforcement, audit logging
+- **Plugin System** - Custom workflow patterns and extensions
+- **Multi-Repository** Support - Manage pipelines across multiple repos
 
-#### Improved Developer Experience
-- Interactive CLI improvements
-- Better error messages and diagnostics
-- Configuration migration tools
-- Visual workflow editor (web-based)
-- Real-time workflow preview
-
-#### Enterprise Features
-- Team configuration templates
-- Organization-wide policy enforcement
-- Audit logging
-- RBAC integration
-- Self-hosted runner configuration
+For the complete roadmap and feature comparison, see [TRUNK_FLOW_PLAN.md](./TRUNK_FLOW_PLAN.md).
 
 ### Contributing to the Roadmap
 
@@ -980,6 +1033,7 @@ Have a feature request? We'd love to hear from you!
 - Check if configuration is valid: `pipecraft validate`
 - Use `--force` to bypass cache: `pipecraft generate --force`
 - Use `--verbose` for detailed output: `pipecraft generate --verbose`
+- Use `--debug` for full debugging output: `pipecraft generate --debug`
 - Verify file permissions in `.github/workflows/`
 
 #### 2. Configuration Validation Errors
@@ -1028,16 +1082,17 @@ If you encounter issues not covered here:
 
 1. Check the [GitHub Issues](https://github.com/jamesvillarrubia/pipecraft/issues)
 2. Enable verbose logging: `pipecraft generate --verbose`
-3. Validate your configuration: `pipecraft validate`
-4. [Open a new issue](https://github.com/jamesvillarrubia/pipecraft/issues/new) with:
+3. Enable debug logging for more detail: `pipecraft generate --debug`
+4. Validate your configuration: `pipecraft validate`
+5. [Open a new issue](https://github.com/jamesvillarrubia/pipecraft/issues/new) with:
    - PipeCraft version: `pipecraft --version`
    - Node version: `node --version`
    - Your configuration (sanitized)
-   - Full error output with `--verbose`
+   - Full error output with `--debug`
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for details on:
+Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/jamesvillarrubia/pipecraft/blob/main/CONTRIBUTING.md) for details on:
 
 - Code of conduct
 - Development setup
@@ -1080,7 +1135,7 @@ npm test tests/unit/config.test.ts
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/jamesvillarrubia/pipecraft/blob/main/LICENSE) file for details.
 
 ## Acknowledgments
 

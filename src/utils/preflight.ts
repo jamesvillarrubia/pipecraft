@@ -1,6 +1,19 @@
 /**
- * Pre-flight checks for PipeCraft commands
- * Validates environment and prerequisites before executing commands
+ * Pre-Flight Validation Checks
+ *
+ * This module implements comprehensive environment validation before workflow generation.
+ * Pre-flight checks prevent common failures by validating:
+ * - PipeCraft configuration exists and is valid
+ * - Git repository is properly initialized
+ * - Git remote is configured
+ * - Workflow directories are writable
+ * - Node.js version meets minimum requirements
+ *
+ * All checks return structured results with actionable error messages and suggestions.
+ * This provides a better user experience by catching issues early with clear guidance
+ * on how to resolve them.
+ *
+ * @module utils/preflight
  */
 
 import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'fs'
@@ -8,23 +21,67 @@ import { execSync } from 'child_process'
 import { join } from 'path'
 import { cosmiconfigSync } from 'cosmiconfig'
 
+/**
+ * Result of a single pre-flight check.
+ *
+ * Contains pass/fail status, descriptive message, and optional suggestion
+ * for resolving failures.
+ */
 export interface PreflightResult {
+  /** Whether the check passed */
   passed: boolean
+
+  /** Human-readable description of the check result */
   message: string
+
+  /** Optional suggestion for resolving failures */
   suggestion?: string
 }
 
+/**
+ * Collection of all pre-flight check results.
+ *
+ * Each field represents a specific environment check that must pass
+ * before workflows can be generated.
+ */
 export interface PreflightChecks {
+  /** Configuration file exists and is discoverable */
   configExists: PreflightResult
+
+  /** Configuration file is valid and has required fields */
   configValid: PreflightResult
+
+  /** Current directory is a git repository */
   inGitRepo: PreflightResult
+
+  /** Git remote (origin) is configured */
   hasGitRemote: PreflightResult
+
+  /** .github/workflows directory is writable */
   canWriteGithubDir: PreflightResult
 }
 
 /**
- * Check if config file exists using cosmiconfig
- * Searches for .pipecraftrc.json, .pipecraftrc, or package.json pipecraft key
+ * Check if PipeCraft configuration file exists.
+ *
+ * Uses cosmiconfig to search for configuration files in standard locations:
+ * - .pipecraftrc.json
+ * - .pipecraftrc (JSON or YAML)
+ * - pipecraft.config.js
+ * - package.json (pipecraft key)
+ *
+ * Searches current directory and all parent directories.
+ *
+ * @returns Check result with pass/fail status and file location if found
+ *
+ * @example
+ * ```typescript
+ * const result = checkConfigExists()
+ * if (!result.passed) {
+ *   console.error(result.message)
+ *   console.log(result.suggestion) // "Run 'pipecraft init' to create..."
+ * }
+ * ```
  */
 export function checkConfigExists(): PreflightResult {
   const explorer = cosmiconfigSync('pipecraft')
@@ -45,7 +102,26 @@ export function checkConfigExists(): PreflightResult {
 }
 
 /**
- * Check if config file is valid and has required fields
+ * Check if configuration file is valid and contains required fields.
+ *
+ * Validates:
+ * - File can be parsed (valid JSON/YAML)
+ * - Required fields are present (ciProvider, branchFlow, domains)
+ * - At least one domain is configured
+ *
+ * @returns Check result with validation status and specific error if invalid
+ *
+ * @example
+ * ```typescript
+ * const result = checkConfigValid()
+ * if (!result.passed) {
+ *   if (result.message.includes('missing required fields')) {
+ *     // Config exists but incomplete
+ *   } else if (result.message.includes('Invalid JSON')) {
+ *     // Syntax error in config file
+ *   }
+ * }
+ * ```
  */
 export function checkConfigValid(): PreflightResult {
   const explorer = cosmiconfigSync('pipecraft')
@@ -105,12 +181,31 @@ export function checkConfigValid(): PreflightResult {
 }
 
 /**
- * Check if current directory is a git repository
+ * Check if current directory is inside a git repository.
+ *
+ * PipeCraft requires a git repository to:
+ * - Generate GitHub Actions workflows
+ * - Track version history
+ * - Enable version management features
+ *
+ * Uses `git rev-parse --is-inside-work-tree` to detect git repository.
+ * Suppresses stderr to avoid noise when git is not initialized.
+ *
+ * @returns Check result indicating if directory is in a git repository
+ *
+ * @example
+ * ```typescript
+ * const result = checkInGitRepo()
+ * if (!result.passed) {
+ *   console.log('Please initialize git first')
+ *   execSync('git init')
+ * }
+ * ```
  */
 export function checkInGitRepo(): PreflightResult {
   try {
     execSync('git rev-parse --is-inside-work-tree', {
-      stdio: 'pipe',
+      stdio: ['pipe', 'pipe', 'ignore'], // Suppress stderr to avoid "not a git repository" errors
       encoding: 'utf8'
     })
 
@@ -128,12 +223,35 @@ export function checkInGitRepo(): PreflightResult {
 }
 
 /**
- * Check if git remote is configured
+ * Check if git remote named 'origin' is configured.
+ *
+ * A git remote is required for:
+ * - Pushing generated workflows to GitHub
+ * - Repository information extraction
+ * - GitHub API integration
+ *
+ * Checks specifically for the 'origin' remote, which is the standard
+ * default remote name. Also detects if the remote is GitHub vs. GitLab
+ * and provides appropriate messaging.
+ *
+ * @returns Check result with remote URL if configured
+ *
+ * @example
+ * ```typescript
+ * const result = checkHasGitRemote()
+ * if (!result.passed) {
+ *   console.log('No git remote found')
+ *   execSync('git remote add origin https://github.com/user/repo.git')
+ * } else if (result.suggestion) {
+ *   // GitLab detected - show warning about experimental support
+ *   console.warn(result.suggestion)
+ * }
+ * ```
  */
 export function checkHasGitRemote(): PreflightResult {
   try {
     const remote = execSync('git remote get-url origin', {
-      stdio: 'pipe',
+      stdio: ['pipe', 'pipe', 'ignore'], // Suppress stderr
       encoding: 'utf8'
     }).trim()
 
@@ -165,7 +283,29 @@ export function checkHasGitRemote(): PreflightResult {
 }
 
 /**
- * Check if .github directory is writable
+ * Check if .github/workflows directory exists and is writable.
+ *
+ * Workflows are written to .github/workflows/, so this directory must:
+ * - Exist or be creatable
+ * - Be writable by the current user
+ *
+ * This check attempts to:
+ * 1. Create .github/workflows/ if it doesn't exist
+ * 2. Write a test file to verify write permissions
+ * 3. Clean up the test file
+ *
+ * @returns Check result indicating if directory is writable
+ *
+ * @example
+ * ```typescript
+ * const result = checkCanWriteGithubDir()
+ * if (!result.passed) {
+ *   if (result.message.includes('permission')) {
+ *     // Fix permissions
+ *     execSync('chmod +w .github/workflows/')
+ *   }
+ * }
+ * ```
  */
 export function checkCanWriteGithubDir(): PreflightResult {
   const githubDir = '.github'
@@ -211,7 +351,28 @@ export function checkCanWriteGithubDir(): PreflightResult {
 }
 
 /**
- * Check Node.js version
+ * Check if Node.js version meets minimum requirement.
+ *
+ * PipeCraft requires Node.js 18.0.0 or higher because it uses:
+ * - Modern ES modules
+ * - Latest TypeScript features
+ * - Current GitHub Actions syntax
+ *
+ * Only checks major version for simplicity. Minor/patch versions
+ * within the same major release are considered compatible.
+ *
+ * @param minVersion - Minimum required version (default: '18.0.0')
+ * @returns Check result with current and minimum versions
+ *
+ * @example
+ * ```typescript
+ * const result = checkNodeVersion('18.0.0')
+ * if (!result.passed) {
+ *   console.error('Please upgrade Node.js')
+ *   console.log('Current:', process.version)
+ *   console.log('Required: >= 18.0.0')
+ * }
+ * ```
  */
 export function checkNodeVersion(minVersion: string = '18.0.0'): PreflightResult {
   const currentVersion = process.version.slice(1) // Remove 'v' prefix
@@ -234,8 +395,38 @@ export function checkNodeVersion(minVersion: string = '18.0.0'): PreflightResult
 }
 
 /**
- * Run all pre-flight checks for generate command
- * Note: No longer needs configPath - uses cosmiconfig to search automatically
+ * Run all pre-flight checks for workflow generation.
+ *
+ * Executes comprehensive environment validation to ensure all prerequisites
+ * are met before attempting to generate workflows. This prevents partial
+ * failures and provides clear error messages upfront.
+ *
+ * Checks performed:
+ * - Configuration file exists
+ * - Configuration is valid
+ * - Inside git repository
+ * - Git remote configured
+ * - Workflow directory writable
+ *
+ * Note: Node version check is optional and not included by default since
+ * if Node is too old, the code wouldn't run at all.
+ *
+ * @returns Collection of all check results
+ *
+ * @example
+ * ```typescript
+ * const checks = runPreflightChecks()
+ * const { allPassed, output } = formatPreflightResults(checks)
+ *
+ * if (!allPassed) {
+ *   console.error('Pre-flight checks failed:')
+ *   console.log(output)
+ *   process.exit(1)
+ * }
+ *
+ * // Proceed with workflow generation
+ * await generateWorkflows()
+ * ```
  */
 export function runPreflightChecks(): PreflightChecks {
   return {
@@ -248,7 +439,33 @@ export function runPreflightChecks(): PreflightChecks {
 }
 
 /**
- * Format preflight results for display
+ * Format pre-flight check results for human-readable display.
+ *
+ * Converts structured check results into formatted output with:
+ * - ✅/❌ icons for visual scanning
+ * - Error messages and suggestions
+ * - Next steps if all checks passed
+ * - Helpful guidance for getting started
+ *
+ * The output is designed to be printed directly to the console.
+ *
+ * @param checks - Collection of check results from runPreflightChecks()
+ * @returns Formatted output object with overall status and display string
+ *
+ * @example
+ * ```typescript
+ * const checks = runPreflightChecks()
+ * const { allPassed, output, nextSteps } = formatPreflightResults(checks)
+ *
+ * console.log(output)
+ *
+ * if (allPassed && nextSteps) {
+ *   console.log('\n' + nextSteps.join('\n'))
+ * } else {
+ *   console.error('\n⚠ Fix the above issues and try again')
+ *   process.exit(1)
+ * }
+ * ```
  */
 export function formatPreflightResults(checks: PreflightChecks): {
   allPassed: boolean
@@ -291,12 +508,21 @@ export function formatPreflightResults(checks: PreflightChecks): {
 }
 
 /**
- * Get current git branch name
+ * Get current git branch name.
+ *
+ * Uses `git branch --show-current` to get the active branch.
+ * Falls back to 'main' if:
+ * - Not in a git repository
+ * - In detached HEAD state
+ * - Git command fails
+ *
+ * @returns Current branch name or 'main' as fallback
+ * @private
  */
 function getCurrentBranch(): string {
   try {
     const branch = execSync('git branch --show-current', {
-      stdio: 'pipe',
+      stdio: ['pipe', 'pipe', 'ignore'], // Suppress stderr
       encoding: 'utf8'
     }).trim()
     return branch || 'main'

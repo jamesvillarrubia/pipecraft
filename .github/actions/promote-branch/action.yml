@@ -11,10 +11,6 @@ inputs:
     description: 'Version being promoted (e.g., v1.2.3, auto-detected from git tags if not provided)'
     required: false
     default: ''
-  run_number:
-    description: 'Original run number from develop branch to track across promotions'
-    required: false
-    default: ''
   configPath:
     description: 'Path to .pipecraftrc.json config file'
     required: false
@@ -298,22 +294,13 @@ runs:
       run: |
         TARGET="${{ steps.read-config.outputs.targetBranch }}"
         VERSION="${{ steps.get-version.outputs.version }}"
-        RUN_NUMBER="${{ inputs.run_number }}"
 
         echo "🔄 Triggering pipeline workflow on $TARGET branch with version $VERSION"
 
-        if [ -n "$RUN_NUMBER" ]; then
-          echo "   Tracking original run number: $RUN_NUMBER"
-        fi
-
         # Trigger the pipeline workflow on the target branch
         # This is necessary because GITHUB_TOKEN pushes don't trigger workflows by default
-        # Pass the version and run_number so runs can be tracked across promotions
-        if [ -n "$RUN_NUMBER" ]; then
-          gh workflow run pipeline.yml --ref "$TARGET" --field version="$VERSION" --field run_number="$RUN_NUMBER"
-        else
-          gh workflow run pipeline.yml --ref "$TARGET" --field version="$VERSION"
-        fi
+        # Pass the version so the run name is descriptive
+        gh workflow run pipeline.yml --ref "$TARGET" --field version="$VERSION"
 
         echo "✅ Pipeline workflow triggered on $TARGET with version $VERSION"
 

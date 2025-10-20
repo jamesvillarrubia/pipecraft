@@ -1,0 +1,25 @@
+{
+  "tsconfig": "../tsconfig.typedoc.json",
+  "entryPoints": ["../src"],
+  "entryPointStrategy": "expand",
+  "out": "docs/api",
+  "plugin": ["typedoc-plugin-markdown"],
+  "readme": "none",
+  "outputFileStrategy": "modules",
+  "membersWithOwnFile": ["Class", "Interface", "Enum"],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/node_modules/**",
+    "**/dist/**"
+  ],
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeInternal": true,
+  "hideGenerator": true,
+  "includeVersion": true,
+  "githubPages": false,
+  "disableSources": false,
+  "sourceLinkTemplate": "https://github.com/jamesvillarrubia/pipecraft/blob/{gitRevision}/{path}#L{line}"
+}
+

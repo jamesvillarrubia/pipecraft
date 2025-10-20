@@ -54,6 +54,15 @@
       ],
       "test": true,
       "description": "PipeCraft CI/CD changes"
+    },
+    "docs": {
+      "paths": [
+        "docs/**",
+        "docs-site/**"
+      ],
+      "test": true,
+      "deploy": true,
+      "description": "Documentation changes"
     }
   },
   "versioning": {

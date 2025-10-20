@@ -1,0 +1,44 @@
+.heroBanner {
+  padding: 4rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2rem;
+  }
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.heroCode {
+  margin: 2rem auto 0;
+  max-width: 600px;
+  text-align: left;
+  background: var(--ifm-color-emphasis-100);
+  border-radius: var(--ifm-code-border-radius);
+  padding: 1.5rem;
+  box-shadow: var(--ifm-global-shadow-lw);
+}
+
+.heroCode pre {
+  margin: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.heroCode code {
+  background: transparent;
+  border: none;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--ifm-color-content);
+}
