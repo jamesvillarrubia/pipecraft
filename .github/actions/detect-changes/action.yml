@@ -18,6 +18,9 @@ outputs:
   cicd:
     description: 'Whether cicd domain has changes'
     value: ${{ steps.merge.outputs.cicd }}
+  docs:
+    description: 'Whether docs domain has changes'
+    value: ${{ steps.merge.outputs.docs }}
 
 runs:
   using: 'composite'
@@ -47,6 +50,9 @@ runs:
             - 'tests/**'
           cicd:
             - '.github/**'
+          docs:
+            - 'docs/**'
+            - 'docs-site/**'
 
     - name: Merge filter outputs
       id: merge
@@ -55,8 +61,10 @@ runs:
         echo "core=${{ contains(steps.filter.outputs.changes, 'core') }}" >> $GITHUB_OUTPUT
         echo "test=${{ contains(steps.filter.outputs.changes, 'test') }}" >> $GITHUB_OUTPUT
         echo "cicd=${{ contains(steps.filter.outputs.changes, 'cicd') }}" >> $GITHUB_OUTPUT
+        echo "docs=${{ contains(steps.filter.outputs.changes, 'docs') }}" >> $GITHUB_OUTPUT
         
         echo "📋 Change Detection Results:"
         echo "  core: ${{ contains(steps.filter.outputs.changes, 'core') }}"
         echo "  test: ${{ contains(steps.filter.outputs.changes, 'test') }}"
         echo "  cicd: ${{ contains(steps.filter.outputs.changes, 'cicd') }}"
+        echo "  docs: ${{ contains(steps.filter.outputs.changes, 'docs') }}"
