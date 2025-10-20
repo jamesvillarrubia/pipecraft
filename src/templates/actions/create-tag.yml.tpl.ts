@@ -1,8 +1,23 @@
+/**
+ * Create Tag Action Template
+ * 
+ * Generates a composite action that creates and pushes git tags, and optionally creates
+ * GitHub releases. Used after version calculation to tag the codebase with semantic versions.
+ * 
+ * @module templates/actions/create-tag.yml.tpl
+ */
+
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import fs from 'fs'
 import dedent from 'dedent'
 import { logger } from '../../utils/logger.js'
-// Template for the Tag GitHub Action
+
+/**
+ * Generates the create-tag composite action YAML content.
+ * 
+ * @param {any} ctx - Context (not currently used)
+ * @returns {string} YAML content for the composite action
+ */
 const tagActionTemplate = (ctx: any) => {
   return dedent`name: 'Tag Version'
     description: 'Create and push a Git tag for a given version'
@@ -100,6 +115,12 @@ const tagActionTemplate = (ctx: any) => {
             fi`
 };
 
+/**
+ * Generator entry point for create-tag composite action.
+ * 
+ * @param {PinionContext} ctx - Pinion generator context
+ * @returns {Promise<PinionContext>} Updated context after file generation
+ */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
     .then((ctx) => {

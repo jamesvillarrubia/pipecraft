@@ -1,10 +1,82 @@
+/**
+ * Detect Changes Action Template
+ * 
+ * Generates a GitHub composite action that detects which domains (application areas)
+ * have changes in a pull request. This is the foundation for PipeCraft's path-based
+ * conditional workflow execution.
+ * 
+ * ## Purpose
+ * 
+ * In monorepos or multi-domain projects, not every change affects every part of the
+ * system. This action uses GitHub's `dorny/paths-filter` to detect which domains
+ * have modifications, allowing subsequent jobs to run conditionally.
+ * 
+ * ## How It Works
+ * 
+ * 1. Checks out the repository with full history
+ * 2. Uses paths-filter action to check each domain's file patterns
+ * 3. Outputs a boolean for each domain (true if changed, false if not)
+ * 4. Logs results for debugging
+ * 
+ * ## Generated Action Location
+ * 
+ * `.github/actions/detect-changes/action.yml`
+ * 
+ * ## Usage in Workflows
+ * 
+ * ```yaml
+ * jobs:
+ *   changes:
+ *     runs-on: ubuntu-latest
+ *     outputs:
+ *       api: ${{ steps.changes.outputs.api }}
+ *       web: ${{ steps.changes.outputs.web }}
+ *     steps:
+ *       - uses: ./.github/actions/detect-changes
+ *         id: changes
+ *         with:
+ *           baseRef: main
+ * 
+ *   test-api:
+ *     needs: changes
+ *     if: needs.changes.outputs.api == 'true'
+ *     # Only runs if API domain changed
+ * ```
+ * 
+ * @module templates/actions/detect-changes.yml.tpl
+ */
+
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import fs from 'fs'
 import dedent from 'dedent'
 import { DomainConfig } from '../../types/index.js'
 import { logger } from '../../utils/logger.js'
 
-// Template for the Changes Detection GitHub Action
+/**
+ * Generates the detect-changes composite action YAML content.
+ * 
+ * Creates a GitHub Actions composite action that:
+ * - Accepts a base branch reference for comparison
+ * - Defines outputs for each configured domain
+ * - Uses dorny/paths-filter to detect file changes
+ * - Merges filter outputs into domain-specific outputs
+ * - Logs detection results
+ * 
+ * @param {any} ctx - Context containing domains configuration
+ * @param {Record<string, DomainConfig>} ctx.domains - Domain configurations with path patterns
+ * @returns {string} YAML content for the composite action
+ * 
+ * @example
+ * ```typescript
+ * const yaml = changesActionTemplate({
+ *   domains: {
+ *     api: { paths: ['src/api/**'] },
+ *     web: { paths: ['src/web/**'] }
+ *   }
+ * })
+ * // Generates action with 'api' and 'web' outputs
+ * ```
+ */
 const changesActionTemplate = (ctx: any) => {
   const domainOutputs = Object.entries(ctx.domains).map((entry) => {
     const [domainName, domainConfig] = entry as [string, DomainConfig];
@@ -28,6 +100,7 @@ const changesActionTemplate = (ctx: any) => {
     return `        echo "  ${domainName}: \${{ contains(steps.filter.outputs.changes, '${domainName}') }}"`
   }).join('\n');
 
+  // Generate the composite action YAML
   return `name: 'Detect Changes'
 description: 'Detect changes in different application domains based on file paths'
 author: 'Pipecraft'
@@ -75,6 +148,29 @@ ${domainEchoes}
 ${domainResults}`
 }
 
+/**
+ * Generator entry point for detect-changes composite action.
+ * 
+ * Generates the `.github/actions/detect-changes/action.yml` file with domain-specific
+ * change detection logic. This action is used by the main pipeline to determine which
+ * domains have changes and need to run tests/deployment.
+ * 
+ * @param {PinionContext} ctx - Pinion generator context
+ * @param {Record<string, DomainConfig>} ctx.domains - Domain configurations
+ * @returns {Promise<PinionContext>} Updated context after file generation
+ * 
+ * @example
+ * ```typescript
+ * await generate({
+ *   cwd: '/path/to/project',
+ *   domains: {
+ *     api: { paths: ['src/api/**'], description: 'API' },
+ *     web: { paths: ['src/web/**'], description: 'Web' }
+ *   }
+ * })
+ * // Creates: .github/actions/detect-changes/action.yml
+ * ```
+ */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
     .then((ctx) => {

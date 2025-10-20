@@ -1,8 +1,55 @@
+/**
+ * Calculate Version Action Template
+ * 
+ * Generates a composite action that calculates the next semantic version based on
+ * conventional commits. Uses `release-it` to analyze commit history and determine
+ * the appropriate version bump (major, minor, or patch).
+ * 
+ * ## Purpose
+ * 
+ * Automates semantic versioning in the CI/CD pipeline by:
+ * - Analyzing conventional commit messages since the last tag
+ * - Determining the appropriate version bump (feat→minor, fix→patch, BREAKING→major)
+ * - Installing and running release-it for version calculation
+ * - Outputting the calculated version for use in subsequent jobs
+ * 
+ * ## Generated Action Location
+ * 
+ * `.github/actions/calculate-version/action.yml`
+ * 
+ * ## Usage in Workflows
+ * 
+ * ```yaml
+ * jobs:
+ *   version:
+ *     runs-on: ubuntu-latest
+ *     outputs:
+ *       version: ${{ steps.calc.outputs.version }}
+ *     steps:
+ *       - uses: ./.github/actions/calculate-version
+ *         id: calc
+ *         with:
+ *           baseRef: main
+ * 
+ *   tag:
+ *     needs: version
+ *     steps:
+ *       - run: echo "Next version: ${{ needs.version.outputs.version }}"
+ * ```
+ * 
+ * @module templates/actions/calculate-version.yml.tpl
+ */
+
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import fs from 'fs'
 import { logger } from '../../utils/logger.js'
 
-// Template for the Version Calculation GitHub Action
+/**
+ * Generates the calculate-version composite action YAML content.
+ * 
+ * @param {any} ctx - Context (not currently used, included for consistency)
+ * @returns {string} YAML content for the composite action
+ */
 const versionActionTemplate = (ctx: any) => {
   return `name: 'Calculate Version'
 description: 'Calculate semantic version using release-it and conventional commits'
@@ -112,6 +159,12 @@ runs:
         echo "Version determined: \${{ steps.set_version.outputs.version }}"`
 }
 
+/**
+ * Generator entry point for calculate-version composite action.
+ * 
+ * @param {PinionContext} ctx - Pinion generator context
+ * @returns {Promise<PinionContext>} Updated context after file generation
+ */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
     .then((ctx) => {
