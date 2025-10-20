@@ -26,37 +26,7 @@ const config: Config = {
     locales: ['en'],
   },
 
-  plugins: [
-    [
-      'docusaurus-plugin-typedoc',
-      {
-        // TypeDoc options
-        entryPoints: ['../src'],
-        entryPointStrategy: 'expand',
-        out: 'api',
-        sidebar: {
-          categoryLabel: 'API Reference',
-          position: 4,
-          fullNames: true,
-        },
-        // Output options
-        plugin: ['typedoc-plugin-markdown'],
-        readme: 'none',
-        outputFileStrategy: 'modules',
-        membersWithOwnFile: ['Class', 'Interface', 'Enum'],
-        
-        // Include/Exclude
-        exclude: ['**/*.test.ts', '**/*.spec.ts', '**/node_modules/**'],
-        excludePrivate: true,
-        excludeProtected: false,
-        excludeInternal: true,
-        
-        // Display options
-        hideGenerator: true,
-        includeVersion: true,
-      },
-    ],
-  ],
+  plugins: [],
 
   presets: [
     [
@@ -97,11 +67,6 @@ const config: Config = {
           label: 'Documentation',
         },
         {
-          to: '/docs/api',
-          label: 'API',
-          position: 'left',
-        },
-        {
           href: 'https://github.com/jamesvillarrubia/pipecraft',
           label: 'GitHub',
           position: 'right',
@@ -124,8 +89,12 @@ const config: Config = {
               to: '/docs/intro',
             },
             {
-              label: 'API Reference',
-              to: '/docs/api',
+              label: 'Architecture',
+              to: '/docs/architecture',
+            },
+            {
+              label: 'Testing Guide',
+              to: '/docs/testing-guide',
             },
           ],
         },

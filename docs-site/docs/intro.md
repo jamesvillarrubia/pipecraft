@@ -1,6 +1,5 @@
 ---
 sidebar_position: 1
-slug: /
 ---
 
 # Getting Started with PipeCraft
@@ -94,7 +93,7 @@ Regenerate workflows safely:
 - 🏗️ [Architecture Overview](./architecture.md)
 - ⚠️ [Error Handling](./error-handling.md)
 - 🧪 [Testing Guide](./testing-guide.md)
-- 📚 [API Reference](./api/README.md)
+- 💻 [Source Code on GitHub](https://github.com/jamesvillarrubia/pipecraft/tree/main/src)
 
 ## Configuration Example
 

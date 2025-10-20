@@ -1,7 +1,7 @@
 # Current Trunk Flow Implementation
 
 > **Status**: This document describes the ONE working trunk-based flow currently implemented in PipeCraft.
-> For planned future enhancements, see [TRUNK_FLOW_PLAN.md](../TRUNK_FLOW_PLAN.md).
+> For planned future enhancements, see [TRUNK_FLOW_PLAN.md](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md).
 
 ## Overview
 
@@ -570,7 +570,7 @@ Now that you understand the current implementation:
 
 ## Future Enhancements
 
-See [TRUNK_FLOW_PLAN.md](../TRUNK_FLOW_PLAN.md) for planned improvements:
+See [TRUNK_FLOW_PLAN.md](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md) for planned improvements:
 - Multiple flow patterns
 - GitLab support
 - Manual approval gates

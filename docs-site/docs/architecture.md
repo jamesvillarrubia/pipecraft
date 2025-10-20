@@ -329,9 +329,9 @@ pipecraft/
 │   ├── integration/                    # Integration tests
 │   └── e2e/                            # End-to-end tests
 └── docs/
-    ├── ARCHITECTURE.md                 # This file
-    ├── CURRENT_TRUNK_FLOW.md           # Current implementation
-    └── ERROR_HANDLING.md               # Error handling guide
+    ├── architecture.md                 # This file
+    ├── trunk-flow.md                   # Current implementation
+    └── error-handling.md               # Error handling guide
 ```
 
 ## Design Decisions
@@ -524,8 +524,8 @@ When contributing to PipeCraft:
 
 ## Related Documentation
 
-- [Current Trunk Flow](./CURRENT_TRUNK_FLOW.md) - Current implementation details
-- [Error Handling](./ERROR_HANDLING.md) - Error types and recovery
-- [Test Structure](../tests/TEST_STRUCTURE.md) - Testing guidelines
-- [README](../README.md) - User-facing documentation
+- [Current Trunk Flow](./trunk-flow) - Current implementation details
+- [Error Handling](./error-handling) - Error types and recovery
+- [Testing Guide](./testing-guide) - Testing guidelines and best practices
+- [Getting Started](./intro) - User-facing documentation
 

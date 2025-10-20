@@ -750,8 +750,8 @@ If you encounter an error not covered in this guide:
 
 ## Related Documentation
 
-- [Architecture](./ARCHITECTURE.md) - System design and components
-- [Current Trunk Flow](./CURRENT_TRUNK_FLOW.md) - Implementation details
-- [README](../README.md) - User guide and examples
-- [Test Structure](../tests/TEST_STRUCTURE.md) - Testing guidelines
+- [Architecture](./architecture) - System design and components
+- [Current Trunk Flow](./trunk-flow) - Implementation details
+- [Getting Started](./intro) - User guide and examples
+- [Testing Guide](./testing-guide) - Testing guidelines
 
