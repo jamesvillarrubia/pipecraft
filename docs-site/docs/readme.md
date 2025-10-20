@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/jamesvillarrubia/pipecraft/main/assets/logo_banner.png" alt="PipeCraft Logo" width="auto">
+![PipeCraft Logo](https://raw.githubusercontent.com/jamesvillarrubia/pipecraft/main/assets/logo_banner.png)
 
 # PipeCraft
 
