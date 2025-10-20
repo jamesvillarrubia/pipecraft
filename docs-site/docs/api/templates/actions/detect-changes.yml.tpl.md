@@ -58,7 +58,7 @@ jobs:
 function generate(ctx): Promise<any>;
 ```
 
-Defined in: [templates/actions/detect-changes.yml.tpl.ts:174](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/templates/actions/detect-changes.yml.tpl.ts#L174)
+Defined in: [templates/actions/detect-changes.yml.tpl.ts:174](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/templates/actions/detect-changes.yml.tpl.ts#L174)
 
 Generator entry point for detect-changes composite action.
 

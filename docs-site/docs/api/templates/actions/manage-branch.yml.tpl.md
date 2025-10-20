@@ -19,7 +19,7 @@ branch creation, and deletion. Core utility for trunk-based development workflow
 function generate(ctx): Promise<any>;
 ```
 
-Defined in: [templates/actions/manage-branch.yml.tpl.ts:143](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/templates/actions/manage-branch.yml.tpl.ts#L143)
+Defined in: [templates/actions/manage-branch.yml.tpl.ts:143](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/templates/actions/manage-branch.yml.tpl.ts#L143)
 
 Generator entry point for manage-branch composite action.
 

@@ -19,7 +19,7 @@ GitHub releases. Used after version calculation to tag the codebase with semanti
 function generate(ctx): Promise<any>;
 ```
 
-Defined in: [templates/actions/create-tag.yml.tpl.ts:124](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/templates/actions/create-tag.yml.tpl.ts#L124)
+Defined in: [templates/actions/create-tag.yml.tpl.ts:124](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/templates/actions/create-tag.yml.tpl.ts#L124)
 
 Generator entry point for create-tag composite action.
 

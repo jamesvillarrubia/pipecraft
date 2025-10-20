@@ -19,7 +19,7 @@ temporary branch and pull request. Handles auto-merge and cleanup for trunk flow
 function generate(ctx): Promise<any>;
 ```
 
-Defined in: [templates/actions/promote-branch.yml.tpl.ts:385](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/templates/actions/promote-branch.yml.tpl.ts#L385)
+Defined in: [templates/actions/promote-branch.yml.tpl.ts:385](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/templates/actions/promote-branch.yml.tpl.ts#L385)
 
 Generator entry point for promote-branch composite action.
 

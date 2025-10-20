@@ -10,7 +10,7 @@
 
 ### PathOperationConfig
 
-Defined in: [utils/ast-path-operations.ts:127](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L127)
+Defined in: [utils/ast-path-operations.ts:127](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L127)
 
 Configuration for a single path operation
 
@@ -39,7 +39,7 @@ const config: PathOperationConfig = {
 optional comment: string;
 ```
 
-Defined in: [utils/ast-path-operations.ts:133](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L133)
+Defined in: [utils/ast-path-operations.ts:133](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L133)
 
 ##### commentBefore?
 
@@ -47,7 +47,7 @@ Defined in: [utils/ast-path-operations.ts:133](https://github.com/jamesvillarrub
 optional commentBefore: string;
 ```
 
-Defined in: [utils/ast-path-operations.ts:132](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L132)
+Defined in: [utils/ast-path-operations.ts:132](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L132)
 
 ##### operation
 
@@ -55,7 +55,7 @@ Defined in: [utils/ast-path-operations.ts:132](https://github.com/jamesvillarrub
 operation: PathOperation;
 ```
 
-Defined in: [utils/ast-path-operations.ts:129](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L129)
+Defined in: [utils/ast-path-operations.ts:129](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L129)
 
 Type of operation to perform
 
@@ -65,7 +65,7 @@ Type of operation to perform
 path: string;
 ```
 
-Defined in: [utils/ast-path-operations.ts:128](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L128)
+Defined in: [utils/ast-path-operations.ts:128](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L128)
 
 Dot-notation path to target (e.g., 'jobs.changes.steps')
 
@@ -75,7 +75,7 @@ Dot-notation path to target (e.g., 'jobs.changes.steps')
 optional required: boolean;
 ```
 
-Defined in: [utils/ast-path-operations.ts:131](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L131)
+Defined in: [utils/ast-path-operations.ts:131](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L131)
 
 Whether the path must exist
 
@@ -85,7 +85,7 @@ Whether the path must exist
 optional spaceBefore: boolean;
 ```
 
-Defined in: [utils/ast-path-operations.ts:134](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L134)
+Defined in: [utils/ast-path-operations.ts:134](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L134)
 
 ##### spaceBeforeComment?
 
@@ -93,7 +93,7 @@ Defined in: [utils/ast-path-operations.ts:134](https://github.com/jamesvillarrub
 optional spaceBeforeComment: boolean;
 ```
 
-Defined in: [utils/ast-path-operations.ts:135](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L135)
+Defined in: [utils/ast-path-operations.ts:135](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L135)
 
 ##### tag?
 
@@ -101,7 +101,7 @@ Defined in: [utils/ast-path-operations.ts:135](https://github.com/jamesvillarrub
 optional tag: string;
 ```
 
-Defined in: [utils/ast-path-operations.ts:136](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L136)
+Defined in: [utils/ast-path-operations.ts:136](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L136)
 
 ##### value
 
@@ -109,7 +109,7 @@ Defined in: [utils/ast-path-operations.ts:136](https://github.com/jamesvillarrub
 value: PathValue;
 ```
 
-Defined in: [utils/ast-path-operations.ts:130](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L130)
+Defined in: [utils/ast-path-operations.ts:130](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L130)
 
 Value to set/merge/overwrite
 
@@ -121,7 +121,7 @@ Value to set/merge/overwrite
 type PathOperation = "set" | "merge" | "overwrite" | "preserve";
 ```
 
-Defined in: [utils/ast-path-operations.ts:93](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L93)
+Defined in: [utils/ast-path-operations.ts:93](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L93)
 
 Available operation types for path-based AST manipulation
 
@@ -133,7 +133,7 @@ Available operation types for path-based AST manipulation
 type PathValue = Node | object | string | number | boolean | any[];
 ```
 
-Defined in: [utils/ast-path-operations.ts:102](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L102)
+Defined in: [utils/ast-path-operations.ts:102](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L102)
 
 Supported value types for path operations
 
@@ -148,7 +148,7 @@ function applyPathOperations(
    document?): void;
 ```
 
-Defined in: [utils/ast-path-operations.ts:485](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L485)
+Defined in: [utils/ast-path-operations.ts:485](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L485)
 
 Apply multiple path operations to a document
 
@@ -208,7 +208,7 @@ applyPathOperations(doc, operations)
 function createValueFromArray(arr): Node;
 ```
 
-Defined in: [utils/ast-path-operations.ts:588](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L588)
+Defined in: [utils/ast-path-operations.ts:588](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L588)
 
 Create a YAML node from a JavaScript array
 
@@ -242,7 +242,7 @@ const node = createValueFromArray(['develop', 'staging', 'main'])
 function createValueFromObject(obj, doc?): Node;
 ```
 
-Defined in: [utils/ast-path-operations.ts:568](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L568)
+Defined in: [utils/ast-path-operations.ts:568](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L568)
 
 Create a YAML node from a JavaScript object
 
@@ -287,7 +287,7 @@ function createValueFromString(
    document?): Node;
 ```
 
-Defined in: [utils/ast-path-operations.ts:523](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L523)
+Defined in: [utils/ast-path-operations.ts:523](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L523)
 
 Create a YAML node from a YAML string
 
@@ -340,7 +340,7 @@ function ensurePathAndApply(
    document?): void;
 ```
 
-Defined in: [utils/ast-path-operations.ts:287](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L287)
+Defined in: [utils/ast-path-operations.ts:287](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L287)
 
 Ensure a path exists and apply the specified operation
 
@@ -391,7 +391,7 @@ ensurePathAndApply(doc, config)
 function getPathValue(doc, path): Node | null;
 ```
 
-Defined in: [utils/ast-path-operations.ts:249](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L249)
+Defined in: [utils/ast-path-operations.ts:249](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L249)
 
 Get a value at a specific path in the YAML AST
 
@@ -440,7 +440,7 @@ function setPathValue(
    spaceBeforeComment?): void;
 ```
 
-Defined in: [utils/ast-path-operations.ts:158](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/utils/ast-path-operations.ts#L158)
+Defined in: [utils/ast-path-operations.ts:158](https://github.com/jamesvillarrubia/pipecraft/blob/311b4e1840ae375ec42f3c283b86b8687af74f0e/src/utils/ast-path-operations.ts#L158)
 
 Set a value at a specific path in the YAML AST
 
