@@ -27,7 +27,7 @@
     "lint:strict": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0",
     "format": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'",
     "format:check": "prettier --check '**/*.{js,jsx,ts,tsx,json,css,scss,md}'",
-    "validate:pipeline": "node scripts/validate-pipeline.cjs",
+    "validate:pipeline": "node tests/tools/validation/validate-pipeline.cjs",
     "pipecraft": "tsx src/cli/index.ts",
     "init": "tsx src/cli/index.ts init --interactive",
     "generate": "tsx src/cli/index.ts generate",
