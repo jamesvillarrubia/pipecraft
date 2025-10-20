@@ -302,8 +302,8 @@ jobs:
   # REMOTE TESTING JOBS
   #=============================================================================
   remote-test-core:
-    needs: [ deploy-core, changes ]
-    if: ${{ always() }}
+    needs: [ deploy-core, changes, test-cicd, test-core, test-test, test-docs ]
+    if: ${{ always() && needs.deploy-core.result == 'success' && needs.changes.outputs.core == 'true' && needs.test-cicd.result != 'failure' && needs.test-core.result != 'failure' && needs.test-test.result != 'failure' && needs.test-docs.result != 'failure' }}
     runs-on: ubuntu-latest
     steps:
       - name: Test core
@@ -352,7 +352,7 @@ jobs:
   # Passes version and run_number to maintain traceability across branches.
   promote:
     # Only runs on push or manual workflow_dispatch events to branches that can promote
-    # Waits for version/tag if they run, but doesn't fail if they're skipped
+    # Requires version to succeed (which means tests passed)
     # Needs all deploy and/or remote test jobs to succeed
     if: ${{
         always() &&
@@ -360,10 +360,7 @@ jobs:
         github.event_name == 'push' ||
         github.event_name == 'workflow_dispatch'
       ) &&
-        (
-        needs.version.result == 'success' ||
-        needs.version.result == 'skipped'
-      ) &&
+        needs.version.result == 'success' &&
         (
         needs.tag.result == 'success' ||
         needs.tag.result == 'skipped'
