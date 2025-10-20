@@ -32,11 +32,11 @@
     "init": "tsx src/cli/index.ts init --interactive",
     "generate": "tsx src/cli/index.ts generate",
     "verify": "tsx src/cli/index.ts verify",
-    "docs:build": "cd docs-site && pnpm run build",
-    "docs:dev": "cd docs-site && pnpm run start",
-    "docs:serve": "cd docs-site && pnpm run serve",
-    "docs:typedoc": "cd docs-site && pnpm run typedoc",
-    "docs:deploy": "npm run build && cd docs-site && pnpm run typedoc && pnpm run build"
+    "docs:build": "cd docs && pnpm run build",
+    "docs:dev": "cd docs && pnpm run start",
+    "docs:serve": "cd docs && pnpm run serve",
+    "docs:typedoc": "cd docs && pnpm run typedoc",
+    "docs:deploy": "npm run build && cd docs && pnpm run typedoc && pnpm run build"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
