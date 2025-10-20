@@ -34,19 +34,13 @@
   "domains": {
     "core": {
       "paths": [
-        "src/**"
+        "src/**",
+        "tests/**"
       ],
       "test": true,
       "deploy": true,
       "remoteTest": true,
       "description": "PipeCraft core changes"
-    },
-    "test": {
-      "paths": [
-        "tests/**"
-      ],
-      "test": true,
-      "description": "PipeCraft test changes"
     },
     "cicd": {
       "paths": [

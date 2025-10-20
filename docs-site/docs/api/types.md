@@ -1,0 +1,465 @@
+[**pipecraft v0.0.0-releaseit**](README.md)
+
+***
+
+[pipecraft](README.md) / types
+
+# types
+
+PipeCraft Type Definitions
+
+This module contains the core TypeScript interfaces and types used throughout PipeCraft.
+These types define the configuration schema, context objects, and domain specifications
+for generating CI/CD pipelines with trunk-based development workflows.
+
+## Interfaces
+
+### DomainConfig
+
+Defined in: [types/index.ts:27](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L27)
+
+Configuration for a single domain (monorepo workspace) in a PipeCraft project.
+
+Domains enable path-based change detection in monorepo architectures, allowing
+different parts of the codebase to be tested and deployed independently.
+
+#### Example
+
+```typescript
+const apiDomain: DomainConfig = {
+  paths: ['packages/api/**', 'libs/shared/**'],
+  description: 'Backend API services',
+  testable: true,
+  deployable: true
+}
+```
+
+#### Properties
+
+##### deployable?
+
+```ts
+optional deployable: boolean;
+```
+
+Defined in: [types/index.ts:52](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L52)
+
+Whether this domain should be deployed.
+If true, generates deployment jobs for this domain.
+
+###### Default
+
+```ts
+false
+```
+
+##### description
+
+```ts
+description: string;
+```
+
+Defined in: [types/index.ts:38](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L38)
+
+Human-readable description of the domain's purpose.
+Used in workflow comments and documentation.
+
+##### paths
+
+```ts
+paths: string[];
+```
+
+Defined in: [types/index.ts:32](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L32)
+
+Glob patterns matching files in this domain.
+Changes to these paths will trigger domain-specific jobs.
+
+##### testable?
+
+```ts
+optional testable: boolean;
+```
+
+Defined in: [types/index.ts:45](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L45)
+
+Whether this domain has tests that should be run.
+If true, generates test jobs for this domain.
+
+###### Default
+
+```ts
+false
+```
+
+***
+
+### PipecraftConfig
+
+Defined in: [types/index.ts:86](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L86)
+
+Complete PipeCraft configuration schema.
+
+This is the main configuration interface loaded from `.pipecraftrc.json` or
+the `pipecraft` key in `package.json`. It defines the entire CI/CD pipeline
+behavior including branch flow, merge strategies, domain configuration,
+versioning, and automated actions.
+
+#### Example
+
+```typescript
+const config: PipecraftConfig = {
+  ciProvider: 'github',
+  mergeStrategy: 'fast-forward',
+  requireConventionalCommits: true,
+  initialBranch: 'develop',
+  finalBranch: 'main',
+  branchFlow: ['develop', 'staging', 'main'],
+  autoMerge: { staging: true },
+  semver: {
+    bumpRules: { feat: 'minor', fix: 'patch', breaking: 'major' }
+  },
+  actions: {
+    onDevelopMerge: ['runTests'],
+    onStagingMerge: ['runTests', 'calculateVersion']
+  },
+  domains: {
+    api: { paths: ['packages/api/**'], description: 'API', testable: true }
+  }
+}
+```
+
+#### Properties
+
+##### actions
+
+```ts
+actions: object;
+```
+
+Defined in: [types/index.ts:176](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L176)
+
+Actions to execute when code is merged to specific branches.
+These define the automated workflow steps like running tests,
+calculating versions, and promoting code to the next branch.
+
+###### onDevelopMerge
+
+```ts
+onDevelopMerge: string[];
+```
+
+Actions triggered when code merges to the initial branch (e.g., develop).
+Common actions: runTests, fastForwardToNext
+
+###### onStagingMerge
+
+```ts
+onStagingMerge: string[];
+```
+
+Actions triggered when code merges to staging branch.
+Common actions: runTests, calculateVersion, createOrFastForwardToMain
+
+##### autoMerge?
+
+```ts
+optional autoMerge: boolean | Record<string, boolean>;
+```
+
+Defined in: [types/index.ts:135](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L135)
+
+Auto-merge configuration for branch promotions.
+- boolean: Enable/disable auto-merge for all branches
+- Record: Per-branch auto-merge settings (e.g., { staging: true, main: false })
+
+When enabled, PRs are automatically merged after checks pass.
+
+###### Default
+
+```ts
+false
+```
+
+##### branchFlow
+
+```ts
+branchFlow: string[];
+```
+
+Defined in: [types/index.ts:125](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L125)
+
+Ordered list of branches in the promotion flow from initial to final.
+Must start with initialBranch and end with finalBranch.
+
+###### Example
+
+```ts
+['develop', 'staging', 'main']
+```
+
+##### ciProvider
+
+```ts
+ciProvider: "github" | "gitlab";
+```
+
+Defined in: [types/index.ts:91](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L91)
+
+CI/CD provider platform.
+Currently 'github' is fully supported, 'gitlab' support is planned.
+
+##### domains
+
+```ts
+domains: Record<string, DomainConfig>;
+```
+
+Defined in: [types/index.ts:195](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L195)
+
+Domain definitions for monorepo path-based change detection.
+Each domain represents a logical part of the codebase with its own
+test and deployment requirements.
+
+##### finalBranch
+
+```ts
+finalBranch: string;
+```
+
+Defined in: [types/index.ts:117](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L117)
+
+The final production branch (typically 'main' or 'master').
+This is the last branch in the promotion flow.
+
+##### initialBranch
+
+```ts
+initialBranch: string;
+```
+
+Defined in: [types/index.ts:111](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L111)
+
+The first branch in the promotion flow (typically 'develop' or 'dev').
+All feature branches merge into this branch.
+
+##### mergeMethod?
+
+```ts
+optional mergeMethod: 
+  | "merge"
+  | "auto"
+  | "squash"
+  | "rebase"
+| Record<string, "merge" | "auto" | "squash" | "rebase">;
+```
+
+Defined in: [types/index.ts:147](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L147)
+
+Git merge method for auto-merge operations.
+- 'auto': Use fast-forward when possible, merge otherwise
+- 'merge': Always create merge commit
+- 'squash': Squash all commits into one
+- 'rebase': Rebase and fast-forward
+
+Can be set globally or per-branch.
+
+###### Default
+
+```ts
+'auto'
+```
+
+##### mergeStrategy
+
+```ts
+mergeStrategy: "fast-forward" | "merge";
+```
+
+Defined in: [types/index.ts:98](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L98)
+
+Git merge strategy for branch promotions.
+- 'fast-forward': Requires linear history, fails if branches diverged
+- 'merge': Creates merge commits
+
+##### rebuild?
+
+```ts
+optional rebuild: object;
+```
+
+Defined in: [types/index.ts:201](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L201)
+
+Idempotency and rebuild configuration.
+Controls when workflows should be regenerated based on config/template changes.
+
+###### cacheFile
+
+```ts
+cacheFile: string;
+```
+
+Path to cache file storing previous config hash.
+
+###### enabled
+
+```ts
+enabled: boolean;
+```
+
+Whether idempotency checking is enabled.
+If true, workflows are only regenerated when config or templates change.
+
+###### forceRegenerate
+
+```ts
+forceRegenerate: boolean;
+```
+
+Force regeneration even if hash matches.
+Useful for debugging or manual overrides.
+
+###### hashAlgorithm
+
+```ts
+hashAlgorithm: "md5" | "sha1" | "sha256";
+```
+
+Hashing algorithm for detecting config changes.
+
+###### ignorePatterns
+
+```ts
+ignorePatterns: string[];
+```
+
+Patterns to ignore when calculating config hash.
+
+###### skipIfUnchanged
+
+```ts
+skipIfUnchanged: boolean;
+```
+
+Skip regeneration if config hash hasn't changed.
+
+###### watchMode
+
+```ts
+watchMode: boolean;
+```
+
+Enable watch mode for automatic regeneration on config changes.
+
+##### requireConventionalCommits
+
+```ts
+requireConventionalCommits: boolean;
+```
+
+Defined in: [types/index.ts:105](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L105)
+
+Whether to enforce conventional commit message format.
+If true, commit messages must follow the Conventional Commits specification.
+
+###### See
+
+https://www.conventionalcommits.org/
+
+##### semver
+
+```ts
+semver: object;
+```
+
+Defined in: [types/index.ts:164](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L164)
+
+Semantic versioning configuration.
+Maps conventional commit types to version bump levels.
+
+###### bumpRules
+
+```ts
+bumpRules: Record<string, string>;
+```
+
+Mapping of commit types to semver bump levels (major, minor, patch).
+
+###### Example
+
+```typescript
+semver: {
+  bumpRules: {
+    feat: 'minor',      // New features bump minor version
+    fix: 'patch',        // Bug fixes bump patch version
+    breaking: 'major'    // Breaking changes bump major version
+  }
+}
+```
+
+##### versioning?
+
+```ts
+optional versioning: object;
+```
+
+Defined in: [types/index.ts:244](https://github.com/jamesvillarrubia/pipecraft/blob/290101696d3569c36886634c8a3467a47778728d/src/types/index.ts#L244)
+
+Version management configuration using release-it.
+Enables automatic version bumping, tagging, and changelog generation.
+
+###### autoPush
+
+```ts
+autoPush: boolean;
+```
+
+Automatically push tags to remote after creation.
+
+###### autoTag
+
+```ts
+autoTag: boolean;
+```
+
+Automatically create git tags for new versions.
+
+###### bumpRules
+
+```ts
+bumpRules: Record<string, string>;
+```
+
+Mapping of commit types to version bump levels.
+
+###### changelog
+
+```ts
+changelog: boolean;
+```
+
+Generate CHANGELOG.md from conventional commits.
+
+###### conventionalCommits
+
+```ts
+conventionalCommits: boolean;
+```
+
+Use conventional commits for version calculation.
+
+###### enabled
+
+```ts
+enabled: boolean;
+```
+
+Whether version management is enabled.
+
+###### releaseItConfig
+
+```ts
+releaseItConfig: string;
+```
+
+Path to release-it configuration file.

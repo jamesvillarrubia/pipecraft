@@ -137,31 +137,7 @@ jobs:
 
       - name: Run integration tests
         run: pnpm run test:run tests/integration
-
-  test-test:
-    needs: changes
-    if: ${{ needs.changes.outputs.test == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build TypeScript
-        run: pnpm run build
-
+        
       - name: Run e2e tests
         run: pnpm run test:run tests/e2e
 
@@ -213,15 +189,13 @@ jobs:
         (
         needs.test-cicd.result == 'success' ||
         needs.test-core.result == 'success' ||
-        needs.test-test.result == 'success' ||
         needs.test-docs.result == 'success'
       ) &&
         needs.test-cicd.result != 'failure' &&
         needs.test-core.result != 'failure' &&
-        needs.test-test.result != 'failure' &&
         needs.test-docs.result != 'failure'
       }}
-    needs: [ changes, test-cicd, test-core, test-test, test-docs ]
+    needs: [ changes, test-cicd, test-core, test-docs ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -302,8 +276,8 @@ jobs:
   # REMOTE TESTING JOBS
   #=============================================================================
   remote-test-core:
-    needs: [ deploy-core, changes, test-cicd, test-core, test-test, test-docs ]
-    if: ${{ always() && needs.deploy-core.result == 'success' && needs.changes.outputs.core == 'true' && needs.test-cicd.result != 'failure' && needs.test-core.result != 'failure' && needs.test-test.result != 'failure' && needs.test-docs.result != 'failure' }}
+    needs: [ deploy-core, changes, test-cicd, test-core, test-docs ]
+    if: ${{ always() && needs.deploy-core.result == 'success' && needs.changes.outputs.core == 'true' && needs.test-cicd.result != 'failure' && needs.test-core.result != 'failure' && needs.test-docs.result != 'failure' }}
     runs-on: ubuntu-latest
     steps:
       - name: Test core

@@ -127,7 +127,7 @@ export interface PipecraftConfig {
   /**
    * Auto-merge configuration for branch promotions.
    * - boolean: Enable/disable auto-merge for all branches
-   * - Record: Per-branch auto-merge settings (e.g., { staging: true, main: false })
+   * - Record: Per-branch auto-merge settings (e.g., `{ staging: true, main: false }`)
    *
    * When enabled, PRs are automatically merged after checks pass.
    * @default false
