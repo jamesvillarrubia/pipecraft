@@ -1,17 +1,80 @@
+/**
+ * Version Management and Semantic Versioning Utilities
+ *
+ * This module provides comprehensive version management using release-it and
+ * conventional commits. It handles:
+ * - Automatic version calculation based on commit history
+ * - Generation of release-it, commitlint, and husky configurations
+ * - Git tag creation and management
+ * - Conventional commit validation
+ * - Changelog generation
+ *
+ * The VersionManager integrates with the trunk-based workflow to automatically
+ * bump versions when code is promoted through the pipeline.
+ *
+ * @module utils/versioning
+ */
+
 import { execSync } from 'child_process'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { PipecraftConfig } from '../types/index.js'
 
+/**
+ * Manager for semantic versioning and release automation.
+ *
+ * This class handles all version-related operations including configuration
+ * generation, version calculation, and commit validation. It integrates with
+ * release-it for automated versioning and conventional-changelog for
+ * changelog generation.
+ *
+ * @example
+ * ```typescript
+ * const versionManager = new VersionManager(config)
+ *
+ * // Setup version management (creates config files)
+ * versionManager.setupVersionManagement()
+ *
+ * // Get current version from git tags
+ * const currentVersion = versionManager.getCurrentVersion()
+ *
+ * // Calculate next version based on commits
+ * const { version, type } = versionManager.calculateNextVersion()
+ * console.log(`Next version: ${version} (${type} bump)`)
+ * ```
+ */
 export class VersionManager {
   private config: PipecraftConfig
 
+  /**
+   * Create a new VersionManager instance.
+   *
+   * @param config - PipeCraft configuration object
+   */
   constructor(config: PipecraftConfig) {
     this.config = config
   }
 
   /**
-   * Generate release-it configuration
+   * Generate release-it configuration file content.
+   *
+   * Creates a CommonJS module exporting release-it configuration that:
+   * - Disables npm publishing (for monorepos/private packages)
+   * - Configures git tagging with conventional versioning
+   * - Sets up conventional-changelog plugin for automatic version bumping
+   * - Merges user-defined bump rules with sensible defaults
+   *
+   * The generated config uses a custom whatBump function that analyzes
+   * conventional commits to determine the appropriate version bump level
+   * (major, minor, or patch).
+   *
+   * @returns JavaScript module string ready to write to .release-it.cjs
+   *
+   * @example
+   * ```typescript
+   * const config = versionManager.generateReleaseItConfig()
+   * writeFileSync('.release-it.cjs', config)
+   * ```
    */
   generateReleaseItConfig(): string {
     const defaultConfig = {
@@ -85,7 +148,20 @@ export class VersionManager {
   }
 
   /**
-   * Generate commitlint configuration
+   * Generate commitlint configuration file content.
+   *
+   * Creates a CommonJS module that configures commitlint to enforce
+   * conventional commit message format. This ensures all commits follow
+   * a consistent structure that can be parsed for automatic versioning.
+   *
+   * Enforced rules include:
+   * - Valid commit types (feat, fix, docs, etc.)
+   * - Lowercase types
+   * - Non-empty subjects
+   * - Lowercase subject (except proper nouns)
+   * - No trailing period in subject
+   *
+   * @returns JavaScript module string ready to write to commitlint.config.js
    */
   generateCommitlintConfig(): string {
     return `module.exports = {
@@ -118,7 +194,13 @@ export class VersionManager {
   }
 
   /**
-   * Generate husky configuration
+   * Generate husky commit-msg hook script.
+   *
+   * Creates a shell script that runs commitlint on every commit message.
+   * This hook automatically validates commit messages before they're accepted,
+   * preventing non-conventional commits from entering the repository.
+   *
+   * @returns Shell script string ready to write to .husky/commit-msg
    */
   generateHuskyConfig(): string {
     return `#!/usr/bin/env sh
@@ -128,7 +210,27 @@ npx commitlint --edit $1`
   }
 
   /**
-   * Setup version management files
+   * Setup version management infrastructure.
+   *
+   * Creates all necessary configuration files and hooks for automated
+   * version management:
+   * - .release-it.cjs (release-it configuration)
+   * - commitlint.config.js (commit message linting)
+   * - .husky/commit-msg (git hook for commit validation)
+   * - package.json scripts (release, changelog commands)
+   *
+   * Only runs if versioning is enabled in configuration.
+   * Installs husky if not already present.
+   *
+   * @example
+   * ```typescript
+   * versionManager.setupVersionManagement()
+   * // Files created:
+   * // - .release-it.cjs
+   * // - commitlint.config.js
+   * // - .husky/commit-msg
+   * // - Updated package.json
+   * ```
    */
   setupVersionManagement(): void {
     if (!this.config.versioning?.enabled) {
@@ -143,27 +245,39 @@ npx commitlint --edit $1`
     const commitlintConfig = this.generateCommitlintConfig()
     writeFileSync('commitlint.config.js', commitlintConfig)
 
-    // Generate .husky/commit-msg
+    // Setup husky and commit-msg hook
     const huskyDir = '.husky'
     if (!existsSync(huskyDir)) {
       execSync('npx husky install', { stdio: 'inherit' })
-      // Ensure directory exists (in case husky install was mocked/failed)
+      // Ensure directory exists (in case husky install was mocked/failed in tests)
       if (!existsSync(huskyDir)) {
         const { mkdirSync } = require('fs')
         mkdirSync(huskyDir, { recursive: true })
       }
     }
     
+    // Create commit-msg hook script
     const commitMsgHook = this.generateHuskyConfig()
     writeFileSync(join(huskyDir, 'commit-msg'), commitMsgHook)
+    // Make hook executable (required for git to run it)
     execSync(`chmod +x ${join(huskyDir, 'commit-msg')}`)
 
-    // Update package.json scripts
+    // Update package.json with version management scripts
     this.updatePackageJsonScripts()
   }
 
   /**
-   * Update package.json with version management scripts
+   * Update package.json with version management scripts.
+   *
+   * Adds npm scripts for common version management tasks:
+   * - release: Run release-it to create a new version
+   * - release:dry: Preview what release-it would do
+   * - version:check: Check what version would be bumped to
+   * - changelog: Generate CHANGELOG.md from commits
+   * - commit: Stage and commit with interactive prompting
+   * - prepare: Install husky hooks (runs automatically on npm install)
+   *
+   * @private
    */
   private updatePackageJsonScripts(): void {
     const packageJsonPath = 'package.json'
@@ -173,6 +287,7 @@ npx commitlint --edit $1`
 
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
     
+    // Merge with existing scripts, preserving any user-defined ones
     packageJson.scripts = {
       ...packageJson.scripts,
       'release': 'release-it',
@@ -187,7 +302,24 @@ npx commitlint --edit $1`
   }
 
   /**
-   * Check if conventional commits are being used
+   * Validate that recent commits follow conventional commit format.
+   *
+   * Checks the last 10 commits to determine if the repository is following
+   * conventional commit conventions. This can be used as a pre-flight check
+   * before enabling versioning features.
+   *
+   * Expected format: `type(scope?): subject`
+   * Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+   *
+   * @returns true if all recent commits follow conventional format
+   *
+   * @example
+   * ```typescript
+   * if (!versionManager.validateConventionalCommits()) {
+   *   console.warn('⚠ Some commits do not follow conventional format')
+   *   console.log('Enable with: git config commit.template .gitmessage')
+   * }
+   * ```
    */
   validateConventionalCommits(): boolean {
     try {
@@ -197,17 +329,29 @@ npx commitlint --edit $1`
       })
       const commits = result.split('\n').filter(line => line.trim())
       
-      // Check if commits follow conventional format
+      // Check if commits follow conventional format: type(scope?): subject
       const conventionalPattern = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+/
       
       return commits.every(commit => conventionalPattern.test(commit))
     } catch (error) {
+      // Not a git repository or other git error
       return false
     }
   }
 
   /**
-   * Get current version from git tags
+   * Get the current version from git tags.
+   *
+   * Finds the most recent git tag matching semantic versioning format (v*.*.*)
+   * and returns it as a version string. Strips the leading 'v' if present.
+   *
+   * @returns Current version string (e.g., "1.2.3") or "0.0.0" if no tags exist
+   *
+   * @example
+   * ```typescript
+   * const currentVersion = versionManager.getCurrentVersion()
+   * console.log(`Current version: v${currentVersion}`)
+   * ```
    */
   getCurrentVersion(): string {
     try {
@@ -217,12 +361,26 @@ npx commitlint --edit $1`
       })
       return result.trim().replace('v', '')
     } catch (error) {
+      // No tags exist yet, or not a git repository
       return '0.0.0'
     }
   }
 
   /**
-   * Calculate next version based on conventional commits
+   * Calculate the next version based on conventional commits.
+   *
+   * Runs release-it in dry-run mode to determine what version would be
+   * created based on commits since the last tag. Analyzes conventional
+   * commit messages to determine the appropriate bump level.
+   *
+   * @returns Object containing the next version string and bump type
+   *
+   * @example
+   * ```typescript
+   * const { version, type } = versionManager.calculateNextVersion()
+   * console.log(`Next ${type} version: ${version}`)
+   * // Output: "Next minor version: 1.3.0"
+   * ```
    */
   calculateNextVersion(): { version: string, type: string } {
     try {
@@ -232,7 +390,7 @@ npx commitlint --edit $1`
         stdio: 'pipe'
       })
       
-      // Parse release-it output to get version info
+      // Parse release-it output to extract version and bump type
       const versionMatch = result.match(/version\s+(\d+\.\d+\.\d+)/)
       const typeMatch = result.match(/bump\s+(\w+)/)
       
@@ -241,6 +399,7 @@ npx commitlint --edit $1`
         type: typeMatch ? typeMatch[1] : 'patch'
       }
     } catch (error) {
+      // release-it not installed, or other error
       return {
         version: this.getCurrentVersion(),
         type: 'patch'

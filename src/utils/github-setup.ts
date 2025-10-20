@@ -1,50 +1,153 @@
+/**
+ * GitHub Repository Setup and Configuration
+ *
+ * This module provides utilities for setting up and configuring GitHub repositories
+ * for use with PipeCraft workflows. It handles:
+ * - Repository information extraction from git remotes
+ * - GitHub authentication token management
+ * - Workflow permissions configuration
+ * - Branch protection rules setup
+ * - Auto-merge enablement
+ *
+ * These setup utilities ensure that GitHub repositories have the correct permissions
+ * and settings for PipeCraft workflows to function properly, including:
+ * - Workflows can create pull requests
+ * - Auto-merge is enabled for automated promotions
+ * - Branch protection is configured appropriately
+ * - Required status checks are enforced
+ *
+ * @module utils/github-setup
+ */
+
 import { execSync } from 'child_process'
 import { prompt } from '@featherscloud/pinion'
 import { loadConfig } from './config.js'
 import { PipecraftConfig } from '../types/index.js'
 
+/**
+ * GitHub Actions workflow permissions configuration.
+ *
+ * Controls what permissions workflows have when executing in the repository.
+ * PipeCraft workflows need 'write' permissions to create PRs and manage branches.
+ */
 interface WorkflowPermissions {
+  /**
+   * Default permissions for GITHUB_TOKEN in workflow runs.
+   * - 'read': Read-only access (insufficient for PipeCraft)
+   * - 'write': Read-write access (required for PipeCraft)
+   */
   default_workflow_permissions: 'read' | 'write'
+
+  /**
+   * Whether workflows can approve pull request reviews.
+   * Should be false to require human approval.
+   */
   can_approve_pull_request_reviews: boolean
 }
 
+/**
+ * Repository identification information extracted from git remote.
+ *
+ * Used for GitHub API calls and workflow configuration.
+ */
 interface RepositoryInfo {
+  /** GitHub organization or user name */
   owner: string
+
+  /** Repository name */
   repo: string
+
+  /** Full git remote URL */
   remote: string
 }
 
+/**
+ * GitHub branch protection rule configuration.
+ *
+ * Defines protection requirements for a branch including status checks,
+ * review requirements, and restrictions on force pushes/deletions.
+ * PipeCraft recommends specific settings for trunk-based workflows.
+ */
 interface BranchProtectionRules {
+  /**
+   * Required status checks that must pass before merging.
+   * PipeCraft sets this to enforce test jobs.
+   */
   required_status_checks: null | {
+    /** Whether branch must be up to date before merging */
     strict: boolean
+    
+    /** Names of required status checks (job names from workflow) */
     contexts: string[]
   }
+
+  /** Whether administrators are subject to branch protection rules */
   enforce_admins: boolean
+
+  /**
+   * Pull request review requirements.
+   * PipeCraft typically disables this for automated promotions.
+   */
   required_pull_request_reviews: null | {
+    /** Dismiss stale reviews when new commits are pushed */
     dismiss_stale_reviews: boolean
+    
+    /** Require review from code owners */
     require_code_owner_reviews: boolean
+    
+    /** Number of approving reviews required */
     required_approving_review_count: number
   }
+
+  /** User/team restrictions for who can push (null = no restrictions) */
   restrictions: null
+
+  /** Allow force pushes to the branch */
   allow_force_pushes: boolean
+
+  /** Allow branch deletion */
   allow_deletions: boolean
+
+  /** Require linear commit history (no merge commits) */
   required_linear_history: boolean
+
+  /** Require all conversations to be resolved before merging */
   required_conversation_resolution: boolean
 }
 
 /**
- * Get repository information from git remote
+ * Extract GitHub repository information from git remote configuration.
+ *
+ * Parses the git remote URL for the 'origin' remote to extract owner and
+ * repository name. Supports both HTTPS and SSH GitHub URLs:
+ * - HTTPS: https://github.com/owner/repo.git
+ * - SSH: git@github.com:owner/repo.git
+ *
+ * This information is required for GitHub API calls to configure repository
+ * settings and permissions.
+ *
+ * @returns Repository information object
+ * @throws {Error} If origin remote is not configured
+ * @throws {Error} If remote URL is not a valid GitHub URL
+ *
+ * @example
+ * ```typescript
+ * const info = getRepositoryInfo()
+ * console.log(`Owner: ${info.owner}, Repo: ${info.repo}`)
+ * // Owner: jamesvillarrubia, Repo: pipecraft
+ * ```
  */
 export function getRepositoryInfo(): RepositoryInfo {
   try {
-    // Get the remote URL
+    // Get the remote URL from git configuration
     const remoteUrl = execSync('git remote get-url origin', { 
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'ignore'] // Suppress stderr
     }).trim()
 
-    // Parse GitHub URL
-    // Supports: https://github.com/owner/repo.git, git@github.com:owner/repo.git
+    // Parse GitHub URL - supports both HTTPS and SSH formats
+    // HTTPS: https://github.com/owner/repo.git
+    // SSH: git@github.com:owner/repo.git
     const match = remoteUrl.match(/github\.com[:/]([^/]+)\/([^/.]+)(\.git)?$/)
 
     if (!match) {
@@ -62,7 +165,30 @@ export function getRepositoryInfo(): RepositoryInfo {
 }
 
 /**
- * Get GitHub token from environment or gh CLI
+ * Get GitHub authentication token from environment or GitHub CLI.
+ *
+ * Attempts to retrieve a GitHub personal access token from multiple sources
+ * in this order:
+ * 1. GITHUB_TOKEN environment variable
+ * 2. GH_TOKEN environment variable
+ * 3. GitHub CLI (`gh auth token`) if authenticated
+ *
+ * The token is required for GitHub API calls to configure repository settings.
+ * Token must have 'repo' and 'workflow' scopes.
+ *
+ * @returns GitHub personal access token
+ * @throws {Error} If no token is found in any source
+ *
+ * @example
+ * ```typescript
+ * // Set token via environment
+ * process.env.GITHUB_TOKEN = 'ghp_xxxxxxxxxxxx'
+ * const token = getGitHubToken()
+ *
+ * // Or authenticate with GitHub CLI first
+ * // $ gh auth login
+ * const token = getGitHubToken() // Uses gh CLI token
+ * ```
  */
 export function getGitHubToken(): string {
   // Check environment variables
