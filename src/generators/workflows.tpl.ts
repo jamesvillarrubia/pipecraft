@@ -1,3 +1,44 @@
+/**
+ * Workflows Template Generator
+ * 
+ * Main orchestrator for generating complete GitHub Actions CI/CD pipeline.
+ * This generator creates all necessary workflow files including:
+ * - Main pipeline workflow (path-based change detection)
+ * - Reusable composite actions (tag creation, versioning, branch management, etc.)
+ * 
+ * The generator supports both initial generation and incremental updates, preserving
+ * user modifications to existing workflows through intelligent merging.
+ * 
+ * @module generators/workflows.tpl
+ * 
+ * @example
+ * ```typescript
+ * import { generate } from './generators/workflows.tpl.js'
+ * 
+ * // Initial generation - creates all workflows
+ * await generate({
+ *   cwd: '/path/to/project',
+ *   config: pipecraftConfig
+ * })
+ * 
+ * // Incremental update - merges with existing pipeline
+ * await generate({
+ *   cwd: '/path/to/project',
+ *   pipelinePath: '.github/workflows/pipeline.yml',
+ *   config: pipecraftConfig
+ * })
+ * 
+ * // Creates:
+ * // .github/workflows/pipeline.yml         - Main pipeline
+ * // .github/actions/detect-changes/...     - Change detection action
+ * // .github/actions/calculate-version/...  - Version calculation action
+ * // .github/actions/create-tag/...         - Tag creation action
+ * // .github/actions/create-pr/...          - PR creation action
+ * // .github/actions/manage-branch/...      - Branch management action
+ * // .github/actions/promote-branch/...     - Branch promotion action
+ * ```
+ */
+
 import { PinionContext, toFile, renderTemplate, loadJSON, when } from '@featherscloud/pinion'
 import { IdempotencyManager } from '../utils/idempotency.js'
 import { PipecraftConfig } from '../types/index.js'
@@ -14,6 +55,13 @@ import { generate as generateBranchWorkflow } from '../templates/actions/manage-
 import { generate as generatePromoteBranchWorkflow } from '../templates/actions/promote-branch.yml.tpl.js'
 import { generate as generatePathBasedPipeline } from '../templates/workflows/pipeline-path-based.yml.tpl.js'
 
+/**
+ * Default fallback configuration when no config file exists.
+ * Mirrors `defaultConfig` from init.tpl.ts to ensure consistent behavior.
+ * 
+ * @const
+ * @see {@link module:generators/init.tpl~defaultConfig}
+ */
 const defaultConfig = {
   ciProvider: 'github' as const,
   mergeStrategy: 'fast-forward' as const,
@@ -40,6 +88,51 @@ const defaultConfig = {
   }
 }
 
+/**
+ * Workflows generator main entry point.
+ * 
+ * Orchestrates the complete workflow generation process:
+ * 1. Loads existing pipeline (if specified) for merging
+ * 2. Merges configuration with defaults
+ * 3. Generates all composite actions in parallel
+ * 4. Generates the main pipeline workflow
+ * 
+ * @param {PinionContext & { pipelinePath?: string, outputPipelinePath?: string, config?: any }} ctx - Extended Pinion context
+ * @param {string} [ctx.pipelinePath] - Path to existing pipeline for incremental updates
+ * @param {string} [ctx.outputPipelinePath] - Custom output path for pipeline (defaults to .github/workflows/pipeline.yml)
+ * @param {PipecraftConfig} [ctx.config] - PipeCraft configuration (overrides defaults)
+ * @returns {Promise<PinionContext>} Updated context after workflow generation
+ * 
+ * @throws {Error} If workflow files cannot be written
+ * @throws {Error} If existing pipeline cannot be parsed
+ * 
+ * @example
+ * ```typescript
+ * // Initial generation with config
+ * await generate({
+ *   cwd: '/path/to/project',
+ *   config: {
+ *     ciProvider: 'github',
+ *     branchFlow: ['develop', 'staging', 'main'],
+ *     domains: { api: { paths: ['src/api/**'] } }
+ *   }
+ * })
+ * 
+ * // Update existing pipeline
+ * await generate({
+ *   cwd: '/path/to/project',
+ *   pipelinePath: '.github/workflows/pipeline.yml',
+ *   config: updatedConfig
+ * })
+ * ```
+ * 
+ * @note The generator creates 7 files:
+ * - 1 main workflow (pipeline.yml)
+ * - 6 composite actions (in .github/actions/)
+ * 
+ * All actions are generated in parallel for performance, followed by
+ * the main pipeline which may reference the actions.
+ */
 export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPipelinePath?: string, config?: any }) =>
   Promise.resolve(ctx)
     .then((ctx) => {
