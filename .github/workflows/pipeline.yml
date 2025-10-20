@@ -164,16 +164,16 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm install --frozen-lockfile
-          cd docs-site && pnpm install --frozen-lockfile
+          cd docs && pnpm install --frozen-lockfile
 
       - name: Build TypeScript
         run: pnpm run build
 
       - name: Generate API Documentation
-        run: cd docs-site && pnpm run typedoc
+        run: cd docs && pnpm run typedoc
 
       - name: Build Docusaurus site
-        run: cd docs-site && pnpm run build
+        run: cd docs && pnpm run build
         env:
           NODE_ENV: production
 
@@ -250,16 +250,16 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm install --frozen-lockfile
-          cd docs-site && pnpm install --frozen-lockfile
+          cd docs && pnpm install --frozen-lockfile
 
       - name: Build TypeScript
         run: pnpm run build
 
       - name: Generate API Documentation
-        run: cd docs-site && pnpm run typedoc
+        run: cd docs && pnpm run typedoc
 
       - name: Build Docusaurus site
-        run: cd docs-site && pnpm run build
+        run: cd docs && pnpm run build
         env:
           NODE_ENV: production
 
@@ -269,7 +269,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs-site/build
+          path: docs/build
 
       - name: Deploy to GitHub Pages
         id: deployment
