@@ -6,47 +6,42 @@
  * 2. Workflows generator orchestrates template generation correctly
  * 3. Generators handle errors gracefully
  * 4. Context is properly passed through the generation pipeline
+ * 
+ * Refactored to use isolated workspaces to eliminate race conditions.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
-import { writeFileSync, existsSync, rmSync, readFileSync, mkdirSync } from 'fs'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { writeFileSync, existsSync, readFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
-import { TEST_DIR, FIXTURES_DIR } from '../setup'
-import { generate as generateInit } from '../../src/generators/init.tpl'
-import { generate as generateWorkflows } from '../../src/generators/workflows.tpl'
+import { FIXTURES_DIR } from '../setup.js'
+import { generate as generateInit } from '../../src/generators/init.tpl.js'
+import { generate as generateWorkflows } from '../../src/generators/workflows.tpl.js'
 import { PinionContext } from '@featherscloud/pinion'
-import { PipecraftConfig } from '../../src/types'
+import { PipecraftConfig } from '../../src/types/index.js'
 import { parse as parseYAML } from 'yaml'
+import { createWorkspaceWithCleanup } from '../helpers/workspace.js'
+import { createMinimalConfig } from '../helpers/fixtures.js'
 
-// Run tests serially to avoid race conditions with shared test-temp directory
-describe.sequential('Generator Integration Tests', () => {
+describe('Generator Integration Tests', () => {
+  let workspace: string
+  let cleanup: () => void
+
   beforeEach(() => {
-    // Clean up test directory
-    const filesToClean = [
-      '.pipecraftrc.json',
-      '.pipecraft-cache.json',
-      '.github',
-      'package.json',
-      '.release-it.cjs',
-      'commitlint.config.js'
-    ]
-    
-    filesToClean.forEach(file => {
-      const filePath = join(TEST_DIR, file)
-      if (existsSync(filePath)) {
-        rmSync(filePath, { recursive: true, force: true })
-      }
-    })
+    [workspace, cleanup] = createWorkspaceWithCleanup('pipecraft-generators')
+  })
+
+  afterEach(() => {
+    cleanup()
   })
 
   describe('init.tpl.ts - Configuration Initialization', () => {
-    it.skip('should generate valid configuration file', async () => {
-      // Skipped: Race condition when running with full test suite - TEST_DIR cleanup timing issue
+    it('should generate valid configuration file', async () => {
+      // Skipped: Race condition when running with full test suite - workspace cleanup timing issue
       // All init.tpl.ts tests fail intermittently when run with other tests
       // Tests pass when run individually: npx vitest run tests/integration/generators.test.ts -t "init"
-      // Root cause: TEST_DIR being cleaned up by other tests while generator is running
+      // Root cause: workspace being cleaned up by other tests while generator is running
       const ctx: PinionContext = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['init'],
         pinion: {
           logger: {
@@ -54,7 +49,7 @@ describe.sequential('Generator Integration Tests', () => {
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
@@ -70,7 +65,7 @@ describe.sequential('Generator Integration Tests', () => {
 
       await generateInit(ctx)
 
-      const configPath = join(TEST_DIR, '.pipecraftrc.json')
+      const configPath = join(workspace, '.pipecraftrc.json')
       expect(existsSync(configPath)).toBe(true)
 
       const rawContent = readFileSync(configPath, 'utf8')
@@ -87,12 +82,12 @@ describe.sequential('Generator Integration Tests', () => {
       expect(configContent.finalBranch).toBe('main')
     })
 
-    it.skip('should create basic configuration structure', async () => {
-      // Skipped: Race condition when running with other tests - TEST_DIR cleanup timing issue
+    it('should create basic configuration structure', async () => {
+      // Skipped: Race condition when running with other tests - workspace cleanup timing issue
       // Test passes when run individually but fails in full test suite
       // This is a duplicate of "should generate valid configuration file" above
       const ctx: PinionContext = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['init'],
         pinion: {
           logger: {
@@ -100,7 +95,7 @@ describe.sequential('Generator Integration Tests', () => {
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
@@ -116,7 +111,7 @@ describe.sequential('Generator Integration Tests', () => {
 
       await generateInit(ctx)
 
-      const configPath = join(TEST_DIR, '.pipecraftrc.json')
+      const configPath = join(workspace, '.pipecraftrc.json')
       const rawContent = readFileSync(configPath, 'utf8')
       let configContent = JSON.parse(rawContent)
       
@@ -131,12 +126,12 @@ describe.sequential('Generator Integration Tests', () => {
       expect(configContent.branchFlow).toBeDefined()
     })
 
-    it.skip('should write config with proper structure and defaults', async () => {
-      // Skipped: Race condition when running with other tests - TEST_DIR cleanup timing issue
+    it('should write config with proper structure and defaults', async () => {
+      // Skipped: Race condition when running with other tests - workspace cleanup timing issue
       // Test passes when run individually but fails in full test suite
       // This is a duplicate of "should generate valid configuration file" above
       const ctx: PinionContext = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['init'],
         pinion: {
           logger: {
@@ -144,7 +139,7 @@ describe.sequential('Generator Integration Tests', () => {
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
@@ -160,7 +155,7 @@ describe.sequential('Generator Integration Tests', () => {
 
       await generateInit(ctx)
 
-      const configPath = join(TEST_DIR, '.pipecraftrc.json')
+      const configPath = join(workspace, '.pipecraftrc.json')
       const rawContent = readFileSync(configPath, 'utf8')
       
       // Should be valid JSON (may be double-encoded)
@@ -193,12 +188,12 @@ describe.sequential('Generator Integration Tests', () => {
       testConfig = JSON.parse(readFileSync(configPath, 'utf8'))
     })
 
-    it.skip('should generate all workflow files', async () => {
-      // Skipped: Race condition with TEST_DIR cleanup - directory exists before
+    it('should generate all workflow files', async () => {
+      // Skipped: Race condition with workspace cleanup - directory exists before
       // generateWorkflows() but gets removed/doesn't exist when Pinion tries to write
       // Core functionality is tested in other integration tests
       const ctx: PinionContext & { config?: PipecraftConfig } = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['generate'],
         pinion: {
           logger: {
@@ -206,7 +201,7 @@ describe.sequential('Generator Integration Tests', () => {
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
@@ -215,7 +210,7 @@ describe.sequential('Generator Integration Tests', () => {
       }
 
       // Ensure .github/workflows directory exists
-      const workflowsDir = join(TEST_DIR, '.github', 'workflows')
+      const workflowsDir = join(workspace, '.github', 'workflows')
       mkdirSync(workflowsDir, { recursive: true })
 
       // Verify directory was created
@@ -235,7 +230,7 @@ describe.sequential('Generator Integration Tests', () => {
 
     it('should generate valid YAML in pipeline file', async () => {
       const ctx: PinionContext & { config?: PipecraftConfig } = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['generate'],
         pinion: {
           logger: {
@@ -243,7 +238,7 @@ describe.sequential('Generator Integration Tests', () => {
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
@@ -251,7 +246,7 @@ describe.sequential('Generator Integration Tests', () => {
         config: testConfig
       }
 
-      const workflowsDir = join(TEST_DIR, '.github', 'workflows')
+      const workflowsDir = join(workspace, '.github', 'workflows')
       mkdirSync(workflowsDir, { recursive: true })
 
       await generateWorkflows(ctx)
@@ -270,7 +265,7 @@ describe.sequential('Generator Integration Tests', () => {
 
     it('should include Pipecraft-managed jobs in pipeline', async () => {
       const ctx: PinionContext & { config?: PipecraftConfig } = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['generate'],
         pinion: {
           logger: {
@@ -278,7 +273,7 @@ describe.sequential('Generator Integration Tests', () => {
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
@@ -286,7 +281,7 @@ describe.sequential('Generator Integration Tests', () => {
         config: testConfig
       }
 
-      const workflowsDir = join(TEST_DIR, '.github', 'workflows')
+      const workflowsDir = join(workspace, '.github', 'workflows')
       mkdirSync(workflowsDir, { recursive: true })
 
       await generateWorkflows(ctx)
@@ -305,7 +300,7 @@ describe.sequential('Generator Integration Tests', () => {
 
     it('should merge with existing pipeline when provided', async () => {
       // Create an existing pipeline with custom jobs
-      const workflowsDir = join(TEST_DIR, '.github', 'workflows')
+      const workflowsDir = join(workspace, '.github', 'workflows')
       mkdirSync(workflowsDir, { recursive: true })
       
       const existingPipelinePath = join(workflowsDir, 'pipeline.yml')
@@ -323,7 +318,7 @@ jobs:
       writeFileSync(existingPipelinePath, existingPipeline)
 
       const ctx: PinionContext & { config?: PipecraftConfig, pipelinePath?: string } = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['generate'],
         pinion: {
           logger: {
@@ -331,7 +326,7 @@ jobs:
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
@@ -359,7 +354,7 @@ jobs:
       }
 
       const ctx: PinionContext & { config?: PipecraftConfig } = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['generate'],
         pinion: {
           logger: {
@@ -367,7 +362,7 @@ jobs:
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
@@ -375,7 +370,7 @@ jobs:
         config: customConfig
       }
 
-      const workflowsDir = join(TEST_DIR, '.github', 'workflows')
+      const workflowsDir = join(workspace, '.github', 'workflows')
       mkdirSync(workflowsDir, { recursive: true })
 
       await generateWorkflows(ctx)
@@ -392,7 +387,7 @@ jobs:
 
     it('should handle missing config gracefully with defaults', async () => {
       const ctx: PinionContext = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['generate'],
         pinion: {
           logger: {
@@ -400,14 +395,14 @@ jobs:
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
         }
       }
 
-      const workflowsDir = join(TEST_DIR, '.github', 'workflows')
+      const workflowsDir = join(workspace, '.github', 'workflows')
       mkdirSync(workflowsDir, { recursive: true })
 
       // Should not throw
@@ -424,10 +419,10 @@ jobs:
     })
 
     it('should output to custom pipeline path when specified', async () => {
-      const customPipelinePath = join(TEST_DIR, 'custom-pipeline.yml')
+      const customPipelinePath = join(workspace, 'custom-pipeline.yml')
       
       const ctx: PinionContext & { config?: PipecraftConfig, outputPipelinePath?: string } = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['generate'],
         pinion: {
           logger: {
@@ -435,7 +430,7 @@ jobs:
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
@@ -444,7 +439,7 @@ jobs:
         outputPipelinePath: customPipelinePath
       }
 
-      const workflowsDir = join(TEST_DIR, '.github', 'workflows')
+      const workflowsDir = join(workspace, '.github', 'workflows')
       mkdirSync(workflowsDir, { recursive: true })
 
       await generateWorkflows(ctx)
@@ -458,7 +453,7 @@ jobs:
 
     it('should include workflow_dispatch trigger with inputs', async () => {
       const ctx: PinionContext & { config?: PipecraftConfig } = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['generate'],
         pinion: {
           logger: {
@@ -466,7 +461,7 @@ jobs:
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
@@ -474,7 +469,7 @@ jobs:
         config: testConfig
       }
 
-      const workflowsDir = join(TEST_DIR, '.github', 'workflows')
+      const workflowsDir = join(workspace, '.github', 'workflows')
       mkdirSync(workflowsDir, { recursive: true })
 
       await generateWorkflows(ctx)
@@ -489,11 +484,11 @@ jobs:
       expect(pipeline.on.workflow_dispatch.inputs.baseRef).toBeDefined()
     })
 
-    it.skip('should include push trigger with branch flow', async () => {
+    it('should include push trigger with branch flow', async () => {
       // Skipped: Same race condition as 'should generate all workflow files'
       // Core functionality is tested in path-based-template.test.ts
       const ctx: PinionContext & { config?: PipecraftConfig } = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['generate'],
         pinion: {
           logger: {
@@ -501,7 +496,7 @@ jobs:
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
@@ -509,7 +504,7 @@ jobs:
         config: testConfig
       }
 
-      const workflowsDir = join(TEST_DIR, '.github', 'workflows')
+      const workflowsDir = join(workspace, '.github', 'workflows')
       mkdirSync(workflowsDir, { recursive: true })
 
       await generateWorkflows(ctx)
@@ -531,7 +526,7 @@ jobs:
       }
 
       const ctx: PinionContext & { config?: any } = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['generate'],
         pinion: {
           logger: {
@@ -539,7 +534,7 @@ jobs:
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
@@ -547,7 +542,7 @@ jobs:
         config: invalidConfig
       }
 
-      const workflowsDir = join(TEST_DIR, '.github', 'workflows')
+      const workflowsDir = join(workspace, '.github', 'workflows')
       mkdirSync(workflowsDir, { recursive: true })
 
       // Should handle gracefully with defaults
@@ -558,7 +553,7 @@ jobs:
       const testConfig = JSON.parse(readFileSync(join(FIXTURES_DIR, 'basic-config.json'), 'utf8'))
       
       const ctx: PinionContext & { config?: PipecraftConfig, pipelinePath?: string } = {
-        cwd: TEST_DIR,
+        cwd: workspace,
         argv: ['generate'],
         pinion: {
           logger: {
@@ -566,7 +561,7 @@ jobs:
             notice: console.log
           },
           prompt: async () => ({}),
-          cwd: TEST_DIR,
+          cwd: workspace,
           force: true,
           trace: [],
           exec: async () => 0
@@ -575,7 +570,7 @@ jobs:
         pipelinePath: '/non/existent/path.yml'
       }
 
-      const workflowsDir = join(TEST_DIR, '.github', 'workflows')
+      const workflowsDir = join(workspace, '.github', 'workflows')
       mkdirSync(workflowsDir, { recursive: true })
 
       // Should not throw, should create new pipeline
