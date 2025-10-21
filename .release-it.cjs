@@ -28,7 +28,7 @@ module.exports = {
 
               ci: 'patch',
               docs: 'patch',
-              chore: 'minor',
+              chore: 'patch',
               style: 'patch',
               fix: 'patch',
               perf: 'patch',
