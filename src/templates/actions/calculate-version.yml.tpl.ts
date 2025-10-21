@@ -96,7 +96,7 @@ runs:
         echo "Current commit hash: $COMMIT_HASH"
         
         # Check for tags on the current commit
-        TAG=$(git tag --points-at $COMMIT_HASH | grep -E '^v[0-9]+\\.[0-9]+\\.[0-9]+\\$' || true)
+        TAG=$(git tag --points-at $COMMIT_HASH | grep -E '^v[0-9]+\\.[0-9]+\\.[0-9]+$' || true)
         echo "Tags found: $TAG"
         
         if [ -z "$TAG" ]; then
