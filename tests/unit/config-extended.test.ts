@@ -177,10 +177,6 @@ describe('Config Utilities - Extended Coverage', () => {
             breaking: 'major'
           }
         },
-        actions: {
-          onDevelopMerge: ['runTests', 'deploy'],
-          onStagingMerge: ['runTests', 'calculateVersion']
-        },
         domains: {
           'backend': {
             paths: ['services/backend/**', 'libs/backend/**'],

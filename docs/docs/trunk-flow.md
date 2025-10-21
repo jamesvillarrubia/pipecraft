@@ -77,24 +77,6 @@ feature → develop → staging → main
 - When `false`, PRs require manual approval
 - Typically used for automated promote-to-staging, manual promote-to-production
 
-#### Actions Configuration
-
-```json
-{
-  "actions": {
-    "onDevelopMerge": [
-      "runTests",
-      "createPRToStaging"     // Creates promotion PR
-    ],
-    "onStagingMerge": [
-      "runTests",
-      "calculateVersion",      // Optional: bump version
-      "createTagAndRelease",   // Optional: tag release
-      "createPRToMain"         // Creates promotion PR
-    ]
-  }
-}
-```
 
 ### Domain-Based Testing
 
@@ -410,10 +392,6 @@ The following GitHub settings must be configured (can use `pipecraft setup`):
   "semver": {
     "bumpRules": {}
   },
-  "actions": {
-    "onDevelopMerge": ["runTests"],
-    "onStagingMerge": []
-  },
   "domains": {
     "app": {
       "paths": ["src/**"],
@@ -449,18 +427,6 @@ The following GitHub settings must be configured (can use `pipecraft setup`):
       "fix": "patch",
       "breaking": "major"
     }
-  },
-  "actions": {
-    "onDevelopMerge": [
-      "runTests",
-      "createPRToStaging"
-    ],
-    "onStagingMerge": [
-      "runTests",
-      "calculateVersion",
-      "createTagAndRelease",
-      "createPRToMain"
-    ]
   },
   "domains": {
     "api": {

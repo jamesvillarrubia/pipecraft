@@ -46,9 +46,6 @@ describe('VersionManager - Extended Coverage', () => {
           breaking: 'major'
         }
       },
-      actions: {
-        onDevelopMerge: ['runTests']
-      },
       domains: {
         api: {
           paths: ['apps/api/**'],

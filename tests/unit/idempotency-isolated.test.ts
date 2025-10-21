@@ -39,10 +39,6 @@ describe('IdempotencyManager - Isolated', () => {
           breaking: 'major'
         }
       },
-      actions: {
-        onDevelopMerge: ['runTests', 'fastForwardToStaging'],
-        onStagingMerge: ['runTests', 'calculateVersion', 'createOrFastForwardToMain']
-      },
       domains: {
         api: {
           paths: ['apps/api/**'],

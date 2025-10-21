@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/cli/index.ts",
-    "test": "vitest",
+    "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",

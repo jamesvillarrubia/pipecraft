@@ -20,17 +20,6 @@
       "breaking": "major"
     }
   },
-  "actions": {
-    "onDevelopMerge": [
-      "runTests",
-      "fastForwardToStaging"
-    ],
-    "onStagingMerge": [
-      "runTests",
-      "calculateVersion",
-      "createOrFastForwardToMain"
-    ]
-  },
   "domains": {
     "core": {
       "paths": [
