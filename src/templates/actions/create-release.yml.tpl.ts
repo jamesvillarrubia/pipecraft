@@ -32,6 +32,10 @@ const releaseActionTemplate = (ctx: any) => {
         description: 'GitHub token for authentication'
         required: false
         default: \${{ github.token }}
+      publish-workflow:
+        description: 'Name of the publish workflow file to trigger (e.g., publish.yml)'
+        required: false
+        default: 'publish.yml'
 
     outputs:
       release_url:
@@ -101,21 +105,22 @@ const releaseActionTemplate = (ctx: any) => {
             GH_TOKEN: \${{ inputs.token }}
           run: |
             VERSION="\${{ inputs.version }}"
+            PUBLISH_WORKFLOW="\${{ inputs.publish-workflow }}"
 
-            # Check if publish.yml workflow exists
-            if gh workflow list | grep -q "publish.yml"; then
-              echo "🔄 Triggering publish workflow for $VERSION"
+            # Check if publish workflow file exists
+            if [ -f ".github/workflows/$PUBLISH_WORKFLOW" ]; then
+              echo "🔄 Triggering $PUBLISH_WORKFLOW for $VERSION"
 
               # Trigger the publish workflow with the release tag
               # This is necessary because GITHUB_TOKEN release creation doesn't trigger workflows
-              if gh workflow run publish.yml --field tag="$VERSION" 2>&1; then
+              if gh workflow run "$PUBLISH_WORKFLOW" --field tag="$VERSION" 2>&1; then
                 echo "✅ Publish workflow triggered for $VERSION"
               else
                 echo "⚠️  Failed to trigger publish workflow, but continuing"
-                echo "   Check that publish.yml accepts workflow_dispatch with a 'tag' input"
+                echo "   Check that $PUBLISH_WORKFLOW accepts workflow_dispatch with a 'tag' input"
               fi
             else
-              echo "ℹ️  No publish.yml workflow found - skipping publish trigger"
+              echo "ℹ️  No $PUBLISH_WORKFLOW workflow found - skipping publish trigger"
               echo "   This is normal if you don't have a separate publish workflow"
             fi`
 };
