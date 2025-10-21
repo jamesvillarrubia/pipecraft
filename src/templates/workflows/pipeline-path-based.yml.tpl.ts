@@ -540,12 +540,14 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       operation: 'overwrite' as const,
       value: createValueFromString(`
         # Only runs on push or manual workflow_dispatch events to branches that can promote
-        # Waits for version/tag if they run, but doesn't fail if they're skipped
+        # Requires version to succeed (which means tests passed)
+        # Requires a version to have been calculated (skip promotion for non-versioned commits)
         # Needs all deploy and/or remote test jobs to succeed
         if: \${{
             always() &&
             (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
-            (needs.version.result == 'success' || needs.version.result == 'skipped') &&
+            needs.version.result == 'success' &&
+            needs.version.outputs.version != '' &&
             (needs.tag.result == 'success' || needs.tag.result == 'skipped') &&
             (
               ${branchFlow.slice(0, -1).map((branch: string) => `github.ref_name == '${branch}'`).join(' || \n              ')}
@@ -735,6 +737,11 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
    - Workflow triggers, job dependencies, and conditionals
    - Changes detection, version calculation, and tag creation
    - CreatePR, branch management, promote, and release jobs
+
+ 📌 VERSION PROMOTION BEHAVIOR:
+   - Only commits that trigger a version bump will promote to staging/main
+   - Non-versioned commits (test, build, etc.) remain on develop
+   - This keeps staging/main aligned with tagged releases
 
  Running 'pipecraft generate' updates managed sections while preserving
  your customizations in test/deploy/remote-test jobs.
