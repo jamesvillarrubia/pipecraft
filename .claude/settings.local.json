@@ -52,7 +52,12 @@
       "Bash(LOG_LEVEL=verbose pnpm test:*)",
       "Bash(for file in tests/unit/versioning-extended.test.ts tests/unit/config-extended.test.ts tests/integration/path-based-template.test.ts tests/unit/cli.test.ts tests/unit/idempotency-isolated.test.ts tests/integration/simple-path-based.test.ts)",
       "Bash(do echo \"Processing $file\" grep -n \"actions:\" \"$file\")",
-      "Bash(npm run test:*)"
+      "Bash(npm run test:*)",
+      "Bash(gh release list:*)",
+      "Bash(gh secret:*)",
+      "Bash(pnpm run test:coverage:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh workflow run:*)"
     ],
     "deny": [],
     "ask": []

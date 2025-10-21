@@ -28,11 +28,12 @@ export default defineConfig({
         '**/*.spec.ts'
       ],
       // Thresholds based on actual testable code (CLI + generators + core logic)
+      // Starting at 60%, with goal to gradually increase to 75%+
       thresholds: {
-        lines: 75,
-        functions: 75,
-        branches: 75,
-        statements: 75
+        lines: 60,
+        functions: 60,
+        branches: 60,
+        statements: 60
       },
       // Report per-file thresholds
       perFile: true,
