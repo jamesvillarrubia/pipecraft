@@ -11,6 +11,10 @@ inputs:
     description: 'Version being promoted (e.g., v1.2.3, auto-detected from git tags if not provided)'
     required: false
     default: ''
+  run_number:
+    description: 'GitHub Actions run number for tracking promotion lineage'
+    required: false
+    default: ''
   configPath:
     description: 'Path to .pipecraftrc.json config file'
     required: false
@@ -202,8 +206,14 @@ runs:
         SOURCE="${{ inputs.sourceBranch }}"
         VERSION="${{ steps.get-version.outputs.version }}"
         AUTO_MERGE="${{ steps.read-config.outputs.autoMerge }}"
+        RUN_NUMBER="${{ inputs.run_number }}"
 
-        TITLE="🚀 Release $VERSION to $TARGET"
+        # Build descriptive title with run number for traceability
+        if [ -n "$RUN_NUMBER" ]; then
+          TITLE="🚀 Release $VERSION to $TARGET (run #$RUN_NUMBER from $SOURCE)"
+        else
+          TITLE="🚀 Release $VERSION to $TARGET (from $SOURCE)"
+        fi
 
         # Determine merge behavior text
         if [ "$AUTO_MERGE" == "true" ]; then
