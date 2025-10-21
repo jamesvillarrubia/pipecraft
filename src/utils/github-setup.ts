@@ -6,15 +6,44 @@
  * - Repository information extraction from git remotes
  * - GitHub authentication token management
  * - Workflow permissions configuration
+ * - Repository merge settings (strategies, auto-merge, PR updates)
+ * - Merge commit message format settings
  * - Branch protection rules setup
- * - Auto-merge enablement
+ * - Auto-merge enablement (two-layer system)
  *
  * These setup utilities ensure that GitHub repositories have the correct permissions
  * and settings for PipeCraft workflows to function properly, including:
  * - Workflows can create pull requests
- * - Auto-merge is enabled for automated promotions
+ * - Merge commits always use PR titles (not individual commit messages)
+ * - Auto-merge is enabled based on .pipecraftrc.json config
  * - Branch protection is configured appropriately
  * - Required status checks are enforced
+ *
+ * ## Auto-Merge Two-Layer System
+ *
+ * Auto-merge in GitHub works with two layers:
+ *
+ * 1. **Repository-Level Setting** (`allow_auto_merge`):
+ *    - Must be ON for auto-merge to be available at all
+ *    - Controls whether the "Enable auto-merge" button appears on PRs
+ *    - Configured by this module based on .pipecraftrc.json
+ *
+ * 2. **Per-PR Activation**:
+ *    - Must be explicitly enabled on each PR (via button, CLI, or API)
+ *    - Pipecraft workflows automatically enable it for configured branches
+ *    - Configured per-branch in .pipecraftrc.json autoMerge setting
+ *
+ * Example config:
+ * ```json
+ * {
+ *   "branchFlow": ["develop", "staging", "main"],
+ *   "autoMerge": {
+ *     "staging": true,  // Auto-merge PRs to staging
+ *     "main": true      // Auto-merge PRs to main
+ *   }
+ * }
+ * ```
+ * Result: develop requires manual review, staging and main auto-merge when checks pass
  *
  * @module utils/github-setup
  */
@@ -60,6 +89,75 @@ interface RepositoryInfo {
   /** Full git remote URL */
   remote: string
 }
+
+/**
+ * GitHub repository merge and PR settings.
+ *
+ * Controls merge strategies, auto-merge, PR branch updates, and commit message formats.
+ * These settings determine how PRs can be merged and what commit messages are created.
+ */
+interface RepositorySettings {
+  /**
+   * Allow auto-merge feature (let PRs auto-merge when checks pass)
+   */
+  allow_auto_merge?: boolean
+
+  /**
+   * Always suggest updating pull request branches (keep PRs up to date with base)
+   */
+  allow_update_branch?: boolean
+
+  /**
+   * Allow merge commits (creates a merge commit)
+   */
+  allow_merge_commit?: boolean
+
+  /**
+   * Allow rebase merging (rebases and fast-forwards)
+   */
+  allow_rebase_merge?: boolean
+
+  /**
+   * Allow squash merging (squashes all commits into one)
+   */
+  allow_squash_merge?: boolean
+
+  /**
+   * Default title format for squash merge commits.
+   * - 'PR_TITLE': Use the pull request title
+   * - 'COMMIT_OR_PR_TITLE': Use commit message if single commit, PR title otherwise
+   */
+  squash_merge_commit_title?: 'PR_TITLE' | 'COMMIT_OR_PR_TITLE'
+
+  /**
+   * Default message format for squash merge commits.
+   * - 'PR_BODY': Use the pull request body
+   * - 'COMMIT_MESSAGES': Use all commit messages
+   * - 'BLANK': Leave message blank
+   */
+  squash_merge_commit_message?: 'PR_BODY' | 'COMMIT_MESSAGES' | 'BLANK'
+
+  /**
+   * Default title format for merge commits.
+   * - 'PR_TITLE': Use the pull request title
+   * - 'MERGE_MESSAGE': Use default merge message
+   */
+  merge_commit_title?: 'PR_TITLE' | 'MERGE_MESSAGE'
+
+  /**
+   * Default message format for merge commits.
+   * - 'PR_BODY': Use the pull request body
+   * - 'PR_TITLE': Use the pull request title
+   * - 'BLANK': Leave message blank
+   */
+  merge_commit_message?: 'PR_BODY' | 'PR_TITLE' | 'BLANK'
+}
+
+/**
+ * Type alias for backwards compatibility with existing functions.
+ * @deprecated Use RepositorySettings instead
+ */
+type MergeCommitSettings = RepositorySettings
 
 /**
  * GitHub branch protection rule configuration.
@@ -369,6 +467,494 @@ export async function promptPermissionChanges(
 }
 
 /**
+ * Get current merge commit message settings for the repository.
+ *
+ * Retrieves the default formats for merge and squash commit messages.
+ * These settings control how GitHub formats commit messages when PRs are merged.
+ *
+ * @param owner - Repository owner (organization or user)
+ * @param repo - Repository name
+ * @param token - GitHub authentication token
+ * @returns Current merge commit settings
+ * @throws {Error} If the API call fails
+ *
+ * @example
+ * ```typescript
+ * const settings = await getMergeCommitSettings('owner', 'repo', token)
+ * console.log(settings.squash_merge_commit_title) // 'PR_TITLE' or 'COMMIT_OR_PR_TITLE'
+ * ```
+ */
+export async function getMergeCommitSettings(
+  owner: string,
+  repo: string,
+  token: string
+): Promise<MergeCommitSettings> {
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    }
+  )
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to get merge commit settings: ${response.status} ${error}`)
+  }
+
+  const data = await response.json()
+  return {
+    squash_merge_commit_title: data.squash_merge_commit_title,
+    squash_merge_commit_message: data.squash_merge_commit_message,
+    merge_commit_title: data.merge_commit_title,
+    merge_commit_message: data.merge_commit_message,
+    allow_squash_merge: data.allow_squash_merge,
+    allow_merge_commit: data.allow_merge_commit,
+    allow_rebase_merge: data.allow_rebase_merge
+  }
+}
+
+/**
+ * Update merge commit message settings for the repository.
+ *
+ * Configures how GitHub formats commit messages when PRs are merged.
+ * PipeCraft recommends using PR_TITLE to ensure consistent commit messages
+ * regardless of whether a PR has one or multiple commits.
+ *
+ * @param owner - Repository owner (organization or user)
+ * @param repo - Repository name
+ * @param token - GitHub authentication token
+ * @param settings - Merge commit settings to apply
+ * @throws {Error} If the API call fails
+ *
+ * @example
+ * ```typescript
+ * await updateMergeCommitSettings('owner', 'repo', token, {
+ *   squash_merge_commit_title: 'PR_TITLE',
+ *   merge_commit_title: 'PR_TITLE'
+ * })
+ * ```
+ */
+export async function updateMergeCommitSettings(
+  owner: string,
+  repo: string,
+  token: string,
+  settings: MergeCommitSettings
+): Promise<void> {
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(settings)
+    }
+  )
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to update merge commit settings: ${response.status} ${error}`)
+  }
+}
+
+/**
+ * Determine required merge commit setting changes without prompting.
+ *
+ * Checks if merge commit settings match PipeCraft's recommended configuration:
+ * - Always use PR title for squash and merge commits
+ * - This ensures consistent commit messages regardless of commit count
+ * - Only configures settings for enabled merge strategies
+ *
+ * @param currentSettings - Current merge commit settings
+ * @returns Changes object if changes needed, null if already correct
+ *
+ * @example
+ * ```typescript
+ * const settings = await getMergeCommitSettings(owner, repo, token)
+ * const changes = getRequiredMergeCommitChanges(settings)
+ * if (changes) {
+ *   await updateMergeCommitSettings(owner, repo, token, changes)
+ * }
+ * ```
+ */
+export function getRequiredMergeCommitChanges(
+  currentSettings: MergeCommitSettings
+): MergeCommitSettings | null {
+  const changes: MergeCommitSettings = {}
+
+  // For squash merges, always use PR title (not commit message)
+  // Only configure if squash merge is enabled
+  if (currentSettings.allow_squash_merge && currentSettings.squash_merge_commit_title !== 'PR_TITLE') {
+    changes.squash_merge_commit_title = 'PR_TITLE'
+  }
+
+  // For merge commits, always use PR title
+  // Only configure if merge commit is enabled
+  if (currentSettings.allow_merge_commit && currentSettings.merge_commit_title !== 'PR_TITLE') {
+    changes.merge_commit_title = 'PR_TITLE'
+  }
+
+  return Object.keys(changes).length > 0 ? changes : null
+}
+
+/**
+ * Display current merge commit settings and prompt for changes.
+ *
+ * Shows the user their current merge commit message format settings and
+ * asks if they want to change them to PipeCraft's recommended configuration.
+ * Only prompts for settings that are relevant to enabled merge strategies.
+ *
+ * @param currentSettings - Current merge commit settings
+ * @returns Changes object if user accepted, 'declined' if declined, null if already correct
+ *
+ * @example
+ * ```typescript
+ * const settings = await getMergeCommitSettings(owner, repo, token)
+ * const changes = await promptMergeCommitChanges(settings)
+ * if (changes && changes !== 'declined') {
+ *   await updateMergeCommitSettings(owner, repo, token, changes)
+ * }
+ * ```
+ */
+export async function promptMergeCommitChanges(
+  currentSettings: MergeCommitSettings
+): Promise<MergeCommitSettings | null | 'declined'> {
+  console.log('\n📋 Current Merge Commit Message Settings:')
+
+  // Only show settings for enabled merge strategies
+  if (currentSettings.allow_squash_merge) {
+    console.log(`   Squash merge title: ${currentSettings.squash_merge_commit_title || 'not set'}`)
+  }
+  if (currentSettings.allow_merge_commit) {
+    console.log(`   Merge commit title: ${currentSettings.merge_commit_title || 'not set'}`)
+  }
+
+  if (!currentSettings.allow_squash_merge && !currentSettings.allow_merge_commit) {
+    console.log('   No merge strategies enabled - skipping configuration')
+    return null
+  }
+
+  // Check if settings are already correct for enabled strategies
+  const squashCorrect = !currentSettings.allow_squash_merge || currentSettings.squash_merge_commit_title === 'PR_TITLE'
+  const mergeCorrect = !currentSettings.allow_merge_commit || currentSettings.merge_commit_title === 'PR_TITLE'
+
+  if (squashCorrect && mergeCorrect) {
+    console.log('\n✅ Merge commit settings are already configured correctly!')
+    return null
+  }
+
+  console.log('\n⚠️  PipeCraft recommends the following settings:')
+  if (currentSettings.allow_squash_merge && !squashCorrect) {
+    console.log('   • Squash merge title: PR_TITLE (always use PR title, not commit message)')
+  }
+  if (currentSettings.allow_merge_commit && !mergeCorrect) {
+    console.log('   • Merge commit title: PR_TITLE (always use PR title)')
+  }
+  console.log('\n   This ensures consistent commit messages when PRs have single or multiple commits.')
+
+  const response: any = await prompt({
+    type: 'confirm',
+    name: 'updateSettings',
+    message: 'Update merge commit message settings to use PR titles?',
+    default: true
+  } as any)
+
+  if (!response.updateSettings) {
+    return 'declined'
+  }
+
+  const changes: MergeCommitSettings = {}
+
+  // Only include changes for enabled strategies
+  if (currentSettings.allow_squash_merge && currentSettings.squash_merge_commit_title !== 'PR_TITLE') {
+    changes.squash_merge_commit_title = 'PR_TITLE'
+  }
+
+  if (currentSettings.allow_merge_commit && currentSettings.merge_commit_title !== 'PR_TITLE') {
+    changes.merge_commit_title = 'PR_TITLE'
+  }
+
+  return Object.keys(changes).length > 0 ? changes : null
+}
+
+/**
+ * Check if auto-merge should be enabled based on .pipecraftrc.json config.
+ *
+ * Auto-merge should be enabled at the repository level if ANY branch
+ * has autoMerge configured in the config file.
+ */
+export function shouldEnableAutoMerge(): boolean {
+  try {
+    const config = loadConfig('.pipecraftrc.json') as PipecraftConfig
+
+    if (!config.autoMerge) {
+      return false
+    }
+
+    if (typeof config.autoMerge === 'boolean') {
+      return config.autoMerge
+    }
+
+    if (typeof config.autoMerge === 'object') {
+      // Check if any branch has auto-merge enabled
+      return Object.values(config.autoMerge).some(enabled => enabled === true)
+    }
+
+    return false
+  } catch (error) {
+    // No config file or autoMerge not configured
+    return false
+  }
+}
+
+/**
+ * Get Pipecraft's recommended repository settings.
+ *
+ * These are the settings that work best with Pipecraft workflows:
+ * - Allow auto-merge: ON if any branch has autoMerge in config, OFF otherwise
+ * - Always suggest updating PR branches: ON
+ * - Allow merge commits: OFF
+ * - Allow rebase merging: OFF
+ * - Allow squash merging: ON
+ * - Squash merge commit title: PR_TITLE
+ * - Squash merge commit message: COMMIT_MESSAGES (PR title + commit details)
+ */
+export function getRecommendedRepositorySettings(): RepositorySettings {
+  return {
+    allow_auto_merge: shouldEnableAutoMerge(),
+    allow_update_branch: true,
+    allow_merge_commit: false,
+    allow_rebase_merge: false,
+    allow_squash_merge: true,
+    squash_merge_commit_title: 'PR_TITLE',
+    squash_merge_commit_message: 'COMMIT_MESSAGES'
+  }
+}
+
+/**
+ * Get current repository settings from GitHub API.
+ */
+export async function getRepositorySettings(
+  owner: string,
+  repo: string,
+  token: string
+): Promise<RepositorySettings> {
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    }
+  )
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to get repository settings: ${response.status} ${error}`)
+  }
+
+  const data = await response.json()
+  return {
+    allow_auto_merge: data.allow_auto_merge,
+    allow_update_branch: data.allow_update_branch,
+    allow_merge_commit: data.allow_merge_commit,
+    allow_rebase_merge: data.allow_rebase_merge,
+    allow_squash_merge: data.allow_squash_merge,
+    squash_merge_commit_title: data.squash_merge_commit_title,
+    squash_merge_commit_message: data.squash_merge_commit_message,
+    merge_commit_title: data.merge_commit_title,
+    merge_commit_message: data.merge_commit_message
+  }
+}
+
+/**
+ * Update repository settings via GitHub API.
+ */
+export async function updateRepositorySettings(
+  owner: string,
+  repo: string,
+  token: string,
+  settings: Partial<RepositorySettings>
+): Promise<void> {
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(settings)
+    }
+  )
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to update repository settings: ${response.status} ${error}`)
+  }
+}
+
+/**
+ * Compare current settings with recommended settings and return differences.
+ */
+export function getSettingsGaps(
+  current: RepositorySettings,
+  recommended: RepositorySettings
+): Partial<RepositorySettings> {
+  const gaps: Partial<RepositorySettings> = {}
+
+  // Check each setting
+  if (current.allow_auto_merge !== recommended.allow_auto_merge) {
+    gaps.allow_auto_merge = recommended.allow_auto_merge
+  }
+  if (current.allow_update_branch !== recommended.allow_update_branch) {
+    gaps.allow_update_branch = recommended.allow_update_branch
+  }
+  if (current.allow_merge_commit !== recommended.allow_merge_commit) {
+    gaps.allow_merge_commit = recommended.allow_merge_commit
+  }
+  if (current.allow_rebase_merge !== recommended.allow_rebase_merge) {
+    gaps.allow_rebase_merge = recommended.allow_rebase_merge
+  }
+  if (current.allow_squash_merge !== recommended.allow_squash_merge) {
+    gaps.allow_squash_merge = recommended.allow_squash_merge
+  }
+
+  // Only check squash merge settings if squash merge will be enabled
+  const squashWillBeEnabled = gaps.allow_squash_merge ?? current.allow_squash_merge
+  if (squashWillBeEnabled) {
+    if (current.squash_merge_commit_title !== recommended.squash_merge_commit_title) {
+      gaps.squash_merge_commit_title = recommended.squash_merge_commit_title
+    }
+    if (current.squash_merge_commit_message !== recommended.squash_merge_commit_message) {
+      gaps.squash_merge_commit_message = recommended.squash_merge_commit_message
+    }
+  }
+
+  return gaps
+}
+
+/**
+ * Display a comparison table of current vs recommended settings.
+ */
+export function displaySettingsComparison(
+  current: RepositorySettings,
+  recommended: RepositorySettings,
+  gaps: Partial<RepositorySettings>
+): void {
+  console.log('\n📊 Repository Settings Comparison:\n')
+
+  const formatValue = (value: any): string => {
+    if (typeof value === 'boolean') return value ? 'ON' : 'OFF'
+    if (value === undefined || value === null) return 'not set'
+    return String(value)
+  }
+
+  const hasGap = (key: keyof RepositorySettings): boolean => key in gaps
+
+  const settings: Array<{key: keyof RepositorySettings, label: string}> = [
+    { key: 'allow_auto_merge', label: 'Allow auto-merge' },
+    { key: 'allow_update_branch', label: 'Always suggest updating PR branches' },
+    { key: 'allow_merge_commit', label: 'Allow merge commits' },
+    { key: 'allow_rebase_merge', label: 'Allow rebase merging' },
+    { key: 'allow_squash_merge', label: 'Allow squash merging' },
+    { key: 'squash_merge_commit_title', label: 'Squash merge commit title' },
+    { key: 'squash_merge_commit_message', label: 'Squash merge commit message' }
+  ]
+
+  settings.forEach(({ key, label }) => {
+    const currentVal = formatValue(current[key])
+    const recommendedVal = formatValue(recommended[key])
+    const gap = hasGap(key)
+
+    if (gap) {
+      console.log(`   ${label}:`)
+      console.log(`      Current:     ${currentVal}`)
+      console.log(`      Recommended: ${recommendedVal} ⚠️`)
+    } else {
+      console.log(`   ${label}: ${currentVal} ✅`)
+    }
+  })
+
+  const gapCount = Object.keys(gaps).length
+  if (gapCount > 0) {
+    console.log(`\n⚠️  Found ${gapCount} setting${gapCount > 1 ? 's' : ''} that differ from recommendations`)
+  } else {
+    console.log('\n✅ All settings match Pipecraft recommendations!')
+  }
+
+  // Show auto-merge branch configuration if auto-merge is enabled
+  if (current.allow_auto_merge || recommended.allow_auto_merge) {
+    try {
+      const config = loadConfig('.pipecraftrc.json') as PipecraftConfig
+      if (config.autoMerge) {
+        console.log('\n📋 Auto-Merge Branch Configuration:')
+        console.log('   (Repository-level allow_auto_merge must be ON for these to work)\n')
+
+        if (typeof config.autoMerge === 'boolean') {
+          if (config.autoMerge) {
+            console.log('   All branches: Auto-merge ENABLED')
+          } else {
+            console.log('   All branches: Auto-merge DISABLED')
+          }
+        } else if (typeof config.autoMerge === 'object') {
+          const branches = config.branchFlow || []
+          const autoMergeConfig = config.autoMerge as Record<string, boolean>
+          branches.forEach(branch => {
+            const enabled = autoMergeConfig[branch]
+            if (enabled === true) {
+              console.log(`   ${branch}: Auto-merge ENABLED ✅`)
+            } else if (enabled === false) {
+              console.log(`   ${branch}: Auto-merge DISABLED (manual review required)`)
+            } else {
+              console.log(`   ${branch}: Auto-merge not configured (manual review required)`)
+            }
+          })
+        }
+
+        console.log('\n   ℹ️  Auto-merge means PRs will automatically merge when all checks pass.')
+        console.log('   ℹ️  Branches without auto-merge require manual approval and merge.')
+      }
+    } catch (error) {
+      // Config file not found or invalid - skip branch config display
+    }
+  }
+}
+
+/**
+ * Prompt user whether to apply recommended settings.
+ */
+export async function promptApplySettings(
+  gaps: Partial<RepositorySettings>
+): Promise<'apply' | 'declined'> {
+  const gapCount = Object.keys(gaps).length
+
+  if (gapCount === 0) {
+    return 'declined' // Nothing to apply
+  }
+
+  const response: any = await prompt({
+    type: 'confirm',
+    name: 'applySettings',
+    message: `Apply ${gapCount} recommended setting${gapCount > 1 ? 's' : ''}?`,
+    default: true
+  } as any)
+
+  return response.applySettings ? 'apply' : 'declined'
+}
+
+/**
  * Get branch protection rules
  */
 export async function getBranchProtection(
@@ -518,24 +1104,12 @@ export async function configureBranchProtection(
   }
 
   if (!config.autoMerge || !config.branchFlow) {
-    console.log('ℹ️  No autoMerge configuration found - skipping auto-merge setup')
+    console.log('ℹ️  No autoMerge configuration found - skipping branch protection setup')
     return
   }
 
-  // Enable repository-level auto-merge feature
-  try {
-    const wasEnabled = await enableAutoMerge(repoInfo.owner, repoInfo.repo, token)
-    if (wasEnabled) {
-      console.log('✅ Enabled auto-merge for repository')
-    } else {
-      console.log('✅ Auto-merge already enabled for repository')
-    }
-  } catch (error: any) {
-    console.error(`⚠️  Could not enable auto-merge: ${error.message}`)
-    console.log('   You can enable it manually at:')
-    console.log(`   https://github.com/${repoInfo.owner}/${repoInfo.repo}/settings`)
-    return
-  }
+  // Note: Repository-level auto-merge is now handled by repository settings configuration
+  // This function only configures branch protection for the branches that need it
 
   // Determine which branches need auto-merge
   const autoMergeConfig = config.autoMerge
@@ -676,6 +1250,58 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
     )
 
     console.log('✅ GitHub Actions permissions updated successfully!')
+  }
+
+  // Check and configure repository settings (merge strategies, auto-merge, etc.)
+  console.log('\n🔍 Checking repository settings...')
+  try {
+    const currentSettings = await getRepositorySettings(
+      repoInfo.owner,
+      repoInfo.repo,
+      token
+    )
+    const recommendedSettings = getRecommendedRepositorySettings()
+    const gaps = getSettingsGaps(currentSettings, recommendedSettings)
+
+    // Display current vs recommended comparison
+    displaySettingsComparison(currentSettings, recommendedSettings, gaps)
+
+    if (Object.keys(gaps).length === 0) {
+      // No changes needed
+      console.log('')
+    } else {
+      // Changes needed
+      let shouldApply = false
+
+      if (autoApply) {
+        // Auto-apply mode
+        shouldApply = true
+        console.log('\n🔧 Auto-applying recommended settings...')
+      } else {
+        // Interactive mode: prompt user
+        const decision = await promptApplySettings(gaps)
+        shouldApply = decision === 'apply'
+      }
+
+      if (shouldApply) {
+        console.log('\n🔄 Updating repository settings...')
+        await updateRepositorySettings(
+          repoInfo.owner,
+          repoInfo.repo,
+          token,
+          gaps
+        )
+        console.log('✅ Repository settings updated successfully!')
+      } else {
+        console.log('\n⚠️  Repository settings were not updated')
+        console.log('💡 You can update them manually at:')
+        console.log(`   https://github.com/${repoInfo.owner}/${repoInfo.repo}/settings`)
+      }
+    }
+  } catch (error: any) {
+    console.error(`⚠️  Could not configure repository settings: ${error.message}`)
+    console.log('💡 You can update them manually at:')
+    console.log(`   https://github.com/${repoInfo.owner}/${repoInfo.repo}/settings`)
   }
 
   // Configure branch protection for auto-merge
