@@ -15,7 +15,22 @@ import {
   getGitHubToken,
   getWorkflowPermissions,
   updateWorkflowPermissions,
-  getRequiredPermissionChanges
+  getRequiredPermissionChanges,
+  promptPermissionChanges,
+  shouldEnableAutoMerge,
+  getRecommendedRepositorySettings,
+  getRepositorySettings,
+  updateRepositorySettings,
+  getSettingsGaps,
+  getMergeCommitSettings,
+  updateMergeCommitSettings,
+  getRequiredMergeCommitChanges,
+  promptMergeCommitChanges,
+  getBranchProtection,
+  updateBranchProtection,
+  enableAutoMerge,
+  displaySettingsComparison,
+  promptApplySettings
 } from '../../src/utils/github-setup.js'
 
 // Mock child_process at module level
@@ -27,10 +42,19 @@ vi.mock('child_process', async () => {
   }
 })
 
+// Mock config loader
+vi.mock('../../src/utils/config.js', () => ({
+  loadConfig: vi.fn()
+}))
+
 const mockExecSync = execSync as unknown as ReturnType<typeof vi.fn>
 
 // Mock global fetch
 global.fetch = vi.fn()
+
+// Import after mocking
+import { loadConfig } from '../../src/utils/config.js'
+const mockLoadConfig = loadConfig as unknown as ReturnType<typeof vi.fn>
 
 describe('GitHub Setup', () => {
   let originalEnv: NodeJS.ProcessEnv
@@ -453,6 +477,687 @@ describe('GitHub Setup', () => {
         expect.stringContaining('test-org/test-repo'),
         expect.objectContaining({ method: 'PUT' })
       )
+    })
+  })
+
+  describe('Repository Settings', () => {
+    describe('shouldEnableAutoMerge()', () => {
+      it('should return true when autoMerge is boolean true', () => {
+        mockLoadConfig.mockReturnValue({
+          autoMerge: true
+        })
+
+        expect(shouldEnableAutoMerge()).toBe(true)
+      })
+
+      it('should return false when autoMerge is boolean false', () => {
+        mockLoadConfig.mockReturnValue({
+          autoMerge: false
+        })
+
+        expect(shouldEnableAutoMerge()).toBe(false)
+      })
+
+      it('should return true when any branch has autoMerge enabled', () => {
+        mockLoadConfig.mockReturnValue({
+          autoMerge: {
+            staging: true,
+            main: false
+          }
+        })
+
+        expect(shouldEnableAutoMerge()).toBe(true)
+      })
+
+      it('should return false when no branches have autoMerge enabled', () => {
+        mockLoadConfig.mockReturnValue({
+          autoMerge: {
+            staging: false,
+            main: false
+          }
+        })
+
+        expect(shouldEnableAutoMerge()).toBe(false)
+      })
+
+      it('should return false when autoMerge is not configured', () => {
+        mockLoadConfig.mockReturnValue({
+          branchFlow: ['develop', 'main']
+        })
+
+        expect(shouldEnableAutoMerge()).toBe(false)
+      })
+
+      it('should return false when config file cannot be loaded', () => {
+        mockLoadConfig.mockImplementation(() => {
+          throw new Error('Config file not found')
+        })
+
+        expect(shouldEnableAutoMerge()).toBe(false)
+      })
+    })
+
+    describe('getRecommendedRepositorySettings()', () => {
+      it('should return recommended settings with auto-merge enabled when configured', () => {
+        mockLoadConfig.mockReturnValue({
+          autoMerge: {
+            staging: true,
+            main: true
+          }
+        })
+
+        const settings = getRecommendedRepositorySettings()
+
+        expect(settings).toEqual({
+          allow_auto_merge: true,
+          allow_update_branch: true,
+          allow_merge_commit: false,
+          allow_rebase_merge: false,
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'PR_TITLE',
+          squash_merge_commit_message: 'COMMIT_MESSAGES'
+        })
+      })
+
+      it('should return recommended settings with auto-merge disabled when not configured', () => {
+        mockLoadConfig.mockReturnValue({
+          branchFlow: ['develop', 'main']
+        })
+
+        const settings = getRecommendedRepositorySettings()
+
+        expect(settings.allow_auto_merge).toBe(false)
+        expect(settings.allow_squash_merge).toBe(true)
+        expect(settings.allow_merge_commit).toBe(false)
+        expect(settings.allow_rebase_merge).toBe(false)
+      })
+    })
+
+    describe('getRepositorySettings()', () => {
+      it('should fetch repository settings successfully', async () => {
+        const mockSettings = {
+          allow_auto_merge: true,
+          allow_update_branch: false,
+          allow_merge_commit: false,
+          allow_rebase_merge: false,
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'COMMIT_OR_PR_TITLE',
+          squash_merge_commit_message: 'COMMIT_MESSAGES',
+          merge_commit_title: 'MERGE_MESSAGE',
+          merge_commit_message: 'PR_TITLE'
+        }
+
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: true,
+          json: async () => mockSettings
+        } as Response)
+
+        const result = await getRepositorySettings('owner', 'repo', 'token123')
+
+        expect(result).toEqual(mockSettings)
+        expect(global.fetch).toHaveBeenCalledWith(
+          'https://api.github.com/repos/owner/repo',
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              'Authorization': 'Bearer token123',
+              'Accept': 'application/vnd.github+json'
+            })
+          })
+        )
+      })
+
+      it('should throw on API error', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: false,
+          status: 404,
+          text: async () => 'Not Found'
+        } as Response)
+
+        await expect(
+          getRepositorySettings('owner', 'repo', 'token123')
+        ).rejects.toThrow('Failed to get repository settings: 404')
+      })
+    })
+
+    describe('updateRepositorySettings()', () => {
+      it('should update repository settings successfully', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: true
+        } as Response)
+
+        const settings = {
+          allow_auto_merge: true,
+          allow_update_branch: true,
+          squash_merge_commit_title: 'PR_TITLE' as const
+        }
+
+        await updateRepositorySettings('owner', 'repo', 'token123', settings)
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          'https://api.github.com/repos/owner/repo',
+          expect.objectContaining({
+            method: 'PATCH',
+            headers: expect.objectContaining({
+              'Authorization': 'Bearer token123',
+              'Content-Type': 'application/json'
+            }),
+            body: JSON.stringify(settings)
+          })
+        )
+      })
+
+      it('should throw on API error', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: false,
+          status: 403,
+          text: async () => 'Forbidden'
+        } as Response)
+
+        await expect(
+          updateRepositorySettings('owner', 'repo', 'token123', {
+            allow_auto_merge: true
+          })
+        ).rejects.toThrow('Failed to update repository settings: 403')
+      })
+    })
+
+    describe('getSettingsGaps()', () => {
+      it('should return empty object when all settings match', () => {
+        const current = {
+          allow_auto_merge: true,
+          allow_update_branch: true,
+          allow_merge_commit: false,
+          allow_rebase_merge: false,
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'PR_TITLE' as const,
+          squash_merge_commit_message: 'COMMIT_MESSAGES' as const
+        }
+
+        const recommended = { ...current }
+
+        const gaps = getSettingsGaps(current, recommended)
+        expect(gaps).toEqual({})
+      })
+
+      it('should detect auto-merge gap', () => {
+        const current = {
+          allow_auto_merge: false,
+          allow_update_branch: true,
+          allow_squash_merge: true
+        }
+
+        const recommended = {
+          allow_auto_merge: true,
+          allow_update_branch: true,
+          allow_squash_merge: true
+        }
+
+        const gaps = getSettingsGaps(current, recommended)
+        expect(gaps).toEqual({
+          allow_auto_merge: true
+        })
+      })
+
+      it('should detect multiple gaps', () => {
+        const current = {
+          allow_auto_merge: false,
+          allow_update_branch: false,
+          allow_merge_commit: true,
+          allow_rebase_merge: true,
+          allow_squash_merge: false,
+          squash_merge_commit_title: 'COMMIT_OR_PR_TITLE' as const
+        }
+
+        const recommended = {
+          allow_auto_merge: true,
+          allow_update_branch: true,
+          allow_merge_commit: false,
+          allow_rebase_merge: false,
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'PR_TITLE' as const,
+          squash_merge_commit_message: 'COMMIT_MESSAGES' as const
+        }
+
+        const gaps = getSettingsGaps(current, recommended)
+        expect(gaps).toEqual({
+          allow_auto_merge: true,
+          allow_update_branch: true,
+          allow_merge_commit: false,
+          allow_rebase_merge: false,
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'PR_TITLE',
+          squash_merge_commit_message: 'COMMIT_MESSAGES'
+        })
+      })
+
+      it('should only check squash merge settings if squash merge will be enabled', () => {
+        const current = {
+          allow_squash_merge: false,
+          squash_merge_commit_title: 'COMMIT_OR_PR_TITLE' as const
+        }
+
+        const recommended = {
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'PR_TITLE' as const
+        }
+
+        const gaps = getSettingsGaps(current, recommended)
+        // Should include both squash_merge and its settings
+        expect(gaps.allow_squash_merge).toBe(true)
+        expect(gaps.squash_merge_commit_title).toBe('PR_TITLE')
+      })
+
+      it('should not check squash merge settings if squash merge stays disabled', () => {
+        const current = {
+          allow_squash_merge: false,
+          squash_merge_commit_title: 'COMMIT_OR_PR_TITLE' as const
+        }
+
+        const recommended = {
+          allow_squash_merge: false,
+          squash_merge_commit_title: 'PR_TITLE' as const
+        }
+
+        const gaps = getSettingsGaps(current, recommended)
+        // Should not include squash settings if squash merge is disabled
+        expect(gaps).not.toHaveProperty('squash_merge_commit_title')
+      })
+    })
+  })
+
+  describe('Repository Settings Integration Scenarios', () => {
+    beforeEach(() => {
+      mockLoadConfig.mockReset()
+      vi.mocked(global.fetch).mockReset()
+    })
+
+    it('should handle complete repository setup for fresh repo', async () => {
+      // Mock config with auto-merge for staging and main
+      mockLoadConfig.mockReturnValue({
+        branchFlow: ['develop', 'staging', 'main'],
+        autoMerge: {
+          staging: true,
+          main: true
+        }
+      })
+
+      // Get recommended settings
+      const recommended = getRecommendedRepositorySettings()
+      expect(recommended.allow_auto_merge).toBe(true)
+      expect(recommended.allow_squash_merge).toBe(true)
+      expect(recommended.allow_merge_commit).toBe(false)
+
+      // Mock current settings (fresh repo)
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          allow_auto_merge: false,
+          allow_update_branch: false,
+          allow_merge_commit: true,
+          allow_rebase_merge: true,
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'COMMIT_OR_PR_TITLE',
+          squash_merge_commit_message: 'COMMIT_MESSAGES'
+        })
+      } as Response)
+
+      const current = await getRepositorySettings('owner', 'repo', 'token')
+
+      // Detect gaps
+      const gaps = getSettingsGaps(current, recommended)
+      expect(Object.keys(gaps).length).toBeGreaterThan(0)
+      expect(gaps.allow_auto_merge).toBe(true)
+      expect(gaps.allow_update_branch).toBe(true)
+      expect(gaps.allow_merge_commit).toBe(false)
+      expect(gaps.squash_merge_commit_title).toBe('PR_TITLE')
+
+      // Apply changes
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true
+      } as Response)
+
+      await updateRepositorySettings('owner', 'repo', 'token', gaps)
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://api.github.com/repos/owner/repo',
+        expect.objectContaining({ method: 'PATCH' })
+      )
+    })
+
+    it('should handle repo without auto-merge config', async () => {
+      // Mock config without auto-merge
+      mockLoadConfig.mockReturnValue({
+        branchFlow: ['develop', 'main']
+        // No autoMerge field
+      })
+
+      const recommended = getRecommendedRepositorySettings()
+      expect(recommended.allow_auto_merge).toBe(false)
+
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          allow_auto_merge: true,
+          allow_update_branch: true,
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'PR_TITLE'
+        })
+      } as Response)
+
+      const current = await getRepositorySettings('owner', 'repo', 'token')
+      const gaps = getSettingsGaps(current, recommended)
+
+      // Should want to disable auto-merge
+      expect(gaps.allow_auto_merge).toBe(false)
+    })
+
+    it('should handle already configured repository', async () => {
+      mockLoadConfig.mockReturnValue({
+        autoMerge: { staging: true, main: true }
+      })
+
+      const recommended = getRecommendedRepositorySettings()
+
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: async () => recommended
+      } as Response)
+
+      const current = await getRepositorySettings('owner', 'repo', 'token')
+      const gaps = getSettingsGaps(current, recommended)
+
+      // No changes needed
+      expect(Object.keys(gaps).length).toBe(0)
+    })
+  })
+
+  describe('Legacy Merge Commit Settings Functions', () => {
+    describe('getMergeCommitSettings()', () => {
+      it('should fetch merge commit settings successfully', async () => {
+        const mockSettings = {
+          allow_squash_merge: true,
+          allow_merge_commit: false,
+          squash_merge_commit_title: 'PR_TITLE',
+          squash_merge_commit_message: 'COMMIT_MESSAGES'
+        }
+
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: true,
+          json: async () => mockSettings
+        } as Response)
+
+        const result = await getMergeCommitSettings('owner', 'repo', 'token123')
+
+        expect(result.squash_merge_commit_title).toBe('PR_TITLE')
+        expect(result.allow_squash_merge).toBe(true)
+      })
+
+      it('should throw on API error', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: false,
+          status: 404,
+          text: async () => 'Not Found'
+        } as Response)
+
+        await expect(
+          getMergeCommitSettings('owner', 'repo', 'token123')
+        ).rejects.toThrow('Failed to get merge commit settings: 404')
+      })
+    })
+
+    describe('updateMergeCommitSettings()', () => {
+      it('should update merge commit settings successfully', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: true
+        } as Response)
+
+        const settings = {
+          squash_merge_commit_title: 'PR_TITLE' as const
+        }
+
+        await updateMergeCommitSettings('owner', 'repo', 'token123', settings)
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          'https://api.github.com/repos/owner/repo',
+          expect.objectContaining({
+            method: 'PATCH',
+            body: JSON.stringify(settings)
+          })
+        )
+      })
+    })
+
+    describe('getRequiredMergeCommitChanges()', () => {
+      it('should return null when settings are correct', () => {
+        const settings = {
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'PR_TITLE' as const,
+          allow_merge_commit: false
+        }
+
+        const changes = getRequiredMergeCommitChanges(settings)
+        expect(changes).toBeNull()
+      })
+
+      it('should detect needed change for squash merge', () => {
+        const settings = {
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'COMMIT_OR_PR_TITLE' as const
+        }
+
+        const changes = getRequiredMergeCommitChanges(settings)
+        expect(changes).toEqual({
+          squash_merge_commit_title: 'PR_TITLE'
+        })
+      })
+
+      it('should not check disabled merge strategies', () => {
+        const settings = {
+          allow_squash_merge: false,
+          squash_merge_commit_title: 'COMMIT_OR_PR_TITLE' as const,
+          allow_merge_commit: false,
+          merge_commit_title: 'MERGE_MESSAGE' as const
+        }
+
+        const changes = getRequiredMergeCommitChanges(settings)
+        expect(changes).toBeNull()
+      })
+    })
+  })
+
+  describe('Branch Protection Functions', () => {
+    describe('getBranchProtection()', () => {
+      it('should fetch branch protection successfully', async () => {
+        const mockProtection = {
+          required_status_checks: { strict: false, contexts: [] },
+          enforce_admins: false,
+          required_pull_request_reviews: null,
+          restrictions: null,
+          allow_force_pushes: false,
+          allow_deletions: false,
+          required_linear_history: true,
+          required_conversation_resolution: false
+        }
+
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: true,
+          status: 200,
+          json: async () => mockProtection
+        } as Response)
+
+        const result = await getBranchProtection('owner', 'repo', 'main', 'token123')
+
+        expect(result).toEqual(mockProtection)
+        expect(global.fetch).toHaveBeenCalledWith(
+          'https://api.github.com/repos/owner/repo/branches/main/protection',
+          expect.any(Object)
+        )
+      })
+
+      it('should return null when branch protection not configured', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: false,
+          status: 404
+        } as Response)
+
+        const result = await getBranchProtection('owner', 'repo', 'main', 'token123')
+
+        expect(result).toBeNull()
+      })
+
+      it('should throw on other API errors', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: false,
+          status: 403,
+          text: async () => 'Forbidden'
+        } as Response)
+
+        await expect(
+          getBranchProtection('owner', 'repo', 'main', 'token123')
+        ).rejects.toThrow('Failed to get branch protection')
+      })
+    })
+
+    describe('updateBranchProtection()', () => {
+      it('should update branch protection successfully', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: true
+        } as Response)
+
+        await updateBranchProtection('owner', 'repo', 'main', 'token123')
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          'https://api.github.com/repos/owner/repo/branches/main/protection',
+          expect.objectContaining({
+            method: 'PUT',
+            body: expect.stringContaining('required_status_checks')
+          })
+        )
+      })
+
+      it('should throw on API error', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: false,
+          status: 403,
+          text: async () => 'Forbidden'
+        } as Response)
+
+        await expect(
+          updateBranchProtection('owner', 'repo', 'main', 'token123')
+        ).rejects.toThrow('Failed to update branch protection')
+      })
+    })
+
+    describe('enableAutoMerge()', () => {
+      it('should enable auto-merge when not already enabled', async () => {
+        // First call to check current state
+        vi.mocked(global.fetch).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ allow_auto_merge: false })
+        } as Response)
+
+        // Second call to enable it
+        vi.mocked(global.fetch).mockResolvedValueOnce({
+          ok: true
+        } as Response)
+
+        const wasEnabled = await enableAutoMerge('owner', 'repo', 'token123')
+
+        expect(wasEnabled).toBe(true)
+        expect(global.fetch).toHaveBeenCalledTimes(2)
+      })
+
+      it('should return false when auto-merge already enabled', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: true,
+          json: async () => ({ allow_auto_merge: true })
+        } as Response)
+
+        const wasEnabled = await enableAutoMerge('owner', 'repo', 'token123')
+
+        expect(wasEnabled).toBe(false)
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+      })
+
+      it('should throw on API error', async () => {
+        vi.mocked(global.fetch).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ allow_auto_merge: false })
+        } as Response)
+
+        vi.mocked(global.fetch).mockResolvedValueOnce({
+          ok: false,
+          status: 403,
+          text: async () => 'Forbidden'
+        } as Response)
+
+        await expect(
+          enableAutoMerge('owner', 'repo', 'token123')
+        ).rejects.toThrow('Failed to enable auto-merge')
+      })
+    })
+  })
+
+  describe('Display and Prompt Functions', () => {
+    describe('displaySettingsComparison()', () => {
+      it('should display settings without errors', () => {
+        const current = {
+          allow_auto_merge: true,
+          allow_update_branch: false,
+          allow_merge_commit: false,
+          allow_rebase_merge: false,
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'COMMIT_OR_PR_TITLE' as const
+        }
+
+        const recommended = {
+          allow_auto_merge: true,
+          allow_update_branch: true,
+          allow_merge_commit: false,
+          allow_rebase_merge: false,
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'PR_TITLE' as const,
+          squash_merge_commit_message: 'COMMIT_MESSAGES' as const
+        }
+
+        const gaps = {
+          allow_update_branch: true,
+          squash_merge_commit_title: 'PR_TITLE' as const,
+          squash_merge_commit_message: 'COMMIT_MESSAGES' as const
+        }
+
+        // Mock config for branch display
+        mockLoadConfig.mockReturnValue({
+          branchFlow: ['develop', 'staging', 'main'],
+          autoMerge: {
+            staging: true,
+            main: true
+          }
+        })
+
+        // Should not throw
+        expect(() => displaySettingsComparison(current, recommended, gaps)).not.toThrow()
+      })
+
+      it('should handle missing config gracefully', () => {
+        mockLoadConfig.mockImplementation(() => {
+          throw new Error('Config not found')
+        })
+
+        const current = { allow_auto_merge: true }
+        const recommended = { allow_auto_merge: true }
+        const gaps = {}
+
+        // Should not throw even if config is missing
+        expect(() => displaySettingsComparison(current, recommended, gaps)).not.toThrow()
+      })
+    })
+
+    describe('promptApplySettings()', () => {
+      it('should return declined when no gaps', async () => {
+        const result = await promptApplySettings({})
+        expect(result).toBe('declined')
+      })
     })
   })
 })

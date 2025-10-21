@@ -54,6 +54,10 @@ const defaultConfig = {
   initialBranch: 'develop',
   finalBranch: 'main',
   branchFlow: ['develop', 'staging', 'main'],
+  autoMerge: {
+    staging: true,
+    main: true
+  },
   semver: {
     bumpRules: {
       feat: 'minor',
@@ -101,12 +105,13 @@ const configTemplate = (ctx: PipecraftConfig) => {
     initialBranch: ctx.initialBranch,
     finalBranch: ctx.finalBranch,
     branchFlow: ctx.branchFlow,
+    autoMerge: ctx.autoMerge,
     semver: {
       bumpRules: ctx.semver.bumpRules
     },
     domains: ctx.domains
   }
-  
+
   return JSON.stringify(config, null, 2)
 }
 
