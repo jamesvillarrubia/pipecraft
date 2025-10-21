@@ -12,8 +12,8 @@ const config: Config = {
   },
 
   // GitHub Pages configuration
-  url: 'https://jamesvillarrubia.github.io',
-  baseUrl: '/pipecraft/',
+  url: 'https://pipecraft.thecraftlab.dev',
+  baseUrl: '/',
 
   organizationName: 'jamesvillarrubia',
   projectName: 'pipecraft',
