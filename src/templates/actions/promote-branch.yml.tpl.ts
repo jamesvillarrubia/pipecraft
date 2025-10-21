@@ -315,6 +315,14 @@ const promoteBranchActionTemplate = (ctx: any) => {
             echo "✅ Fast-forwarded \$TARGET to \$COMMIT_SHA"
             echo "📝 PR will be closed automatically for audit trail"
 
+        - name: Wait for Branch to Propagate
+          if: steps.read-config.outputs.autoMerge == 'true'
+          shell: bash
+          run: |
+            echo "⏳ Waiting 5 seconds for branch update to propagate..."
+            sleep 5
+            echo "✅ Branch should be fully propagated"
+
         - name: Trigger Pipeline Workflow on Target Branch
           if: steps.read-config.outputs.autoMerge == 'true'
           shell: bash

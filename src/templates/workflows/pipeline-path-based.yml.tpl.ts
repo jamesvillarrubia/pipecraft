@@ -415,6 +415,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
             id: version
             with:
               baseRef: \${{ inputs.baseRef || '${ctx.finalBranch || "main"}' }}
+              commitSha: \${{ inputs.commitSha || github.sha }}
         outputs:
           version: \${{ steps.version.outputs.version }}
       `, ctx),
