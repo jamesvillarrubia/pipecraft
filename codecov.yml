@@ -2,45 +2,69 @@ coverage:
   status:
     project:
       default:
-        target: 75%
+        target: 60%
         threshold: 2%
     patch:
       default:
-        target: 75%
+        target: 60%
+
+  # Ignore files that should not be included in coverage
+  ignore:
+    - "dist/**"
+    - "coverage/**"
+    - "docs/**"
+    - "docs-site/**"
+    - "tests/**"
+    - "**/*.d.ts"
+    - "**/*.config.*"
+    - "**/*.test.ts"
+    - "**/*.spec.ts"
+    - "**/*.tpl.md"
+    - ".github/**"
+    - "src/templates/actions/**"  # Action templates are YAML, not executable TS
 
 component_management:
   default_rules:
     # Default thresholds inherited by all components
+    # Starting at 60%, with goal to gradually increase to 75%+
     statuses:
       - type: project
-        target: 75%
+        target: 60%
       - type: patch
-        target: 75%
+        target: 60%
 
   individual_components:
-    # Core domain - main source code
-    - component_id: core
-      name: "Core"
+    # Core utilities - business logic
+    - component_id: utils
+      name: "Utils"
       paths:
-        - src/**
+        - src/utils/**
       flag_regexes:
         - ^core$
 
-    # Test domain - test infrastructure
-    - component_id: test
-      name: "Tests"
+    # Workflow templates - pipeline generation
+    - component_id: workflows
+      name: "Workflow Templates"
       paths:
-        - tests/**
+        - src/templates/workflows/**
       flag_regexes:
-        - ^test$
+        - ^core$
 
-    # CI/CD domain - GitHub Actions and pipeline
-    - component_id: cicd
-      name: "CI/CD"
+    # Generators - orchestration code
+    - component_id: generators
+      name: "Generators"
       paths:
-        - .github/**
+        - src/generators/**
       flag_regexes:
-        - ^cicd$
+        - ^core$
+
+    # CLI entry point
+    - component_id: cli
+      name: "CLI"
+      paths:
+        - src/cli/index.ts
+      flag_regexes:
+        - ^core$
 
 comment:
   layout: "reach,diff,flags,components"

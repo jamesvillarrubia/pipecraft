@@ -51,6 +51,7 @@ tests/tools/*/output/
 custom-output.yml
 custom-pipeline.yml
 *.test.log
+.claude/settings.local.json
 
 # Backup files
 *.backup
