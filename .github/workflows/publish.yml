@@ -1,5 +1,7 @@
 name: Publish to npm
 
+run-name: 'Publish ${{ github.event.release.tag_name || inputs.tag }}'
+
 on:
   release:
     types: [published]
