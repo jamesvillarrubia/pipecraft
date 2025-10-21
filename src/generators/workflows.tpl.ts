@@ -36,6 +36,7 @@
  * // .github/actions/create-pr/...          - PR creation action
  * // .github/actions/manage-branch/...      - Branch management action
  * // .github/actions/promote-branch/...     - Branch promotion action
+ * // .github/actions/create-release/...     - Release creation action
  * ```
  */
 
@@ -53,6 +54,7 @@ import { generate as generateVersionWorkflow } from '../templates/actions/calcul
 import { generate as generateCreatePRWorkflow } from '../templates/actions/create-pr.yml.tpl.js'
 import { generate as generateBranchWorkflow } from '../templates/actions/manage-branch.yml.tpl.js'
 import { generate as generatePromoteBranchWorkflow } from '../templates/actions/promote-branch.yml.tpl.js'
+import { generate as generateReleaseWorkflow } from '../templates/actions/create-release.yml.tpl.js'
 import { generate as generatePathBasedPipeline } from '../templates/workflows/pipeline-path-based.yml.tpl.js'
 
 /**
@@ -122,9 +124,9 @@ const defaultConfig = {
  * })
  * ```
  * 
- * @note The generator creates 7 files:
+ * @note The generator creates 8 files:
  * - 1 main workflow (pipeline.yml)
- * - 6 composite actions (in .github/actions/)
+ * - 7 composite actions (in .github/actions/)
  * 
  * All actions are generated in parallel for performance, followed by
  * the main pipeline which may reference the actions.
@@ -157,7 +159,8 @@ export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPip
         generateVersionWorkflow(ctx),
         generateCreatePRWorkflow(ctx),
         generateBranchWorkflow(ctx),
-        generatePromoteBranchWorkflow(ctx)
+        generatePromoteBranchWorkflow(ctx),
+        generateReleaseWorkflow(ctx)
       ]).then(() => ctx)
     })
     .then((ctx) => {
