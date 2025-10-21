@@ -16,11 +16,21 @@ import {
   getWorkflowPermissions,
   updateWorkflowPermissions,
   getRequiredPermissionChanges,
+  promptPermissionChanges,
   shouldEnableAutoMerge,
   getRecommendedRepositorySettings,
   getRepositorySettings,
   updateRepositorySettings,
-  getSettingsGaps
+  getSettingsGaps,
+  getMergeCommitSettings,
+  updateMergeCommitSettings,
+  getRequiredMergeCommitChanges,
+  promptMergeCommitChanges,
+  getBranchProtection,
+  updateBranchProtection,
+  enableAutoMerge,
+  displaySettingsComparison,
+  promptApplySettings
 } from '../../src/utils/github-setup.js'
 
 // Mock child_process at module level
@@ -858,6 +868,296 @@ describe('GitHub Setup', () => {
 
       // No changes needed
       expect(Object.keys(gaps).length).toBe(0)
+    })
+  })
+
+  describe('Legacy Merge Commit Settings Functions', () => {
+    describe('getMergeCommitSettings()', () => {
+      it('should fetch merge commit settings successfully', async () => {
+        const mockSettings = {
+          allow_squash_merge: true,
+          allow_merge_commit: false,
+          squash_merge_commit_title: 'PR_TITLE',
+          squash_merge_commit_message: 'COMMIT_MESSAGES'
+        }
+
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: true,
+          json: async () => mockSettings
+        } as Response)
+
+        const result = await getMergeCommitSettings('owner', 'repo', 'token123')
+
+        expect(result.squash_merge_commit_title).toBe('PR_TITLE')
+        expect(result.allow_squash_merge).toBe(true)
+      })
+
+      it('should throw on API error', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: false,
+          status: 404,
+          text: async () => 'Not Found'
+        } as Response)
+
+        await expect(
+          getMergeCommitSettings('owner', 'repo', 'token123')
+        ).rejects.toThrow('Failed to get merge commit settings: 404')
+      })
+    })
+
+    describe('updateMergeCommitSettings()', () => {
+      it('should update merge commit settings successfully', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: true
+        } as Response)
+
+        const settings = {
+          squash_merge_commit_title: 'PR_TITLE' as const
+        }
+
+        await updateMergeCommitSettings('owner', 'repo', 'token123', settings)
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          'https://api.github.com/repos/owner/repo',
+          expect.objectContaining({
+            method: 'PATCH',
+            body: JSON.stringify(settings)
+          })
+        )
+      })
+    })
+
+    describe('getRequiredMergeCommitChanges()', () => {
+      it('should return null when settings are correct', () => {
+        const settings = {
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'PR_TITLE' as const,
+          allow_merge_commit: false
+        }
+
+        const changes = getRequiredMergeCommitChanges(settings)
+        expect(changes).toBeNull()
+      })
+
+      it('should detect needed change for squash merge', () => {
+        const settings = {
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'COMMIT_OR_PR_TITLE' as const
+        }
+
+        const changes = getRequiredMergeCommitChanges(settings)
+        expect(changes).toEqual({
+          squash_merge_commit_title: 'PR_TITLE'
+        })
+      })
+
+      it('should not check disabled merge strategies', () => {
+        const settings = {
+          allow_squash_merge: false,
+          squash_merge_commit_title: 'COMMIT_OR_PR_TITLE' as const,
+          allow_merge_commit: false,
+          merge_commit_title: 'MERGE_MESSAGE' as const
+        }
+
+        const changes = getRequiredMergeCommitChanges(settings)
+        expect(changes).toBeNull()
+      })
+    })
+  })
+
+  describe('Branch Protection Functions', () => {
+    describe('getBranchProtection()', () => {
+      it('should fetch branch protection successfully', async () => {
+        const mockProtection = {
+          required_status_checks: { strict: false, contexts: [] },
+          enforce_admins: false,
+          required_pull_request_reviews: null,
+          restrictions: null,
+          allow_force_pushes: false,
+          allow_deletions: false,
+          required_linear_history: true,
+          required_conversation_resolution: false
+        }
+
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: true,
+          status: 200,
+          json: async () => mockProtection
+        } as Response)
+
+        const result = await getBranchProtection('owner', 'repo', 'main', 'token123')
+
+        expect(result).toEqual(mockProtection)
+        expect(global.fetch).toHaveBeenCalledWith(
+          'https://api.github.com/repos/owner/repo/branches/main/protection',
+          expect.any(Object)
+        )
+      })
+
+      it('should return null when branch protection not configured', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: false,
+          status: 404
+        } as Response)
+
+        const result = await getBranchProtection('owner', 'repo', 'main', 'token123')
+
+        expect(result).toBeNull()
+      })
+
+      it('should throw on other API errors', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: false,
+          status: 403,
+          text: async () => 'Forbidden'
+        } as Response)
+
+        await expect(
+          getBranchProtection('owner', 'repo', 'main', 'token123')
+        ).rejects.toThrow('Failed to get branch protection')
+      })
+    })
+
+    describe('updateBranchProtection()', () => {
+      it('should update branch protection successfully', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: true
+        } as Response)
+
+        await updateBranchProtection('owner', 'repo', 'main', 'token123')
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          'https://api.github.com/repos/owner/repo/branches/main/protection',
+          expect.objectContaining({
+            method: 'PUT',
+            body: expect.stringContaining('required_status_checks')
+          })
+        )
+      })
+
+      it('should throw on API error', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: false,
+          status: 403,
+          text: async () => 'Forbidden'
+        } as Response)
+
+        await expect(
+          updateBranchProtection('owner', 'repo', 'main', 'token123')
+        ).rejects.toThrow('Failed to update branch protection')
+      })
+    })
+
+    describe('enableAutoMerge()', () => {
+      it('should enable auto-merge when not already enabled', async () => {
+        // First call to check current state
+        vi.mocked(global.fetch).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ allow_auto_merge: false })
+        } as Response)
+
+        // Second call to enable it
+        vi.mocked(global.fetch).mockResolvedValueOnce({
+          ok: true
+        } as Response)
+
+        const wasEnabled = await enableAutoMerge('owner', 'repo', 'token123')
+
+        expect(wasEnabled).toBe(true)
+        expect(global.fetch).toHaveBeenCalledTimes(2)
+      })
+
+      it('should return false when auto-merge already enabled', async () => {
+        vi.mocked(global.fetch).mockResolvedValue({
+          ok: true,
+          json: async () => ({ allow_auto_merge: true })
+        } as Response)
+
+        const wasEnabled = await enableAutoMerge('owner', 'repo', 'token123')
+
+        expect(wasEnabled).toBe(false)
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+      })
+
+      it('should throw on API error', async () => {
+        vi.mocked(global.fetch).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ allow_auto_merge: false })
+        } as Response)
+
+        vi.mocked(global.fetch).mockResolvedValueOnce({
+          ok: false,
+          status: 403,
+          text: async () => 'Forbidden'
+        } as Response)
+
+        await expect(
+          enableAutoMerge('owner', 'repo', 'token123')
+        ).rejects.toThrow('Failed to enable auto-merge')
+      })
+    })
+  })
+
+  describe('Display and Prompt Functions', () => {
+    describe('displaySettingsComparison()', () => {
+      it('should display settings without errors', () => {
+        const current = {
+          allow_auto_merge: true,
+          allow_update_branch: false,
+          allow_merge_commit: false,
+          allow_rebase_merge: false,
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'COMMIT_OR_PR_TITLE' as const
+        }
+
+        const recommended = {
+          allow_auto_merge: true,
+          allow_update_branch: true,
+          allow_merge_commit: false,
+          allow_rebase_merge: false,
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'PR_TITLE' as const,
+          squash_merge_commit_message: 'COMMIT_MESSAGES' as const
+        }
+
+        const gaps = {
+          allow_update_branch: true,
+          squash_merge_commit_title: 'PR_TITLE' as const,
+          squash_merge_commit_message: 'COMMIT_MESSAGES' as const
+        }
+
+        // Mock config for branch display
+        mockLoadConfig.mockReturnValue({
+          branchFlow: ['develop', 'staging', 'main'],
+          autoMerge: {
+            staging: true,
+            main: true
+          }
+        })
+
+        // Should not throw
+        expect(() => displaySettingsComparison(current, recommended, gaps)).not.toThrow()
+      })
+
+      it('should handle missing config gracefully', () => {
+        mockLoadConfig.mockImplementation(() => {
+          throw new Error('Config not found')
+        })
+
+        const current = { allow_auto_merge: true }
+        const recommended = { allow_auto_merge: true }
+        const gaps = {}
+
+        // Should not throw even if config is missing
+        expect(() => displaySettingsComparison(current, recommended, gaps)).not.toThrow()
+      })
+    })
+
+    describe('promptApplySettings()', () => {
+      it('should return declined when no gaps', async () => {
+        const result = await promptApplySettings({})
+        expect(result).toBe('declined')
+      })
     })
   })
 })
