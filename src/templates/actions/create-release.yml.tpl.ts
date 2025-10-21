@@ -93,6 +93,30 @@ const releaseActionTemplate = (ctx: any) => {
               echo "❌ Failed to create release"
               echo "$RELEASE_OUTPUT"
               exit 1
+            fi
+
+        - name: Trigger Publish Workflow (if exists)
+          shell: bash
+          env:
+            GH_TOKEN: \${{ inputs.token }}
+          run: |
+            VERSION="\${{ inputs.version }}"
+
+            # Check if publish.yml workflow exists
+            if gh workflow list | grep -q "publish.yml"; then
+              echo "🔄 Triggering publish workflow for $VERSION"
+
+              # Trigger the publish workflow with the release tag
+              # This is necessary because GITHUB_TOKEN release creation doesn't trigger workflows
+              if gh workflow run publish.yml --field tag="$VERSION" 2>&1; then
+                echo "✅ Publish workflow triggered for $VERSION"
+              else
+                echo "⚠️  Failed to trigger publish workflow, but continuing"
+                echo "   Check that publish.yml accepts workflow_dispatch with a 'tag' input"
+              fi
+            else
+              echo "ℹ️  No publish.yml workflow found - skipping publish trigger"
+              echo "   This is normal if you don't have a separate publish workflow"
             fi`
 };
 
