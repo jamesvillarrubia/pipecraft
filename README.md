@@ -276,10 +276,6 @@ Example `.pipecraftrc.json`:
       "breaking": "major"
     }
   },
-  "actions": {
-    "onDevelopMerge": ["runTests", "fastForwardToStaging"],
-    "onStagingMerge": ["runTests", "calculateVersion", "createOrFastForwardToMain"]
-  },
   "domains": {
     "api": {
       "paths": ["apps/api/**"],
@@ -620,33 +616,6 @@ Note: Branch protection rules are required for auto-merge to work in GitHub.
 | `semver.bumpRules.fix` | `'major' \| 'minor' \| 'patch'` | Version bump for fixes |
 | `semver.bumpRules.breaking` | `'major' \| 'minor' \| 'patch'` | Version bump for breaking changes |
 
-### Actions
-
-Define what happens on branch merges:
-
-```json
-{
-  "actions": {
-    "onDevelopMerge": [
-      "runTests",
-      "fastForwardToStaging"
-    ],
-    "onStagingMerge": [
-      "runTests",
-      "calculateVersion",
-      "createOrFastForwardToMain"
-    ]
-  }
-}
-```
-
-Available actions:
-- `runTests` - Run test suite
-- `fastForwardToStaging` - Fast-forward develop to staging
-- `calculateVersion` - Calculate next semantic version
-- `createOrFastForwardToMain` - Merge or fast-forward to main
-- `deploy` - Run deployment steps
-
 ### Domains (Monorepo Support)
 
 Define multiple domains for path-based change detection:
@@ -866,12 +835,6 @@ Configuration for staging environment:
       "fix": "patch",
       "breaking": "major"
     }
-  },
-  "actions": {
-    "onDevelopMerge": ["runTests", "fastForwardToStaging"],
-    "onStagingMerge": ["runTests", "deployToStaging"],
-    "onUatMerge": ["runTests", "calculateVersion", "deployToUat"],
-    "onProductionMerge": ["runTests", "deployToProduction", "createRelease"]
   },
   "domains": {
     "api": {

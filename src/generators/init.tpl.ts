@@ -61,10 +61,6 @@ const defaultConfig = {
       breaking: 'major'
     }
   },
-  actions: {
-    onDevelopMerge: ['runTests', 'fastForwardToStaging'],
-    onStagingMerge: ['runTests', 'calculateVersion', 'createOrFastForwardToMain']
-  },
   domains: {
     api: {
       paths: ['apps/api/**'],
@@ -107,10 +103,6 @@ const configTemplate = (ctx: PipecraftConfig) => {
     branchFlow: ctx.branchFlow,
     semver: {
       bumpRules: ctx.semver.bumpRules
-    },
-    actions: {
-      onDevelopMerge: ctx.actions.onDevelopMerge,
-      onStagingMerge: ctx.actions.onStagingMerge
     },
     domains: ctx.domains
   }

@@ -73,10 +73,6 @@ describe('CLI Logic Tests', () => {
             breaking: 'major'
           }
         },
-        actions: {
-          onDevelopMerge: ['runTests', 'fastForwardToStaging'],
-          onStagingMerge: ['runTests', 'calculateVersion', 'createOrFastForwardToMain']
-        },
         domains: {
           api: {
             paths: ['apps/api/**'],
@@ -112,9 +108,6 @@ describe('CLI Logic Tests', () => {
             fix: 'patch',
             breaking: 'major'
           }
-        },
-        actions: {
-          onDevelopMerge: ['runTests']
         },
         domains: {
           api: {
@@ -166,9 +159,6 @@ describe('CLI Logic Tests', () => {
             fix: 'patch',
             breaking: 'major'
           }
-        },
-        actions: {
-          onDevelopMerge: ['runTests']
         },
         domains: {
           api: {
@@ -282,9 +272,6 @@ describe('CLI Logic Tests', () => {
             fix: 'patch',
             breaking: 'major'
           }
-        },
-        actions: {
-          onDevelopMerge: ['runTests']
         },
         domains: {
           api: {
@@ -428,9 +415,6 @@ describe('CLI Logic Tests', () => {
             breaking: 'major'
           }
         },
-        actions: {
-          onDevelopMerge: ['runTests']
-        },
         domains: {
           backend: {
             paths: ['services/backend/**'],
@@ -462,9 +446,6 @@ describe('CLI Logic Tests', () => {
             breaking: 'major'
           }
         },
-        actions: {
-          onDevelopMerge: ['runTests']
-        },
         domains: {
           'api': { paths: ['apps/api/**'], description: 'API' },
           'web': { paths: ['apps/web/**'], description: 'Web' },
@@ -495,9 +476,6 @@ describe('CLI Logic Tests', () => {
             breaking: 'major'
           }
         },
-        actions: {
-          onDevelopMerge: ['runTests']
-        },
         domains: {
           api: { paths: ['apps/api/**'], description: 'API' }
         }
@@ -523,9 +501,6 @@ describe('CLI Logic Tests', () => {
             fix: 'patch',
             breaking: 'major'
           }
-        },
-        actions: {
-          onDevelopMerge: ['runTests']
         },
         domains: {
           api: { paths: ['apps/api/**'], description: 'API' }

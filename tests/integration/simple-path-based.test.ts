@@ -295,10 +295,6 @@ jobs:
             breaking: 'major'
           }
         },
-        actions: {
-          onDevelopMerge: ['runTests', 'fastForwardToStaging'],
-          onStagingMerge: ['runTests', 'calculateVersion', 'createOrFastForwardToMain']
-        },
         domains: {
           'fake-domain1': {
             paths: ['apps/fake-domain1/**'],

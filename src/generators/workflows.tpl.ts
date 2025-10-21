@@ -76,10 +76,6 @@ const defaultConfig = {
       breaking: 'major'
     }
   },
-  actions: {
-    onDevelopMerge: ['runTests', 'fastForwardToStaging'],
-    onStagingMerge: ['runTests', 'calculateVersion', 'createOrFastForwardToMain']
-  },
   domains: {
     api: { paths: ['apps/api/**'], description: 'API application changes' },
     web: { paths: ['apps/web/**'], description: 'Web application changes' },

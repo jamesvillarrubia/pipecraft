@@ -178,7 +178,8 @@ export const createPathBasedPipeline = (ctx: any) => {
       path: 'run-name',
       operation: 'preserve',
       value: (() => {
-        const runNameScalar = new Scalar(`\${{ github.ref_name }} #\${{ inputs.run_number || github.run_number }}\${{ inputs.version && format(' - {0}', inputs.version) || '' }}`)
+        const branchList = branchFlow.join(',')
+        const runNameScalar = new Scalar(`\${{ github.event_name == 'pull_request' && !contains('${branchList}', github.head_ref) && github.event.pull_request.title || github.ref_name }} #\${{ inputs.run_number || github.run_number }}\${{ inputs.version && format(' - {0}', inputs.version) || '' }}`)
         runNameScalar.type = Scalar.QUOTE_DOUBLE
         return runNameScalar
       })(),

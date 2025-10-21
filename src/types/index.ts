@@ -169,25 +169,6 @@ export interface PipecraftConfig {
   }
 
   /**
-   * Actions to execute when code is merged to specific branches.
-   * These define the automated workflow steps like running tests,
-   * calculating versions, and promoting code to the next branch.
-   */
-  actions: {
-    /**
-     * Actions triggered when code merges to the initial branch (e.g., develop).
-     * Common actions: runTests, fastForwardToNext
-     */
-    onDevelopMerge: string[]
-
-    /**
-     * Actions triggered when code merges to staging branch.
-     * Common actions: runTests, calculateVersion, createOrFastForwardToMain
-     */
-    onStagingMerge: string[]
-  }
-
-  /**
    * Domain definitions for monorepo path-based change detection.
    * Each domain represents a logical part of the codebase with its own
    * test and deployment requirements.
@@ -336,11 +317,4 @@ export interface PipecraftContext {
     bumpRules: Record<string, string>
   }
 
-  /**
-   * Branch-specific actions.
-   */
-  actions: {
-    onDevelopMerge: string[]
-    onStagingMerge: string[]
-  }
 }

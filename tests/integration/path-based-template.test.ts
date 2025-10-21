@@ -54,10 +54,6 @@ describe('Path-Based Template Generation Tests', () => {
             breaking: 'major'
           }
         },
-        actions: {
-          onDevelopMerge: ['runTests', 'fastForwardToStaging'],
-          onStagingMerge: ['runTests', 'calculateVersion', 'createOrFastForwardToMain']
-        },
         domains: {
           'fake-domain1': {
             paths: ['apps/fake-domain1/**'],
@@ -154,10 +150,6 @@ describe('Path-Based Template Generation Tests', () => {
             fix: 'patch',
             breaking: 'major'
           }
-        },
-        actions: {
-          onDevelopMerge: ['runTests', 'fastForwardToStaging'],
-          onStagingMerge: ['runTests', 'calculateVersion', 'createOrFastForwardToMain']
         },
         domains: {
           'fake-domain1': {
@@ -302,10 +294,6 @@ describe('Path-Based Template Generation Tests', () => {
             breaking: 'major'
           }
         },
-        actions: {
-          onDevelopMerge: ['runTests', 'fastForwardToStaging'],
-          onStagingMerge: ['runTests', 'calculateVersion', 'createOrFastForwardToMain']
-        },
         domains: {
           'fake-domain1': {
             paths: ['apps/fake-domain1/**'],
@@ -345,7 +333,6 @@ describe('Path-Based Template Generation Tests', () => {
         finalBranch: 'epsilon',
         branchFlow: ['alpha', 'beta', 'gamma', 'delta', 'epsilon'],
         semver: { bumpRules: { feat: 'minor', fix: 'patch', breaking: 'major' } },
-        actions: { onDevelopMerge: ['runTests'], onStagingMerge: ['runTests'] },
         domains: { 'fake-domain1': { paths: ['apps/fake-domain1/**'], description: 'fake-domain1' } },
         cwd: TEST_DIR,
         force: true
@@ -386,7 +373,6 @@ describe('Path-Based Template Generation Tests', () => {
         finalBranch: 'epsilon',
         branchFlow: ['alpha', 'beta', 'gamma', 'delta', 'epsilon'],
         semver: { bumpRules: { feat: 'minor', fix: 'patch', breaking: 'major' } },
-        actions: { onDevelopMerge: ['runTests'], onStagingMerge: ['runTests'] },
         domains: { 'fake-domain1': { paths: ['apps/fake-domain1/**'], description: 'fake-domain1' } },
         existingPipeline,
         cwd: TEST_DIR,
@@ -439,7 +425,6 @@ describe('Path-Based Template Generation Tests', () => {
         finalBranch: 'epsilon',
         branchFlow: ['alpha', 'beta', 'gamma', 'delta', 'epsilon'],
         semver: { bumpRules: { feat: 'minor', fix: 'patch', breaking: 'major' } },
-        actions: { onDevelopMerge: ['runTests'], onStagingMerge: ['runTests'] },
         domains: { 'fake-domain1': { paths: ['apps/fake-domain1/**'], description: 'fake-domain1' } },
         existingPipeline,
         cwd: TEST_DIR,
@@ -501,7 +486,6 @@ describe('Path-Based Template Generation Tests', () => {
         finalBranch: 'epsilon',
         branchFlow: ['alpha', 'beta', 'gamma', 'delta', 'epsilon'],
         semver: { bumpRules: { feat: 'minor', fix: 'patch', breaking: 'major' } },
-        actions: { onDevelopMerge: ['runTests'], onStagingMerge: ['runTests'] },
         domains: { 'fake-domain1': { paths: ['apps/fake-domain1/**'], description: 'fake-domain1' } },
         existingPipeline,
         cwd: TEST_DIR,

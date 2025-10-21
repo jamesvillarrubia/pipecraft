@@ -286,8 +286,6 @@ PipeCraft is a CLI tool that generates intelligent CI/CD pipelines for trunk-bas
 │   ├─ testable → generate test jobs
 │   └─ deployable → generate deploy jobs
 ├─ semver.bumpRules → calculate-version: bump logic
-├─ actions.onDevelopMerge → jobs: on develop merge
-├─ actions.onStagingMerge → jobs: on staging merge
 ├─ autoMerge → create-pr: auto-merge setting
 ├─ mergeMethod → create-pr: merge method
 ├─ rebuild → idempotency: caching behavior

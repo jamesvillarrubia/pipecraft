@@ -42,10 +42,6 @@ export function createMinimalConfig(overrides: Partial<PipecraftConfig> = {}): P
         breaking: 'major'
       }
     },
-    actions: {
-      onDevelopMerge: [],
-      onStagingMerge: []
-    },
     domains: {
       app: {
         paths: ['src/**'],
@@ -96,10 +92,6 @@ export function createTrunkFlowConfig(overrides: Partial<PipecraftConfig> = {}):
         breaking: 'major',
         chore: 'patch'
       }
-    },
-    actions: {
-      onDevelopMerge: ['runTests', 'createPRToStaging'],
-      onStagingMerge: ['runTests', 'calculateVersion', 'createPRToMain']
     },
     domains: {
       api: {

@@ -113,10 +113,6 @@ const config: PipecraftConfig = {
   semver: {
     bumpRules: { feat: 'minor', fix: 'patch', breaking: 'major' }
   },
-  actions: {
-    onDevelopMerge: ['runTests'],
-    onStagingMerge: ['runTests', 'calculateVersion']
-  },
   domains: {
     api: { paths: ['packages/api/**'], description: 'API', testable: true }
   }
@@ -124,36 +120,6 @@ const config: PipecraftConfig = {
 ```
 
 #### Properties
-
-##### actions
-
-```ts
-actions: object;
-```
-
-Defined in: [types/index.ts:176](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/types/index.ts#L176)
-
-Actions to execute when code is merged to specific branches.
-These define the automated workflow steps like running tests,
-calculating versions, and promoting code to the next branch.
-
-###### onDevelopMerge
-
-```ts
-onDevelopMerge: string[];
-```
-
-Actions triggered when code merges to the initial branch (e.g., develop).
-Common actions: runTests, fastForwardToNext
-
-###### onStagingMerge
-
-```ts
-onStagingMerge: string[];
-```
-
-Actions triggered when code merges to staging branch.
-Common actions: runTests, calculateVersion, createOrFastForwardToMain
 
 ##### autoMerge?
 
