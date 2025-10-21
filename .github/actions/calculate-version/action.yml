@@ -37,6 +37,22 @@ runs:
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
+    - name: Ensure on branch (not detached HEAD)
+      shell: bash
+      run: |
+        # release-it requires a branch ref, not detached HEAD
+        # If we're in detached HEAD, create a temporary branch
+        if ! git symbolic-ref -q HEAD > /dev/null; then
+          echo "⚠️  In detached HEAD state, creating temporary branch"
+          TEMP_BRANCH="temp-release-it-$(git rev-parse --short HEAD)"
+          git checkout -b "$TEMP_BRANCH"
+          # Set upstream to track the branch we're calculating version for
+          git branch --set-upstream-to=origin/${{ github.ref_name }} "$TEMP_BRANCH" 2>/dev/null || true
+          echo "✅ Created temporary branch: $TEMP_BRANCH"
+        else
+          echo "✅ Already on a branch: $(git branch --show-current)"
+        fi
+
     - name: Get existing version tag
       id: get_version_old
       shell: bash
