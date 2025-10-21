@@ -8,7 +8,7 @@
  * - verbose: Normal + verbose messages (detailed operation info)
  * - debug: Verbose + debug messages (maximum detail for troubleshooting)
  *
- * Note: This is a test change to verify branch protection rules
+ * Note: This is a test change to verify Codecov integration
  *
  * The log level can be changed at runtime using --verbose or --debug flags
  * passed to the CLI commands.
