@@ -249,6 +249,16 @@ export const createPathBasedPipeline = (ctx: any) => {
       required: true
     },
     {
+      path: 'on.workflow_dispatch.inputs.commitSha',
+      operation: 'set',
+      value: {
+        description: 'The exact commit SHA to checkout and test',
+        required: false,
+        type: 'string'
+      },
+      required: true
+    },
+    {
       path: 'on.workflow_call.inputs.version',
       operation: 'set',
       value: {
@@ -273,6 +283,16 @@ export const createPathBasedPipeline = (ctx: any) => {
       operation: 'set',
       value: {
         description: 'The original run number from develop branch',
+        required: false,
+        type: 'string'
+      },
+      required: true
+    },
+    {
+      path: 'on.workflow_call.inputs.commitSha',
+      operation: 'set',
+      value: {
+        description: 'The exact commit SHA to checkout and test',
         required: false,
         type: 'string'
       },
@@ -320,6 +340,8 @@ export const createPathBasedPipeline = (ctx: any) => {
         runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@v4
+            with:
+              ref: \${{ inputs.commitSha || github.sha }}
           - uses: ./.github/actions/detect-changes
             id: detect
             with:
@@ -387,6 +409,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@v4
+            with:
+              ref: \${{ inputs.commitSha || github.sha }}
           - uses: ./.github/actions/calculate-version
             id: version
             with:
@@ -490,6 +514,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
           runs-on: ubuntu-latest
           steps:
             - uses: actions/checkout@v4
+              with:
+                ref: \${{ inputs.commitSha || github.sha }}
             - uses: ./.github/actions/create-tag
               with:
                 version: \${{ needs.version.outputs.version }}
@@ -527,6 +553,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@v4
+            with:
+              ref: \${{ inputs.commitSha || github.sha }}
           - uses: ./.github/actions/promote-branch
             with:
               sourceBranch: \${{ github.ref_name }}
@@ -561,6 +589,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
         runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@v4
+            with:
+              ref: \${{ inputs.commitSha || github.sha }}
           - uses: ./.github/actions/create-release
             with:
               version: \${{ needs.version.outputs.version }}

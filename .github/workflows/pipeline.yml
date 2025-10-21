@@ -36,6 +36,10 @@ on:
         description: The original run number from develop branch
         required: false
         type: string
+      commitSha:
+        description: The exact commit SHA to checkout and test
+        required: false
+        type: string
   workflow_call:
     inputs:
       version:
@@ -48,6 +52,10 @@ on:
         type: string
       run_number:
         description: The original run number from develop branch
+        required: false
+        type: string
+      commitSha:
+        description: The exact commit SHA to checkout and test
         required: false
         type: string
   push:
@@ -71,6 +79,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commitSha || github.sha }}
       - uses: ./.github/actions/detect-changes
         id: detect
         with:
@@ -202,6 +212,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commitSha || github.sha }}
       - uses: ./.github/actions/calculate-version
         id: version
         with:
@@ -321,6 +333,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commitSha || github.sha }}
       - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.version }}
@@ -354,6 +368,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commitSha || github.sha }}
       - uses: ./.github/actions/promote-branch
         with:
           sourceBranch: ${{ github.ref_name }}
@@ -386,6 +402,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commitSha || github.sha }}
       - uses: ./.github/actions/create-release
         with:
           version: ${{ needs.version.outputs.version }}

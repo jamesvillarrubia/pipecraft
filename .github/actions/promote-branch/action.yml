@@ -306,20 +306,25 @@ runs:
         VERSION="${{ steps.get-version.outputs.version }}"
         RUN_NUMBER="${{ inputs.run_number }}"
 
-        echo "🔄 Triggering pipeline workflow on $TARGET branch with version $VERSION"
+        # Get the exact commit SHA that was just pushed to target branch
+        COMMIT_SHA=$(git rev-parse $TARGET)
+        echo "🔄 Triggering pipeline workflow on $TARGET branch"
+        echo "   Version: $VERSION"
+        echo "   Commit SHA: $COMMIT_SHA"
 
         # Trigger the pipeline workflow on the target branch
         # This is necessary because GITHUB_TOKEN pushes don't trigger workflows by default
-        # Pass the version and run_number to maintain traceability across branches
-        WORKFLOW_ARGS=(--ref "$TARGET" --field version="$VERSION")
+        # Pass the exact commit SHA to ensure the workflow checks out the correct commit
+        # (avoids race conditions from GitHub's eventual consistency)
+        WORKFLOW_ARGS=(--ref "$TARGET" --field version="$VERSION" --field commitSha="$COMMIT_SHA")
         if [ -n "$RUN_NUMBER" ]; then
           WORKFLOW_ARGS+=(--field run_number="$RUN_NUMBER")
           echo "   Run number: $RUN_NUMBER (for traceability)"
         fi
-        
+
         gh workflow run pipeline.yml "${WORKFLOW_ARGS[@]}"
 
-        echo "✅ Pipeline workflow triggered on $TARGET with version $VERSION"
+        echo "✅ Pipeline workflow triggered on $TARGET with version $VERSION at commit $COMMIT_SHA"
 
     - name: Close PR and Delete Branch
       if: steps.read-config.outputs.autoMerge == 'true'
