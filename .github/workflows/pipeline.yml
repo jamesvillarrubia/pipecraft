@@ -320,6 +320,7 @@ jobs:
         github.event_name != 'pull_request' &&
         github.ref_name == 'develop' &&
         needs.version.result == 'success' &&
+        needs.version.outputs.version != '' &&
         (
         needs.deploy-core.result != 'failure' &&
         needs.deploy-docs.result != 'failure' &&

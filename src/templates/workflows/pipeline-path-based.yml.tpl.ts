@@ -505,6 +505,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
               github.event_name != 'pull_request' &&
               github.ref_name == '${ctx.initialBranch || branchFlow[0]}' &&
               needs.version.result == 'success' &&
+              needs.version.outputs.version != '' &&
               (
                 ${noFailures}
               ) &&
