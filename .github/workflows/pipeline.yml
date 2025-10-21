@@ -132,14 +132,17 @@ jobs:
       - name: Build TypeScript
         run: pnpm run build
 
-      - name: Run unit tests
-        run: pnpm run test:run tests/unit
+      - name: Run tests with coverage
+        run: pnpm run test:coverage
 
-      - name: Run integration tests
-        run: pnpm run test:run tests/integration
-        
-      - name: Run e2e tests
-        run: pnpm run test:run tests/e2e
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: pipecraft-coverage
+          fail_ci_if_error: false
 
   test-docs:
     needs: changes
