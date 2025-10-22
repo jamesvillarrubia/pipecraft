@@ -42,11 +42,13 @@ runs:
         base: ${{ steps.set-base.outputs.base_branch }}
         filters: |
           core:
-            - 'src/**'\n            - 'tests/**'
+            - 'src/**'
+            - 'tests/**'
           cicd:
             - '.github/**'
           docs:
-            - 'docs/**'\n            - 'docs-site/**'
+            - 'docs/**'
+            - 'docs-site/**'
 
     - name: Merge filter outputs
       id: merge
