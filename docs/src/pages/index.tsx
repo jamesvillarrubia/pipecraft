@@ -54,8 +54,8 @@ export default function Home(): JSX.Element {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      title={`${siteConfig.title} - Automated CI/CD for Trunk-Based Development`}
-      description="Automated CI/CD pipeline generator for trunk-based development workflows. Generate GitHub Actions workflows with domain-based change detection and semantic versioning.">
+      title={`${siteConfig.title} - Battle-Tested CI/CD Templates`}
+      description="Skip the debugging cycles. Generate battle-tested CI/CD workflows into your repository with best practices built in. Fully customizable, completely yours.">
       <HomepageHeader />
       <main>
         <HomepageFeatures />

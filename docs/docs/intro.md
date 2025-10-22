@@ -4,13 +4,17 @@ sidebar_position: 1
 
 # Getting Started
 
-PipeCraft generates CI/CD workflows for your project. Instead of writing GitHub Actions YAML by hand, you describe your project in a configuration file and let PipeCraft handle the rest.
+PipeCraft generates battle-tested CI/CD workflows directly into your repository. Instead of debugging GitHub Actions YAML through trial and error, you start with proven templates that handle common patterns like domain-based testing, semantic versioning, and branch promotions.
 
 ## Why PipeCraft?
 
-Setting up CI/CD pipelines is tedious. You need to configure testing, versioning, branch promotions, and deployments - all while maintaining consistency across environments. PipeCraft automates this by generating complete workflows from a simple configuration.
+Debugging CI/CD pipelines wastes time. You make a change, push it, wait for the pipeline to run, discover a syntax error or misconfiguration, fix it, wait again. Each cycle takes 5-15 minutes. After several iterations, you've spent hours on what should be straightforward workflow setup.
 
-It's particularly valuable for monorepos where different parts of your codebase need to be tested and deployed independently. PipeCraft detects which domains changed in each commit and only runs the relevant jobs, saving time and CI costs.
+PipeCraft eliminates these debugging cycles by providing battle-tested templates. These workflows are generated into your repository where you own them completely. You can customize them freely—add your deployment steps, integrate your tools, modify job configurations. The generated code lives in your `.github/workflows` directory just like hand-written workflows, but you start from a working foundation instead of an empty file.
+
+When customizations become complex or you need to incorporate updates, regenerate from templates. PipeCraft's smart merging preserves your custom jobs and deployment steps while updating the core workflow structure. This gives you the best of both worlds: the speed of templates with the flexibility of full ownership.
+
+The templates include best practices for monorepos where different parts of your codebase need independent testing. PipeCraft's domain-based change detection ensures only affected code gets tested, reducing CI costs and runtime. The workflows also handle semantic versioning, changelog generation, and automated branch promotions—common requirements that are tedious to implement correctly from scratch.
 
 ## Your first workflow
 
