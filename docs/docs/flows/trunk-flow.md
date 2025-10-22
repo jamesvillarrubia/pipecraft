@@ -1,7 +1,6 @@
-# Current Trunk Flow Implementation
+# Trunk Flow
 
-> **Status**: This document describes the ONE working trunk-based flow currently implemented in PipeCraft.
-> For planned future enhancements, see [TRUNK_FLOW_PLAN.md](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md).
+PipeCraft implements a **promote-on-merge trunk-based workflow** with automatic branch-to-branch promotion. This is the default and currently the only supported flow pattern.
 
 ## Overview
 
@@ -111,133 +110,175 @@ PipeCraft implements path-based change detection for monorepo support:
 
 ## Generated Workflow Structure
 
-### Pipeline Jobs
+PipeCraft generates a single comprehensive workflow file that handles all stages of the trunk-based flow. The workflow is divided into distinct phases:
+
+### Workflow Phases
 
 ```yaml
 name: Pipeline
 
 on:
+  workflow_dispatch:  # Manual trigger
+  workflow_call:      # Called by other workflows
   push:
     branches: [develop, staging, main]
   pull_request:
-    branches: [develop, staging, main]
+    branches: [develop]
 
 jobs:
-  # 1. Change Detection
-  detect-changes:
+  # Phase 1: Change Detection (Managed by PipeCraft)
+  changes:
     runs-on: ubuntu-latest
-    outputs:
-      api-changed: ${{ steps.detect.outputs.api }}
-      web-changed: ${{ steps.detect.outputs.web }}
     steps:
       - uses: ./.github/actions/detect-changes
+    outputs:
+      domain1: ${{ steps.detect.outputs.domain1 }}
+      domain2: ${{ steps.detect.outputs.domain2 }}
+
+  # Phase 2: Testing (Customizable)
+  test-domain1:
+    needs: changes
+    if: needs.changes.outputs.domain1 == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm test -- packages/domain1
+
+  test-domain2:
+    needs: changes
+    if: needs.changes.outputs.domain2 == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm test -- packages/domain2
+
+  # Phase 3: Versioning (Managed by PipeCraft)
+  version:
+    needs: [changes, test-domain1, test-domain2]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/calculate-version
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+  # Phase 4: Deployment (Customizable)
+  deploy-domain1:
+    needs: [version, changes]
+    if: needs.changes.outputs.domain1 == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm run deploy -- packages/domain1
+
+  # Phase 5: Remote Testing (Customizable)
+  remote-test-domain1:
+    needs: [deploy-domain1]
+    if: needs.deploy-domain1.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm run test:remote -- packages/domain1
+
+  # Phase 6: Tagging (Managed by PipeCraft)
+  tag:
+    needs: [version, deploy-domain1, remote-test-domain1]
+    if: |
+      github.ref_name == 'develop' &&
+      needs.version.outputs.version != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/create-tag
         with:
-          domains: |
-            api: packages/api/**,libs/shared/**
-            web: packages/web/**,libs/shared/**
+          version: ${{ needs.version.outputs.version }}
 
-  # 2. Domain Tests (run in parallel)
-  test-api:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.api-changed == 'true'
+  # Phase 7: Promotion (Managed by PipeCraft)
+  promote:
+    needs: [version, tag]
+    if: |
+      needs.version.outputs.version != '' &&
+      (github.ref_name == 'develop' || github.ref_name == 'staging')
     runs-on: ubuntu-latest
     steps:
-      - run: npm test -- packages/api
-
-  test-web:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.web-changed == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - run: npm test -- packages/web
-
-  # 3. Promotion Logic
-  promote-to-staging:
-    needs: [test-api, test-web]
-    if: github.ref == 'refs/heads/develop'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: ./.github/actions/create-pr
+      - uses: ./.github/actions/promote-branch
         with:
-          source-branch: develop
-          target-branch: staging
-          auto-merge: true
-          merge-method: squash
+          sourceBranch: ${{ github.ref_name }}
+          version: ${{ needs.version.outputs.version }}
 
-  promote-to-main:
-    needs: [test-api, test-web]
-    if: github.ref == 'refs/heads/staging'
+  # Phase 8: Release (Managed by PipeCraft)
+  release:
+    needs: [version, tag]
+    if: |
+      github.ref_name == 'main' &&
+      needs.version.outputs.version != ''
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/calculate-version  # Optional
-      - uses: ./.github/actions/create-tag         # Optional
-      - uses: ./.github/actions/create-pr
+      - uses: ./.github/actions/create-release
         with:
-          source-branch: staging
-          target-branch: main
-          auto-merge: false  # Manual approval required
-          merge-method: merge
-
-  # 4. Deployment
-  deploy-api:
-    needs: [test-api]
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - run: npm run deploy:api
-
-  deploy-web:
-    needs: [test-web]
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - run: npm run deploy:web
+          version: ${{ needs.version.outputs.version }}
 ```
+
+### What You Can Customize
+
+PipeCraft manages the workflow structure, but you can customize:
+
+- **Test jobs** (`test-*`): Add your testing commands
+- **Deploy jobs** (`deploy-*`): Add your deployment commands
+- **Remote test jobs** (`remote-test-*`): Add integration/E2E tests
+- **Workflow name**: Change the workflow display name
+
+### What PipeCraft Manages
+
+These sections are automatically generated and should not be modified:
+
+- **Workflow triggers**: Push, PR, and workflow_dispatch events
+- **Changes detection**: Domain-based change detection logic
+- **Versioning**: Semantic version calculation from commits
+- **Tagging**: Git tag creation on develop branch
+- **Promotion**: Branch-to-branch promotion logic
+- **Release**: GitHub release creation on main branch
+- **Job dependencies**: Conditional logic and job ordering
 
 ## Promotion Mechanism
 
 ### How Promotions Work
 
-1. **Trigger**: Code merges to source branch (e.g., `develop`)
-2. **Test**: Run all relevant tests
-3. **Create PR**: If tests pass, create PR from source to target branch
-4. **Auto-Merge** (optional): If configured, automatically merge PR after checks
-5. **Trigger Next Stage**: PR merge triggers workflow on target branch
+PipeCraft uses **workflow dispatch** to trigger promotions between branches:
 
-### Why PRs Instead of Direct Push?
+1. **Version Calculation**: On `develop`, calculate semantic version from commits
+2. **Tagging**: Create a git tag with the version on `develop`
+3. **Promote**: Trigger the next branch's workflow via `workflow_dispatch`
+4. **Pass Context**: Version and run number are passed to maintain traceability
+5. **Next Stage**: The target branch (`staging` or `main`) runs the same workflow with the version context
 
-**GitHub Token Limitation**: Pushes made with `GITHUB_TOKEN` do NOT trigger workflows.
+### Promotion Flow
 
-```bash
-# ❌ This does NOT trigger workflows
-git push origin staging  # Using GITHUB_TOKEN
-# Result: staging is updated, but no workflow runs!
-
-# ✅ This DOES trigger workflows
-Create PR → Merge PR (even with bot)
-# Result: PR merge triggers workflow naturally!
+```
+develop (push)
+  ↓
+  tests pass
+  ↓
+  version calculated
+  ↓
+  tag created on develop
+  ↓
+  promote job triggers staging workflow
+  ↓
+staging (workflow_dispatch)
+  ↓
+  tests run with develop's commitSha
+  ↓
+  promote job triggers main workflow
+  ↓
+main (workflow_dispatch)
+  ↓
+  tests run with develop's commitSha
+  ↓
+  deploy & release created
 ```
 
-**Key Insight**: PR merges (including auto-merges) DO trigger workflows, even with `GITHUB_TOKEN`.
+### Key Features
 
-Therefore, **all promotions MUST use PRs** for reliable workflow triggering.
-
-### Auto-Merge Settings
-
-Configure per-branch to control automation level:
-
-```json
-{
-  "autoMerge": {
-    "staging": true,    // Fully automated develop → staging
-    "main": false       // Manual approval for staging → main
-  }
-}
-```
-
-**Typical Usage**:
-- `staging: true` - Low-risk staging environment, auto-promote for fast feedback
-- `main: false` - High-risk production, require human approval
+- **Version Gating**: Only commits that bump the version trigger promotions
+- **Commit SHA Tracking**: The same commit SHA is tested across all branches
+- **Traceability**: Original run number and version are passed through all stages
+- **Idempotent**: Re-running the same version on a branch is safe
 
 ## Semantic Versioning (Optional)
 

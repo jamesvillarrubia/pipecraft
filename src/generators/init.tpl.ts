@@ -213,6 +213,18 @@ export const generate = (ctx: PinionContext) =>
     ]))
     .then((ctx) => ({ ...ctx, ...defaultConfig } as PipecraftConfig))
     .then((config) => {
-      const content = configTemplate(config)
-      return writeJSON(() => content, toFile('.pipecraftrc.json'))(ctx)
+      const configData = {
+        ciProvider: config.ciProvider,
+        mergeStrategy: config.mergeStrategy,
+        requireConventionalCommits: config.requireConventionalCommits,
+        initialBranch: config.initialBranch,
+        finalBranch: config.finalBranch,
+        branchFlow: config.branchFlow,
+        autoMerge: config.autoMerge,
+        semver: {
+          bumpRules: config.semver.bumpRules
+        },
+        domains: config.domains
+      }
+      return writeJSON(() => configData, toFile('.pipecraftrc.json'))(ctx)
     })

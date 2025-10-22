@@ -11,42 +11,42 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Trunk-Based Development',
-    emoji: '🌳',
+    title: 'Battle-Tested Templates',
+    emoji: '🛡️',
     description: (
       <>
-        Automate your trunk-based workflow with proper branch promotions,
-        automated testing, and safe deployments from develop → staging → main.
+        Start with proven CI/CD patterns instead of debugging YAML from scratch.
+        Templates include trunk-based development, domain testing, and versioning.
       </>
     ),
   },
   {
-    title: 'Domain-Based Change Detection',
+    title: 'You Own The Code',
+    emoji: '🔑',
+    description: (
+      <>
+        Generated workflows live in your repository. Customize freely—add deployments,
+        integrate tools, modify jobs. It's your code, not a black box.
+      </>
+    ),
+  },
+  {
+    title: 'Smart Monorepo Support',
     emoji: '🎯',
     description: (
       <>
-        Perfect for monorepos. Only build and test what changed. Configure
-        domains with path patterns and PipeCraft handles the rest.
+        Domain-based change detection tests only what changed. Configure path patterns
+        once, save hours of CI time on every push.
       </>
     ),
   },
   {
-    title: 'Semantic Versioning',
-    emoji: '📦',
-    description: (
-      <>
-        Automatic version bumps based on conventional commits. feat = minor,
-        fix = patch, breaking = major. Simple and predictable.
-      </>
-    ),
-  },
-  {
-    title: 'Idempotent Regeneration',
+    title: 'Safe Regeneration',
     emoji: '♻️',
     description: (
       <>
-        Regenerate workflows safely. Preserves user comments and custom jobs.
-        Only updates when configuration or templates change.
+        Regenerate from templates when needed. Your custom jobs and deployment steps
+        are preserved while core workflow structure updates.
       </>
     ),
   },
@@ -56,17 +56,17 @@ const FeatureList: FeatureItem[] = [
     description: (
       <>
         397 passing tests, 100% JSDoc coverage, comprehensive error handling.
-        Battle-tested with real-world monorepo scenarios.
+        Used in production by teams managing complex monorepos.
       </>
     ),
   },
   {
-    title: 'Zero Configuration',
+    title: 'Best Practices Built In',
     emoji: '⚡',
     description: (
       <>
-        Smart defaults that just work. One command to initialize,
-        one command to generate. Customize when you need to.
+        Semantic versioning, conventional commits, branch promotions, changelog
+        generation. Get all the tedious details right from day one.
       </>
     ),
   },
