@@ -44,6 +44,11 @@ Get a working pipeline in three commands:
 # Initialize PipeCraft in your project
 npx pipecraft init
 
+# Edit the generated .pipecraftrc.json to customize:
+# - Branch names (branchFlow, initialBranch, finalBranch)
+# - Domain paths and configurations
+# - CI provider and merge strategy
+
 # Generate your CI/CD workflows
 npx pipecraft generate
 

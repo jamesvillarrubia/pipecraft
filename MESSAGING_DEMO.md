@@ -248,3 +248,4 @@ pipecraft setup-github --verbose
 # Fallback to original verbose output
 pipecraft setup-github --no-clean
 ```
+

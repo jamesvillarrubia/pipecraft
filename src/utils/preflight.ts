@@ -491,13 +491,29 @@ export function formatPreflightResults(checks: PreflightChecks): {
   const nextSteps: string[] | undefined = allPassed ? [
     'Your environment is ready to generate workflows!',
     '',
-    'Next steps:',
-    '  1. Validate the pipeline: pipecraft validate:pipeline',
-    '  2. Set up GitHub tokens: pipecraft setup-github --verify',
-    '  3. Commit the generated workflows: git add .github && git commit -m "chore: add workflows"',
-    '  4. Push to remote: git push origin ' + getCurrentBranch(),
+    '📋 Next steps:',
     '',
-    '⚠️  Important: Set up GitHub tokens (step 2) BEFORE pushing to ensure workflows run correctly!'
+    '1. Review and customize the generated workflows:',
+    '   - Add test commands to test-* jobs',
+    '   - Add deployment logic to deploy-* jobs (if deployable: true)',
+    '   - Add remote tests to remote-test-* jobs (if remoteTestable: true)',
+    '',
+    '2. Validate the workflow syntax:',
+    '   npm run validate:pipeline        # Check YAML is valid',
+    '',
+    '3. Configure GitHub permissions for auto-merge:',
+    '   pipecraft setup-github           # Interactive setup',
+    '   pipecraft setup-github --apply   # Auto-apply (no prompts)',
+    '',
+    '4. Commit and push:',
+    '   git add .github/workflows/ .pipecraftrc.json',
+    '   git commit -m "feat: add pipecraft workflows"',
+    '   git push',
+    '',
+    '5. Watch your first pipeline run at:',
+    `   https://github.com/${getRepoInfo()}/actions`,
+    '',
+    '⚠️  Important: Set up GitHub permissions (step 3) BEFORE pushing to ensure workflows run correctly!'
   ] : undefined
 
   return {
@@ -528,5 +544,33 @@ function getCurrentBranch(): string {
     return branch || 'main'
   } catch (error) {
     return 'main'
+  }
+}
+
+/**
+ * Get repository information for GitHub Actions URL.
+ *
+ * Extracts owner and repository name from git remote URL.
+ * Falls back to placeholder if not a GitHub repository.
+ *
+ * @returns Repository info in format "owner/repo" or placeholder
+ * @private
+ */
+function getRepoInfo(): string {
+  try {
+    const remote = execSync('git remote get-url origin', {
+      stdio: ['pipe', 'pipe', 'ignore'], // Suppress stderr
+      encoding: 'utf8'
+    }).trim()
+    
+    // Extract owner/repo from GitHub URL
+    const match = remote.match(/github\.com[:/]([^/]+)\/([^/]+?)(?:\.git)?$/)
+    if (match) {
+      return `${match[1]}/${match[2]}`
+    }
+    
+    return 'your-username/your-repo'
+  } catch (error) {
+    return 'your-username/your-repo'
   }
 }

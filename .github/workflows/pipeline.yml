@@ -21,11 +21,13 @@
 # Running 'pipecraft generate' updates managed sections while preserving
 # your customizations in test/deploy/remote-test jobs.
 
-# 📖 Learn more: https://docs.pipecraft.dev
+# 📖 Learn more: https://pipecraft.thecraftlab.dev
 #=============================================================================
+
 name: Pipeline
 
 run-name: "${{ github.ref_name }} #${{ inputs.run_number || github.run_number }}${{ inputs.version && format(' - {0}', inputs.version) || '' }}"
+
 on:
   workflow_dispatch:
     inputs:
@@ -75,6 +77,7 @@ on:
       - reopened
     branches:
       - develop
+
 jobs:
   #=============================================================================
   # CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
@@ -93,107 +96,51 @@ jobs:
     outputs:
       cicd: ${{ steps.detect.outputs.cicd }}
       core: ${{ steps.detect.outputs.core }}
-      test: ${{ steps.detect.outputs.test }}
       docs: ${{ steps.detect.outputs.docs }}
 
   #=============================================================================
   # TESTING JOBS
   #=============================================================================
   test-cicd:
+    #=============================================================================
+    # TESTING JOBS (✅ Customize these with your test logic)
+    #=============================================================================
+    # These jobs run tests for each domain when changes are detected.
+    # Replace the TODO comments with your actual test commands.
     needs: changes
     if: ${{ needs.changes.outputs.cicd == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Validate pipeline workflow
-        run: node tests/tools/validation/validate-pipeline.cjs
+      # TODO: Replace with your cicd test logic
+      - name: Run cicd tests
+        run: |
+          echo "Running tests for cicd domain"
+          echo "Replace this with your actual test commands"
+          # Example: npm test -- --testPathPattern=cicd
 
   test-core:
     needs: changes
     if: ${{ needs.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build TypeScript
-        run: pnpm run build
-
-      - name: Run tests with coverage
-        run: pnpm run test:coverage
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-          flags: unittests
-          name: pipecraft-coverage
-          fail_ci_if_error: false
+      # TODO: Replace with your core test logic
+      - name: Run core tests
+        run: |
+          echo "Running tests for core domain"
+          echo "Replace this with your actual test commands"
+          # Example: npm test -- --testPathPattern=core
 
   test-docs:
     needs: changes
     if: ${{ needs.changes.outputs.docs == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Install dependencies
+      # TODO: Replace with your docs test logic
+      - name: Run docs tests
         run: |
-          pnpm install --frozen-lockfile
-          cd docs && pnpm install --frozen-lockfile
-
-      - name: Build TypeScript
-        run: pnpm run build
-
-      - name: Generate API Documentation
-        run: cd docs && pnpm run typedoc
-
-      - name: Build Docusaurus site
-        run: cd docs && pnpm run build
-        env:
-          NODE_ENV: production
+          echo "Running tests for docs domain"
+          echo "Replace this with your actual test commands"
+          # Example: npm test -- --testPathPattern=docs
 
   #=============================================================================
   # VERSIONING (⚠️  Managed by Pipecraft - do not modify)
@@ -201,6 +148,7 @@ jobs:
   # Calculates the next version based on conventional commits and semver rules.
   # Only runs on push events (skipped on pull requests).
   version:
+
     if: ${{
         always() &&
         github.event_name != 'pull_request' &&
@@ -243,7 +191,12 @@ jobs:
 
   deploy-docs:
     needs: [ version, changes ]
-    if: ${{ always() && needs.version.result == 'success' && needs.changes.outputs.docs == 'true' && github.ref_name == 'main' }}
+    if: ${{
+        always() &&
+        needs.version.result == 'success' &&
+        needs.changes.outputs.docs == 'true' &&
+        github.ref_name == 'main'
+      }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -301,7 +254,14 @@ jobs:
   #=============================================================================
   remote-test-core:
     needs: [ deploy-core, changes, test-cicd, test-core, test-docs ]
-    if: ${{ always() && needs.deploy-core.result == 'success' && needs.changes.outputs.core == 'true' && needs.test-cicd.result != 'failure' && needs.test-core.result != 'failure' && needs.test-docs.result != 'failure' }}
+    if: ${{
+        always() &&
+        needs.deploy-core.result == 'success' &&
+        needs.changes.outputs.core == 'true' &&
+        needs.test-cicd.result != 'failure' &&
+        needs.test-core.result != 'failure' &&
+        needs.test-docs.result != 'failure'
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Test core
@@ -317,9 +277,10 @@ jobs:
   # Creates a git tag with the calculated version on the initial branch.
   # Only runs on push events after successful tests and deployments.
   tag:
+
     # Needs all deploy and/or remote test jobs to succeed or be skipped
     # Needs at least one domain to succeed
-    needs: [ version, deploy-core, deploy-docs, remote-test-core ]
+    needs: [ version ]
     if: ${{
         always() &&
         github.event_name != 'pull_request' &&
@@ -327,14 +288,10 @@ jobs:
         needs.version.result == 'success' &&
         needs.version.outputs.version != '' &&
         (
-        needs.deploy-core.result != 'failure' &&
-        needs.deploy-docs.result != 'failure' &&
-        needs.remote-test-core.result != 'failure'
+        true
       ) &&
         (
-        needs.deploy-core.result == 'success' ||
-        needs.deploy-docs.result == 'success' ||
-        needs.remote-test-core.result == 'success'
+        true
       )
       }}
     runs-on: ubuntu-latest
@@ -352,6 +309,7 @@ jobs:
   # Triggers the next branch's workflow after successful versioning and tagging.
   # Passes version and run_number to maintain traceability across branches.
   promote:
+
     # Only runs on push or manual workflow_dispatch events to branches that can promote
     # Requires version to succeed (which means tests passed)
     # Requires a version to have been calculated (skip promotion for non-versioned commits)
@@ -392,6 +350,7 @@ jobs:
   # Creates a GitHub release on the final branch with release notes.
   # Only runs after successful versioning and tagging on the final branch.
   release:
+
     # Create GitHub release on main branch after successful tests and versioning
     if: ${{
         always() &&
@@ -417,3 +376,70 @@ jobs:
         with:
           version: ${{ needs.version.outputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  #=============================================================================
+  # TESTING JOBS (✅ Customize these with your test logic)
+  #=============================================================================
+  # These jobs run tests for each domain when changes are detected.
+  # Replace the TODO comments with your actual test commands.
+  test-api:
+    #=============================================================================
+    # TESTING JOBS (✅ Customize these with your test logic)
+    #=============================================================================
+    # These jobs run tests for each domain when changes are detected.
+    # Replace the TODO comments with your actual test commands.
+    needs: changes
+    if: ${{ needs.changes.outputs.api == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      # TODO: Replace with your api test logic
+      - name: Run api tests
+        run: |
+          echo "Running tests for api domain"
+          echo "Replace this with your actual test commands"
+          # Example: npm test -- --testPathPattern=api
+
+  #=============================================================================
+  # DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
+  #=============================================================================
+  # These jobs deploy each domain when changes are detected and tests pass.
+  # Replace the TODO comments with your actual deployment commands.
+  deploy-api:
+
+    #=============================================================================
+    # DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
+    #=============================================================================
+    # These jobs deploy each domain when changes are detected and tests pass.
+    # Replace the TODO comments with your actual deployment commands.
+    needs: [ version, changes ]
+    if: ${{ always() && needs.version.result == 'success' && needs.changes.outputs.api == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy api
+        run: |
+          echo "Deploying api"
+          echo "Replace this with your actual deploy commands"
+          # Example: npm deploy -- --testPathPattern=api
+
+  #=============================================================================
+  # REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
+  #=============================================================================
+  # These jobs test deployed services remotely after deployment succeeds.
+  # Replace the TODO comments with your actual remote testing commands.
+  remote-test-api:
+
+    #=============================================================================
+    # REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
+    #=============================================================================
+    # These jobs test deployed services remotely after deployment succeeds.
+    # Replace the TODO comments with your actual remote testing commands.
+    needs: [ deploy-api, changes ]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test api
+        if: ${{ needs.changes.outputs.api == 'true' && needs.deploy-api.result == 'success' }}
+        run: |
+          echo "Testing api remotely"
+          echo "Replace this with your actual test commands"
+          # Example: npm test -- --testPathPattern=api

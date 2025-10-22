@@ -39,13 +39,14 @@ cd my-monorepo
 pipecraft init
 ```
 
-PipeCraft will ask you questions about your project:
+PipeCraft will ask you questions about your project, but currently uses sensible defaults regardless of your answers. You'll get a `.pipecraftrc.json` file with these defaults:
 
-- **What branches do you use?** Most teams use develop, staging, and main. Choose what matches your workflow.
-- **What domains exist in your codebase?** For our example, we have "api" and "web".
-- **Where is each domain located?** The API lives in `packages/api/**` and the web app in `packages/web/**`.
+- **CI Provider**: GitHub Actions
+- **Branch Flow**: develop → staging → main  
+- **Merge Strategy**: fast-forward
+- **Default Domains**: api, web, libs, cicd
 
-After answering these questions, you'll have a `.pipecraftrc.json` file:
+After initialization, you'll have a `.pipecraftrc.json` file:
 
 ```json
 {
@@ -68,7 +69,45 @@ After answering these questions, you'll have a `.pipecraftrc.json` file:
 }
 ```
 
-This configuration tells PipeCraft everything it needs to know about your project structure.
+**Next, customize the configuration**:
+
+1. **Update branch names** if you use different naming (e.g., dev, prod):
+   ```json
+   {
+     "branchFlow": ["dev", "uat", "prod"],
+     "initialBranch": "dev",
+     "finalBranch": "prod"
+   }
+   ```
+
+2. **Configure your domains** to match your monorepo structure:
+   ```json
+   {
+     "domains": {
+       "api": {
+         "paths": ["packages/api/**"],
+         "description": "Backend API services",
+         "testable": true,
+         "deployable": true,
+         "remoteTestable": false
+       },
+       "web": {
+         "paths": ["packages/web/**"],
+         "description": "Frontend web application",
+         "testable": true,
+         "deployable": true,
+         "remoteTestable": true
+       }
+     }
+   }
+   ```
+
+3. **Set domain capabilities** based on your needs:
+   - `testable: true` (default) - Generates test jobs
+   - `deployable: true` (default: false) - Generates deployment jobs
+   - `remoteTestable: true` (default: false) - Generates remote testing jobs after deployment
+
+After editing `.pipecraftrc.json`, you're ready to generate workflows.
 
 ### Generate workflows
 
@@ -208,15 +247,179 @@ Anything between these markers survives regeneration. When you add deployment sc
 
 ## Understanding the workflow
 
-The generated workflow has several phases that run automatically:
+The generated workflow orchestrates multiple phases that run automatically based on your configuration and what changed in your commit.
 
-**Change detection** looks at which files changed in your commit and determines which domains are affected. If you modify `packages/api/server.ts`, only API jobs run. If you modify `packages/web/App.tsx`, only web jobs run.
+### Complete Phase Flow
 
-**Testing** runs your test commands for affected domains. Jobs run in parallel to save time.
+#### 1. Change Detection
+**When**: Every workflow run
+**What**: Analyzes which files changed and maps them to domains
 
-**Versioning** calculates the next version number based on your commit messages. Commits starting with `feat:` bump the minor version, `fix:` bumps the patch version, and commits with `!` are breaking changes that bump the major version.
+The `changes` job looks at modified file paths and determines which domains are affected. If you modify `packages/api/server.ts`, only the API domain is marked as changed. If you modify `packages/shared/utils.ts` used by multiple domains, all dependent domains may be marked.
 
-**Promotion** triggers the workflow on the next branch (staging, then main) after tests pass. This happens automatically for commits that bump the version, creating a continuous flow from development to production.
+**Output**: Boolean flags for each domain (`api: true`, `web: false`, etc.)
+
+#### 2. Testing
+**When**: After change detection, for domains with `testable: true` (default) that have changes
+**What**: Runs your test commands for affected domains in parallel
+
+Jobs run concurrently to save time. `test-api` and `test-web` run simultaneously if both domains changed. Each job only runs if its domain has changes (`if: needs.changes.outputs.api == 'true'`).
+
+**Output**: Pass/fail status for each domain's tests
+
+#### 3. Versioning
+**When**: After all tests pass, only on push events (not PRs)
+**What**: Calculates the next version number based on conventional commits
+
+The `version` job analyzes commit messages since the last version:
+- `feat:` commits bump the minor version (1.0.0 → 1.1.0)
+- `fix:` commits bump the patch version (1.0.0 → 1.0.1)
+- `feat!:` or `BREAKING CHANGE:` bumps major version (1.0.0 → 2.0.0)
+- `chore:`, `docs:`, `style:`, `refactor:` don't trigger version bumps
+
+**Output**: New version number (e.g., `1.2.0`) or empty if no versioned commits
+
+#### 4. Deployment (if domains have `deployable: true`)
+**When**: After versioning succeeds, for domains with `deployable: true` that have changes
+**What**: Deploys services to their respective environments
+
+Deployment jobs (`deploy-api`, `deploy-web`, etc.) run in parallel. Each only runs if its domain changed and tests passed. This is where you add your actual deployment commands (push to cloud, update Kubernetes, deploy to CDN, etc.).
+
+**Output**: Pass/fail status for each deployment
+
+#### 5. Remote Testing (if domains have `remoteTestable: true`)
+**When**: After deployment succeeds, for domains with `remoteTestable: true`
+**What**: Tests deployed services in their live environment
+
+Remote test jobs (`remote-test-api`, `remote-test-web`, etc.) verify deployments work correctly. Use these for integration tests, smoke tests, health checks, or end-to-end tests against deployed services.
+
+**Output**: Pass/fail status for each remote test
+
+#### 6. Tagging
+**When**: After deployments and remote tests pass, only on initial branch (e.g., develop)
+**What**: Creates a git tag with the calculated version
+
+The `tag` job only runs if:
+- A version was calculated
+- All deployments succeeded or were skipped
+- All remote tests passed or were skipped
+- We're on the initial branch (develop)
+
+This creates an immutable reference to the tested and deployed code.
+
+**Output**: Git tag created (e.g., `v1.2.0`)
+
+#### 7. Promotion
+**When**: After tagging succeeds, on any branch except the final branch
+**What**: Creates a PR to promote code to the next branch in the flow
+
+The `promote` job triggers the workflow on the next branch (develop → staging → main). It creates a PR with the version number and passes metadata (version, run number, commit SHA) to maintain traceability.
+
+**Branch flow example** (develop → staging → main):
+1. PR merged to develop → Tests pass → Version 1.2.0 calculated → Deploy → Tag → Create PR to staging
+2. Staging PR auto-merged → Tests pass → (version already set) → Deploy → Create PR to main
+3. Main PR auto-merged → Tests pass → (version already set) → Deploy → Create release
+
+**Output**: PR created to next branch
+
+#### 8. Release (final branch only)
+**When**: After tests pass on the final branch (e.g., main)
+**What**: Creates a GitHub release with changelog
+
+The `release` job only runs on your production branch (typically `main`). It creates a GitHub release with:
+- Version number from tag
+- Changelog generated from conventional commits
+- Links to compare changes
+- Artifacts (if configured)
+
+**Output**: GitHub release created
+
+### Phase Dependencies
+
+Phases depend on previous phases succeeding:
+
+```
+Change Detection (always runs)
+    ↓
+Testing (if testable: true and changes detected)
+    ↓
+Versioning (if tests pass and push event)
+    ↓
+Deployment (if deployable: true and version calculated)
+    ↓
+Remote Testing (if remoteTestable: true and deployment succeeded)
+    ↓
+Tagging (if version calculated and deployments/remote-tests passed)
+    ↓
+Promotion (if on non-final branch and tag created)
+    OR
+Release (if on final branch and tests passed)
+```
+
+### Phase Behavior by Event Type
+
+**Pull Request to develop**:
+- Runs: Change Detection → Testing
+- Skips: Versioning, Deployment, Remote Testing, Tagging, Promotion, Release
+- Why: PRs only verify code quality, don't version or promote
+
+**Push to develop** (after PR merge):
+- Runs: Change Detection → Testing → Versioning → Deployment → Remote Testing → Tagging → Promotion
+- Creates: PR from develop to staging
+- Why: First branch gets full pipeline and initiates promotion flow
+
+**Push to staging** (after promotion PR merges):
+- Runs: Change Detection → Testing → Deployment → Remote Testing → Promotion
+- Skips: Versioning (version already set from develop), Tagging (only on initial branch)
+- Creates: PR from staging to main
+- Why: Middle branches test and deploy but don't re-version
+
+**Push to main** (after promotion PR merges):
+- Runs: Change Detection → Testing → Deployment → Remote Testing → Release
+- Skips: Promotion (no next branch)
+- Creates: GitHub release
+- Why: Final branch creates release instead of promoting
+
+### Customizing Phases
+
+You can customize test and deployment logic in the generated workflow:
+
+**Test jobs** - Add your test commands:
+```yaml
+test-api:
+  needs: changes
+  if: needs.changes.outputs.api == 'true'
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+    - run: npm install
+    - run: npm test -- apps/api  # Your test command
+```
+
+**Deploy jobs** - Add your deployment commands:
+```yaml
+deploy-api:
+  needs: [version, changes]
+  if: needs.changes.outputs.api == 'true'
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - run: ./deploy-api.sh ${{ needs.version.outputs.version }}
+```
+
+**Remote test jobs** - Add your remote testing:
+```yaml
+remote-test-api:
+  needs: [deploy-api, changes]
+  if: needs.deploy-api.result == 'success'
+  runs-on: ubuntu-latest
+  steps:
+    - run: curl -f https://api.example.com/health
+    - run: npm run test:e2e -- --api-url=https://api.example.com
+```
+
+PipeCraft preserves your customizations during regeneration, so you only need to configure these once.
 
 ## Conventional commits
 

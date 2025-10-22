@@ -248,16 +248,16 @@ export function formatSetupSummary(summary: SetupSummary, context: MessageContex
   lines.push(`\n🔍 GitHub Setup Summary for ${summary.repository}`)
   
   // Overall status
-  const statusIcons = {
+  const statusIcons: Record<string, string> = {
     ready: '🟢',
-    needs-setup: '🟡', 
+    'needs-setup': '🟡', 
     partial: '🟡',
     error: '🔴'
   }
   
-  const statusMessages = {
+  const statusMessages: Record<string, string> = {
     ready: 'All settings configured correctly',
-    needs-setup: 'Setup required',
+    'needs-setup': 'Setup required',
     partial: 'Some optimizations available', 
     error: 'Setup failed - fix errors above'
   }
