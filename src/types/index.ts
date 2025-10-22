@@ -50,6 +50,13 @@ export interface DomainConfig {
    * @default false
    */
   deployable?: boolean
+
+  /**
+   * Whether this domain should be tested remotely after deployment.
+   * If true, generates remote test jobs for this domain.
+   * @default false
+   */
+  remoteTestable?: boolean
 }
 
 /**
@@ -308,7 +315,7 @@ export interface PipecraftContext {
   /**
    * Simplified domain configuration for template rendering.
    */
-  domains: Record<string, { paths: string[], description: string }>
+  domains: Record<string, { paths: string[], description: string, testable?: boolean, deployable?: boolean, remoteTestable?: boolean }>
 
   /**
    * Semantic versioning rules.
