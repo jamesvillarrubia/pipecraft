@@ -14,7 +14,7 @@
 [![staging](https://img.shields.io/github/actions/workflow/status/jamesvillarrubia/pipecraft/pipeline.yml?branch=staging&label=staging)](https://github.com/jamesvillarrubia/pipecraft/actions/workflows/pipeline.yml?query=branch%3Astaging)
 [![main](https://img.shields.io/github/actions/workflow/status/jamesvillarrubia/pipecraft/pipeline.yml?branch=main&label=main)](https://github.com/jamesvillarrubia/pipecraft/actions/workflows/pipeline.yml?query=branch%3Amain)
 
-Automated CI/CD pipeline generator for trunk-based development. Generate intelligent GitHub Actions workflows with domain-based change detection, semantic versioning, and branch flow management.
+Skip the debugging cycles. Generate battle-tested CI/CD workflows into your repository with best practices built in. Fully customizable, completely yours.
 
 ---
 
@@ -28,11 +28,13 @@ The documentation site includes comprehensive guides, real-world examples, confi
 
 ## What is PipeCraft?
 
-PipeCraft generates CI/CD workflows for your project automatically. Instead of writing hundreds of lines of GitHub Actions YAML by hand, you describe your project structure in a simple configuration file and let PipeCraft handle the rest.
+Debugging CI/CD pipelines is tedious. You push a change, wait 10 minutes for the pipeline to run, discover a tiny YAML syntax error, fix it, wait another 10 minutes, find another issue. Repeat until you've wasted hours on what should be simple workflow setup.
 
-It's particularly powerful for monorepos where different parts of your codebase need independent testing and deployment. PipeCraft detects which parts of your code changed and only runs the relevant jobs, saving time and CI costs. Teams using PipeCraft report 60-80% reductions in CI runtime for large monorepos.
+PipeCraft solves this by providing battle-tested CI/CD templates that you generate into your own repository. Instead of writing GitHub Actions workflows from scratch and debugging them through trial and error, you start with proven patterns that handle common scenarios: domain-based testing for monorepos, semantic versioning, branch promotion flows, and deployment automation.
 
-Beyond change detection, PipeCraft handles the tedious parts of trunk-based development: semantic versioning based on conventional commits, branch promotion flows, version tagging, and changelog generation. Once configured, your pipeline runs automatically—testing changes, bumping versions, and promoting code through environments without manual intervention.
+The generated workflows live in your repository—you own them completely. Customize them as much as you need: add deployment steps, integrate with your tools, modify job configurations. When customizations get complex or you want to start fresh, regenerate from templates. PipeCraft preserves your customizations while updating the core workflow structure.
+
+This approach means you get a fully functional CI/CD pipeline with best practices built in from day one, without the debugging cycles and without the maintenance burden of keeping workflows synchronized across projects.
 
 ## Quick Start
 
