@@ -54,6 +54,8 @@ jobs:
           VERSION=${TAG#v}
           echo "Setting package version to $VERSION"
           npm pkg set version=$VERSION
+          echo "Verifying repository URL in package.json:"
+          npm pkg get repository.url
 
       - name: Publish to npm
         run: npm publish --provenance --access public
