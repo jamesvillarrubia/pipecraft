@@ -45,7 +45,8 @@ jobs:
           TAG=${{ github.event.release.tag_name || inputs.tag }}
           VERSION=${TAG#v}  # Remove 'v' prefix
           echo "Setting package version to $VERSION"
-          npm version $VERSION --no-git-tag-version
+          # Use npm pkg to set version without modifying lockfiles
+          npm pkg set version=$VERSION
 
       - name: Publish to npm
         run: npm publish --provenance --access public
