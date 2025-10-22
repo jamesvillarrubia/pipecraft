@@ -41,24 +41,15 @@ jobs:
       - name: Build package
         run: pnpm run build
 
-      - name: Upgrade npm
+      - name: Upgrade npm to latest (required for OIDC)
         run: npm install -g npm@latest
-
-      - name: Check npm version
-        run: npm --version
 
       - name: Set package version
         run: |
           TAG=${{ github.event.release.tag_name || inputs.tag }}
           VERSION=${TAG#v}
-          echo "=== Before npm pkg set ==="
-          echo "Repository field:"
-          cat package.json | jq '.repository'
           echo "Setting package version to $VERSION"
           npm pkg set version=$VERSION
-          echo "=== After npm pkg set ==="
-          echo "Repository field:"
-          cat package.json | jq '.repository'
 
       - name: Publish to npm
         run: npm publish --provenance --access public
