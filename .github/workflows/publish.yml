@@ -50,10 +50,4 @@ jobs:
           npm pkg set version=$VERSION
 
       - name: Publish to npm
-        run: |
-          npm install -g npm@latest
-          npm config set registry https://registry.npmjs.org
-          npm adduser
-          npm whoami
-          echo "Publishing to npm"
-          npm publish --access public
+        run: npm publish --provenance --access public
