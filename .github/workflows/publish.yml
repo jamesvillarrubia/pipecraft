@@ -48,4 +48,6 @@ jobs:
           pnpm version $VERSION --no-git-tag-version
 
       - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: pnpm publish --provenance --access public --no-git-checks
