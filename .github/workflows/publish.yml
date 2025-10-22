@@ -49,4 +49,6 @@ jobs:
           npm pkg set version=$VERSION
 
       - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --provenance --access public
