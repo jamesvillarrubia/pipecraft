@@ -45,9 +45,7 @@ jobs:
           TAG=${{ github.event.release.tag_name || inputs.tag }}
           VERSION=${TAG#v}  # Remove 'v' prefix
           echo "Setting package version to $VERSION"
-          pnpm version $VERSION --no-git-tag-version
+          npm version $VERSION --no-git-tag-version
 
       - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm publish --provenance --access public --no-git-checks
+        run: npm publish --provenance --access public
