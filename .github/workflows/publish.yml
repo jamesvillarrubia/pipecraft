@@ -48,14 +48,19 @@ jobs:
           # Use npm pkg to set version without modifying lockfiles
           npm pkg set version=$VERSION
 
-      - name: Debug npm config
+      - name: Debug npm whoami
         run: |
-          echo "=== .npmrc contents ==="
-          cat ~/.npmrc || echo "No .npmrc in home directory"
-          echo "=== npm config list ==="
-          npm config list
-          echo "=== Current directory .npmrc ==="
-          cat .npmrc 2>/dev/null || echo "No .npmrc in current directory"
+          echo "=== Checking npm authentication ==="
+          npm whoami || echo "Not authenticated"
+          echo "=== Environment variables ==="
+          env | grep -i npm || true
+          env | grep -i node || true
+          echo "=== Registry info ==="
+          npm config get registry
 
-      - name: Publish to npm
-        run: npm publish --provenance --access public
+      - name: Publish to npm with verbose logging
+        run: |
+          echo "=== Starting publish with maximum verbosity ==="
+          npm publish --provenance --access public --loglevel silly 2>&1 | tee npm-publish.log || true
+          echo "=== Publish exit code: $? ==="
+          echo "=== Full log above ==="
