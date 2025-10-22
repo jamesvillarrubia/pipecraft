@@ -42,6 +42,12 @@ jobs:
       - name: Build package
         run: pnpm run build
 
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+
+      - name: Check npm version
+        run: npm --version
+
       - name: Set package version
         run: |
           TAG=${{ github.event.release.tag_name || inputs.tag }}
