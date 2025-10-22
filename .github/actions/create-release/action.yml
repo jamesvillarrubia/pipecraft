@@ -53,10 +53,7 @@ runs:
         fi
 
         # Create release with notes
-        RELEASE_OUTPUT=$(gh release create "$VERSION" \
-          --title "Release $VERSION" \
-          --notes "$RELEASE_NOTES" \
-          --latest 2>&1)
+        RELEASE_OUTPUT=$(gh release create "$VERSION" \--title "Release $VERSION" \--notes "$RELEASE_NOTES" \--latest 2>&1)
 
         RELEASE_EXIT_CODE=$?
 

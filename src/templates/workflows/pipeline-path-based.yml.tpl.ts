@@ -102,9 +102,9 @@ const getPipecraftOwnedJobs = (branchFlow: string[], domains: Record<string, any
   // Add domain-based jobs (test-*, deploy-*, remote-test-*) based on flags
   Object.keys(domains).forEach(domain => {
     const domainConfig = domains[domain]
-    if (domainConfig.test !== false) jobs.add(`test-${domain}`)
-    if (domainConfig.deploy === true) jobs.add(`deploy-${domain}`)
-    if (domainConfig.remoteTest === true) jobs.add(`remote-test-${domain}`)
+    if (domainConfig.testable !== false) jobs.add(`test-${domain}`)
+    if (domainConfig.deployable === true) jobs.add(`deploy-${domain}`)
+    if (domainConfig.remoteTestable === true) jobs.add(`remote-test-${domain}`)
   })
 
   return jobs
@@ -365,8 +365,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
     // Using 'preserve' operation to keep any existing user jobs while providing
     // template structure and examples for new users.
 
-    // Generate test jobs for each domain (only if test: true)
-    ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => ({
+    // Generate test jobs for each domain (only if testable: true)
+    ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].testable !== false).map((domain: string) => ({
       path: `jobs.test-${domain}`,
       operation: 'preserve' as const,
       value: createValueFromString(`
@@ -404,8 +404,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
          Only runs on push events (skipped on pull requests).
       `,
       value: createValueFromString(`
-        if: \${{ always() && github.event_name != 'pull_request' && (${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result == 'success'`).join(' || ')}) && ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' && ')} }}
-        needs: [ changes, ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].test !== false).map((domain: string) => `test-${domain}`).join(', ')} ]
+        if: \${{ always() && github.event_name != 'pull_request' && (${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].testable !== false).map((domain: string) => `needs.test-${domain}.result == 'success'`).join(' || ')}) && ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].testable !== false).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' && ')} }}
+        needs: [ changes, ${Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].testable !== false).map((domain: string) => `test-${domain}`).join(', ')} ]
         runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@v4
@@ -423,8 +423,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       spaceBefore: true,
     },
     
-    // Generate deployment jobs for each domain (only if deploy: true)
-    ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].deploy === true).map((domain: string, index: number) => ({
+    // Generate deployment jobs for each domain (only if deployable: true)
+    ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].deployable === true).map((domain: string, index: number) => ({
       path: `jobs.deploy-${domain}`,
       operation: 'overwrite' as const,
       commentBefore: index === 0 ? dedent`
@@ -449,8 +449,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       required: true
     })),
 
-    // Generate remote testing jobs for each domain (only if remoteTest: true)
-    ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].remoteTest === true).map((domain: string, index: number) => ({
+    // Generate remote testing jobs for each domain (only if remoteTestable: true)
+    ...Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].remoteTestable === true).map((domain: string, index: number) => ({
       path: `jobs.remote-test-${domain}`,
       operation: 'overwrite' as const,
       commentBefore: index === 0 ? dedent`
@@ -481,8 +481,8 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
       operation: 'overwrite',
       value: (() => {
         // Build list of deploy and remote-test jobs that tag depends on
-        const deployJobs = Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].deploy === true).map((domain: string) => `deploy-${domain}`)
-        const remoteTestJobs = Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].remoteTest === true).map((domain: string) => `remote-test-${domain}`)
+        const deployJobs = Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].deployable === true).map((domain: string) => `deploy-${domain}`)
+        const remoteTestJobs = Object.keys(ctx.domains || {}).sort().filter((domain: string) => ctx.domains[domain].remoteTestable === true).map((domain: string) => `remote-test-${domain}`)
         const allDeployTestJobs = [...deployJobs, ...remoteTestJobs]
 
         // Build needs array (version + all deploy/remote-test jobs)
@@ -746,7 +746,7 @@ ${Object.keys(ctx.domains || {}).sort().map((domain: string) => `          ${dom
  Running 'pipecraft generate' updates managed sections while preserving
  your customizations in test/deploy/remote-test jobs.
 
- 📖 Learn more: https://docs.pipecraft.dev
+ 📖 Learn more: https://pipecraft.thecraftlab.dev
 =============================================================================`
     ;(doc as any).commentBefore = pipecraftHeader
   }

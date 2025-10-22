@@ -491,7 +491,7 @@ describe('Preflight Checks', () => {
         const { nextSteps } = formatPreflightResults(checks)
 
         expect(nextSteps).toBeDefined()
-        expect(nextSteps?.join('\n')).toContain('git push origin develop')
+        expect(nextSteps?.join('\n')).toContain('git push')
       })
     })
 

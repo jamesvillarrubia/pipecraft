@@ -7,10 +7,6 @@ inputs:
     description: 'Base reference for version calculation'
     required: false
     default: 'main'
-  commitSha:
-    description: 'Specific commit SHA to checkout and calculate version for (prevents race conditions)'
-    required: false
-    default: ''
 
 outputs:
   version:
@@ -23,7 +19,6 @@ runs:
     - name: Checkout Code
       uses: actions/checkout@v4
       with:
-        ref: ${{ inputs.commitSha || github.sha }}
         fetch-depth: 0
 
     - name: Install Node.js

@@ -879,11 +879,11 @@ export function displaySettingsComparison(
     const gap = hasGap(key)
 
     if (gap) {
-      console.log(`   ${label}:`)
-      console.log(`      Current:     ${currentVal}`)
-      console.log(`      Recommended: ${recommendedVal} ⚠️`)
+      console.log(`   • ${label}`)
+      console.log(`       Current:     ${currentVal}`)
+      console.log(`       Recommended: ${recommendedVal} ⚠️`)
     } else {
-      console.log(`   ${label}: ${currentVal} ✅`)
+      console.log(`   • ${label}: ${currentVal} ✅`)
     }
   })
 
@@ -900,13 +900,13 @@ export function displaySettingsComparison(
       const config = loadConfig('.pipecraftrc.json') as PipecraftConfig
       if (config.autoMerge) {
         console.log('\n📋 Auto-Merge Branch Configuration:')
-        console.log('   (Repository-level allow_auto_merge must be ON for these to work)\n')
+        console.log('   ℹ️  Repository-level allow_auto_merge must be ON for these to work\n')
 
         if (typeof config.autoMerge === 'boolean') {
           if (config.autoMerge) {
-            console.log('   All branches: Auto-merge ENABLED')
+            console.log('   • All branches: Auto-merge ENABLED ✅')
           } else {
-            console.log('   All branches: Auto-merge DISABLED')
+            console.log('   • All branches: Auto-merge DISABLED')
           }
         } else if (typeof config.autoMerge === 'object') {
           const branches = config.branchFlow || []
@@ -914,17 +914,20 @@ export function displaySettingsComparison(
           branches.forEach(branch => {
             const enabled = autoMergeConfig[branch]
             if (enabled === true) {
-              console.log(`   ${branch}: Auto-merge ENABLED ✅`)
+              console.log(`   • ${branch}:`)
+              console.log(`       Status: Auto-merge ENABLED ✅`)
             } else if (enabled === false) {
-              console.log(`   ${branch}: Auto-merge DISABLED (manual review required)`)
+              console.log(`   • ${branch}:`)
+              console.log(`       Status: Auto-merge DISABLED (manual review required)`)
             } else {
-              console.log(`   ${branch}: Auto-merge not configured (manual review required)`)
+              console.log(`   • ${branch}:`)
+              console.log(`       Status: Not configured (manual review required)`)
             }
           })
         }
 
-        console.log('\n   ℹ️  Auto-merge means PRs will automatically merge when all checks pass.')
-        console.log('   ℹ️  Branches without auto-merge require manual approval and merge.')
+        console.log('\n   ℹ️  Auto-merge means PRs will automatically merge when all checks pass')
+        console.log('   ℹ️  Branches without auto-merge require manual approval and merge')
       }
     } catch (error) {
       // Config file not found or invalid - skip branch config display
@@ -1160,7 +1163,9 @@ export async function configureBranchProtection(
             await updateBranchProtection(repoInfo.owner, repoInfo.repo, branch, token)
             console.log(`✅ Branch protection enabled for ${branch}`)
           } else {
-            console.log(`⚠️  Skipped ${branch} - auto-merge will not work without branch protection`)
+            console.log(`⚠️  Skipped ${branch}:`)
+            console.log(`     • Auto-merge will not work without branch protection`)
+            console.log(`     • Run 'pipecraft setup-github' again to enable it`)
           }
         }
       } else {
@@ -1232,8 +1237,10 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
       permissionsAlreadyCorrect = true
     } else if (changes === 'declined') {
       console.log('\n⚠️  Setup incomplete - permissions were not updated')
-      console.log('💡 You can run this command again anytime or update permissions manually at:')
-      console.log(`   https://github.com/${repoInfo.owner}/${repoInfo.repo}/settings/actions`)
+      console.log('\n📍 To update manually:')
+      console.log(`   1. Visit: ${repoInfo.owner}/${repoInfo.repo}/settings/actions`)
+      console.log(`   2. Enable write permissions and PR creation`)
+      console.log(`   3. Or run 'pipecraft setup-github' again to auto-apply`)
       // Still continue to check branch protection
       permissionsAlreadyCorrect = true
     }
@@ -1294,20 +1301,27 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
         console.log('✅ Repository settings updated successfully!')
       } else {
         console.log('\n⚠️  Repository settings were not updated')
-        console.log('💡 You can update them manually at:')
-        console.log(`   https://github.com/${repoInfo.owner}/${repoInfo.repo}/settings`)
+        console.log('\n📍 To update manually:')
+        console.log(`   1. Visit: ${repoInfo.owner}/${repoInfo.repo}/settings`)
+        console.log(`   2. Apply the recommended changes listed above`)
+        console.log(`   3. Or run 'pipecraft setup-github' again to auto-apply`)
       }
     }
   } catch (error: any) {
     console.error(`⚠️  Could not configure repository settings: ${error.message}`)
-    console.log('💡 You can update them manually at:')
-    console.log(`   https://github.com/${repoInfo.owner}/${repoInfo.repo}/settings`)
+    console.log('\n📍 To update manually:')
+    console.log(`   • Visit: ${repoInfo.owner}/${repoInfo.repo}/settings`)
+    console.log(`   • Check the documentation for recommended settings`)
   }
 
   // Configure branch protection for auto-merge
   await configureBranchProtection(repoInfo, token, autoApply)
 
   console.log('\n✨ Setup complete!')
-  console.log('\n💡 You can verify the changes at:')
-  console.log(`   https://github.com/${repoInfo.owner}/${repoInfo.repo}/settings/actions`)
+  console.log('\n📍 Next Steps:')
+  console.log(`   1. Verify workflow permissions:`)
+  console.log(`      ${repoInfo.owner}/${repoInfo.repo}/settings/actions`)
+  console.log(`   2. Verify repository settings:`)
+  console.log(`      ${repoInfo.owner}/${repoInfo.repo}/settings`)
+  console.log(`   3. Run 'pipecraft edit' to create your first release`)
 }
