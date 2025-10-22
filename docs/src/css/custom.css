@@ -138,6 +138,14 @@
   --ifm-footer-link-hover-color: var(--ifm-color-primary-light);
 }
 
+/* Logo scaling and cropping */
+.navbar__logo img {
+  transform: scale(1.2);
+  object-fit: cover;
+  object-position: center;
+  margin: -8px -12px;
+}
+
 /* Custom styling for better visual hierarchy */
 .navbar__title {
   font-weight: 600;

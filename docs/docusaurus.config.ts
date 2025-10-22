@@ -93,7 +93,7 @@ const config: Config = {
       title: 'PipeCraft',
       logo: {
         alt: 'PipeCraft Logo',
-        src: 'logo.svg',
+        src: '/img/logo.png',
       },
       items: [
         {
