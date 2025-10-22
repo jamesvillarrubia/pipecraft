@@ -19,7 +19,6 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: npm  # CRITICAL: npm environment for OIDC
     steps:
       - uses: actions/checkout@v4
         with:
