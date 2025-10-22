@@ -11,12 +11,48 @@ const config: Config = {
     v4: true,
   },
 
-  // GitHub Pages configuration
-  url: 'https://jamesvillarrubia.github.io',
-  baseUrl: '/pipecraft/',
+  // Documentation site configuration
+  url: 'https://pipecraft.thecraftlab.dev',
+  baseUrl: '/',
 
   organizationName: 'jamesvillarrubia',
   projectName: 'pipecraft',
+
+  headTags: [
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'apple-touch-icon',
+        sizes: '180x180',
+        href: '/img/apple-touch-icon.png',
+      },
+    },
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '32x32',
+        href: '/img/favicon-32x32.png',
+      },
+    },
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '16x16',
+        href: '/img/favicon-16x16.png',
+      },
+    },
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'manifest',
+        href: '/site.webmanifest',
+      },
+    },
+  ],
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -47,7 +83,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/pipecraft-social-card.jpg',
+    image: 'img/logo_banner.png',
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,
@@ -57,7 +93,7 @@ const config: Config = {
       title: 'PipeCraft',
       logo: {
         alt: 'PipeCraft Logo',
-        src: 'img/logo.svg',
+        src: 'img/logo_square.png',
       },
       items: [
         {
@@ -89,12 +125,12 @@ const config: Config = {
               to: '/docs/intro',
             },
             {
-              label: 'Architecture',
-              to: '/docs/architecture',
+              label: 'CLI Reference',
+              to: '/docs/cli-reference',
             },
             {
-              label: 'Testing Guide',
-              to: '/docs/testing-guide',
+              label: 'Architecture',
+              to: '/docs/architecture',
             },
           ],
         },

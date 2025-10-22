@@ -1,7 +1,7 @@
 {
   "name": "pipecraft",
   "version": "0.0.0-releaseit",
-  "description": "CLI tool for managing trunk-based development workflows",
+  "description": "Automated CI/CD pipeline generator for trunk-based development. Generates intelligent GitHub Actions workflows with domain-based change detection, semantic versioning, and branch flow management. Full documentation: https://pipecraft.thecraftlab.dev",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -15,6 +15,24 @@
     "type": "git",
     "url": "https://github.com/jamesvillarrubia/pipecraft.git"
   },
+  "homepage": "https://pipecraft.thecraftlab.dev",
+  "bugs": {
+    "url": "https://github.com/jamesvillarrubia/pipecraft/issues"
+  },
+  "keywords": [
+    "ci-cd",
+    "github-actions",
+    "trunk-based-development",
+    "pipeline",
+    "workflow",
+    "monorepo",
+    "semantic-versioning",
+    "automation",
+    "devops",
+    "continuous-integration",
+    "continuous-deployment",
+    "workflow-generator"
+  ],
   "publishConfig": {
     "access": "public"
   },

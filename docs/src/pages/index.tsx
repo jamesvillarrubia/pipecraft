@@ -3,19 +3,32 @@ import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
-import Heading from '@theme/Heading';
 
 import styles from './index.module.css';
 
 function HomepageHeader() {
-  const {siteConfig} = useDocusaurusContext();
   return (
-    <header className={clsx('hero hero--primary', styles.heroBanner)}>
+    <header className={clsx('hero', styles.heroBanner)}>
       <div className="container">
-        <Heading as="h1" className="hero__title">
-          {siteConfig.title}
-        </Heading>
-        <p className="hero__subtitle">{siteConfig.tagline}</p>
+        <div style={{
+          maxWidth: '800px',
+          width: '100%',
+          margin: '0 auto 2rem',
+          overflow: 'hidden',
+          height: '200px',
+          display: 'flex',
+          alignItems: 'center'
+        }}>
+          <img
+            src="https://raw.githubusercontent.com/jamesvillarrubia/pipecraft/main/assets/logo_banner.png"
+            alt="PipeCraft"
+            style={{
+              width: '100%',
+              transform: 'scale(1.43)',
+              objectFit: 'cover'
+            }}
+          />
+        </div>
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
