@@ -9,6 +9,7 @@
   },
   "files": [
     "dist",
+    "src/generators",
     "README.md"
   ],
   "repository": {
