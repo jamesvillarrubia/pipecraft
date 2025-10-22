@@ -23,6 +23,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
         with:
@@ -48,15 +49,24 @@ jobs:
           # Use npm pkg to set version without modifying lockfiles
           npm pkg set version=$VERSION
 
-      - name: Debug npm whoami
+      - name: Debug OIDC and npm context
         run: |
-          echo "=== Checking npm authentication ==="
-          npm whoami || echo "Not authenticated"
-          echo "=== Environment variables ==="
-          env | grep -i npm || true
-          env | grep -i node || true
+          echo "=== GitHub Context ==="
+          echo "Event name: ${{ github.event_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Actor: ${{ github.actor }}"
+          echo ""
+          echo "=== Checking npm authentication (expected to fail - OIDC only works during publish) ==="
+          npm whoami || echo "Not authenticated (this is normal with OIDC)"
+          echo ""
           echo "=== Registry info ==="
           npm config get registry
+          echo ""
+          echo "=== OIDC Token Info ==="
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL: ${ACTIONS_ID_TOKEN_REQUEST_URL:-not set}"
+          echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+SET}"
 
       - name: Publish to npm with verbose logging
         run: |
