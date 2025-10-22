@@ -58,6 +58,4 @@ jobs:
           cat .npmrc 2>/dev/null || echo "No .npmrc in current directory"
 
       - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --provenance --access public
