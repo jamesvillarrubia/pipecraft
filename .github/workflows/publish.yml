@@ -68,9 +68,36 @@ jobs:
           echo "ACTIONS_ID_TOKEN_REQUEST_URL: ${ACTIONS_ID_TOKEN_REQUEST_URL:-not set}"
           echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+SET}"
 
-      - name: Publish to npm with verbose logging
+      - name: Test npm logout/login cycle
         run: |
-          echo "=== Starting publish with maximum verbosity ==="
-          npm publish --provenance --access public --loglevel silly 2>&1 | tee npm-publish.log || true
-          echo "=== Publish exit code: $? ==="
-          echo "=== Full log above ==="
+          echo "=== Attempting npm logout ==="
+          npm logout || echo "Logout failed or not logged in"
+          echo "=== Attempting npm login (will fail without token, but tests auth flow) ==="
+          npm whoami || echo "Not authenticated (expected with OIDC)"
+
+      - name: Publish WITHOUT provenance (test basic OIDC auth first)
+        continue-on-error: true
+        id: publish_no_provenance
+        run: |
+          echo "=== Attempt 1: Publishing WITHOUT --provenance flag ==="
+          npm publish --access public --loglevel silly 2>&1 | tee npm-publish-no-provenance.log
+        shell: bash
+
+      - name: Check for 403 vs 404 errors
+        if: always()
+        run: |
+          if [ -f npm-publish-no-provenance.log ]; then
+            echo "=== Checking for 403 errors (npm sometimes mislabels auth errors as 404) ==="
+            grep -E "http.*403|403.*Forbidden" npm-publish-no-provenance.log && echo "Found 403 error!" || echo "No 403 found"
+            grep -E "http.*404|404.*Not.*Found" npm-publish-no-provenance.log && echo "Found 404 error!" || echo "No 404 found"
+            echo ""
+            echo "=== Last 20 lines of log ==="
+            tail -20 npm-publish-no-provenance.log
+          fi
+
+      - name: Publish WITH provenance (if first attempt failed)
+        if: steps.publish_no_provenance.outcome == 'failure'
+        run: |
+          echo "=== Attempt 2: Publishing WITH --provenance flag ==="
+          npm publish --provenance --access public --loglevel silly 2>&1 | tee npm-publish-with-provenance.log
+        shell: bash
