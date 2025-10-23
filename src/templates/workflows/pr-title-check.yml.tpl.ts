@@ -52,16 +52,16 @@ import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
  */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
-    .then(renderTemplate(
-      (ctx: any) => {
-        const { requireConventionalCommits = true } = ctx
-        
-        // Only generate if conventional commits are required
-        if (!requireConventionalCommits) {
-          return null
-        }
-        
-        return `name: "PR Title Format Check"
+    .then((ctx) => {
+      const { requireConventionalCommits = true } = ctx as any
+      
+      // Only generate if conventional commits are required
+      if (!requireConventionalCommits) {
+        return ctx
+      }
+      
+      return renderTemplate(
+        (ctx: any) => `name: "PR Title Format Check"
 
 on:
   pull_request:
@@ -124,7 +124,7 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v2
         with:   
           header: pr-title-lint-error
-          delete: true`
-      },
-      toFile('.github/workflows/pr-title-check.yml')
-    ))
+          delete: true`,
+        toFile('.github/workflows/pr-title-check.yml')
+      )(ctx)
+    })
