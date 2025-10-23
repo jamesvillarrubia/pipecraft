@@ -12,7 +12,7 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
 
 ### For New Users
 1. **[Main README](https://github.com/jamesvillarrubia/pipecraft#readme)** - Start here! Installation, quick start, and basic usage
-2. **[Current Trunk Flow](./trunk-flow.md)** - Understand how the trunk-based workflow works
+2. **[Current Trunk Flow](./flows/trunk-flow)** - Understand how the trunk-based workflow works
 3. **[Examples](https://github.com/jamesvillarrubia/pipecraft/tree/main/examples)** - Example configurations for different use cases
    - `basic-config.json` - Simple single-repo configuration
    - `monorepo-config.json` - Multi-domain monorepo configuration
@@ -29,7 +29,7 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
 ## 📖 User Documentation
 
 ### Core Concepts
-- **[Current Trunk Flow](./trunk-flow.md)** - The ONE currently implemented workflow pattern
+- **[Current Trunk Flow](./flows/trunk-flow)** - The ONE currently implemented workflow pattern
   - How promotions work (develop → staging → main)
   - Auto-merge configuration
   - Domain-based testing
@@ -118,7 +118,7 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
 | Document | Purpose | Audience |
 |----------|---------|----------|
 | [Main README](https://github.com/jamesvillarrubia/pipecraft#readme) | Installation, quick start, usage | All users |
-| [Current Trunk Flow](./trunk-flow.md) | Current implementation details | Users, contributors |
+| [Current Trunk Flow](./flows/trunk-flow) | Current implementation details | Users, contributors |
 | [Error Handling](./error-handling.md) | Troubleshooting guide | Users |
 | [Examples](https://github.com/jamesvillarrubia/pipecraft/tree/main/examples) | Configuration examples | Users |
 
@@ -144,7 +144,7 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
 
 **Use PipeCraft**
 → Start with [Main README](https://github.com/jamesvillarrubia/pipecraft#readme)
-→ Then read [Current Trunk Flow](./trunk-flow.md)
+→ Then read [Current Trunk Flow](./flows/trunk-flow)
 → Check [Examples](https://github.com/jamesvillarrubia/pipecraft/tree/main/examples) for your use case
 
 **Troubleshoot an error**
@@ -154,7 +154,7 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
 
 **Understand how PipeCraft works**
 → Read [Architecture](./architecture.md)
-→ Read [Current Trunk Flow](./trunk-flow.md)
+→ Read [Current Trunk Flow](./flows/trunk-flow)
 → Study [AST Operations](https://github.com/jamesvillarrubia/pipecraft/blob/main/docs/AST_OPERATIONS.md) for template internals
 
 **Contribute code**
