@@ -182,12 +182,56 @@ jobs:
     needs: [ version, changes ]
     if: ${{ always() && needs.version.result == 'success' && needs.changes.outputs.docs == 'true' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy docs
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
         run: |
-          echo "Deploying docs"
-          echo "Replace this with your actual deploy commands"
-          # Example: npm deploy -- --testPathPattern=docs
+          pnpm install --frozen-lockfile
+          cd docs && pnpm install --frozen-lockfile
+
+      - name: Build TypeScript
+        run: pnpm run build
+
+      - name: Generate API Documentation
+        run: cd docs && pnpm run typedoc
+
+      - name: Build Docusaurus site
+        run: cd docs && pnpm run build
+        env:
+          NODE_ENV: production
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   #=============================================================================
   # TAG & PROMOTE (⚠️  Managed by Pipecraft - do not modify)
