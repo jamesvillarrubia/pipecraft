@@ -1,4 +1,21 @@
+const DEFAULT_PREFIXES = {
+  test: 'ignore',
+  build: 'ignore',
+
+  ci: 'patch',
+  docs: 'patch',
+  chore: 'minor',
+  style: 'patch',
+  fix: 'patch',
+  perf: 'patch',
+  refactor: 'patch',
+
+  feat: 'minor',
+  major: 'major',
+}
+
 module.exports = {
+    DEFAULT_PREFIXES,
     "git": {
       "requireCleanWorkingDir": false,
       "commit": false,
@@ -22,21 +39,7 @@ module.exports = {
     "plugins": {
       "@release-it/conventional-changelog": {
         "whatBump": (commits,options)=>{
-            let defaults = {
-              test: 'ignore',
-              build: 'ignore',
-
-              ci: 'patch',
-              docs: 'patch',
-              chore: 'minor',
-              style: 'patch',
-              fix: 'patch',
-              perf: 'patch',
-              refactor: 'patch',
-
-              feat: 'minor',
-              major: 'major',
-            }
+            let defaults = DEFAULT_PREFIXES;
    
             let types = (options?.preset?.types || [])
             .reduce((a, v) => {

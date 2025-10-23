@@ -24,4 +24,3 @@ jobs:
         if: github.base_ref == 'develop'
         run: |
           echo "✅ PR correctly targets 'develop' branch"
-
