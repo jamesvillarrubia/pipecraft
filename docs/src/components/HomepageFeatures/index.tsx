@@ -26,7 +26,7 @@ const FeatureList: FeatureItem[] = [
     description: (
       <>
         Generated workflows live in your repository. Customize freely—add deployments,
-        integrate tools, modify jobs. It's your code, not a black box.
+        integrate tools, modify jobs. It&apos;s your code, not a black box.
       </>
     ),
   },
