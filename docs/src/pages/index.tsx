@@ -20,11 +20,11 @@ function HomepageHeader() {
           alignItems: 'center'
         }}>
           <img
-            src="https://raw.githubusercontent.com/jamesvillarrubia/pipecraft/main/assets/logo_banner.png"
+            src="/img/logo_banner_trans.png"
             alt="PipeCraft"
             style={{
               width: '100%',
-              transform: 'scale(1.43)',
+              transform: 'scale(1.3)',
               objectFit: 'cover'
             }}
           />

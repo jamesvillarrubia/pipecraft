@@ -42,3 +42,69 @@
   line-height: 1.8;
   color: var(--ifm-color-content);
 }
+
+/* Banner container for theme-based display */
+.bannerContainer {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto 2rem;
+  overflow: hidden;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* Light theme banner (default) */
+.lightBanner {
+  width: 100%;
+  transform: scale(1.3);
+  object-fit: cover;
+  display: block;
+}
+
+/* Dark theme banner */
+.darkBanner {
+  width: 100%;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 12px;
+  border: 2px solid #334155;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.darkBannerContent {
+  text-align: center;
+  color: #f1f5f9;
+}
+
+.darkBannerTitle {
+  font-size: 3rem;
+  font-weight: bold;
+  margin: 0 0 0.5rem 0;
+  background: linear-gradient(135deg, #9d62b7 0%, #5ed181 50%, #f2e275 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.darkBannerSubtitle {
+  font-size: 1.2rem;
+  margin: 0;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Hide light banner in dark mode, show dark banner */
+[data-theme='dark'] .lightBanner {
+  display: none;
+}
+
+[data-theme='dark'] .darkBanner {
+  display: flex;
+}

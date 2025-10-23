@@ -77,7 +77,7 @@
 /* Dark theme - Adjusted for readability */
 [data-theme='dark'] {
   /* Override base colors with brighter versions for better contrast on dark backgrounds */
-  --color-primary-base: #9d62b7;    /* Brighter purple */
+  --color-primary-base: #c97bf0;    /* Brighter purple */
   --color-secondary-base: #5ed181;  /* Brighter green */
   --color-info-base: #f2e275;       /* Brighter gold */
 
@@ -146,6 +146,13 @@
   margin: 0px 0px 0px 0px;
   padding-right: 10px;
   padding-left: 10px;
+
+}
+[data-theme='dark'] .navbar__logo img {
+  filter: brightness(1.5);
+}
+[data-theme='dark'] .hero img {
+  filter: brightness(1.5);
 }
 
 /* Custom styling for better visual hierarchy */
