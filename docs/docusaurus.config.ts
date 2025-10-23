@@ -6,6 +6,8 @@ const config: Config = {
   title: 'PipeCraft',
   tagline: 'Automated CI/CD Pipeline Generator for Trunk-Based Development',
   favicon: 'img/favicon.ico',
+  
+  // Test deployment trigger - small change to docs
 
   future: {
     v4: true,
