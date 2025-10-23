@@ -57,6 +57,8 @@ import { generate as generateBranchWorkflow } from '../templates/actions/manage-
 import { generate as generatePromoteBranchWorkflow } from '../templates/actions/promote-branch.yml.tpl.js'
 import { generate as generateReleaseWorkflow } from '../templates/actions/create-release.yml.tpl.js'
 import { generate as generatePathBasedPipeline } from '../templates/workflows/pipeline-path-based.yml.tpl.js'
+import { generate as generateEnforcePRTarget } from '../templates/workflows/enforce-pr-target.yml.tpl.js'
+import { generate as generatePRTitleCheck } from '../templates/workflows/pr-title-check.yml.tpl.js'
 import { generate as generateReleaseItConfig } from '../templates/release-it.cjs.tpl.js'
 
 /**
@@ -170,6 +172,14 @@ export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPip
     .then((ctx) => {
       // Generate the main pipeline
       return generatePathBasedPipeline(ctx)
+    })
+    .then((ctx) => {
+      // Generate the enforce PR target workflow
+      return generateEnforcePRTarget(ctx)
+    })
+    .then((ctx) => {
+      // Generate the PR title check workflow
+      return generatePRTitleCheck(ctx)
     })
     .then((ctx) => {
       logger.success('✅ Generated workflows in: .github/workflows')

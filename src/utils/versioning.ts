@@ -98,19 +98,9 @@ export class VersionManager {
       plugins: {
         "@release-it/conventional-changelog": {
           whatBump: (commits: any[], options: any) => {
-            const defaults = {
-              test: 'ignore',
-              build: 'ignore',
-              ci: 'patch',
-              docs: 'patch',
-              chore: 'minor',
-              style: 'patch',
-              fix: 'patch',
-              perf: 'patch',
-              refactor: 'patch',
-              feat: 'minor',
-              major: 'major',
-            }
+            // Import DEFAULT_PREFIXES from the release-it config
+            const { DEFAULT_PREFIXES } = require('../../.release-it.cjs')
+            const defaults = DEFAULT_PREFIXES
 
             // Merge with user-defined bump rules
             const bumpRules = { ...defaults, ...this.config.versioning?.bumpRules }

@@ -24,7 +24,7 @@
 # 📖 Learn more: https://pipecraft.thecraftlab.dev
 #=============================================================================
 
-name: Pipeline
+name: "Pipeline"
 
 run-name: "${{ github.event_name == 'pull_request' && !contains('develop,staging,main', github.head_ref) && github.event.pull_request.title || github.ref_name }} #${{ inputs.run_number || github.run_number }}${{ inputs.version && format(' - {0}', inputs.version) || '' }}"
 
@@ -79,6 +79,7 @@ on:
       - develop
 
 jobs:
+
   #=============================================================================
   # CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
   #=============================================================================
@@ -99,14 +100,11 @@ jobs:
       docs: ${{ steps.detect.outputs.docs }}
 
   #=============================================================================
-  # TESTING JOBS
+  # TESTING JOBS (✅ Customize these with your test logic)
   #=============================================================================
+  # These jobs run tests for each domain when changes are detected.
+  # Replace the TODO comments with your actual test commands.
   test-cicd:
-    #=============================================================================
-    # TESTING JOBS (✅ Customize these with your test logic)
-    #=============================================================================
-    # These jobs run tests for each domain when changes are detected.
-    # Replace the TODO comments with your actual test commands.
     needs: changes
     if: ${{ needs.changes.outputs.cicd == 'true' }}
     runs-on: ubuntu-latest
@@ -148,7 +146,8 @@ jobs:
   # Calculates the next version based on conventional commits and semver rules.
   # Only runs on push events (skipped on pull requests).
   version:
-
+    # Requires all tests to succeed or be skipped
+    # Requires at least one domain to succeed
     if: ${{
         always() &&
         github.event_name != 'pull_request' &&
@@ -175,19 +174,73 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
 
+
   #=============================================================================
-  # DEPLOYMENT JOBS
+  # DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
   #=============================================================================
+  # These jobs deploy each domain when changes are detected and tests pass.
+  # Replace the TODO comments with your actual deployment commands.
+
   deploy-docs:
     needs: [ version, changes ]
-    if: ${{ always() && needs.version.result == 'success' && needs.changes.outputs.docs == 'true' }}
+    if: ${{
+        always() &&
+        needs.version.result == 'success' &&
+        needs.changes.outputs.docs == 'true' &&
+        github.ref_name == 'main'
+      }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy docs
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
         run: |
-          echo "Deploying docs"
-          echo "Replace this with your actual deploy commands"
-          # Example: npm deploy -- --testPathPattern=docs
+          pnpm install --frozen-lockfile
+          cd docs && pnpm install --frozen-lockfile
+
+      - name: Build TypeScript
+        run: pnpm run build
+
+      - name: Generate API Documentation
+        run: cd docs && pnpm run typedoc
+
+      - name: Build Docusaurus site
+        run: cd docs && pnpm run build
+        env:
+          NODE_ENV: production
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
 
   #=============================================================================
   # TAG & PROMOTE (⚠️  Managed by Pipecraft - do not modify)
@@ -195,26 +248,21 @@ jobs:
   # Creates a git tag with the calculated version on the initial branch.
   # Only runs on push events after successful tests and deployments.
   tag:
-
     # Needs all deploy and/or remote test jobs to succeed or be skipped
     # Needs at least one domain to succeed
-    needs: [ version, deploy-core, deploy-docs, remote-test-core ]
+    needs: [ version, deploy-docs ]
     if: ${{
         always() &&
         github.event_name != 'pull_request' &&
         github.ref_name == 'develop' &&
         needs.version.result == 'success' &&
-        needs.version.outputs.version != '' &&
+        needs.version.outputs.version != '' &&  
         (
-        needs.deploy-core.result != 'failure' &&
-        needs.deploy-docs.result != 'failure' &&
-        needs.remote-test-core.result != 'failure'
-      ) &&
+          needs.deploy-docs.result != 'failure'
+        ) &&
         (
-        needs.deploy-core.result == 'success' ||
-        needs.deploy-docs.result == 'success' ||
-        needs.remote-test-core.result == 'success'
-      )
+          needs.deploy-docs.result == 'success'
+        )
       }}
     runs-on: ubuntu-latest
     steps:
@@ -298,46 +346,3 @@ jobs:
         with:
           version: ${{ needs.version.outputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
-
-  #=============================================================================
-  # DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
-  #=============================================================================
-  # These jobs deploy each domain when changes are detected and tests pass.
-  # Replace the TODO comments with your actual deployment commands.
-  deploy-core:
-
-    #=============================================================================
-    # DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
-    #=============================================================================
-    # These jobs deploy each domain when changes are detected and tests pass.
-    # Replace the TODO comments with your actual deployment commands.
-    needs: [ version, changes ]
-    if: ${{ always() && needs.version.result == 'success' && needs.changes.outputs.core == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy core
-        run: |
-          echo "Deploying core"
-          echo "Replace this with your actual deploy commands"
-          # Example: npm deploy -- --testPathPattern=core
-
-  #=============================================================================
-  # REMOTE TESTING JOBS
-  #=============================================================================
-  remote-test-core:
-
-    #=============================================================================
-    # REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
-    #=============================================================================
-    # These jobs test deployed services remotely after deployment succeeds.
-    # Replace the TODO comments with your actual remote testing commands.
-    needs: [ deploy-core, changes ]
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Test core
-        if: ${{ needs.changes.outputs.core == 'true' && needs.deploy-core.result == 'success' }}
-        run: |
-          echo "Testing core remotely"
-          echo "Replace this with your actual test commands"
-          # Example: npm test -- --testPathPattern=core
