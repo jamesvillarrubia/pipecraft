@@ -43,12 +43,9 @@ Thumbs.db
 
 # PipeCraft test output
 .test-output/
-TEST-REPORT.md
-DIFF-REPORT.md
 
-# NOTE: For testing purposes, we ALLOW PipeCraft generated files
-# In a real project, you would typically gitignore these:
-# .pipecraftrc.json
-# .pipecraft-cache.json
-# .github/
-# .release-it.cjs
+# PipeCraft generated files
+.pipecraftrc.json
+.pipecraft-cache.json
+.github/
+release-it.cjs
