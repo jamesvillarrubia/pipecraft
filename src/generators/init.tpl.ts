@@ -29,7 +29,7 @@
  */
 
 import { PinionContext, toFile, renderTemplate, prompt, when, writeJSON } from '@featherscloud/pinion'
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { IdempotencyManager } from '../utils/idempotency.js'
 import { VersionManager } from '../utils/versioning.js'
 import { PipecraftConfig } from '../types/index.js'
@@ -224,12 +224,42 @@ export const generate = (ctx: PinionContext) =>
       let nxConfig = undefined
 
       if (existsSync(nxJsonPath)) {
-        console.log('✅ Nx workspace detected - enabling Nx integration')
-        nxConfig = {
-          enabled: true,
-          tasks: ['lint', 'test', 'build', 'integration-test'],
-          baseRef: 'origin/main',
-          enableCache: true
+        try {
+          const nxJsonContent = readFileSync(nxJsonPath, 'utf8')
+          const nxJson = JSON.parse(nxJsonContent)
+
+          // Extract tasks from targetDefaults
+          const tasks = nxJson.targetDefaults ? Object.keys(nxJson.targetDefaults) : []
+
+          // Sort tasks in a logical order (quality → test → build → e2e)
+          const taskOrder = ['lint', 'typecheck', 'test', 'unit-test', 'build', 'integration-test', 'e2e', 'e2e-ci']
+          const sortedTasks = tasks.sort((a, b) => {
+            const aIdx = taskOrder.indexOf(a)
+            const bIdx = taskOrder.indexOf(b)
+            if (aIdx === -1 && bIdx === -1) return 0
+            if (aIdx === -1) return 1
+            if (bIdx === -1) return -1
+            return aIdx - bIdx
+          })
+
+          console.log('✅ Nx workspace detected - enabling Nx integration')
+          console.log(`   Detected tasks: ${sortedTasks.join(', ')}`)
+
+          nxConfig = {
+            enabled: true,
+            tasks: sortedTasks,
+            baseRef: 'origin/main',
+            enableCache: true
+          }
+        } catch (error) {
+          console.warn('⚠️  Found nx.json but could not parse it:', error)
+          console.log('   Using default Nx configuration')
+          nxConfig = {
+            enabled: true,
+            tasks: ['lint', 'test', 'build', 'integration-test'],
+            baseRef: 'origin/main',
+            enableCache: true
+          }
         }
       }
 
