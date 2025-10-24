@@ -75,6 +75,7 @@ export async function runPipecraftInit() {
   console.log('🚀 Running pipecraft init...')
 
   const config = {
+    ciProvider: 'github-actions',
     branchFlow: ['develop', 'staging', 'main'],
     domains: {
       'nx-apps': {
@@ -128,7 +129,7 @@ export async function runPipecraftGenerate() {
   const startTime = Date.now()
 
   try {
-    const output = exec('npx pipecraft generate', { cwd: '../../../', silent: false, throwOnError: true })
+    const output = exec('npx pipecraft generate', { silent: false, throwOnError: true })
     const duration = Date.now() - startTime
 
     console.log(`  ✅ Generate completed in ${duration}ms`)
@@ -211,7 +212,7 @@ export async function cleanPipecraftFiles() {
 
 export async function getPipecraftVersion() {
   try {
-    const output = exec('npx pipecraft --version', { silent: true, cwd: '../../../' })
+    const output = exec('npx pipecraft --version', { silent: true })
     return output.trim()
   } catch {
     return 'unknown'
