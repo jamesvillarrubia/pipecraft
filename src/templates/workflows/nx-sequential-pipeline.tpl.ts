@@ -7,8 +7,11 @@
  * This is Option 1 (Sequential Strategy) - simple, fast, and leverages Nx's intelligence.
  */
 
-import { PinionContext } from '@featherscloud/pinion'
+import { PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import { PipecraftConfig } from '../../types/index.js'
+import { parseDocument, stringify } from 'yaml'
+import fs from 'fs'
+import { logger } from '../../utils/logger.js'
 
 interface NxPipelineContext extends PinionContext {
   config: PipecraftConfig
@@ -27,6 +30,7 @@ export const generateNxSequentialPipeline = (ctx: NxPipelineContext) => {
   const baseRef = nxConfig.baseRef || 'origin/main'
   const enableCache = nxConfig.enableCache !== false
   const branchList = ctx.branchFlow.join(',')
+  const domains = config.domains || {}
 
   return `#=============================================================================
 # PIPECRAFT MANAGED WORKFLOW - NX MONOREPO
@@ -36,10 +40,13 @@ export const generateNxSequentialPipeline = (ctx: NxPipelineContext) => {
 #   - Node.js version
 #   - Package manager (npm/pnpm/yarn)
 #   - Cache settings
-#   - Deploy jobs
+#   - test-* jobs for non-Nx domains
+#   - deploy-* jobs for deployable domains
+#   - remote-test-* jobs for remote testing
 
 # ⚠️  PIPECRAFT MANAGES (do not modify):
 #   - Workflow triggers and job dependencies
+#   - Change detection for domain paths and Nx projects
 #   - Nx affected commands and task orchestration
 #   - Version calculation and promotion flow
 
@@ -104,11 +111,33 @@ on:
 
 jobs:
   #=============================================================================
+  # CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
+  #=============================================================================
+  # Detects which domains have changed using Nx dependency graph and path-based detection
+  changes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: \${{ inputs.commitSha || github.sha }}
+          fetch-depth: 0
+      - uses: ./.github/actions/detect-changes-nx
+        id: detect
+        with:
+          baseRef: \${{ inputs.baseRef || '${baseRef}' }}
+          useNx: 'true'
+${Object.keys(domains).length > 0 ? `    outputs:
+${Object.keys(domains).sort().map((domain: string) => `      ${domain}: \${{ steps.detect.outputs.${domain} }}`).join('\n')}
+      nxAvailable: \${{ steps.detect.outputs.nxAvailable }}
+      affectedProjects: \${{ steps.detect.outputs.affectedProjects }}` : ''}
+
+  #=============================================================================
   # NX CI - All Tasks Sequential (⚠️  Managed by Pipecraft - do not modify)
   #=============================================================================
   # This job runs all Nx tasks sequentially using \`nx affected\`.
   # Nx handles dependency detection, caching, and parallel execution internally.
   nx-ci:
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -126,31 +155,49 @@ jobs:
       - name: Install Dependencies
         run: npm ci${enableCache ? `
 
-      - name: Restore Nx Cache
-        uses: actions/cache/restore@v3
+      - name: Cache Nx
+        uses: actions/cache@v4
         with:
           path: .nx/cache
-          key: nx-\${{ hashFiles('package-lock.json') }}-\${{ github.sha }}
+          # Cache key includes run_number to allow saving updated cache on each run
+          # Nx cache accumulates computation results, so we want to save after every run
+          # restore-keys ensure we start from the most recent cache on this branch
+          key: nx-\${{ runner.os }}-\${{ hashFiles('package-lock.json') }}-\${{ github.ref_name }}-\${{ github.run_number }}
           restore-keys: |
-            nx-\${{ hashFiles('package-lock.json') }}-
-            nx-` : ''}
+            nx-\${{ runner.os }}-\${{ hashFiles('package-lock.json') }}-\${{ github.ref_name }}-
+            nx-\${{ runner.os }}-\${{ hashFiles('package-lock.json') }}-
+            nx-\${{ runner.os }}-` : ''}
 ${tasks.map(task => `
       - name: Run Nx Affected - ${task}
-        run: npx nx affected --target=${task} --base=\${{ inputs.baseRef || '${baseRef}' }}`).join('')}${enableCache ? `
-
-      - name: Save Nx Cache
-        if: always()
-        uses: actions/cache/save@v3
+        run: npx nx affected --target=${task} --base=\${{ inputs.baseRef || '${baseRef}' }}`).join('')}
+${Object.keys(domains).length > 0 && Object.keys(domains).some((d: string) => domains[d].testable !== false) ? `
+  #=============================================================================
+  # DOMAIN TESTING JOBS (✅ Customize these with your test logic)
+  #=============================================================================
+  # These jobs run tests for domains not covered by Nx or requiring special handling.
+  # Replace the TODO comments with your actual test commands.
+${Object.keys(domains).sort().filter((domain: string) => domains[domain].testable !== false).map((domain: string) => `
+  test-${domain}:
+    needs: changes
+    if: \${{ needs.changes.outputs.${domain} == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
         with:
-          path: .nx/cache
-          key: nx-\${{ hashFiles('package-lock.json') }}-\${{ github.sha }}` : ''}
+          ref: \${{ inputs.commitSha || github.sha }}
+      # TODO: Replace with your ${domain} test logic
+      - name: Run ${domain} tests
+        run: |
+          echo "Running tests for ${domain} domain"
+          echo "Replace this with your actual test commands"
+          # Example: npm test -- --testPathPattern=${domain}`).join('')}` : ''}
 
   #=============================================================================
   # VERSIONING (⚠️  Managed by Pipecraft - do not modify)
   #=============================================================================
   version:
-    if: \${{ always() && github.event_name != 'pull_request' && needs.nx-ci.result == 'success' }}
-    needs: [ nx-ci ]
+    if: \${{ always() && github.event_name != 'pull_request' && needs.nx-ci.result == 'success'${Object.keys(domains).filter((d: string) => domains[d].testable !== false).length > 0 ? ` && (${Object.keys(domains).sort().filter((domain: string) => domains[domain].testable !== false).map((domain: string) => `needs.test-${domain}.result == 'success'`).join(' || ')}) && ${Object.keys(domains).sort().filter((domain: string) => domains[domain].testable !== false).map((domain: string) => `needs.test-${domain}.result != 'failure'`).join(' && ')}` : ''} }}
+    needs: [ changes, nx-ci${Object.keys(domains).filter((d: string) => domains[d].testable !== false).length > 0 ? `, ${Object.keys(domains).sort().filter((domain: string) => domains[domain].testable !== false).map((domain: string) => `test-${domain}`).join(', ')}` : ''} ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -163,13 +210,69 @@ ${tasks.map(task => `
           commitSha: \${{ inputs.commitSha || github.sha }}
     outputs:
       version: \${{ steps.version.outputs.version }}
+${Object.keys(domains).length > 0 && Object.keys(domains).some((d: string) => domains[d].deployable === true) ? `
+  #=============================================================================
+  # DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
+  #=============================================================================
+  # These jobs deploy each domain when changes are detected and tests pass.
+  # Replace the TODO comments with your actual deployment commands.
+${Object.keys(domains).sort().filter((domain: string) => domains[domain].deployable === true).map((domain: string) => `
+  deploy-${domain}:
+    needs: [ version, changes ]
+    if: \${{ always() && needs.version.result == 'success' && needs.changes.outputs.${domain} == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: \${{ inputs.commitSha || github.sha }}
+      # TODO: Replace with your ${domain} deployment logic
+      - name: Deploy ${domain}
+        run: |
+          echo "Deploying ${domain} with version \${{ needs.version.outputs.version }}"
+          echo "Replace this with your actual deploy commands"
+          # Example: npm run deploy:${domain}`).join('')}` : ''}
+${Object.keys(domains).length > 0 && Object.keys(domains).some((d: string) => domains[d].remoteTestable === true) ? `
+  #=============================================================================
+  # REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
+  #=============================================================================
+  # These jobs test deployed services remotely after deployment succeeds.
+  # Replace the TODO comments with your actual remote testing commands.
+${Object.keys(domains).sort().filter((domain: string) => domains[domain].remoteTestable === true).map((domain: string) => `
+  remote-test-${domain}:
+    needs: [ deploy-${domain}, changes ]
+    if: \${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: \${{ inputs.commitSha || github.sha }}
+      # TODO: Replace with your ${domain} remote testing logic
+      - name: Test ${domain} remotely
+        if: \${{ needs.changes.outputs.${domain} == 'true' && needs.deploy-${domain}.result == 'success' }}
+        run: |
+          echo "Testing ${domain} remotely"
+          echo "Replace this with your actual remote test commands"
+          # Example: npm run test:remote:${domain}`).join('')}` : ''}
 
   #=============================================================================
   # TAG & PROMOTE (⚠️  Managed by Pipecraft - do not modify)
   #=============================================================================
   tag:
-    if: \${{ always() && needs.version.result == 'success' && needs.version.outputs.version != '' }}
-    needs: [ version ]
+    if: \${{ always() && needs.version.result == 'success' && needs.version.outputs.version != ''${(() => {
+      const deployJobs = Object.keys(domains).sort().filter((d: string) => domains[d].deployable === true).map((d: string) => `deploy-${d}`)
+      const remoteTestJobs = Object.keys(domains).sort().filter((d: string) => domains[d].remoteTestable === true).map((d: string) => `remote-test-${d}`)
+      const allJobs = [...deployJobs, ...remoteTestJobs]
+      if (allJobs.length === 0) return ''
+      const noFailures = allJobs.map((job: string) => `needs.${job}.result != 'failure'`).join(' && ')
+      const atLeastOneSuccess = allJobs.map((job: string) => `needs.${job}.result == 'success'`).join(' || ')
+      return ` && (${noFailures}) && (${atLeastOneSuccess})`
+    })()} }}
+    needs: [ version${(() => {
+      const deployJobs = Object.keys(domains).sort().filter((d: string) => domains[d].deployable === true).map((d: string) => `deploy-${d}`)
+      const remoteTestJobs = Object.keys(domains).sort().filter((d: string) => domains[d].remoteTestable === true).map((d: string) => `remote-test-${d}`)
+      const allJobs = [...deployJobs, ...remoteTestJobs]
+      return allJobs.length > 0 ? `, ${allJobs.join(', ')}` : ''
+    })()} ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -209,3 +312,102 @@ ${tasks.map(task => `
           commitSha: \${{ inputs.commitSha || github.sha }}
 `
 }
+
+/**
+ * Get Pipecraft-managed jobs for Nx pipelines
+ */
+const getNxManagedJobs = (domains: Record<string, any> = {}): Set<string> => {
+  return new Set([
+    'changes',
+    'nx-ci',
+    'version',
+    'tag',
+    'promote',
+    'release'
+  ])
+}
+
+/**
+ * Get user-customizable domain jobs
+ */
+const getNxDomainJobs = (domains: Record<string, any> = {}): Set<string> => {
+  const jobs = new Set<string>()
+  Object.keys(domains).forEach(domain => {
+    const domainConfig = domains[domain]
+    if (domainConfig.testable !== false) jobs.add(`test-${domain}`)
+    if (domainConfig.deployable === true) jobs.add(`deploy-${domain}`)
+    if (domainConfig.remoteTestable === true) jobs.add(`remote-test-${domain}`)
+  })
+  return jobs
+}
+
+/**
+ * Main generator that handles merging with existing workflow
+ */
+export const generate = (ctx: NxPipelineContext) =>
+  Promise.resolve(ctx)
+    .then((ctx) => {
+      const filePath = `${ctx.cwd || process.cwd()}/.github/workflows/pipeline.yml`
+      const domains = ctx.config.domains || {}
+
+      // Generate the template
+      const templateYaml = generateNxSequentialPipeline(ctx)
+      const templateDoc = parseDocument(templateYaml)
+
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        logger.verbose('📝 Creating new Nx pipeline')
+        return { ...ctx, yamlContent: templateYaml, mergeStatus: 'created' }
+      }
+
+      // Parse existing file
+      const existingContent = fs.readFileSync(filePath, 'utf8')
+      const existingDoc = parseDocument(existingContent)
+
+      // Get job sets
+      const managedJobs = getNxManagedJobs(domains)
+      const domainJobs = getNxDomainJobs(domains)
+
+      // Extract user jobs from existing workflow
+      const existingJobs = existingDoc.contents && (existingDoc.contents as any).get ? (existingDoc.contents as any).get('jobs') : null
+      const userJobs = new Map<string, any>()
+
+      if (existingJobs && (existingJobs as any).items) {
+        for (const item of existingJobs.items) {
+          const jobName = item.key?.toString()
+          if (jobName && !managedJobs.has(jobName) && !domainJobs.has(jobName)) {
+            // This is a user-added custom job - preserve it
+            userJobs.set(jobName, item)
+          }
+        }
+      }
+
+      if (userJobs.size > 0) {
+        logger.verbose(`📋 Preserving ${userJobs.size} user jobs: ${Array.from(userJobs.keys()).join(', ')}`)
+
+        // Add user jobs to template
+        const templateJobs = templateDoc.contents && (templateDoc.contents as any).get ? (templateDoc.contents as any).get('jobs') : null
+        if (templateJobs && (templateJobs as any).items) {
+          for (const [jobName, jobItem] of userJobs) {
+            templateJobs.items.push(jobItem)
+          }
+        }
+
+        return { ...ctx, yamlContent: stringify(templateDoc), mergeStatus: 'merged' }
+      }
+
+      logger.verbose('🔄 Updating Nx pipeline (no user jobs to preserve)')
+      return { ...ctx, yamlContent: templateYaml, mergeStatus: 'updated' }
+    })
+    .then((ctx) => {
+      const outputPath = '.github/workflows/pipeline.yml'
+      const status = ctx.mergeStatus === 'merged' ? '🔄 Merged with existing' :
+                     ctx.mergeStatus === 'updated' ? '🔄 Updated existing' :
+                     '📝 Created new'
+      logger.verbose(`${status} ${outputPath}`)
+      return ctx
+    })
+    .then(renderTemplate(
+      (ctx: any) => ctx.yamlContent,
+      toFile('.github/workflows/pipeline.yml')
+    ))
