@@ -57,6 +57,7 @@ import { generate as generateBranchWorkflow } from '../templates/actions/manage-
 import { generate as generatePromoteBranchWorkflow } from '../templates/actions/promote-branch.yml.tpl.js'
 import { generate as generateReleaseWorkflow } from '../templates/actions/create-release.yml.tpl.js'
 import { generate as generatePathBasedPipeline } from '../templates/workflows/pipeline-path-based.yml.tpl.js'
+import { generateNxSequentialPipeline } from '../templates/workflows/nx-sequential-pipeline.tpl.js'
 import { generate as generateEnforcePRTarget } from '../templates/workflows/enforce-pr-target.yml.tpl.js'
 import { generate as generatePRTitleCheck } from '../templates/workflows/pr-title-check.yml.tpl.js'
 import { generate as generateReleaseItConfig } from '../templates/release-it.cjs.tpl.js'
@@ -170,8 +171,14 @@ export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPip
       ]).then(() => ctx)
     })
     .then((ctx) => {
-      // Generate the main pipeline
-      return generatePathBasedPipeline(ctx)
+      // Generate the main pipeline (Nx or path-based)
+      if (ctx.config.nx?.enabled) {
+        logger.info('🔧 Generating Nx-optimized pipeline...')
+        const nxPipeline = generateNxSequentialPipeline(ctx as any)
+        return renderTemplate(() => nxPipeline, toFile('.github/workflows/pipeline.yml'))(ctx)
+      } else {
+        return generatePathBasedPipeline(ctx)
+      }
     })
     .then((ctx) => {
       // Generate the enforce PR target workflow
