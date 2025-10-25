@@ -9,6 +9,8 @@ import {
   formatStatusTable,
   formatNextSteps,
   formatQuickSuccess,
+  createSetupSummary,
+  formatSetupSummary,
   type MessageContext,
   type StatusItem
 } from '../../src/utils/messaging.js'
@@ -274,6 +276,255 @@ describe('Messaging System', () => {
 
       expect(result).toContain('my-org/my-repo')
       expect(result).toBeDefined()
+    })
+  })
+
+  describe('createSetupSummary', () => {
+    it('should create summary with ready status when all correct', () => {
+      const permissions: StatusItem[] = [
+        {
+          category: 'Permissions',
+          name: 'Workflow Permissions',
+          current: 'write',
+          status: 'correct',
+          action: 'None'
+        }
+      ]
+
+      const settings: StatusItem[] = [
+        {
+          category: 'Settings',
+          name: 'Auto-merge',
+          current: 'enabled',
+          status: 'correct',
+          action: 'None'
+        }
+      ]
+
+      const context: MessageContext = {
+        persona: 'startup',
+        operation: 'setup'
+      }
+
+      const summary = createSetupSummary('my-org/my-repo', permissions, settings, [], context)
+
+      expect(summary.overallStatus).toBe('ready')
+      expect(summary.repository).toBe('my-org/my-repo')
+      expect(summary.permissions).toEqual(permissions)
+      expect(summary.settings).toEqual(settings)
+      expect(summary.nextSteps[0]).toContain('pipecraft generate')
+    })
+
+    it('should detect error status when items have errors', () => {
+      const permissions: StatusItem[] = [
+        {
+          category: 'Permissions',
+          name: 'Workflow Permissions',
+          current: 'unknown',
+          recommended: 'write',
+          status: 'error',
+          action: 'Check access'
+        }
+      ]
+
+      const context: MessageContext = {
+        persona: 'startup',
+        operation: 'setup'
+      }
+
+      const summary = createSetupSummary('my-org/my-repo', permissions, [], [], context)
+
+      expect(summary.overallStatus).toBe('error')
+      expect(summary.errors).toHaveLength(1)
+      expect(summary.errors[0]).toContain('Workflow Permissions')
+      expect(summary.nextSteps[0]).toContain('Fix the errors')
+    })
+
+    it('should detect needs-setup status when items are missing', () => {
+      const settings: StatusItem[] = [
+        {
+          category: 'Settings',
+          name: 'Branch Protection',
+          current: 'not configured',
+          recommended: 'enabled',
+          status: 'missing',
+          action: 'Configure in settings'
+        }
+      ]
+
+      const context: MessageContext = {
+        persona: 'team-lead',
+        operation: 'setup'
+      }
+
+      const summary = createSetupSummary('my-org/my-repo', [], settings, [], context)
+
+      expect(summary.overallStatus).toBe('needs-setup')
+      expect(summary.nextSteps[0]).toContain('Run setup')
+    })
+
+    it('should detect partial status when items need changes', () => {
+      const permissions: StatusItem[] = [
+        {
+          category: 'Permissions',
+          name: 'Workflow Permissions',
+          current: 'read',
+          recommended: 'write',
+          status: 'needs-change',
+          action: 'Update in settings'
+        }
+      ]
+
+      const context: MessageContext = {
+        persona: 'platform-engineer',
+        operation: 'setup'
+      }
+
+      const summary = createSetupSummary('my-org/my-repo', permissions, [], [], context)
+
+      expect(summary.overallStatus).toBe('partial')
+      expect(summary.warnings).toHaveLength(1)
+      expect(summary.warnings[0]).toContain('1 setting can be optimized')
+      expect(summary.nextSteps[0]).toContain('Apply recommended changes')
+    })
+
+    it('should handle multiple items with warnings', () => {
+      const permissions: StatusItem[] = [
+        {
+          category: 'Permissions',
+          name: 'Workflow Permissions',
+          current: 'read',
+          recommended: 'write',
+          status: 'needs-change',
+          action: 'Update'
+        },
+        {
+          category: 'Permissions',
+          name: 'PR Creation',
+          current: 'disabled',
+          recommended: 'enabled',
+          status: 'needs-change',
+          action: 'Enable'
+        }
+      ]
+
+      const context: MessageContext = {
+        persona: 'startup',
+        operation: 'setup'
+      }
+
+      const summary = createSetupSummary('my-org/my-repo', permissions, [], [], context)
+
+      expect(summary.warnings[0]).toContain('2 settings can be optimized')
+    })
+
+    it('should combine all items from permissions, settings, and autoMerge', () => {
+      const permissions: StatusItem[] = [
+        { category: 'Permissions', name: 'P1', current: 'ok', status: 'correct', action: 'None' }
+      ]
+      const settings: StatusItem[] = [
+        { category: 'Settings', name: 'S1', current: 'ok', status: 'correct', action: 'None' }
+      ]
+      const autoMerge: StatusItem[] = [
+        { category: 'Auto-merge', name: 'A1', current: 'ok', status: 'correct', action: 'None' }
+      ]
+
+      const context: MessageContext = {
+        persona: 'team-lead',
+        operation: 'setup'
+      }
+
+      const summary = createSetupSummary('my-org/my-repo', permissions, settings, autoMerge, context)
+
+      expect(summary.permissions).toHaveLength(1)
+      expect(summary.settings).toHaveLength(1)
+      expect(summary.autoMerge).toHaveLength(1)
+    })
+  })
+
+  describe('formatSetupSummary', () => {
+    it('should format complete summary with all sections', () => {
+      const permissions: StatusItem[] = [
+        {
+          category: 'Permissions',
+          name: 'Workflow Permissions',
+          current: 'write',
+          status: 'correct',
+          action: 'None'
+        }
+      ]
+
+      const context: MessageContext = {
+        persona: 'startup',
+        operation: 'setup'
+      }
+
+      const summary = createSetupSummary('my-org/my-repo', permissions, [], [], context)
+      const formatted = formatSetupSummary(summary, context)
+
+      expect(formatted).toContain('my-org/my-repo')
+      expect(formatted).toContain('All settings configured correctly')
+      expect(formatted).toContain('🟢')
+    })
+
+    it('should show error status in summary', () => {
+      const permissions: StatusItem[] = [
+        {
+          category: 'Permissions',
+          name: 'Workflow Permissions',
+          current: 'error',
+          status: 'error',
+          action: 'Fix'
+        }
+      ]
+
+      const context: MessageContext = {
+        persona: 'team-lead',
+        operation: 'setup'
+      }
+
+      const summary = createSetupSummary('my-org/my-repo', permissions, [], [], context)
+      const formatted = formatSetupSummary(summary, context)
+
+      expect(formatted).toContain('🔴')
+      expect(formatted).toContain('Setup failed')
+      expect(formatted).toContain('Errors:')
+    })
+
+    it('should show warnings section when present', () => {
+      const permissions: StatusItem[] = [
+        {
+          category: 'Permissions',
+          name: 'Setting',
+          current: 'suboptimal',
+          recommended: 'optimal',
+          status: 'needs-change',
+          action: 'Update'
+        }
+      ]
+
+      const context: MessageContext = {
+        persona: 'platform-engineer',
+        operation: 'setup'
+      }
+
+      const summary = createSetupSummary('my-org/my-repo', permissions, [], [], context)
+      const formatted = formatSetupSummary(summary, context)
+
+      expect(formatted).toContain('Recommendations:')
+      expect(formatted).toContain('can be optimized')
+    })
+
+    it('should include next steps', () => {
+      const context: MessageContext = {
+        persona: 'startup',
+        operation: 'setup'
+      }
+
+      const summary = createSetupSummary('my-org/my-repo', [], [], [], context)
+      const formatted = formatSetupSummary(summary, context)
+
+      expect(formatted).toContain('pipecraft generate')
     })
   })
 })
