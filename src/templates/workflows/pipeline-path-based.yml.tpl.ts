@@ -54,7 +54,7 @@ export const createPathBasedPipeline = (ctx: any): { yamlContent: string; mergeS
     ...createTagPromoteReleaseOperations({ branchFlow, deployJobNames: deployJobs, remoteTestJobNames: remoteTestJobs })
   ]
 
-  // Check if file exists or use existingPipelineContent/existingPipeline
+  // Check for existing content in context (do NOT read from filesystem in legacy API)
   let doc
   let userJobsCount = 0
   let hasExisting = false
@@ -106,47 +106,6 @@ export const createPathBasedPipeline = (ctx: any): { yamlContent: string; mergeS
     }
 
     // Add back user jobs
-    if (userJobs.size > 0) {
-      const jobsNode = (doc.contents as any).get('jobs')
-      if (jobsNode && (jobsNode as any).items) {
-        for (const [_, item] of userJobs) {
-          jobsNode.items.push(item)
-        }
-      }
-    }
-  } else if (fs.existsSync(filePath)) {
-    hasExisting = true
-    const existingContent = fs.readFileSync(filePath, 'utf8')
-    doc = parseDocument(existingContent)
-
-    // Same merge logic as above
-    const managedJobs = new Set(['changes', 'version', 'tag', 'promote', 'release'])
-    const deprecatedJobs = new Set(['createpr', 'branch'])
-    const userJobs = new Map<string, any>()
-    const existingJobs = doc.contents && (doc.contents as any).get ? (doc.contents as any).get('jobs') : null
-
-    if (existingJobs && (existingJobs as any).items) {
-      for (const item of existingJobs.items) {
-        const jobName = item.key?.toString()
-        if (
-          jobName &&
-          !managedJobs.has(jobName) &&
-          !deprecatedJobs.has(jobName) &&
-          !testJobs.includes(jobName) &&
-          !deployJobs.includes(jobName) &&
-          !remoteTestJobs.includes(jobName)
-        ) {
-          userJobs.set(jobName, item)
-        }
-      }
-    }
-
-    userJobsCount = userJobs.size
-
-    if (doc.contents) {
-      applyPathOperations(doc.contents as any, operations, doc)
-    }
-
     if (userJobs.size > 0) {
       const jobsNode = (doc.contents as any).get('jobs')
       if (jobsNode && (jobsNode as any).items) {
