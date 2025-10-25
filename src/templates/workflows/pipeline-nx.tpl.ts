@@ -183,6 +183,11 @@ export const generate = (ctx: NxPipelineContext) =>
         }
       }
 
+      // Clear all jobs before applying operations to prevent duplicates
+      if (existingJobs && (existingJobs as any).items) {
+        ;(existingJobs as any).items = []
+      }
+
       // Apply operations to update managed jobs
       if (doc.contents) {
         applyPathOperations(doc.contents as any, operations, doc)

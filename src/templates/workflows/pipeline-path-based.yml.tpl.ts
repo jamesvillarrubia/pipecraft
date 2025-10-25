@@ -31,113 +31,6 @@ interface PathBasedPipelineContext extends PinionContext {
 }
 
 /**
- * Legacy API for backward compatibility with tests
- * @deprecated Use generate() instead
- */
-export const createPathBasedPipeline = (ctx: any): { yamlContent: string; mergeStatus: string } => {
-  const filePath = `${ctx.cwd || process.cwd()}/.github/workflows/pipeline.yml`
-  const config = ctx.config || { domains: ctx.domains || {} }
-  const branchFlow = ctx.branchFlow || ['develop', 'staging', 'main']
-  const domains = config.domains || ctx.domains || {}
-
-  // Get domain job names
-  const { testJobs, deployJobs, remoteTestJobs } = getDomainJobNames(domains)
-
-  // Build operations array
-  const operations: PathOperationConfig[] = [
-    ...createHeaderOperations({ branchFlow }),
-    createChangesJobOperation({ domains, useNx: false, baseRef: 'main' }),
-    ...createDomainTestJobOperations({ domains }),
-    createVersionJobOperation({ testJobNames: testJobs, nxEnabled: false, baseRef: 'main' }),
-    ...createDomainDeployJobOperations({ domains }),
-    ...createDomainRemoteTestJobOperations({ domains }),
-    ...createTagPromoteReleaseOperations({ branchFlow, deployJobNames: deployJobs, remoteTestJobNames: remoteTestJobs })
-  ]
-
-  // Check for existing content in context (do NOT read from filesystem in legacy API)
-  let doc
-  let userJobsCount = 0
-  let hasExisting = false
-
-  if (ctx.existingPipelineContent) {
-    hasExisting = true
-    doc = parseDocument(ctx.existingPipelineContent)
-  } else if (ctx.existingPipeline) {
-    hasExisting = true
-    // Convert object to YAML string then parse
-    const yamlString = stringify(ctx.existingPipeline)
-    doc = parseDocument(yamlString)
-
-    // Get managed jobs
-    const managedJobs = new Set(['changes', 'version', 'tag', 'promote', 'release'])
-    const deprecatedJobs = new Set(['createpr', 'branch'])
-
-    // Extract user jobs
-    const userJobs = new Map<string, any>()
-    const existingJobs = doc.contents && (doc.contents as any).get ? (doc.contents as any).get('jobs') : null
-
-    if (existingJobs && (existingJobs as any).items) {
-      for (const item of existingJobs.items) {
-        const jobName = item.key?.toString()
-        if (
-          jobName &&
-          !managedJobs.has(jobName) &&
-          !deprecatedJobs.has(jobName) &&
-          !testJobs.includes(jobName) &&
-          !deployJobs.includes(jobName) &&
-          !remoteTestJobs.includes(jobName)
-        ) {
-          userJobs.set(jobName, item)
-        }
-      }
-    }
-
-    userJobsCount = userJobs.size
-
-    // Clear all jobs from the document before applying operations
-    // (operations will recreate managed jobs, then we'll add back user jobs)
-    if (existingJobs && (existingJobs as any).items) {
-      ;(existingJobs as any).items = []
-    }
-
-    // Apply operations
-    if (doc.contents) {
-      applyPathOperations(doc.contents as any, operations, doc)
-    }
-
-    // Add back user jobs
-    if (userJobs.size > 0) {
-      const jobsNode = (doc.contents as any).get('jobs')
-      if (jobsNode && (jobsNode as any).items) {
-        for (const [_, item] of userJobs) {
-          jobsNode.items.push(item)
-        }
-      }
-    }
-  } else {
-    // Create new document
-    doc = parseDocument('{}')
-    if (doc.contents) {
-      applyPathOperations(doc.contents as any, operations, doc)
-    }
-  }
-
-  const yamlContent = stringify(doc, {
-    lineWidth: 0,
-    minContentWidth: 0
-  })
-
-  // Determine merge status (matches old API behavior)
-  // Old API returned 'overwritten' by default, 'merged' only if existing pipeline with user jobs
-  const mergeStatus = hasExisting && userJobsCount > 0 ? 'merged' : 'overwritten'
-
-  return {
-    yamlContent,
-    mergeStatus
-  }
-}
-
-/**
  * Main generator that handles merging with existing workflow
  */
 export const generate = (ctx: PathBasedPipelineContext) =>
@@ -230,6 +123,11 @@ export const generate = (ctx: PathBasedPipelineContext) =>
             userJobs.set(jobName, item)
           }
         }
+      }
+
+      // Clear all jobs before applying operations to prevent duplicates
+      if (existingJobs && (existingJobs as any).items) {
+        ;(existingJobs as any).items = []
       }
 
       // Apply operations to update managed jobs
