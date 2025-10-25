@@ -18,22 +18,22 @@ export function createDomainTestJobOperations(ctx: DomainJobsContext): PathOpera
   const { domains } = ctx
   const operations: PathOperationConfig[] = []
 
-  Object.keys(domains).sort().forEach(domain => {
-    const domainConfig = domains[domain]
+  const testableDomains = Object.keys(domains).sort().filter(d => domains[d].testable !== false)
 
-    // Skip if explicitly marked as not testable
-    if (domainConfig.testable === false) return
-
+  testableDomains.forEach((domain, index) => {
     operations.push({
       path: `jobs.test-${domain}`,
       operation: 'preserve', // User can customize this job!
-      commentBefore: `
+      // Only add comment to the first test job
+      ...(index === 0 && {
+        commentBefore: `
 =============================================================================
 TESTING JOBS (✅ Customize these with your test logic)
 =============================================================================
 These jobs run tests for each domain when changes are detected.
 Replace the TODO comments with your actual test commands.
-`,
+`
+      }),
       value: createValueFromString(`
     needs: changes
     if: \${{ needs.changes.outputs.${domain} == 'true' }}
@@ -62,22 +62,22 @@ export function createDomainDeployJobOperations(ctx: DomainJobsContext): PathOpe
   const { domains } = ctx
   const operations: PathOperationConfig[] = []
 
-  Object.keys(domains).sort().forEach(domain => {
-    const domainConfig = domains[domain]
+  const deployableDomains = Object.keys(domains).sort().filter(d => domains[d].deployable === true)
 
-    // Only create deploy job if explicitly marked as deployable
-    if (domainConfig.deployable !== true) return
-
+  deployableDomains.forEach((domain, index) => {
     operations.push({
       path: `jobs.deploy-${domain}`,
       operation: 'preserve', // User can customize this job!
-      commentBefore: `
+      // Only add comment to the first deploy job
+      ...(index === 0 && {
+        commentBefore: `
 =============================================================================
 DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
 =============================================================================
 These jobs deploy each domain when changes are detected and tests pass.
 Replace the TODO comments with your actual deployment commands.
-`,
+`
+      }),
       value: createValueFromString(`
     needs: [ version, changes ]
     if: \${{ always() && needs.version.result == 'success' && needs.changes.outputs.${domain} == 'true' }}
@@ -106,22 +106,22 @@ export function createDomainRemoteTestJobOperations(ctx: DomainJobsContext): Pat
   const { domains } = ctx
   const operations: PathOperationConfig[] = []
 
-  Object.keys(domains).sort().forEach(domain => {
-    const domainConfig = domains[domain]
+  const remoteTestableDomains = Object.keys(domains).sort().filter(d => domains[d].remoteTestable === true)
 
-    // Only create remote test job if explicitly marked as remoteTestable
-    if (domainConfig.remoteTestable !== true) return
-
+  remoteTestableDomains.forEach((domain, index) => {
     operations.push({
       path: `jobs.remote-test-${domain}`,
       operation: 'preserve', // User can customize this job!
-      commentBefore: `
+      // Only add comment to the first remote test job
+      ...(index === 0 && {
+        commentBefore: `
 =============================================================================
 REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
 =============================================================================
 These jobs test deployed services remotely after deployment succeeds.
 Replace the TODO comments with your actual remote testing commands.
-`,
+`
+      }),
       value: createValueFromString(`
     needs: [ deploy-${domain}, changes ]
     if: \${{ always() }}

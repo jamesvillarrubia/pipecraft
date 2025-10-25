@@ -153,8 +153,8 @@ export const generate = (ctx: NxPipelineContext) =>
       if (!fs.existsSync(filePath)) {
         logger.verbose('📝 Creating new Nx pipeline')
 
-        // Create new document and apply operations
-        const doc = parseDocument('')
+        // Create new document with empty YAML map
+        const doc = parseDocument('{}')
         if (doc.contents) {
           applyPathOperations(doc.contents as any, operations, doc)
         }
