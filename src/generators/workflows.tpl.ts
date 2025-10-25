@@ -172,7 +172,7 @@ export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPip
     })
     .then((ctx) => {
       // Generate the main pipeline (Nx or path-based)
-      if (ctx.config.nx?.enabled) {
+      if (ctx.config?.nx?.enabled) {
         logger.info('🔧 Generating Nx-optimized pipeline...')
         return generateNxPipeline(ctx as any)
       } else {
