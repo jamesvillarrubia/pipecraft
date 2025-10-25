@@ -28,6 +28,7 @@ import {
 interface NxPipelineContext extends PinionContext {
   config: PipecraftConfig
   branchFlow: string[]
+  outputPipelinePath?: string
 }
 
 /**
@@ -209,10 +210,10 @@ export const generate = (ctx: NxPipelineContext) =>
       return { ...ctx, yamlContent: stringify(doc, { lineWidth: 0, minContentWidth: 0 }), mergeStatus: status }
     })
     .then(ctx => {
-      const outputPath = '.github/workflows/pipeline.yml'
+      const outputPath = ctx.outputPipelinePath || '.github/workflows/pipeline.yml'
       const status =
         ctx.mergeStatus === 'merged' ? '🔄 Merged with existing' : ctx.mergeStatus === 'updated' ? '🔄 Updated existing' : '📝 Created new'
       logger.verbose(`${status} ${outputPath}`)
       return ctx
     })
-    .then(renderTemplate((ctx: any) => ctx.yamlContent, toFile('.github/workflows/pipeline.yml')))
+    .then(renderTemplate((ctx: any) => ctx.yamlContent, toFile((ctx: any) => ctx.outputPipelinePath || '.github/workflows/pipeline.yml')))

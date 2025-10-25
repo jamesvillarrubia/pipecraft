@@ -17,7 +17,9 @@ export interface HeaderContext {
  */
 export function createHeaderOperations(ctx: HeaderContext): PathOperationConfig[] {
   const { branchFlow } = ctx
-  const branchList = branchFlow.join(',')
+  // Provide sensible defaults if branchFlow is invalid
+  const validBranchFlow = (branchFlow && Array.isArray(branchFlow) && branchFlow.length > 0) ? branchFlow : ['main']
+  const branchList = validBranchFlow.join(',')
 
   return [
     // =============================================================================
@@ -150,7 +152,7 @@ export function createHeaderOperations(ctx: HeaderContext): PathOperationConfig[
     {
       path: 'on.push.branches',
       operation: 'set',
-      value: branchFlow,
+      value: validBranchFlow,
       required: true
     },
 
@@ -164,7 +166,7 @@ export function createHeaderOperations(ctx: HeaderContext): PathOperationConfig[
     {
       path: 'on.pull_request.branches',
       operation: 'set',
-      value: [branchFlow[0]], // Only target initial branch
+      value: [validBranchFlow[0]], // Only target initial branch
       required: true
     }
   ]

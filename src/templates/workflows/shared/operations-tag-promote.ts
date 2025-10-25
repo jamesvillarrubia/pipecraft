@@ -17,8 +17,10 @@ export interface TagPromoteContext {
  */
 export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathOperationConfig[] {
   const { branchFlow, deployJobNames, remoteTestJobNames } = ctx
+  // Provide sensible defaults if branchFlow is invalid
+  const validBranchFlow = (branchFlow && Array.isArray(branchFlow) && branchFlow.length > 0) ? branchFlow : ['main']
   const allDeploymentJobs = [...deployJobNames, ...remoteTestJobNames]
-  const initialBranch = branchFlow[0]
+  const initialBranch = validBranchFlow[0]
 
   // Build tag job conditional (should only run on initial branch, not on PRs)
   const tagConditions = [
@@ -69,7 +71,7 @@ Creates git tags and promotes code through branch flow.
       path: 'jobs.promote',
       operation: 'overwrite',
       value: createValueFromString(`
-    if: \${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && (${buildPromotableBranchesCondition(branchFlow)}) }}
+    if: \${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && (${buildPromotableBranchesCondition(validBranchFlow)}) }}
     needs: [ version, tag ]
     runs-on: ubuntu-latest
     steps:
@@ -80,7 +82,7 @@ Creates git tags and promotes code through branch flow.
         with:
           version: \${{ needs.version.outputs.version }}
           currentBranch: \${{ github.ref_name }}
-          nextBranch: \${{ ${buildNextBranchExpression(branchFlow)} }}
+          nextBranch: \${{ ${buildNextBranchExpression(validBranchFlow)} }}
           runNumber: \${{ github.run_number }}
   `)
     },
@@ -90,7 +92,7 @@ Creates git tags and promotes code through branch flow.
       path: 'jobs.release',
       operation: 'overwrite',
       value: createValueFromString(`
-    if: \${{ always() && github.ref_name == '${branchFlow[branchFlow.length - 1]}' && needs.version.result == 'success' && needs.version.outputs.version != '' && needs.tag.result == 'success' }}
+    if: \${{ always() && github.ref_name == '${validBranchFlow[validBranchFlow.length - 1]}' && needs.version.result == 'success' && needs.version.outputs.version != '' && needs.tag.result == 'success' }}
     needs: [ tag, version ]
     runs-on: ubuntu-latest
     steps:

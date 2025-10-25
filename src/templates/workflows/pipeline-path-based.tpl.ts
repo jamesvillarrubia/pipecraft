@@ -28,6 +28,7 @@ interface PathBasedPipelineContext extends PinionContext {
   config: PipecraftConfig
   branchFlow: string[]
   domains: Record<string, any>
+  outputPipelinePath?: string
 }
 
 /**
@@ -38,7 +39,7 @@ export const generate = (ctx: PathBasedPipelineContext) =>
     .then(ctx => {
       const filePath = `${ctx.cwd || process.cwd()}/.github/workflows/pipeline.yml`
       const { config, branchFlow } = ctx
-      const domains = config.domains || {}
+      const domains = config?.domains || {}
 
       // Get domain job names for dependency management
       const { testJobs, deployJobs, remoteTestJobs } = getDomainJobNames(domains)
@@ -166,10 +167,10 @@ export const generate = (ctx: PathBasedPipelineContext) =>
       return { ...ctx, yamlContent: stringify(doc, { lineWidth: 0, minContentWidth: 0 }), mergeStatus: status }
     })
     .then(ctx => {
-      const outputPath = '.github/workflows/pipeline.yml'
+      const outputPath = ctx.outputPipelinePath || '.github/workflows/pipeline.yml'
       const status =
         ctx.mergeStatus === 'merged' ? '🔄 Merged with existing' : ctx.mergeStatus === 'updated' ? '🔄 Updated existing' : '📝 Created new'
       logger.verbose(`${status} ${outputPath}`)
       return ctx
     })
-    .then(renderTemplate((ctx: any) => ctx.yamlContent, toFile('.github/workflows/pipeline.yml')))
+    .then(renderTemplate((ctx: any) => ctx.yamlContent, toFile((ctx: any) => ctx.outputPipelinePath || '.github/workflows/pipeline.yml')))
