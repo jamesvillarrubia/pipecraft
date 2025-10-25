@@ -57,7 +57,7 @@ import { generate as generateBranchWorkflow } from '../templates/actions/manage-
 import { generate as generatePromoteBranchWorkflow } from '../templates/actions/promote-branch.yml.tpl.js'
 import { generate as generateReleaseWorkflow } from '../templates/actions/create-release.yml.tpl.js'
 import { generate as generatePathBasedPipeline } from '../templates/workflows/pipeline-path-based.yml.tpl.js'
-import { generate as generateNxPipeline } from '../templates/workflows/nx-sequential-pipeline.tpl.js'
+import { generate as generateNxPipeline } from '../templates/workflows/pipeline-nx.tpl.js'
 import { generate as generateEnforcePRTarget } from '../templates/workflows/enforce-pr-target.yml.tpl.js'
 import { generate as generatePRTitleCheck } from '../templates/workflows/pr-title-check.yml.tpl.js'
 import { generate as generateReleaseItConfig } from '../templates/release-it.cjs.tpl.js'
