@@ -159,7 +159,7 @@ export const generate = (ctx: NxPipelineContext) =>
           applyPathOperations(doc.contents as any, operations, doc)
         }
 
-        return { ...ctx, yamlContent: stringify(doc), mergeStatus: 'created' }
+        return { ...ctx, yamlContent: stringify(doc, { lineWidth: 0, minContentWidth: 0 }), mergeStatus: 'created' }
       }
 
       // Parse existing file
@@ -201,7 +201,7 @@ export const generate = (ctx: NxPipelineContext) =>
       }
 
       const status = userJobs.size > 0 ? 'merged' : 'updated'
-      return { ...ctx, yamlContent: stringify(doc), mergeStatus: status }
+      return { ...ctx, yamlContent: stringify(doc, { lineWidth: 0, minContentWidth: 0 }), mergeStatus: status }
     })
     .then(ctx => {
       const outputPath = '.github/workflows/pipeline.yml'
