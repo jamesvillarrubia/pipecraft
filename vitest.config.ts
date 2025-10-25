@@ -10,17 +10,18 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
       reportsDirectory: './coverage',
-      // Include core business logic AND orchestration code (CLI, generators)
+      // Include core business logic AND orchestration code (generators, templates, utils)
+      // Note: CLI (src/cli/index.ts) is entry point tested via integration tests
       include: [
         'src/utils/**/*.ts',
         'src/templates/workflows/**/*.ts',
-        'src/generators/**/*.ts',
-        'src/cli/index.ts'
+        'src/generators/**/*.ts'
       ],
       exclude: [
         'node_modules/',
         'dist/',
         'tests/',
+        'examples/',
         '**/*.d.ts',
         '**/*.config.*',
         '**/coverage/**',
