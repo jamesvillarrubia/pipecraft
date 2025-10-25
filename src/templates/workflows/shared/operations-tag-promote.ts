@@ -18,9 +18,17 @@ export interface TagPromoteContext {
 export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathOperationConfig[] {
   const { branchFlow, deployJobNames, remoteTestJobNames } = ctx
   const allDeploymentJobs = [...deployJobNames, ...remoteTestJobNames]
+  const initialBranch = branchFlow[0]
 
-  // Build tag job conditional
-  const tagConditions = ['always()', 'needs.version.result == \'success\'', 'needs.version.outputs.version != \'\'']
+  // Build tag job conditional (should only run on initial branch, not on PRs)
+  const tagConditions = [
+    'always()',
+    'github.event_name != \'pull_request\'',
+    `github.ref_name == '${initialBranch}'`,
+    'needs.version.result == \'success\'',
+    'needs.version.outputs.version != \'\''
+  ]
+
   if (allDeploymentJobs.length > 0) {
     const noFailures = allDeploymentJobs.map(job => `needs.${job}.result != 'failure'`).join(' && ')
     const atLeastOneSuccess = allDeploymentJobs.map(job => `needs.${job}.result == 'success'`).join(' || ')
@@ -61,8 +69,8 @@ Creates git tags and promotes code through branch flow.
       path: 'jobs.promote',
       operation: 'overwrite',
       value: createValueFromString(`
-    if: \${{ always() && needs.tag.result == 'success' }}
-    needs: [ tag, version ]
+    if: \${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && (${buildPromotableBranchesCondition(branchFlow)}) }}
+    needs: [ version, tag ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -82,7 +90,7 @@ Creates git tags and promotes code through branch flow.
       path: 'jobs.release',
       operation: 'overwrite',
       value: createValueFromString(`
-    if: \${{ always() && github.ref_name == '${branchFlow[branchFlow.length - 1]}' && needs.tag.result == 'success' }}
+    if: \${{ always() && github.ref_name == '${branchFlow[branchFlow.length - 1]}' && needs.version.result == 'success' && needs.version.outputs.version != '' && needs.tag.result == 'success' }}
     needs: [ tag, version ]
     runs-on: ubuntu-latest
     steps:
@@ -96,6 +104,15 @@ Creates git tags and promotes code through branch flow.
   `)
     }
   ]
+}
+
+/**
+ * Helper to build promotable branches condition
+ * Returns a condition that checks if current branch is promotable (all except final branch)
+ */
+function buildPromotableBranchesCondition(branchFlow: string[]): string {
+  const promotableBranches = branchFlow.slice(0, -1) // All branches except the last one
+  return promotableBranches.map(branch => `github.ref_name == '${branch}'`).join(' || ')
 }
 
 /**

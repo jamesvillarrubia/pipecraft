@@ -54,7 +54,7 @@ export const createPathBasedPipeline = (ctx: any): { yamlContent: string; mergeS
     ...createTagPromoteReleaseOperations({ branchFlow, deployJobNames: deployJobs, remoteTestJobNames: remoteTestJobs })
   ]
 
-  // Check if file exists or use existingPipelineContent
+  // Check if file exists or use existingPipelineContent/existingPipeline
   let doc
   let userJobsCount = 0
   let hasExisting = false
@@ -62,6 +62,11 @@ export const createPathBasedPipeline = (ctx: any): { yamlContent: string; mergeS
   if (ctx.existingPipelineContent) {
     hasExisting = true
     doc = parseDocument(ctx.existingPipelineContent)
+  } else if (ctx.existingPipeline) {
+    hasExisting = true
+    // Convert object to YAML string then parse
+    const yamlString = stringify(ctx.existingPipeline)
+    doc = parseDocument(yamlString)
 
     // Get managed jobs
     const managedJobs = new Set(['changes', 'version', 'tag', 'promote', 'release'])
@@ -88,6 +93,12 @@ export const createPathBasedPipeline = (ctx: any): { yamlContent: string; mergeS
     }
 
     userJobsCount = userJobs.size
+
+    // Clear all jobs from the document before applying operations
+    // (operations will recreate managed jobs, then we'll add back user jobs)
+    if (existingJobs && (existingJobs as any).items) {
+      ;(existingJobs as any).items = []
+    }
 
     // Apply operations
     if (doc.contents) {
