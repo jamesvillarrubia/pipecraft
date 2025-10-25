@@ -1,0 +1,26 @@
+{
+  "name": "billing",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "outputPath": "dist/libs/billing",
+        "main": "libs/billing/src/index.ts",
+        "tsConfig": "libs/billing/tsconfig.json"
+      }
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/billing/jest.config.ts"
+      }
+    },
+    "integration-test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/billing/jest.config.ts"
+      }
+    }
+  }
+}

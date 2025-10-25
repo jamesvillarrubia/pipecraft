@@ -85,7 +85,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/logo_banner.png',
+    image: 'img/logo_banner_trans.png',
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,

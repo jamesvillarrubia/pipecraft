@@ -29,7 +29,7 @@
  */
 
 import { PinionContext, toFile, renderTemplate, prompt, when, writeJSON } from '@featherscloud/pinion'
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { IdempotencyManager } from '../utils/idempotency.js'
 import { VersionManager } from '../utils/versioning.js'
 import { PipecraftConfig } from '../types/index.js'
@@ -98,7 +98,7 @@ const defaultConfig = {
  * only valid configuration properties are included in the output file.
  */
 const configTemplate = (ctx: PipecraftConfig) => {
-  const config = {
+  const config: any = {
     ciProvider: ctx.ciProvider,
     mergeStrategy: ctx.mergeStrategy,
     requireConventionalCommits: ctx.requireConventionalCommits,
@@ -110,6 +110,11 @@ const configTemplate = (ctx: PipecraftConfig) => {
       bumpRules: ctx.semver.bumpRules
     },
     domains: ctx.domains
+  }
+
+  // Include Nx configuration if detected
+  if (ctx.nx) {
+    config.nx = ctx.nx
   }
 
   return JSON.stringify(config, null, 2)
@@ -211,20 +216,71 @@ export const generate = (ctx: PinionContext) =>
         filter: (input: string) => input.split(',').map(b => b.trim())
       }
     ]))
-    .then((ctx) => ({ ...ctx, ...defaultConfig } as PipecraftConfig))
-    .then((config) => {
-      const configData = {
-        ciProvider: config.ciProvider,
-        mergeStrategy: config.mergeStrategy,
-        requireConventionalCommits: config.requireConventionalCommits,
-        initialBranch: config.initialBranch,
-        finalBranch: config.finalBranch,
-        branchFlow: config.branchFlow,
-        autoMerge: config.autoMerge,
-        semver: {
-          bumpRules: config.semver.bumpRules
-        },
-        domains: config.domains
+    .then((ctx) => {
+      const mergedCtx = { ...ctx, ...defaultConfig } as any
+
+      // Detect Nx workspace
+      const nxJsonPath = `${mergedCtx.cwd || process.cwd()}/nx.json`
+      let nxConfig = undefined
+
+      if (existsSync(nxJsonPath)) {
+        try {
+          const nxJsonContent = readFileSync(nxJsonPath, 'utf8')
+          const nxJson = JSON.parse(nxJsonContent)
+
+          // Extract tasks from targetDefaults
+          const tasks = nxJson.targetDefaults ? Object.keys(nxJson.targetDefaults) : []
+
+          // Sort tasks in a logical order (quality → test → build → e2e)
+          const taskOrder = ['lint', 'typecheck', 'test', 'unit-test', 'build', 'integration-test', 'e2e', 'e2e-ci']
+          const sortedTasks = tasks.sort((a, b) => {
+            const aIdx = taskOrder.indexOf(a)
+            const bIdx = taskOrder.indexOf(b)
+            if (aIdx === -1 && bIdx === -1) return 0
+            if (aIdx === -1) return 1
+            if (bIdx === -1) return -1
+            return aIdx - bIdx
+          })
+
+          console.log('✅ Nx workspace detected - enabling Nx integration')
+          console.log(`   Detected tasks: ${sortedTasks.join(', ')}`)
+
+          nxConfig = {
+            enabled: true,
+            tasks: sortedTasks,
+            baseRef: 'origin/main',
+            enableCache: true
+          }
+        } catch (error) {
+          console.warn('⚠️  Found nx.json but could not parse it:', error)
+          console.log('   Using default Nx configuration')
+          nxConfig = {
+            enabled: true,
+            tasks: ['lint', 'test', 'build', 'integration-test'],
+            baseRef: 'origin/main',
+            enableCache: true
+          }
+        }
       }
-      return writeJSON(() => configData, toFile('.pipecraftrc.json'))(ctx)
+
+      const configData: any = {
+        ciProvider: mergedCtx.ciProvider,
+        mergeStrategy: mergedCtx.mergeStrategy,
+        requireConventionalCommits: mergedCtx.requireConventionalCommits,
+        initialBranch: mergedCtx.initialBranch,
+        finalBranch: mergedCtx.finalBranch,
+        branchFlow: mergedCtx.branchFlow,
+        autoMerge: mergedCtx.autoMerge,
+        semver: {
+          bumpRules: mergedCtx.semver.bumpRules
+        },
+        domains: mergedCtx.domains
+      }
+
+      // Add Nx config if detected
+      if (nxConfig) {
+        configData.nx = nxConfig
+      }
+
+      return writeJSON(() => configData, toFile('.pipecraftrc.json'))(mergedCtx)
     })

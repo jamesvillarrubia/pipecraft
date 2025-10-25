@@ -1,0 +1,120 @@
+{
+  "ciProvider": "github",
+  "mergeStrategy": "fast-forward",
+  "requireConventionalCommits": true,
+  "initialBranch": "develop",
+  "finalBranch": "main",
+  "branchFlow": [
+    "develop",
+    "staging",
+    "main"
+  ],
+  "autoMerge": {
+    "staging": true,
+    "main": true
+  },
+  "semver": {
+    "bumpRules": {
+      "feat": "minor",
+      "fix": "patch",
+      "breaking": "major"
+    }
+  },
+  "domains": {
+    "core": {
+      "paths": [
+        "apps/**",
+        "libs/**",
+        "src/**",
+        "packages/**"
+      ],
+      "testable": false,
+      "deployable": false,
+      "remoteTestable": false,
+      "description": "Core application code and shared libraries (NX handles testing/building)"
+    },
+    "cicd": {
+      "paths": [
+        ".github/**",
+        "infrastructure/**",
+        "workflows/**"
+      ],
+      "testable": true,
+      "description": "CI/CD infrastructure and workflows"
+    },
+    "docs": {
+      "paths": [
+        "docs/**",
+        "apps/docs/**",
+        "libs/docs/**"
+      ],
+      "testable": false,
+      "deployable": true,
+      "description": "Documentation and guides"
+    }
+  },
+  "versioning": {
+    "enabled": true,
+    "conventionalCommits": true,
+    "autoTag": true,
+    "autoPush": false,
+    "changelog": true,
+    "bumpRules": {
+      "feat": "minor",
+      "fix": "patch",
+      "breaking": "major"
+    }
+  },
+  "nx": {
+    "enabled": true,
+    "useAffected": true,
+    "taskStageMapping": {
+      "lint": "pre-version",
+      "test": "pre-version",
+      "e2e": "pre-version",
+      "build": "post-version",
+      "deploy": "post-version"
+    },
+    "excludeTasks": [
+      "serve",
+      "storybook",
+      "dev"
+    ],
+    "domainMappings": {
+      "core": [
+        "apps",
+        "libs",
+        "src",
+        "core",
+        "main",
+        "api",
+        "web",
+        "frontend",
+        "backend"
+      ],
+      "cicd": [
+        ".github",
+        "workflows",
+        "infrastructure",
+        "ci",
+        "cd",
+        "deploy",
+        "pipeline"
+      ],
+      "docs": [
+        "docs",
+        "documentation",
+        "site",
+        "storybook",
+        "guide",
+        "readme"
+      ]
+    }
+  },
+  "rebuild": {
+    "enabled": true,
+    "skipIfUnchanged": true,
+    "forceRegenerate": false,
+    "cacheFile": ".pipecraft-cache.json"
+  }
+}

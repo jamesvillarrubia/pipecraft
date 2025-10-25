@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "targetDefaults": {
+    "build": {
+      "dependsOn": ["^build"],
+      "cache": true
+    },
+    "test": {
+      "dependsOn": [],
+      "cache": true
+    },
+    "integration-test": {
+      "dependsOn": ["build", "^build"],
+      "cache": true
+    },
+    "e2e": {
+      "dependsOn": ["build", "^build"],
+      "cache": false
+    },
+    "lint": {
+      "dependsOn": [],
+      "cache": true
+    }
+  },
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "production": [
+      "default",
+      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+      "!{projectRoot}/tsconfig.spec.json",
+      "!{projectRoot}/jest.config.[jt]s",
+      "!{projectRoot}/.eslintrc.json",
+      "!{projectRoot}/src/test-setup.[jt]s",
+      "!{projectRoot}/test/**/*"
+    ],
+    "sharedGlobals": []
+  },
+  "generators": {
+    "@nx/js:library": {
+      "unitTestRunner": "jest"
+    }
+  }
+}

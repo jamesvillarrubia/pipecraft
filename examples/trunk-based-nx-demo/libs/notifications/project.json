@@ -1,0 +1,25 @@
+{
+  "name": "notifications",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "outputPath": "dist/libs/notifications",
+        "main": "libs/notifications/src/index.ts",
+        "tsConfig": "libs/notifications/tsconfig.json"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/notifications/jest.config.ts"
+      }
+    },
+    "integration-test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/notifications/jest.config.ts"
+      }
+    }
+  }
+}

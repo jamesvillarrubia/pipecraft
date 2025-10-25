@@ -81,7 +81,6 @@ import { VersionManager } from '../utils/versioning.js'
 import { loadConfig, validateConfig } from '../utils/config.js'
 import { PipecraftConfig } from '../types/index.js'
 import { setupGitHubPermissions } from '../utils/github-setup.js'
-import { setupGitHubPermissionsClean } from '../utils/github-setup-v2.js'
 import { runPreflightChecks, formatPreflightResults, checkNodeVersion } from '../utils/preflight.js'
 import { logger } from '../utils/logger.js'
 import { readFileSync } from 'fs'
@@ -468,14 +467,8 @@ program
   .action(async (options) => {
     try {
       const autoApply = options.apply || options.force
-      const verbose = options.verbose || program.opts().verbose
-      
-      // Use clean messaging by default, but allow fallback to original
-      if (options.clean !== false) {
-        await setupGitHubPermissionsClean(autoApply, verbose)
-      } else {
-        await setupGitHubPermissions(autoApply)
-      }
+
+      await setupGitHubPermissions(autoApply)
     } catch (error: any) {
       console.error('❌ GitHub setup failed:', error.message)
       if (error.stack) {

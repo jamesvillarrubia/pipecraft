@@ -1,0 +1,31 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": ["es2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@demo/auth": ["libs/auth/src/index.ts"],
+      "@demo/database": ["libs/database/src/index.ts"],
+      "@demo/logging": ["libs/logging/src/index.ts"],
+      "@demo/config": ["libs/config/src/index.ts"],
+      "@demo/user-management": ["libs/user-management/src/index.ts"],
+      "@demo/analytics": ["libs/analytics/src/index.ts"],
+      "@demo/billing": ["libs/billing/src/index.ts"],
+      "@demo/notifications": ["libs/notifications/src/index.ts"],
+      "@demo/reporting": ["libs/reporting/src/index.ts"],
+      "@demo/admin-dashboard": ["libs/admin-dashboard/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}
