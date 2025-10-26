@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { existsSync, readFileSync } from 'fs'
+import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { generate as generateInit } from '../../src/generators/init.tpl.js'
 import { PinionContext } from '@featherscloud/pinion'
@@ -610,6 +610,213 @@ describe('Init Generator', () => {
           expect(domain).toHaveProperty('description')
           expect(domain.paths).toBeInstanceOf(Array)
         })
+      })
+    })
+  })
+
+  describe('Nx Workspace Detection', () => {
+    it('should detect Nx workspace and add Nx config', async () => {
+      await inWorkspace(workspace, async () => {
+        // Create nx.json
+        const nxJson = {
+          targetDefaults: {
+            'lint': {},
+            'test': {},
+            'build': {},
+            'e2e': {}
+          }
+        }
+        writeFileSync('nx.json', JSON.stringify(nxJson, null, 2))
+
+        const ctx: PinionContext = {
+          cwd: workspace,
+          argv: [],
+          pinion: {
+            logger: { ...console, notice: console.log },
+            prompt: async () => ({}),
+            cwd: workspace,
+            force: true,
+            trace: [],
+            exec: async () => 0
+          }
+        }
+
+        await generateInit(ctx)
+
+        const config = parseConfigJSON('.pipecraftrc.json')
+
+        expect(config.nx).toBeDefined()
+        expect(config.nx.enabled).toBe(true)
+        expect(config.nx.tasks).toBeDefined()
+        expect(config.nx.tasks).toContain('lint')
+        expect(config.nx.tasks).toContain('test')
+        expect(config.nx.tasks).toContain('build')
+        expect(config.nx.baseRef).toBe('origin/main')
+        expect(config.nx.enableCache).toBe(true)
+      })
+    })
+
+    it('should sort Nx tasks in logical order', async () => {
+      await inWorkspace(workspace, async () => {
+        const nxJson = {
+          targetDefaults: {
+            'e2e': {},
+            'build': {},
+            'test': {},
+            'lint': {},
+            'typecheck': {}
+          }
+        }
+        writeFileSync('nx.json', JSON.stringify(nxJson, null, 2))
+
+        const ctx: PinionContext = {
+          cwd: workspace,
+          argv: [],
+          pinion: {
+            logger: { ...console, notice: console.log },
+            prompt: async () => ({}),
+            cwd: workspace,
+            force: true,
+            trace: [],
+            exec: async () => 0
+          }
+        }
+
+        await generateInit(ctx)
+
+        const config = parseConfigJSON('.pipecraftrc.json')
+
+        // Should be sorted: lint, typecheck, test, build, e2e
+        expect(config.nx.tasks[0]).toBe('lint')
+        expect(config.nx.tasks[1]).toBe('typecheck')
+        expect(config.nx.tasks[2]).toBe('test')
+        expect(config.nx.tasks[3]).toBe('build')
+        expect(config.nx.tasks[4]).toBe('e2e')
+      })
+    })
+
+    it('should handle malformed nx.json gracefully', async () => {
+      await inWorkspace(workspace, async () => {
+        // Create invalid nx.json
+        writeFileSync('nx.json', '{ invalid json')
+
+        const ctx: PinionContext = {
+          cwd: workspace,
+          argv: [],
+          pinion: {
+            logger: { ...console, notice: console.log },
+            prompt: async () => ({}),
+            cwd: workspace,
+            force: true,
+            trace: [],
+            exec: async () => 0
+          }
+        }
+
+        await generateInit(ctx)
+
+        const config = parseConfigJSON('.pipecraftrc.json')
+
+        // Should still enable Nx with defaults
+        expect(config.nx).toBeDefined()
+        expect(config.nx.enabled).toBe(true)
+        expect(config.nx.tasks).toContain('lint')
+        expect(config.nx.tasks).toContain('test')
+        expect(config.nx.tasks).toContain('build')
+      })
+    })
+
+    it('should not add Nx config when nx.json absent', async () => {
+      await inWorkspace(workspace, async () => {
+        const ctx: PinionContext = {
+          cwd: workspace,
+          argv: [],
+          pinion: {
+            logger: { ...console, notice: console.log },
+            prompt: async () => ({}),
+            cwd: workspace,
+            force: true,
+            trace: [],
+            exec: async () => 0
+          }
+        }
+
+        await generateInit(ctx)
+
+        const config = parseConfigJSON('.pipecraftrc.json')
+
+        expect(config.nx).toBeUndefined()
+      })
+    })
+
+    it('should handle nx.json without targetDefaults', async () => {
+      await inWorkspace(workspace, async () => {
+        const nxJson = {
+          npmScope: 'my-org'
+          // No targetDefaults
+        }
+        writeFileSync('nx.json', JSON.stringify(nxJson, null, 2))
+
+        const ctx: PinionContext = {
+          cwd: workspace,
+          argv: [],
+          pinion: {
+            logger: { ...console, notice: console.log },
+            prompt: async () => ({}),
+            cwd: workspace,
+            force: true,
+            trace: [],
+            exec: async () => 0
+          }
+        }
+
+        await generateInit(ctx)
+
+        const config = parseConfigJSON('.pipecraftrc.json')
+
+        expect(config.nx).toBeDefined()
+        expect(config.nx.enabled).toBe(true)
+        expect(config.nx.tasks).toBeInstanceOf(Array)
+        expect(config.nx.tasks.length).toBe(0)
+      })
+    })
+
+    it('should include all standard Nx tasks when present', async () => {
+      await inWorkspace(workspace, async () => {
+        const nxJson = {
+          targetDefaults: {
+            'lint': {},
+            'typecheck': {},
+            'test': {},
+            'unit-test': {},
+            'build': {},
+            'integration-test': {},
+            'e2e': {},
+            'e2e-ci': {},
+            'custom-task': {} // Should also be included
+          }
+        }
+        writeFileSync('nx.json', JSON.stringify(nxJson, null, 2))
+
+        const ctx: PinionContext = {
+          cwd: workspace,
+          argv: [],
+          pinion: {
+            logger: { ...console, notice: console.log },
+            prompt: async () => ({}),
+            cwd: workspace,
+            force: true,
+            trace: [],
+            exec: async () => 0
+          }
+        }
+
+        await generateInit(ctx)
+
+        const config = parseConfigJSON('.pipecraftrc.json')
+
+        expect(config.nx.tasks).toHaveLength(9)
+        expect(config.nx.tasks).toContain('custom-task')
       })
     })
   })

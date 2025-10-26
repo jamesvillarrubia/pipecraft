@@ -183,6 +183,52 @@ export interface PipecraftConfig {
   domains: Record<string, DomainConfig>
 
   /**
+   * Nx monorepo integration configuration.
+   * When enabled, PipeCraft generates workflows that leverage Nx's dependency graph
+   * and affected detection for intelligent change-based testing.
+   *
+   * @example
+   * ```typescript
+   * nx: {
+   *   enabled: true,
+   *   tasks: ['lint', 'test', 'build', 'integration-test'],
+   *   baseRef: 'origin/main'
+   * }
+   * ```
+   */
+  nx?: {
+    /**
+     * Whether Nx integration is enabled for this project.
+     * Auto-detected if nx.json exists in project root.
+     */
+    enabled: boolean
+
+    /**
+     * Ordered list of Nx tasks to run sequentially.
+     * Tasks are executed using `nx affected --target=<task>`.
+     *
+     * @example ['lint', 'test', 'build', 'e2e']
+     */
+    tasks: string[]
+
+    /**
+     * Base git reference for affected detection.
+     * Used in `nx affected --base=<baseRef>`.
+     *
+     * @default 'origin/main'
+     */
+    baseRef?: string
+
+    /**
+     * Whether to include Nx cache management in workflows.
+     * Speeds up subsequent runs by caching build outputs.
+     *
+     * @default true
+     */
+    enableCache?: boolean
+  }
+
+  /**
    * Idempotency and rebuild configuration.
    * Controls when workflows should be regenerated based on config/template changes.
    */

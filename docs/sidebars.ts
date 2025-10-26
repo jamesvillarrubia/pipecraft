@@ -34,6 +34,7 @@ const sidebars: SidebarsConfig = {
     'version-management',
     'examples',
     'troubleshooting',
+    'faq',
     'security',
     'roadmap',
     'contributing',

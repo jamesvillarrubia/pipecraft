@@ -1,0 +1,26 @@
+{
+  "name": "analytics",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "outputPath": "dist/libs/analytics",
+        "main": "libs/analytics/src/index.ts",
+        "tsConfig": "libs/analytics/tsconfig.json"
+      }
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/analytics/jest.config.ts"
+      }
+    },
+    "integration-test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/analytics/jest.config.ts"
+      }
+    }
+  }
+}
