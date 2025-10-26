@@ -15,6 +15,13 @@ import fs from 'fs'
 import { logger } from '../../utils/logger.js'
 import { PathOperationConfig, applyPathOperations, createValueFromString } from '../../utils/ast-path-operations.js'
 import {
+  getDocumentMap,
+  getMapValue,
+  getCollectionItems,
+  setCollectionItems,
+  getPairKey
+} from '../../utils/yaml-helpers.js'
+import {
   createHeaderOperations,
   createChangesJobOperation,
   createDomainTestJobOperations,
@@ -157,8 +164,9 @@ export const generate = (ctx: NxPipelineContext) =>
 
         // Create new document with empty YAML map
         const doc = parseDocument('{}')
-        if (doc.contents) {
-          applyPathOperations(doc.contents as any, operations, doc)
+        const contents = getDocumentMap(doc)
+        if (contents) {
+          applyPathOperations(contents, operations, doc)
         }
 
         const yamlContent = stringify(doc, { lineWidth: 0, minContentWidth: 0 })
@@ -175,11 +183,12 @@ export const generate = (ctx: NxPipelineContext) =>
 
       // Extract user jobs from existing (preserves comments!)
       const userJobs = new Map<string, any>()
-      const existingJobs = doc.contents && (doc.contents as any).get ? (doc.contents as any).get('jobs') : null
+      const existingJobs = getMapValue(doc.contents, 'jobs')
 
-      if (existingJobs && (existingJobs as any).items) {
-        for (const item of existingJobs.items) {
-          const jobName = item.key?.toString()
+      if (existingJobs) {
+        const jobItems = getCollectionItems(existingJobs)
+        for (const item of jobItems) {
+          const jobName = getPairKey(item)
           if (jobName && !managedJobs.has(jobName) && !testJobs.includes(jobName) && !deployJobs.includes(jobName) && !remoteTestJobs.includes(jobName)) {
             // This is a custom user job - preserve it completely
             userJobs.set(jobName, item)
@@ -188,24 +197,27 @@ export const generate = (ctx: NxPipelineContext) =>
       }
 
       // Clear all jobs before applying operations to prevent duplicates
-      if (existingJobs && (existingJobs as any).items) {
-        ;(existingJobs as any).items = []
+      if (existingJobs) {
+        setCollectionItems(existingJobs, [])
       }
 
       // Apply operations to update managed jobs
-      if (doc.contents) {
-        applyPathOperations(doc.contents as any, operations, doc)
+      const contents = getDocumentMap(doc)
+      if (contents) {
+        applyPathOperations(contents, operations, doc)
       }
 
       // Add back user jobs (preserves their comments!)
       if (userJobs.size > 0) {
         logger.verbose(`📋 Preserving ${userJobs.size} user jobs: ${Array.from(userJobs.keys()).join(', ')}`)
 
-        const jobsNode = (doc.contents as any).get('jobs')
-        if (jobsNode && (jobsNode as any).items) {
+        const jobsNode = getMapValue(doc.contents, 'jobs')
+        if (jobsNode) {
+          const currentItems = getCollectionItems(jobsNode)
           for (const [_, item] of userJobs) {
-            jobsNode.items.push(item)
+            currentItems.push(item)
           }
+          setCollectionItems(jobsNode, currentItems)
         }
       }
 
