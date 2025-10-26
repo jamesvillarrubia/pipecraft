@@ -1,16 +1,20 @@
 const DEFAULT_PREFIXES = {
   test: 'ignore',
   build: 'ignore',
+  ignore: 'ignore',
 
   ci: 'patch',
   docs: 'patch',
-  chore: 'minor',
+  chore: 'patch',
   style: 'patch',
   fix: 'patch',
   perf: 'patch',
   refactor: 'patch',
+  patch: 'patch',
 
   feat: 'minor',
+  minor: 'minor',
+  
   major: 'major',
 }
 
