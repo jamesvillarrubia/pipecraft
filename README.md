@@ -3,11 +3,14 @@
 # PipeCraft
 
 [![npm version](https://badge.fury.io/js/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
-[![Documentation](https://img.shields.io/badge/docs-pipecraft.thecraftlab.dev-blue)](https://pipecraft.thecraftlab.dev)
-[![License](https://img.shields.io/npm/l/pipecraft.svg)](https://github.com/jamesvillarrubia/pipecraft/blob/main/LICENSE)
 [![NPM downloads](https://img.shields.io/npm/dm/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
+[![License](https://img.shields.io/npm/l/pipecraft.svg)](https://github.com/jamesvillarrubia/pipecraft/blob/main/LICENSE)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/en/)
+[![Documentation](https://img.shields.io/badge/docs-pipecraft.thecraftlab.dev-blue)](https://pipecraft.thecraftlab.dev)
 [![codecov](https://codecov.io/gh/jamesvillarrubia/pipecraft/branch/main/graph/badge.svg)](https://codecov.io/gh/jamesvillarrubia/pipecraft)
+[![GitHub issues](https://img.shields.io/github/issues/jamesvillarrubia/pipecraft)](https://github.com/jamesvillarrubia/pipecraft/issues)
+[![GitHub stars](https://img.shields.io/github/stars/jamesvillarrubia/pipecraft)](https://github.com/jamesvillarrubia/pipecraft/stargazers)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 **Pipeline Status:**
 [![develop](https://img.shields.io/github/actions/workflow/status/jamesvillarrubia/pipecraft/pipeline.yml?branch=develop&label=develop)](https://github.com/jamesvillarrubia/pipecraft/actions/workflows/pipeline.yml?query=branch%3Adevelop)
