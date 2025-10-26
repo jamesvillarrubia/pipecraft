@@ -33,6 +33,7 @@ const sidebars: SidebarsConfig = {
     },
     'version-management',
     'examples',
+    'comparison',
     'troubleshooting',
     'faq',
     'security',
