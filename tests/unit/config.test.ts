@@ -17,18 +17,20 @@ describe('Config Utilities', () => {
   })
 
   describe('loadConfig', () => {
-    it.skip('should load valid configuration from .pipecraftrc.json', () => {
-      // Skipped: Race condition with TEST_DIR cleanup when running in parallel
-      // Config loading is tested extensively in other integration tests
+    it('should load valid configuration from .pipecraftrc.json', () => {
+      // Use a unique temp directory to avoid race conditions with parallel tests
+      const uniqueTempDir = join(tmpdir(), `pipecraft-config-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`)
+      mkdirSync(uniqueTempDir, { recursive: true })
+
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      const testConfigPath = join(TEST_DIR, '.pipecraftrc.json')
+      const testConfigPath = join(uniqueTempDir, '.pipecraftrc.json')
       writeFileSync(testConfigPath, configContent)
 
-      // Change to TEST_DIR so cosmiconfig can find the config file
+      // Change to unique temp dir so cosmiconfig can find the config file
       const originalCwd = process.cwd()
       try {
-        process.chdir(TEST_DIR)
+        process.chdir(uniqueTempDir)
         const config = loadConfig()
 
         expect(config).toBeDefined()
@@ -37,11 +39,8 @@ describe('Config Utilities', () => {
         expect(config.domains).toHaveProperty('api')
         expect(config.domains).toHaveProperty('web')
       } finally {
-        if (existsSync(originalCwd)) {
-          process.chdir(originalCwd)
-        } else {
-          process.chdir(__dirname)
-        }
+        process.chdir(originalCwd)
+        rmSync(uniqueTempDir, { recursive: true, force: true })
       }
     })
 
@@ -61,17 +60,24 @@ describe('Config Utilities', () => {
       }
     })
 
-    it.skip('should load config from custom path', () => {
-      // Skipped: Race condition with test-temp directory
+    it('should load config from custom path', () => {
+      // Use a unique temp directory to avoid race conditions with parallel tests
+      const uniqueTempDir = join(tmpdir(), `pipecraft-config-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`)
+      mkdirSync(uniqueTempDir, { recursive: true })
+
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      const customPath = join(TEST_DIR, 'custom-config.json')
-      writeFileSync(customPath, configContent)
+      const customPath = join(uniqueTempDir, 'custom-config.json')
 
-      const config = loadConfig(customPath)
+      try {
+        writeFileSync(customPath, configContent)
+        const config = loadConfig(customPath)
 
-      expect(config).toBeDefined()
-      expect(config.ciProvider).toBe('github')
+        expect(config).toBeDefined()
+        expect(config.ciProvider).toBe('github')
+      } finally {
+        rmSync(uniqueTempDir, { recursive: true, force: true })
+      }
     })
   })
 
