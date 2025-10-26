@@ -24,6 +24,7 @@ import {
   createTagPromoteReleaseOperations,
   getDomainJobNames
 } from './shared/index.js'
+import { formatIfConditions } from '../yaml-format-utils.js'
 
 interface NxPipelineContext extends PinionContext {
   config: PipecraftConfig
@@ -160,7 +161,9 @@ export const generate = (ctx: NxPipelineContext) =>
           applyPathOperations(doc.contents as any, operations, doc)
         }
 
-        return { ...ctx, yamlContent: stringify(doc, { lineWidth: 0, minContentWidth: 0 }), mergeStatus: 'created' }
+        const yamlContent = stringify(doc, { lineWidth: 0, minContentWidth: 0 })
+        const formattedContent = formatIfConditions(yamlContent)
+        return { ...ctx, yamlContent: formattedContent, mergeStatus: 'created' }
       }
 
       // Parse existing file
@@ -207,7 +210,9 @@ export const generate = (ctx: NxPipelineContext) =>
       }
 
       const status = userJobs.size > 0 ? 'merged' : 'updated'
-      return { ...ctx, yamlContent: stringify(doc, { lineWidth: 0, minContentWidth: 0 }), mergeStatus: status }
+      const yamlContent = stringify(doc, { lineWidth: 0, minContentWidth: 0 })
+      const formattedContent = formatIfConditions(yamlContent)
+      return { ...ctx, yamlContent: formattedContent, mergeStatus: status }
     })
     .then(ctx => {
       const outputPath = ctx.outputPipelinePath || '.github/workflows/pipeline.yml'

@@ -13,6 +13,7 @@ import { parseDocument, stringify } from 'yaml'
 import fs from 'fs'
 import { logger } from '../../utils/logger.js'
 import { PathOperationConfig, applyPathOperations } from '../../utils/ast-path-operations.js'
+import { formatIfConditions } from '../yaml-format-utils.js'
 import {
   createHeaderOperations,
   createChangesJobOperation,
@@ -92,7 +93,9 @@ export const generate = (ctx: PathBasedPipelineContext) =>
           applyPathOperations(doc.contents as any, operations, doc)
         }
 
-        return { ...ctx, yamlContent: stringify(doc, { lineWidth: 0, minContentWidth: 0 }), mergeStatus: 'created' }
+        const yamlContent = stringify(doc, { lineWidth: 0, minContentWidth: 0 })
+        const formattedContent = formatIfConditions(yamlContent)
+        return { ...ctx, yamlContent: formattedContent, mergeStatus: 'created' }
       }
 
       // Parse existing file
@@ -164,7 +167,9 @@ export const generate = (ctx: PathBasedPipelineContext) =>
       }
 
       const status = userJobs.size > 0 ? 'merged' : 'updated'
-      return { ...ctx, yamlContent: stringify(doc, { lineWidth: 0, minContentWidth: 0 }), mergeStatus: status }
+      const yamlContent = stringify(doc, { lineWidth: 0, minContentWidth: 0 })
+      const formattedContent = formatIfConditions(yamlContent)
+      return { ...ctx, yamlContent: formattedContent, mergeStatus: status }
     })
     .then(ctx => {
       const outputPath = ctx.outputPipelinePath || '.github/workflows/pipeline.yml'
