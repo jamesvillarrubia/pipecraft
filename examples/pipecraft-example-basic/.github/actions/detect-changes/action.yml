@@ -1,0 +1,76 @@
+name: 'Detect Changes'
+description: 'Detect changes in different application domains based on file paths'
+author: 'Pipecraft'
+
+inputs:
+  baseRef:
+    description: 'Base reference to compare against'
+    required: false
+    default: 'main'
+
+outputs:
+  frontend:
+    description: 'Whether frontend domain has changes'
+    value: ${{ steps.merge.outputs.frontend }}
+  backend:
+    description: 'Whether backend domain has changes'
+    value: ${{ steps.merge.outputs.backend }}
+  mobile:
+    description: 'Whether mobile domain has changes'
+    value: ${{ steps.merge.outputs.mobile }}
+  shared:
+    description: 'Whether shared domain has changes'
+    value: ${{ steps.merge.outputs.shared }}
+  cicd:
+    description: 'Whether cicd domain has changes'
+    value: ${{ steps.merge.outputs.cicd }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set Base Branch
+      id: set-base
+      shell: bash
+      run: |
+        base_branch=${{ inputs.baseRef || 'main' }}
+        echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
+        echo "base_branch=$base_branch" >> $GITHUB_ENV
+
+    - name: Detect Changes
+      uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        base: ${{ steps.set-base.outputs.base_branch }}
+        filters: |
+          frontend:
+            - 'src/frontend/**'
+          backend:
+            - 'src/backend/**'
+          mobile:
+            - 'src/mobile/**'
+          shared:
+            - 'src/shared/**'
+          cicd:
+            - '.github/workflows/**'
+
+    - name: Merge filter outputs
+      id: merge
+      shell: bash
+      run: |
+        echo "frontend=${{ contains(steps.filter.outputs.changes, 'frontend') }}" >> $GITHUB_OUTPUT
+        echo "backend=${{ contains(steps.filter.outputs.changes, 'backend') }}" >> $GITHUB_OUTPUT
+        echo "mobile=${{ contains(steps.filter.outputs.changes, 'mobile') }}" >> $GITHUB_OUTPUT
+        echo "shared=${{ contains(steps.filter.outputs.changes, 'shared') }}" >> $GITHUB_OUTPUT
+        echo "cicd=${{ contains(steps.filter.outputs.changes, 'cicd') }}" >> $GITHUB_OUTPUT
+        
+        echo "📋 Change Detection Results:"
+        echo "  frontend: ${{ contains(steps.filter.outputs.changes, 'frontend') }}"
+        echo "  backend: ${{ contains(steps.filter.outputs.changes, 'backend') }}"
+        echo "  mobile: ${{ contains(steps.filter.outputs.changes, 'mobile') }}"
+        echo "  shared: ${{ contains(steps.filter.outputs.changes, 'shared') }}"
+        echo "  cicd: ${{ contains(steps.filter.outputs.changes, 'cicd') }}"
