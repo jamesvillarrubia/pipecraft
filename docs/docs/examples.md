@@ -6,6 +6,32 @@ sidebar_position: 9
 
 The best way to understand how PipeCraft configurations work is to see them in context. These examples represent real-world scenarios with explanations of why each choice was made. You can use these as starting points for your own configurations.
 
+## Live Example Repositories
+
+**Looking for complete, working examples?** Check out our example repositories on GitHub with real code, tests, and workflows:
+
+### [📦 pipecraft-example-minimal](https://github.com/jamesvillarrubia/pipecraft-example-minimal)
+Simplest possible setup (1 domain, 2-branch flow). **Perfect for getting started in 5 minutes.**
+
+### [🏗️ pipecraft-example-basic](https://github.com/jamesvillarrubia/pipecraft-example-basic)
+Multi-domain application (4 domains, 3-branch trunk flow). **Most common use case.**
+
+### [🎯 pipecraft-example-nx](https://github.com/jamesvillarrubia/pipecraft-example-nx)
+Advanced Nx monorepo (10+ projects + mixed detection). **For large monorepos.**
+
+### [🔐 pipecraft-example-gated](https://github.com/jamesvillarrubia/pipecraft-example-gated)
+Enterprise gated workflow (5-branch flow, manual approvals). **For compliance requirements.**
+
+**[📖 View detailed comparison of all examples →](https://github.com/jamesvillarrubia/pipecraft/blob/main/examples/README.md)**
+
+Each example includes working code, comprehensive documentation, and is ready to clone and customize for your project.
+
+---
+
+## Configuration Examples
+
+Below are additional configuration examples for specific scenarios:
+
 ## Simple Web Application
 
 This example represents a straightforward web application with a single codebase. You're using a two-branch flow to keep things simple: developers merge features to develop, and when you're ready to release, you promote to main.
