@@ -1,8 +1,0 @@
-{
-  "name": "frontend",
-  "targets": {
-    "build": {"executor": "@nx/js:tsc", "options": {"outputPath": "dist/apps/frontend", "main": "apps/frontend/src/main.ts", "tsConfig": "apps/frontend/tsconfig.json"}},
-    "test": {"executor": "@nx/jest:jest", "options": {"jestConfig": "apps/frontend/jest.config.ts"}},
-    "e2e": {"executor": "@nx/jest:jest", "options": {"jestConfig": "apps/frontend/jest.config.ts", "testPathPattern": "e2e"}}
-  }
-}
