@@ -1,0 +1,26 @@
+{
+  "ciProvider": "github",
+  "mergeStrategy": "fast-forward",
+  "requireConventionalCommits": true,
+  "initialBranch": "develop",
+  "finalBranch": "main",
+  "branchFlow": ["develop", "main"],
+  "autoMerge": {
+    "main": true
+  },
+  "semver": {
+    "bumpRules": {
+      "feat": "minor",
+      "fix": "patch",
+      "breaking": "major"
+    }
+  },
+  "domains": {
+    "app": {
+      "paths": ["src/**"],
+      "description": "Application code",
+      "test": true,
+      "deployable": true
+    }
+  }
+}
