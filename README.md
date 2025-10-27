@@ -158,6 +158,42 @@ Run `pipecraft generate` and you get a complete GitHub Actions workflow with:
 
 Add your specific test commands to the generated jobs, commit everything, and you're running.
 
+## Example Repositories
+
+Explore fully-working example repositories demonstrating different PipeCraft use cases:
+
+### [📦 pipecraft-example-minimal](https://github.com/jamesvillarrubia/pipecraft-example-minimal)
+The simplest possible setup - **perfect for learning PipeCraft in 5 minutes**.
+- 1 domain, 2-branch flow (develop → main)
+- Demonstrates bootstrap behavior (no initial tag)
+- Great for: Quickstart, learning basics
+
+### [🏗️ pipecraft-example-basic](https://github.com/jamesvillarrubia/pipecraft-example-basic)
+Standard multi-domain application - **most common use case**.
+- 4 domains (frontend, backend, api, shared)
+- 3-branch trunk flow (develop → staging → main)
+- Great for: Standard web apps, microservices
+
+### [🎯 pipecraft-example-nx](https://github.com/jamesvillarrubia/pipecraft-example-nx)
+Advanced Nx monorepo - **complex dependency management**.
+- 10+ Nx projects + path-based domains (infra, migrations)
+- Mixed detection strategies (Nx affected + path-based)
+- Great for: Large monorepos, Nx workspaces
+
+### [🔐 pipecraft-example-gated](https://github.com/jamesvillarrubia/pipecraft-example-gated)
+Enterprise gated workflow - **manual approval at each stage**.
+- 5-branch flow (develop → alpha → beta → release → production)
+- Manual PR approvals, merge commits for audit trail
+- Great for: Enterprise workflows, compliance requirements
+
+**[View all examples with detailed comparison →](./examples/)**
+
+Each example includes:
+- ✅ Complete working code and tests
+- ✅ Comprehensive README with setup instructions
+- ✅ Real GitHub Actions workflows
+- ✅ Ready to clone and customize
+
 ## What Gets Generated
 
 PipeCraft creates `.github/workflows/pipeline.yml` containing all the jobs that run when you push code. It also generates reusable actions in `.github/actions/` for common operations like change detection and version calculation.
