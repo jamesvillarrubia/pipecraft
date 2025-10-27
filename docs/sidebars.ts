@@ -35,6 +35,7 @@ const sidebars: SidebarsConfig = {
     'examples',
     'comparison',
     'troubleshooting',
+    'upgrade-guide',
     'faq',
     'security',
     'roadmap',
