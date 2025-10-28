@@ -14,7 +14,7 @@ PipeCraft eliminates these debugging cycles by providing battle-tested templates
 
 When customizations become complex or you need to incorporate updates, regenerate from templates. PipeCraft's smart merging preserves your custom jobs and deployment steps while updating the core workflow structure. This gives you the best of both worlds: the speed of templates with the flexibility of full ownership.
 
-The templates include best practices for monorepos where different parts of your codebase need independent testing. PipeCraft's domain-based change detection ensures only affected code gets tested, reducing CI costs and runtime. The workflows also handle semantic versioning, changelog generation, and automated branch promotions—common requirements that are tedious to implement correctly from scratch.
+The templates include best practices for monorepos where different parts of your codebase need independent testing. PipeCraft's domain-based change detection ensures only affected code gets tested, reducing CI costs and runtime. For Nx workspaces, PipeCraft automatically detects your setup and generates optimized workflows that use Nx's dependency graph for even more precise change detection. The workflows also handle semantic versioning, changelog generation, and automated branch promotions—common requirements that are tedious to implement correctly from scratch.
 
 ## Your first workflow
 
@@ -41,32 +41,72 @@ pipecraft init
 
 PipeCraft will ask you questions about your project:
 
-- **What branches do you use?** Most teams use develop, staging, and main. Choose what matches your workflow.
-- **What domains exist in your codebase?** For our example, we have "api" and "web".
-- **Where is each domain located?** The API lives in `packages/api/**` and the web app in `packages/web/**`.
+- **What is your project name?** Used for documentation and workflow naming
+- **Which CI provider are you using?** GitHub Actions or GitLab CI/CD
+- **What merge strategy do you prefer?** Fast-forward only (recommended) or merge commits
+- **Require conventional commit format for PR titles?** Enforces consistent commit messages
+- **What is your development branch name?** Usually `develop` or `main`
+- **What is your production branch name?** Usually `main` or `production`
+- **Enter your branch flow (comma-separated)** - The sequence of branches (e.g., `develop,staging,main`)
+- **Which package manager do you use?** npm, yarn, or pnpm (auto-detected from lock files)
+- **What domains exist in your codebase?** Choose from common patterns or enter custom domains
+
+For domains, you can select from:
+- **API + Web** (common monorepo pattern)
+- **Frontend + Backend** (full-stack pattern)
+- **Apps + Libs** (Nx-style monorepo)
+- **Custom domains** (enter your own comma-separated list)
+
+If you choose custom domains, PipeCraft will warn you that you'll need to edit the paths in the generated configuration to match your actual project structure.
+
+PipeCraft also auto-detects Nx workspaces and will enable Nx integration if found.
 
 After answering these questions, you'll have a `.pipecraftrc.json` file:
 
 ```json
 {
   "ciProvider": "github",
-  "branchFlow": ["develop", "staging", "main"],
+  "mergeStrategy": "fast-forward",
+  "requireConventionalCommits": true,
   "initialBranch": "develop",
   "finalBranch": "main",
+  "branchFlow": ["develop", "staging", "main"],
+  "packageManager": "npm",
+  "autoMerge": {
+    "staging": true,
+    "main": true
+  },
+  "semver": {
+    "bumpRules": {
+      "feat": "minor",
+      "fix": "patch",
+      "breaking": "major"
+    }
+  },
   "domains": {
     "api": {
-      "paths": ["packages/api/**"],
-      "testable": true,
-      "deployable": true
+      "paths": ["apps/api/**"],
+      "description": "API application changes"
     },
     "web": {
-      "paths": ["packages/web/**"],
-      "testable": true,
-      "deployable": true
+      "paths": ["apps/web/**"],
+      "description": "Web application changes"
+    },
+    "libs": {
+      "paths": ["libs/**"],
+      "description": "Shared library changes"
+    },
+    "cicd": {
+      "paths": [".github/workflows/**"],
+      "description": "CI/CD configuration changes"
     }
   }
 }
 ```
+
+**Note:** The domains are generated based on your selection during init. If you chose custom domains, you'll need to edit the paths in `.pipecraftrc.json` to match your actual project structure. You can always add, remove, or modify domains after generation.
+
+If PipeCraft detects an Nx workspace, it will also add an `nx` configuration section with detected tasks and optimization settings.
 
 This configuration tells PipeCraft everything it needs to know about your project structure.
 
@@ -79,22 +119,44 @@ pipecraft generate
 ```
 
 PipeCraft creates:
+
+**Main workflow:**
 - `.github/workflows/pipeline.yml` - Your main CI/CD pipeline
-- `.github/actions/*/action.yml` - Reusable actions for change detection, versioning, etc.
+
+**Reusable actions:**
+- `.github/actions/detect-changes/action.yml` - Path-based change detection
+- `.github/actions/calculate-version/action.yml` - Semantic version calculation
+- `.github/actions/create-tag/action.yml` - Git tag creation
+- `.github/actions/create-pr/action.yml` - Pull request management
+- `.github/actions/manage-branch/action.yml` - Branch operations
+- `.github/actions/promote-branch/action.yml` - Branch promotion
+- `.github/actions/create-release/action.yml` - GitHub release creation
+
+**Additional workflows:**
+- `.github/workflows/enforce-pr-target.yml` - Ensures PRs target correct branches
+- `.github/workflows/pr-title-check.yml` - Validates conventional commit format
+
+**Configuration:**
+- `.release-it.cjs` - Release-it configuration for version management
+
+If you have an Nx workspace, PipeCraft also generates:
+- `.github/actions/detect-changes-nx/action.yml` - Nx-optimized change detection
 
 Open `.github/workflows/pipeline.yml` and you'll see a complete workflow with jobs for testing, versioning, and deploying both domains. The workflow is ready to use - you just need to add your specific test and deploy commands.
 
 ### Add your test commands
 
-Find the test jobs in the generated workflow and add your actual test commands:
+Find the test jobs in the generated workflow and replace the TODO comments with your actual test commands:
 
 ```yaml
 test-api:
   needs: changes
-  if: needs.changes.outputs.api == 'true'
+  if: ${{ needs.changes.outputs.api == 'true' }}
   runs-on: ubuntu-latest
   steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.commitSha || github.sha }}
     - uses: actions/setup-node@v4
       with:
         node-version: '20'
@@ -102,7 +164,7 @@ test-api:
     - run: npm test -- packages/api  # Your test command here
 ```
 
-Do the same for the web domain and any deploy jobs. PipeCraft preserves these customizations when you regenerate, so you can safely edit them.
+The generated jobs start with TODO placeholders that you replace with your actual commands. PipeCraft uses `operation: 'preserve'` for domain jobs, so your customizations survive regeneration. Only structural changes (like conditions and dependencies) are updated when you modify your configuration.
 
 ### Commit and test
 
@@ -137,44 +199,83 @@ on:
       - develop
       - staging
       - main
+  pull_request:
+    branches:
+      - develop
+      - staging
+      - main
+  workflow_call:
+    inputs:
+      version:
+        description: The version to deploy
+        required: false
+        type: string
+      baseRef:
+        description: The base reference for comparison
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
-      target_branch:
-        description: 'Branch to promote to'
-        required: true
+      version:
+        description: The version to deploy
+        required: false
+        type: string
+      baseRef:
+        description: The base reference for comparison
+        required: false
+        type: string
 
 jobs:
+  # =============================================================================
+  # CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
+  # =============================================================================
   changes:
     runs-on: ubuntu-latest
-    outputs:
-      api: ${{ steps.changes.outputs.api }}
-      web: ${{ steps.changes.outputs.web }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: changes
         with:
-          filters: |
-            api:
-              - 'packages/api/**'
-            web:
-              - 'packages/web/**'
+          ref: ${{ inputs.commitSha || github.sha }}
+          fetch-depth: 0
+      - uses: ./.github/actions/detect-changes
+        id: detect
+        with:
+          baseRef: ${{ inputs.baseRef || 'main' }}
+    outputs:
+      api: ${{ steps.detect.outputs.api }}
+      web: ${{ steps.detect.outputs.web }}
 
+  # =============================================================================
+  # TESTING JOBS (✅ Customize these with your test logic)
+  # =============================================================================
   test-api:
     needs: changes
-    if: needs.changes.outputs.api == 'true'
+    if: ${{ needs.changes.outputs.api == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Your API test commands here
+        with:
+          ref: ${{ inputs.commitSha || github.sha }}
+      # TODO: Replace with your api test logic
+      - name: Run api tests
+        run: |
+          echo "Running tests for api domain"
+          echo "Replace this with your actual test commands"
+          # Example: npm test -- --testPathPattern=api
 
   test-web:
     needs: changes
-    if: needs.changes.outputs.web == 'true'
+    if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Your web test commands here
+        with:
+          ref: ${{ inputs.commitSha || github.sha }}
+      # TODO: Replace with your web test logic
+      - name: Run web tests
+        run: |
+          echo "Running tests for web domain"
+          echo "Replace this with your actual test commands"
+          # Example: npm test -- --testPathPattern=web
 ```
 
 The workflow starts with a **change detection job** that uses GitHub's paths-filter action to determine which domains have modifications. This job outputs boolean values (api: true/false, web: true/false) that other jobs use to decide whether to run.
@@ -187,24 +288,43 @@ PipeCraft also generates jobs for **version bumping** on your final branch (main
 
 PipeCraft creates composite actions in `.github/actions/` for common operations:
 
-- **change-detection**: Analyzes file paths to determine affected domains
-- **version-check**: Inspects commits to calculate the next version number
-- **branch-promotion**: Handles the mechanics of promoting code between branches
+- **detect-changes**: Analyzes file paths to determine affected domains using GitHub's paths-filter
+- **calculate-version**: Inspects commits to calculate the next semantic version number
+- **create-tag**: Creates git tags with the calculated version
+- **create-pr**: Manages pull request creation and updates
+- **manage-branch**: Handles branch operations and management
+- **promote-branch**: Handles the mechanics of promoting code between branches
+- **create-release**: Creates GitHub releases with changelogs
 
-These actions keep the main workflow file clean and make it easier to understand what's happening at each step.
+These actions keep the main workflow file clean and make it easier to understand what's happening at each step. Each action is self-contained and can be reused across different workflows.
 
 ### Customizable sections
 
-The generated workflow includes clearly marked sections where you can add your own jobs and steps:
+The generated workflow includes clearly marked sections where you can customize jobs and add your own:
 
 ```yaml
-# === USER JOBS START ===
-# Add your custom jobs here
-# PipeCraft preserves this section during regeneration
-# === USER JOBS END ===
+# =============================================================================
+# TESTING JOBS (✅ Customize these with your test logic)
+# =============================================================================
+test-api:
+  needs: changes
+  if: ${{ needs.changes.outputs.api == 'true' }}
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    # TODO: Replace with your api test logic
+    - name: Run api tests
+      run: |
+        echo "Replace this with your actual test commands"
 ```
 
-Anything between these markers survives regeneration. When you add deployment scripts, integration tests, or notification steps, place them in these sections. PipeCraft's AST-based merging ensures your customizations remain intact when you update your configuration and regenerate.
+**How preservation works:**
+
+- **Managed jobs** (always regenerated): `changes`, `version`, `tag`, `promote`, `release`
+- **Domain jobs** (preserved when customized): `test-*`, `deploy-*`, `remote-test-*` 
+- **User jobs** (always preserved): Any job name not matching PipeCraft patterns
+
+PipeCraft uses **AST-based intelligent merging** that preserves your customizations by job name. When you edit a `test-api` job, your changes survive regeneration. When you add a custom `database-migrations` job, it's automatically preserved. Comments and formatting are maintained through precise YAML parsing.
 
 ## Understanding the workflow
 
