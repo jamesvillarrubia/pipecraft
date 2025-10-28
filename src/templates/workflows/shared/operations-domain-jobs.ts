@@ -124,7 +124,7 @@ Replace the TODO comments with your actual remote testing commands.
       }),
       value: createValueFromString(`
     needs: [ deploy-${domain}, changes ]
-    if: \${{ always() }}
+    if: \${{ needs.changes.outputs.${domain} == 'true' && needs.deploy-${domain}.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -132,7 +132,6 @@ Replace the TODO comments with your actual remote testing commands.
           ref: \${{ inputs.commitSha || github.sha }}
       # TODO: Replace with your ${domain} remote testing logic
       - name: Test ${domain} remotely
-        if: \${{ needs.changes.outputs.${domain} == 'true' && needs.deploy-${domain}.result == 'success' }}
         run: |
           echo "Testing ${domain} remotely"
           echo "Replace this with your actual remote test commands"
