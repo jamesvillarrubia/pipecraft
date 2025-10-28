@@ -51,6 +51,7 @@ import { logger } from '../utils/logger.js'
 // Import individual workflow templates
 import { generate as generateTagWorkflow } from '../templates/actions/create-tag.yml.tpl.js'
 import { generate as generateChangesWorkflow } from '../templates/actions/detect-changes.yml.tpl.js'
+import { generate as generateChangesNxWorkflow } from '../templates/actions/detect-changes-nx.yml.tpl.js'
 import { generate as generateVersionWorkflow } from '../templates/actions/calculate-version.yml.tpl.js'
 import { generate as generateCreatePRWorkflow } from '../templates/actions/create-pr.yml.tpl.js'
 import { generate as generateBranchWorkflow } from '../templates/actions/manage-branch.yml.tpl.js'
@@ -159,7 +160,7 @@ export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPip
     })
     .then((ctx) => {
       // Generate individual GitHub Actions and release-it config
-      return Promise.all([
+      const generators = [
         generateChangesWorkflow(ctx),
         generateTagWorkflow(ctx),
         generateVersionWorkflow(ctx),
@@ -168,7 +169,14 @@ export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPip
         generatePromoteBranchWorkflow(ctx),
         generateReleaseWorkflow(ctx),
         generateReleaseItConfig(ctx)
-      ]).then(() => ctx)
+      ]
+
+      // Add Nx-specific action if Nx is enabled
+      if (ctx.config?.nx?.enabled) {
+        generators.push(generateChangesNxWorkflow(ctx))
+      }
+
+      return Promise.all(generators).then(() => ctx)
     })
     .then((ctx) => {
       // Generate the main pipeline (Nx or path-based)

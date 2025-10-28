@@ -23,8 +23,17 @@ pipecraft init
 
 This launches an interactive setup that asks you about your project structure. It will ask questions like:
 - Which branches you want to use (develop, staging, main)
+- Which package manager you use (npm, yarn, or pnpm) - auto-detected from lockfiles
 - What domains exist in your codebase (api, web, etc.)
 - Which paths belong to each domain
+
+The init command automatically detects your package manager by checking for lockfiles:
+- `pnpm-lock.yaml` → pnpm
+- `yarn.lock` → yarn
+- `package-lock.json` → npm
+- No lockfile → defaults to npm
+
+You can confirm or override the detected package manager during the interactive prompts.
 
 Once complete, you'll have a `.pipecraftrc.json` file that contains your configuration.
 

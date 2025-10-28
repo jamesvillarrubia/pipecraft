@@ -38,6 +38,7 @@ interface NxPipelineContext extends PinionContext {
 function createNxCiJobOperation(ctx: NxPipelineContext): PathOperationConfig {
   const { config } = ctx
   const nxConfig = config.nx!
+  const packageManager = config.packageManager || 'npm'
   const enableCache = nxConfig.enableCache !== false
 
   const taskSteps = nxConfig.tasks
@@ -88,10 +89,26 @@ Nx handles dependency detection, caching, and parallel execution internally.
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci
+        run: |
+          case "${packageManager}" in
+            pnpm)
+              corepack enable
+              pnpm install --frozen-lockfile || pnpm install
+              ;;
+            yarn)
+              yarn install --frozen-lockfile || yarn install
+              ;;
+            npm)
+              npm ci || npm install
+              ;;
+            *)
+              npm install
+              ;;
+          esac
+        env:
+          packageManager: ${packageManager}
 ${cacheStep}
 ${taskSteps}
   `)

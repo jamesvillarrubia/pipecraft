@@ -179,6 +179,7 @@ Domains with different capabilities flow through phases differently:
 | `ciProvider` | `"github" \| "gitlab"` | `"github"` | CI/CD platform |
 | `mergeStrategy` | `"fast-forward" \| "merge"` | `"fast-forward"` | Git merge strategy |
 | `requireConventionalCommits` | `boolean` | `true` | Enforce conventional commit format |
+| `packageManager` | `"npm" \| "yarn" \| "pnpm"` | `"npm"` | Package manager for dependency installation |
 | `initialBranch` | `string` | `"develop"` | First branch in promotion flow |
 | `finalBranch` | `string` | `"main"` | Final production branch |
 | `branchFlow` | `string[]` | `["develop", "staging", "main"]` | Ordered branch promotion sequence |
@@ -198,6 +199,44 @@ Domains with different capabilities flow through phases differently:
 }
 ```
 
+#### Package Manager Configuration
+
+PipeCraft automatically detects your package manager during `pipecraft init` by checking for lockfiles, but you can explicitly configure it:
+
+```json
+{
+  "packageManager": "pnpm"
+}
+```
+
+**Auto-detection during init:**
+- Checks for `pnpm-lock.yaml` → selects `pnpm`
+- Checks for `yarn.lock` → selects `yarn`
+- Checks for `package-lock.json` → selects `npm`
+- Defaults to `npm` if no lockfile found
+
+**Impact on generated workflows:**
+- **Nx workflows**: Uses the configured package manager for dependency installation
+- **Install commands**:
+  - `npm`: `npm ci` (with fallback to `npm install`)
+  - `yarn`: `yarn install --frozen-lockfile` (with fallback to `yarn install`)
+  - `pnpm`: `pnpm install --frozen-lockfile` (with fallback to `pnpm install`)
+
+**When to set explicitly:**
+```json
+{
+  "packageManager": "pnpm",  // Explicit configuration
+  "nx": {
+    "enabled": true
+  }
+}
+```
+
+Use explicit configuration when:
+- You use a package manager but haven't committed the lockfile yet
+- You want to enforce a specific package manager across your team
+- You're migrating between package managers
+
 #### Custom Version Bump Rules
 
 ```json
@@ -205,7 +244,7 @@ Domains with different capabilities flow through phases differently:
   "semver": {
     "bumpRules": {
       "feat": "minor",
-      "fix": "patch", 
+      "fix": "patch",
       "breaking": "major",
       "docs": "patch",
       "style": "patch",

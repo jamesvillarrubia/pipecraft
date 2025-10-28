@@ -54,7 +54,7 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         createChangesJobOperation({
           domains,
           useNx: false,
-          baseRef: 'main'
+          baseRef: config.finalBranch
         }),
 
         // NO nx-ci job for path-based (that's the key difference!)
@@ -66,7 +66,7 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         createVersionJobOperation({
           testJobNames: testJobs,
           nxEnabled: false,
-          baseRef: 'main'
+          baseRef: config.finalBranch
         }),
 
         // Domain deploy jobs (preserved for user customization)
