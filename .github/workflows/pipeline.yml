@@ -134,13 +134,30 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.docs == 'true' }}
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs
     steps:
-      # TODO: Replace with your docs test logic
-      - name: Run docs tests
-        run: |
-          echo "Running tests for docs domain"
-          echo "Replace this with your actual test commands"
-          # Example: npm test -- --testPathPattern=docs
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commitSha || github.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build docs
+        run: pnpm run build
 
   #=============================================================================
   # VERSIONING (⚠️  Managed by Pipecraft - do not modify)
