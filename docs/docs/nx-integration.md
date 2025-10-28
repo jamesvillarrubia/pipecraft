@@ -466,12 +466,12 @@ If you need custom Nx affected logic, you can override the generated action or c
 
 ## Example: Full Nx Monorepo Setup
 
-See [examples/nx-monorepo/](../examples/nx-monorepo/) for a complete example including:
+See the [pipecraft-example-nx](https://github.com/jamesvillarrubia/pipecraft-example-nx) repository for a complete working example including:
 - Multi-app Nx workspace
 - PipeCraft configuration
 - Generated workflows
 - Domain mapping strategies
-- CI/CD pipeline
+- CI/CD pipeline running in GitHub Actions
 
 ## Next Steps
 
