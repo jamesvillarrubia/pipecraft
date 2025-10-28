@@ -41,9 +41,16 @@ pipecraft init
 
 PipeCraft will ask you questions about your project:
 
-- **What branches do you use?** Most teams use develop, staging, and main. Choose what matches your workflow.
-- **What domains exist in your codebase?** For our example, we have "api" and "web".
-- **Where is each domain located?** The API lives in `packages/api/**` and the web app in `packages/web/**`.
+- **What is your project name?** Used for documentation and workflow naming
+- **Which CI provider are you using?** GitHub Actions or GitLab CI/CD
+- **What merge strategy do you prefer?** Fast-forward only (recommended) or merge commits
+- **Require conventional commit format for PR titles?** Enforces consistent commit messages
+- **What is your development branch name?** Usually `develop` or `main`
+- **What is your production branch name?** Usually `main` or `production`
+- **Enter your branch flow (comma-separated)** - The sequence of branches (e.g., `develop,staging,main`)
+- **Which package manager do you use?** npm, yarn, or pnpm (auto-detected from lock files)
+
+PipeCraft also auto-detects Nx workspaces and will enable Nx integration if found.
 
 After answering these questions, you'll have a `.pipecraftrc.json` file:
 
@@ -69,11 +76,11 @@ After answering these questions, you'll have a `.pipecraftrc.json` file:
   },
   "domains": {
     "api": {
-      "paths": ["packages/api/**"],
+      "paths": ["apps/api/**"],
       "description": "API application changes"
     },
     "web": {
-      "paths": ["packages/web/**"],
+      "paths": ["apps/web/**"],
       "description": "Web application changes"
     },
     "libs": {
@@ -87,6 +94,8 @@ After answering these questions, you'll have a `.pipecraftrc.json` file:
   }
 }
 ```
+
+**Note:** The domains are pre-configured with common patterns. You can edit the `.pipecraftrc.json` file after generation to customize the paths and add/remove domains as needed.
 
 If PipeCraft detects an Nx workspace, it will also add an `nx` configuration section with detected tasks and optimization settings.
 
