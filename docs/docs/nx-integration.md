@@ -22,6 +22,7 @@ This means your CI/CD pipeline only runs tests and deployments for domains that 
   "ciProvider": "github",
   "mergeStrategy": "fast-forward",
   "requireConventionalCommits": true,
+  "packageManager": "npm",
   "initialBranch": "develop",
   "finalBranch": "main",
   "branchFlow": ["develop", "staging", "main"],
@@ -53,6 +54,8 @@ This means your CI/CD pipeline only runs tests and deployments for domains that 
   }
 }
 ```
+
+**Package Manager Support**: PipeCraft automatically detects your package manager during init and uses it for dependency installation in Nx workflows. The install commands use frozen lockfiles when available (`npm ci`, `yarn install --frozen-lockfile`, `pnpm install --frozen-lockfile`) with automatic fallback to regular install if lockfiles are missing.
 
 ### 2. Generate Workflows
 

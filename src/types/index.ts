@@ -183,6 +183,18 @@ export interface PipecraftConfig {
   domains: Record<string, DomainConfig>
 
   /**
+   * Package manager used for dependency installation.
+   * Auto-detected during init based on lockfile presence.
+   *
+   * - 'npm': Uses npm (with package-lock.json)
+   * - 'yarn': Uses yarn (with yarn.lock)
+   * - 'pnpm': Uses pnpm (with pnpm-lock.yaml)
+   *
+   * @default 'npm'
+   */
+  packageManager?: 'npm' | 'yarn' | 'pnpm'
+
+  /**
    * Nx monorepo integration configuration.
    * When enabled, PipeCraft generates workflows that leverage Nx's dependency graph
    * and affected detection for intelligent change-based testing.

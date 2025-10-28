@@ -28,8 +28,9 @@
  * respect user input and allow customization.
  */
 
-import { PinionContext, toFile, renderTemplate, prompt, when, writeJSON } from '@featherscloud/pinion'
+import { PinionContext, toFile, renderTemplate, writeJSON } from '@featherscloud/pinion'
 import { existsSync, readFileSync } from 'fs'
+import inquirer from 'inquirer'
 import { IdempotencyManager } from '../utils/idempotency.js'
 import { VersionManager } from '../utils/versioning.js'
 import { PipecraftConfig } from '../types/index.js'
@@ -161,126 +162,147 @@ const configTemplate = (ctx: PipecraftConfig) => {
  * - Production branch name
  * - Branch flow sequence
  */
-export const generate = (ctx: PinionContext) =>
-  Promise.resolve(ctx)
-    .then(prompt([
-      {
-        type: 'input',
-        name: 'projectName',
-        message: 'What is your project name?',
-        default: 'my-project'
-      },
-      {
-        type: 'list',
-        name: 'ciProvider',
-        message: 'Which CI provider are you using?',
-        choices: [
-          { name: 'GitHub Actions', value: 'github' },
-          { name: 'GitLab CI/CD', value: 'gitlab' }
-        ],
-        default: 'github'
-      },
-      {
-        type: 'list',
-        name: 'mergeStrategy',
-        message: 'What merge strategy do you prefer?',
-        choices: [
-          { name: 'Fast-forward only (recommended)', value: 'fast-forward' },
-          { name: 'Merge commits', value: 'merge' }
-        ],
-        default: 'fast-forward'
-      },
-      {
-        type: 'confirm',
-        name: 'requireConventionalCommits',
-        message: 'Require conventional commit format for PR titles?',
-        default: true
-      },
-      {
-        type: 'input',
-        name: 'initialBranch',
-        message: 'What is your development branch name?',
-        default: 'develop'
-      },
-      {
-        type: 'input',
-        name: 'finalBranch',
-        message: 'What is your production branch name?',
-        default: 'main'
-      },
-      {
-        type: 'input',
-        name: 'branchFlow',
-        message: 'Enter your branch flow (comma-separated)',
-        default: 'develop,staging,main',
-        filter: (input: string) => input.split(',').map(b => b.trim())
+export const generate = async (ctx: PinionContext) => {
+  const cwd = ctx.cwd || process.cwd()
+
+  // Detect package manager before prompting
+  let detectedPackageManager: 'npm' | 'yarn' | 'pnpm' = 'npm'
+  if (existsSync(`${cwd}/pnpm-lock.yaml`)) {
+    detectedPackageManager = 'pnpm'
+  } else if (existsSync(`${cwd}/yarn.lock`)) {
+    detectedPackageManager = 'yarn'
+  } else if (existsSync(`${cwd}/package-lock.json`)) {
+    detectedPackageManager = 'npm'
+  }
+
+  // Run inquirer prompts
+  const answers = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'projectName',
+      message: 'What is your project name?',
+      default: 'my-project'
+    },
+    {
+      type: 'list',
+      name: 'ciProvider',
+      message: 'Which CI provider are you using?',
+      choices: [
+        { name: 'GitHub Actions', value: 'github' },
+        { name: 'GitLab CI/CD', value: 'gitlab' }
+      ],
+      default: 'github'
+    },
+    {
+      type: 'list',
+      name: 'mergeStrategy',
+      message: 'What merge strategy do you prefer?',
+      choices: [
+        { name: 'Fast-forward only (recommended)', value: 'fast-forward' },
+        { name: 'Merge commits', value: 'merge' }
+      ],
+      default: 'fast-forward'
+    },
+    {
+      type: 'confirm',
+      name: 'requireConventionalCommits',
+      message: 'Require conventional commit format for PR titles?',
+      default: true
+    },
+    {
+      type: 'input',
+      name: 'initialBranch',
+      message: 'What is your development branch name?',
+      default: 'develop'
+    },
+    {
+      type: 'input',
+      name: 'finalBranch',
+      message: 'What is your production branch name?',
+      default: 'main'
+    },
+    {
+      type: 'input',
+      name: 'branchFlow',
+      message: 'Enter your branch flow (comma-separated)',
+      default: 'develop,staging,main',
+      filter: (input: string) => input.split(',').map(b => b.trim())
+    },
+    {
+      type: 'list',
+      name: 'packageManager',
+      message: `Which package manager do you use? (detected: ${detectedPackageManager})`,
+      choices: ['npm', 'yarn', 'pnpm'],
+      default: detectedPackageManager
+    }
+  ])
+
+  // Merge answers with context and defaults
+  const mergedCtx = { ...ctx, ...defaultConfig, ...answers } as any
+
+  // Detect Nx workspace
+  const nxJsonPath = `${cwd}/nx.json`
+  let nxConfig = undefined
+
+  if (existsSync(nxJsonPath)) {
+    try {
+      const nxJsonContent = readFileSync(nxJsonPath, 'utf8')
+      const nxJson = JSON.parse(nxJsonContent)
+
+      // Extract tasks from targetDefaults
+      const tasks = nxJson.targetDefaults ? Object.keys(nxJson.targetDefaults) : []
+
+      // Sort tasks in a logical order (quality → test → build → e2e)
+      const taskOrder = ['lint', 'typecheck', 'test', 'unit-test', 'build', 'integration-test', 'e2e', 'e2e-ci']
+      const sortedTasks = tasks.sort((a, b) => {
+        const aIdx = taskOrder.indexOf(a)
+        const bIdx = taskOrder.indexOf(b)
+        if (aIdx === -1 && bIdx === -1) return 0
+        if (aIdx === -1) return 1
+        if (bIdx === -1) return -1
+        return aIdx - bIdx
+      })
+
+      console.log('✅ Nx workspace detected - enabling Nx integration')
+      console.log(`   Detected tasks: ${sortedTasks.join(', ')}`)
+
+      nxConfig = {
+        enabled: true,
+        tasks: sortedTasks,
+        baseRef: 'origin/main',
+        enableCache: true
       }
-    ]))
-    .then((ctx) => {
-      const mergedCtx = { ...ctx, ...defaultConfig } as any
-
-      // Detect Nx workspace
-      const nxJsonPath = `${mergedCtx.cwd || process.cwd()}/nx.json`
-      let nxConfig = undefined
-
-      if (existsSync(nxJsonPath)) {
-        try {
-          const nxJsonContent = readFileSync(nxJsonPath, 'utf8')
-          const nxJson = JSON.parse(nxJsonContent)
-
-          // Extract tasks from targetDefaults
-          const tasks = nxJson.targetDefaults ? Object.keys(nxJson.targetDefaults) : []
-
-          // Sort tasks in a logical order (quality → test → build → e2e)
-          const taskOrder = ['lint', 'typecheck', 'test', 'unit-test', 'build', 'integration-test', 'e2e', 'e2e-ci']
-          const sortedTasks = tasks.sort((a, b) => {
-            const aIdx = taskOrder.indexOf(a)
-            const bIdx = taskOrder.indexOf(b)
-            if (aIdx === -1 && bIdx === -1) return 0
-            if (aIdx === -1) return 1
-            if (bIdx === -1) return -1
-            return aIdx - bIdx
-          })
-
-          console.log('✅ Nx workspace detected - enabling Nx integration')
-          console.log(`   Detected tasks: ${sortedTasks.join(', ')}`)
-
-          nxConfig = {
-            enabled: true,
-            tasks: sortedTasks,
-            baseRef: 'origin/main',
-            enableCache: true
-          }
-        } catch (error) {
-          console.warn('⚠️  Found nx.json but could not parse it:', error)
-          console.log('   Using default Nx configuration')
-          nxConfig = {
-            enabled: true,
-            tasks: ['lint', 'test', 'build', 'integration-test'],
-            baseRef: 'origin/main',
-            enableCache: true
-          }
-        }
+    } catch (error) {
+      console.warn('⚠️  Found nx.json but could not parse it:', error)
+      console.log('   Using default Nx configuration')
+      nxConfig = {
+        enabled: true,
+        tasks: ['lint', 'test', 'build', 'integration-test'],
+        baseRef: 'origin/main',
+        enableCache: true
       }
+    }
+  }
 
-      const configData: any = {
-        ciProvider: mergedCtx.ciProvider,
-        mergeStrategy: mergedCtx.mergeStrategy,
-        requireConventionalCommits: mergedCtx.requireConventionalCommits,
-        initialBranch: mergedCtx.initialBranch,
-        finalBranch: mergedCtx.finalBranch,
-        branchFlow: mergedCtx.branchFlow,
-        autoMerge: mergedCtx.autoMerge,
-        semver: {
-          bumpRules: mergedCtx.semver.bumpRules
-        },
-        domains: mergedCtx.domains
-      }
+  const configData: any = {
+    ciProvider: mergedCtx.ciProvider,
+    mergeStrategy: mergedCtx.mergeStrategy,
+    requireConventionalCommits: mergedCtx.requireConventionalCommits,
+    initialBranch: mergedCtx.initialBranch,
+    finalBranch: mergedCtx.finalBranch,
+    branchFlow: mergedCtx.branchFlow,
+    autoMerge: mergedCtx.autoMerge,
+    packageManager: mergedCtx.packageManager,
+    semver: {
+      bumpRules: mergedCtx.semver.bumpRules
+    },
+    domains: mergedCtx.domains
+  }
 
-      // Add Nx config if detected
-      if (nxConfig) {
-        configData.nx = nxConfig
-      }
+  // Add Nx config if detected
+  if (nxConfig) {
+    configData.nx = nxConfig
+  }
 
-      return writeJSON(() => configData, toFile('.pipecraftrc.json'))(mergedCtx)
-    })
+  return writeJSON(() => configData, toFile('.pipecraftrc.json'))(mergedCtx)
+}
