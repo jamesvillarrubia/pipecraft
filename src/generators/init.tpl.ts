@@ -234,8 +234,74 @@ export const generate = async (ctx: PinionContext) => {
       message: `Which package manager do you use? (detected: ${detectedPackageManager})`,
       choices: ['npm', 'yarn', 'pnpm'],
       default: detectedPackageManager
+    },
+    {
+      type: 'list',
+      name: 'domainSelection',
+      message: 'What domains exist in your codebase?',
+      choices: [
+        { name: 'API + Web (common monorepo)', value: 'api-web' },
+        { name: 'Frontend + Backend', value: 'frontend-backend' },
+        { name: 'Apps + Libs (Nx-style)', value: 'apps-libs' },
+        { name: 'Custom domains', value: 'custom' }
+      ],
+      default: 'api-web'
     }
   ])
+
+  // Handle custom domain selection
+  let selectedDomains = []
+  if (answers.domainSelection === 'custom') {
+    const customDomainsAnswer = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'customDomains',
+        message: 'Enter your domains (comma-separated)',
+        validate: (input: string) => {
+          if (!input.trim()) {
+            return 'Please enter at least one domain'
+          }
+          const domains = input.split(',').map(d => d.trim()).filter(d => d)
+          if (domains.length === 0) {
+            return 'Please enter valid domain names'
+          }
+          return true
+        },
+        filter: (input: string) => input.split(',').map(d => d.trim()).filter(d => d)
+      }
+    ])
+    selectedDomains = customDomainsAnswer.customDomains
+  } else {
+    // Map predefined selections to domain names
+    const domainMappings = {
+      'api-web': ['api', 'web'],
+      'frontend-backend': ['frontend', 'backend'],
+      'apps-libs': ['apps', 'libs']
+    }
+    selectedDomains = domainMappings[answers.domainSelection as keyof typeof domainMappings] || ['api', 'web']
+  }
+
+  // Generate domain configuration
+  const domainConfig: Record<string, any> = {}
+  selectedDomains.forEach((domain: string) => {
+    domainConfig[domain] = {
+      paths: [`${domain}/**`], // Default path pattern
+      description: `${domain} application changes`
+    }
+  })
+
+  // Add cicd domain for CI/CD changes
+  domainConfig.cicd = {
+    paths: ['.github/workflows/**'],
+    description: 'CI/CD configuration changes'
+  }
+
+  // Show warning for custom domains about path editing
+  if (answers.domainSelection === 'custom') {
+    console.log('\n⚠️  Custom domains selected!')
+    console.log('   You will need to edit the paths in .pipecraftrc.json after generation')
+    console.log('   to match your actual project structure.\n')
+  }
 
   // Merge answers with context and defaults
   const mergedCtx = { ...ctx, ...defaultConfig, ...answers } as any
@@ -296,7 +362,7 @@ export const generate = async (ctx: PinionContext) => {
     semver: {
       bumpRules: mergedCtx.semver.bumpRules
     },
-    domains: mergedCtx.domains
+    domains: domainConfig // Use user-selected domains instead of defaults
   }
 
   // Add Nx config if detected

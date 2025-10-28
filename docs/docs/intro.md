@@ -49,6 +49,15 @@ PipeCraft will ask you questions about your project:
 - **What is your production branch name?** Usually `main` or `production`
 - **Enter your branch flow (comma-separated)** - The sequence of branches (e.g., `develop,staging,main`)
 - **Which package manager do you use?** npm, yarn, or pnpm (auto-detected from lock files)
+- **What domains exist in your codebase?** Choose from common patterns or enter custom domains
+
+For domains, you can select from:
+- **API + Web** (common monorepo pattern)
+- **Frontend + Backend** (full-stack pattern)
+- **Apps + Libs** (Nx-style monorepo)
+- **Custom domains** (enter your own comma-separated list)
+
+If you choose custom domains, PipeCraft will warn you that you'll need to edit the paths in the generated configuration to match your actual project structure.
 
 PipeCraft also auto-detects Nx workspaces and will enable Nx integration if found.
 
@@ -95,7 +104,7 @@ After answering these questions, you'll have a `.pipecraftrc.json` file:
 }
 ```
 
-**Note:** The domains are pre-configured with common patterns. You can edit the `.pipecraftrc.json` file after generation to customize the paths and add/remove domains as needed.
+**Note:** The domains are generated based on your selection during init. If you chose custom domains, you'll need to edit the paths in `.pipecraftrc.json` to match your actual project structure. You can always add, remove, or modify domains after generation.
 
 If PipeCraft detects an Nx workspace, it will also add an `nx` configuration section with detected tasks and optimization settings.
 
