@@ -185,13 +185,13 @@ runs:
         # Build body with promotion details
         BODY="## Automated Promotion
 
-**Version:** \`$VERSION\`
-**Source:** \`$SOURCE\`
-**Target:** \`$TARGET\`
+**Version:** \\\`$VERSION\\\`
+**Source:** \\\`$SOURCE\\\`
+**Target:** \\\`$TARGET\\\`
 
 ---
 
-This PR promotes code from \`$SOURCE\` to \`$TARGET\` for release \`$VERSION\`.
+This PR promotes code from \\\`$SOURCE\\\` to \\\`$TARGET\\\` for release \\\`$VERSION\\\`.
 
 "
         if [ "$AUTO_MERGE" == "true" ]; then
