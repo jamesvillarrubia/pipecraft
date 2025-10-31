@@ -16,10 +16,10 @@
  * @module utils/preflight
  */
 
-import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'fs'
 import { execSync } from 'child_process'
-import { join } from 'path'
 import { cosmiconfigSync } from 'cosmiconfig'
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs'
+import { join } from 'path'
 
 /**
  * Result of a single pre-flight check.
@@ -65,8 +65,8 @@ export interface PreflightChecks {
  * Check if PipeCraft configuration file exists.
  *
  * Uses cosmiconfig to search for configuration files in standard locations:
- * - .pipecraftrc.json
- * - .pipecraftrc (JSON or YAML)
+ * - .pipecraftrc (YAML or JSON, recommended)
+ * - .pipecraftrc.json (legacy, still supported)
  * - pipecraft.config.js
  * - package.json (pipecraft key)
  *
@@ -155,7 +155,7 @@ export function checkConfigValid(): PreflightResult {
       return {
         passed: false,
         message: 'Config has no domains configured',
-        suggestion: "Add at least one domain to your config file"
+        suggestion: 'Add at least one domain to your config file'
       }
     }
 
@@ -488,33 +488,35 @@ export function formatPreflightResults(checks: PreflightChecks): {
   }
 
   // Provide next steps if all checks passed
-  const nextSteps: string[] | undefined = allPassed ? [
-    'Your environment is ready to generate workflows!',
-    '',
-    '📋 Next steps:',
-    '',
-    '1. Review and customize the generated workflows:',
-    '   - Add test commands to test-* jobs',
-    '   - Add deployment logic to deploy-* jobs (if deployable: true)',
-    '   - Add remote tests to remote-test-* jobs (if remoteTestable: true)',
-    '',
-    '2. Validate the workflow syntax:',
-    '   npm run validate:pipeline        # Check YAML is valid',
-    '',
-    '3. Configure GitHub permissions for auto-merge:',
-    '   pipecraft setup-github           # Interactive setup',
-    '   pipecraft setup-github --apply   # Auto-apply (no prompts)',
-    '',
-    '4. Commit and push:',
-    '   git add .github/workflows/ .pipecraftrc.json',
-    '   git commit -m "feat: add pipecraft workflows"',
-    '   git push',
-    '',
-    '5. Watch your first pipeline run at:',
-    `   https://github.com/${getRepoInfo()}/actions`,
-    '',
-    '⚠️  Important: Set up GitHub permissions (step 3) BEFORE pushing to ensure workflows run correctly!'
-  ] : undefined
+  const nextSteps: string[] | undefined = allPassed
+    ? [
+        'Your environment is ready to generate workflows!',
+        '',
+        '📋 Next steps:',
+        '',
+        '1. Review and customize the generated workflows:',
+        '   - Add test commands to test-* jobs',
+        '   - Add deployment logic to deploy-* jobs (if deployable: true)',
+        '   - Add remote tests to remote-test-* jobs (if remoteTestable: true)',
+        '',
+        '2. Validate the workflow syntax:',
+        '   npm run validate:pipeline        # Check YAML is valid',
+        '',
+        '3. Configure GitHub permissions for auto-merge:',
+        '   pipecraft setup-github           # Interactive setup',
+        '   pipecraft setup-github --apply   # Auto-apply (no prompts)',
+        '',
+        '4. Commit and push:',
+        '   git add .github/workflows/ .pipecraftrc',
+        '   git commit -m "feat: add pipecraft workflows"',
+        '   git push',
+        '',
+        '5. Watch your first pipeline run at:',
+        `   https://github.com/${getRepoInfo()}/actions`,
+        '',
+        '⚠️  Important: Set up GitHub permissions (step 3) BEFORE pushing to ensure workflows run correctly!'
+      ]
+    : undefined
 
   return {
     allPassed,
@@ -562,13 +564,13 @@ function getRepoInfo(): string {
       stdio: ['pipe', 'pipe', 'ignore'], // Suppress stderr
       encoding: 'utf8'
     }).trim()
-    
+
     // Extract owner/repo from GitHub URL
     const match = remote.match(/github\.com[:/]([^/]+)\/([^/]+?)(?:\.git)?$/)
     if (match) {
       return `${match[1]}/${match[2]}`
     }
-    
+
     return 'your-username/your-repo'
   } catch (error) {
     return 'your-username/your-repo'

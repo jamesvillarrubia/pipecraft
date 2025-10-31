@@ -15,7 +15,7 @@
  * and settings for PipeCraft workflows to function properly, including:
  * - Workflows can create pull requests
  * - Merge commits always use PR titles (not individual commit messages)
- * - Auto-merge is enabled based on .pipecraftrc.json config
+ * - Auto-merge is enabled based on .pipecraftrc config
  * - Branch protection is configured appropriately
  * - Required status checks are enforced
  *
@@ -26,12 +26,12 @@
  * 1. **Repository-Level Setting** (`allow_auto_merge`):
  *    - Must be ON for auto-merge to be available at all
  *    - Controls whether the "Enable auto-merge" button appears on PRs
- *    - Configured by this module based on .pipecraftrc.json
+ *    - Configured by this module based on .pipecraftrc
  *
  * 2. **Per-PR Activation**:
  *    - Must be explicitly enabled on each PR (via button, CLI, or API)
  *    - Pipecraft workflows automatically enable it for configured branches
- *    - Configured per-branch in .pipecraftrc.json autoMerge setting
+ *    - Configured per-branch in .pipecraftrc autoMerge setting
  *
  * Example config:
  * ```json
@@ -48,10 +48,10 @@
  * @module utils/github-setup
  */
 
-import { execSync } from 'child_process'
 import { prompt } from '@featherscloud/pinion'
+import { execSync } from 'child_process'
+import type { PipecraftConfig } from '../types/index.js'
 import { loadConfig } from './config.js'
-import { PipecraftConfig } from '../types/index.js'
 
 /**
  * GitHub Actions workflow permissions configuration.
@@ -174,7 +174,7 @@ interface BranchProtectionRules {
   required_status_checks: null | {
     /** Whether branch must be up to date before merging */
     strict: boolean
-    
+
     /** Names of required status checks (job names from workflow) */
     contexts: string[]
   }
@@ -189,10 +189,10 @@ interface BranchProtectionRules {
   required_pull_request_reviews: null | {
     /** Dismiss stale reviews when new commits are pushed */
     dismiss_stale_reviews: boolean
-    
+
     /** Require review from code owners */
     require_code_owner_reviews: boolean
-    
+
     /** Number of approving reviews required */
     required_approving_review_count: number
   }
@@ -238,7 +238,7 @@ interface BranchProtectionRules {
 export function getRepositoryInfo(): RepositoryInfo {
   try {
     // Get the remote URL from git configuration
-    const remoteUrl = execSync('git remote get-url origin', { 
+    const remoteUrl = execSync('git remote get-url origin', {
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'ignore'] // Suppress stderr
     }).trim()
@@ -308,8 +308,8 @@ export function getGitHubToken(): string {
 
   throw new Error(
     'GitHub token not found. Please:\n' +
-    '  1. Set GITHUB_TOKEN or GH_TOKEN environment variable, or\n' +
-    '  2. Authenticate with gh CLI: gh auth login'
+      '  1. Set GITHUB_TOKEN or GH_TOKEN environment variable, or\n' +
+      '  2. Authenticate with gh CLI: gh auth login'
   )
 }
 
@@ -325,8 +325,8 @@ export async function getWorkflowPermissions(
     `https://api.github.com/repos/${owner}/${repo}/actions/permissions/workflow`,
     {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28'
       }
     }
@@ -354,8 +354,8 @@ export async function updateWorkflowPermissions(
     {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
         'Content-Type': 'application/json'
       },
@@ -406,7 +406,9 @@ export async function promptPermissionChanges(
 ): Promise<Partial<WorkflowPermissions> | null | 'declined'> {
   console.log('\n📋 Current GitHub Actions Workflow Permissions:')
   console.log(`   Default permissions: ${currentPermissions.default_workflow_permissions}`)
-  console.log(`   Can create/approve PRs: ${currentPermissions.can_approve_pull_request_reviews ? 'Yes' : 'No'}`)
+  console.log(
+    `   Can create/approve PRs: ${currentPermissions.can_approve_pull_request_reviews ? 'Yes' : 'No'}`
+  )
 
   // Check if permissions are already correct
   if (
@@ -489,16 +491,13 @@ export async function getMergeCommitSettings(
   repo: string,
   token: string
 ): Promise<MergeCommitSettings> {
-  const response = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}`,
-    {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28'
-      }
+  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
     }
-  )
+  })
 
   if (!response.ok) {
     const error = await response.text()
@@ -544,19 +543,16 @@ export async function updateMergeCommitSettings(
   token: string,
   settings: MergeCommitSettings
 ): Promise<void> {
-  const response = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}`,
-    {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(settings)
-    }
-  )
+  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(settings)
+  })
 
   if (!response.ok) {
     const error = await response.text()
@@ -591,7 +587,10 @@ export function getRequiredMergeCommitChanges(
 
   // For squash merges, always use PR title (not commit message)
   // Only configure if squash merge is enabled
-  if (currentSettings.allow_squash_merge && currentSettings.squash_merge_commit_title !== 'PR_TITLE') {
+  if (
+    currentSettings.allow_squash_merge &&
+    currentSettings.squash_merge_commit_title !== 'PR_TITLE'
+  ) {
     changes.squash_merge_commit_title = 'PR_TITLE'
   }
 
@@ -642,8 +641,10 @@ export async function promptMergeCommitChanges(
   }
 
   // Check if settings are already correct for enabled strategies
-  const squashCorrect = !currentSettings.allow_squash_merge || currentSettings.squash_merge_commit_title === 'PR_TITLE'
-  const mergeCorrect = !currentSettings.allow_merge_commit || currentSettings.merge_commit_title === 'PR_TITLE'
+  const squashCorrect =
+    !currentSettings.allow_squash_merge || currentSettings.squash_merge_commit_title === 'PR_TITLE'
+  const mergeCorrect =
+    !currentSettings.allow_merge_commit || currentSettings.merge_commit_title === 'PR_TITLE'
 
   if (squashCorrect && mergeCorrect) {
     console.log('\n✅ Merge commit settings are already configured correctly!')
@@ -657,7 +658,9 @@ export async function promptMergeCommitChanges(
   if (currentSettings.allow_merge_commit && !mergeCorrect) {
     console.log('   • Merge commit title: PR_TITLE (always use PR title)')
   }
-  console.log('\n   This ensures consistent commit messages when PRs have single or multiple commits.')
+  console.log(
+    '\n   This ensures consistent commit messages when PRs have single or multiple commits.'
+  )
 
   const response: any = await prompt({
     type: 'confirm',
@@ -673,7 +676,10 @@ export async function promptMergeCommitChanges(
   const changes: MergeCommitSettings = {}
 
   // Only include changes for enabled strategies
-  if (currentSettings.allow_squash_merge && currentSettings.squash_merge_commit_title !== 'PR_TITLE') {
+  if (
+    currentSettings.allow_squash_merge &&
+    currentSettings.squash_merge_commit_title !== 'PR_TITLE'
+  ) {
     changes.squash_merge_commit_title = 'PR_TITLE'
   }
 
@@ -685,14 +691,14 @@ export async function promptMergeCommitChanges(
 }
 
 /**
- * Check if auto-merge should be enabled based on .pipecraftrc.json config.
+ * Check if auto-merge should be enabled based on .pipecraftrc config.
  *
  * Auto-merge should be enabled at the repository level if ANY branch
  * has autoMerge configured in the config file.
  */
 export function shouldEnableAutoMerge(): boolean {
   try {
-    const config = loadConfig('.pipecraftrc.json') as PipecraftConfig
+    const config = loadConfig() as PipecraftConfig
 
     if (!config.autoMerge) {
       return false
@@ -746,16 +752,13 @@ export async function getRepositorySettings(
   repo: string,
   token: string
 ): Promise<RepositorySettings> {
-  const response = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}`,
-    {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28'
-      }
+  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
     }
-  )
+  })
 
   if (!response.ok) {
     const error = await response.text()
@@ -785,19 +788,16 @@ export async function updateRepositorySettings(
   token: string,
   settings: Partial<RepositorySettings>
 ): Promise<void> {
-  const response = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}`,
-    {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(settings)
-    }
-  )
+  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(settings)
+  })
 
   if (!response.ok) {
     const error = await response.text()
@@ -863,7 +863,7 @@ export function displaySettingsComparison(
 
   const hasGap = (key: keyof RepositorySettings): boolean => key in gaps
 
-  const settings: Array<{key: keyof RepositorySettings, label: string}> = [
+  const settings: Array<{ key: keyof RepositorySettings; label: string }> = [
     { key: 'allow_auto_merge', label: 'Allow auto-merge' },
     { key: 'allow_update_branch', label: 'Always suggest updating PR branches' },
     { key: 'allow_merge_commit', label: 'Allow merge commits' },
@@ -889,7 +889,9 @@ export function displaySettingsComparison(
 
   const gapCount = Object.keys(gaps).length
   if (gapCount > 0) {
-    console.log(`\n⚠️  Found ${gapCount} setting${gapCount > 1 ? 's' : ''} that differ from recommendations`)
+    console.log(
+      `\n⚠️  Found ${gapCount} setting${gapCount > 1 ? 's' : ''} that differ from recommendations`
+    )
   } else {
     console.log('\n✅ All settings match Pipecraft recommendations!')
   }
@@ -897,7 +899,7 @@ export function displaySettingsComparison(
   // Show auto-merge branch configuration if auto-merge is enabled
   if (current.allow_auto_merge || recommended.allow_auto_merge) {
     try {
-      const config = loadConfig('.pipecraftrc.json') as PipecraftConfig
+      const config = loadConfig() as PipecraftConfig
       if (config.autoMerge) {
         console.log('\n📋 Auto-Merge Branch Configuration:')
         console.log('   ℹ️  Repository-level allow_auto_merge must be ON for these to work\n')
@@ -970,8 +972,8 @@ export async function getBranchProtection(
     `https://api.github.com/repos/${owner}/${repo}/branches/${branch}/protection`,
     {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28'
       }
     }
@@ -1020,8 +1022,8 @@ export async function updateBranchProtection(
     {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
         'Content-Type': 'application/json'
       },
@@ -1044,16 +1046,13 @@ export async function enableAutoMerge(
   token: string
 ): Promise<boolean> {
   // First check if auto-merge is already enabled
-  const checkResponse = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}`,
-    {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28'
-      }
+  const checkResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
     }
-  )
+  })
 
   if (checkResponse.ok) {
     const repoData = await checkResponse.json()
@@ -1063,21 +1062,18 @@ export async function enableAutoMerge(
   }
 
   // Enable auto-merge
-  const response = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}`,
-    {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        allow_auto_merge: true
-      })
-    }
-  )
+  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      allow_auto_merge: true
+    })
+  })
 
   if (!response.ok) {
     const error = await response.text()
@@ -1100,9 +1096,9 @@ export async function configureBranchProtection(
   // Load config to get autoMerge settings
   let config: PipecraftConfig
   try {
-    config = loadConfig('.pipecraftrc.json') as PipecraftConfig
+    config = loadConfig() as PipecraftConfig
   } catch (error) {
-    console.log('⚠️  Could not load .pipecraftrc.json - skipping auto-merge setup')
+    console.log('⚠️  Could not load .pipecraftrc - skipping auto-merge setup')
     return
   }
 
@@ -1199,11 +1195,7 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
 
   // Get current permissions
   console.log('🔍 Fetching current workflow permissions...')
-  const currentPermissions = await getWorkflowPermissions(
-    repoInfo.owner,
-    repoInfo.repo,
-    token
-  )
+  const currentPermissions = await getWorkflowPermissions(repoInfo.owner, repoInfo.repo, token)
 
   let changes: Partial<WorkflowPermissions> | null | 'declined'
   let permissionsAlreadyCorrect = false
@@ -1219,13 +1211,17 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
       // Show what will be applied
       console.log('\n📋 Current GitHub Actions Workflow Permissions:')
       console.log(`   Default permissions: ${currentPermissions.default_workflow_permissions}`)
-      console.log(`   Can create/approve PRs: ${currentPermissions.can_approve_pull_request_reviews ? 'Yes' : 'No'}`)
+      console.log(
+        `   Can create/approve PRs: ${currentPermissions.can_approve_pull_request_reviews ? 'Yes' : 'No'}`
+      )
       console.log('\n🔧 Applying required changes:')
       if (changes.default_workflow_permissions) {
         console.log(`   • Setting default permissions to: ${changes.default_workflow_permissions}`)
       }
       if (changes.can_approve_pull_request_reviews !== undefined) {
-        console.log(`   • Allowing PR creation/approval: ${changes.can_approve_pull_request_reviews}`)
+        console.log(
+          `   • Allowing PR creation/approval: ${changes.can_approve_pull_request_reviews}`
+        )
       }
     }
   } else {
@@ -1249,12 +1245,7 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
   // Apply permission changes if needed
   if (!permissionsAlreadyCorrect && changes && changes !== 'declined') {
     console.log('\n🔄 Updating repository settings...')
-    await updateWorkflowPermissions(
-      repoInfo.owner,
-      repoInfo.repo,
-      token,
-      changes
-    )
+    await updateWorkflowPermissions(repoInfo.owner, repoInfo.repo, token, changes)
 
     console.log('✅ GitHub Actions permissions updated successfully!')
   }
@@ -1262,11 +1253,7 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
   // Check and configure repository settings (merge strategies, auto-merge, etc.)
   console.log('\n🔍 Checking repository settings...')
   try {
-    const currentSettings = await getRepositorySettings(
-      repoInfo.owner,
-      repoInfo.repo,
-      token
-    )
+    const currentSettings = await getRepositorySettings(repoInfo.owner, repoInfo.repo, token)
     const recommendedSettings = getRecommendedRepositorySettings()
     const gaps = getSettingsGaps(currentSettings, recommendedSettings)
 
@@ -1292,12 +1279,7 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
 
       if (shouldApply) {
         console.log('\n🔄 Updating repository settings...')
-        await updateRepositorySettings(
-          repoInfo.owner,
-          repoInfo.repo,
-          token,
-          gaps
-        )
+        await updateRepositorySettings(repoInfo.owner, repoInfo.repo, token, gaps)
         console.log('✅ Repository settings updated successfully!')
       } else {
         console.log('\n⚠️  Repository settings were not updated')

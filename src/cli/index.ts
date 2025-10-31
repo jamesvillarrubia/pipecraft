@@ -16,7 +16,7 @@
  * ## Command Overview
  *
  * ### init
- * Creates .pipecraftrc.json configuration file with project settings.
+ * Creates .pipecraftrc configuration file with project settings.
  * Can run interactively or accept flags for automation.
  *
  * ### generate
@@ -38,7 +38,7 @@
  * - Auto-merge settings
  *
  * ## Global Options
- * - `-c, --config <path>`: Path to config file (default: .pipecraftrc.json)
+ * - `-c, --config <path>`: Path to config file (default: .pipecraftrc)
  * - `-v, --verbose`: Verbose output
  * - `--debug`: Debug output (maximum detail)
  * - `--force`: Force regeneration even if unchanged
@@ -70,19 +70,18 @@
  * @module cli
  */
 
+import { prompt, runModule } from '@featherscloud/pinion'
 import { Command } from 'commander'
 import { cosmiconfigSync } from 'cosmiconfig'
-import { runModule, prompt } from '@featherscloud/pinion'
-import { join } from 'path'
-import { fileURLToPath } from 'url'
-import { dirname } from 'path'
-import { VersionManager } from '../utils/versioning.js'
-import { loadConfig, validateConfig } from '../utils/config.js'
-import { PipecraftConfig } from '../types/index.js'
-import { setupGitHubPermissions } from '../utils/github-setup.js'
-import { runPreflightChecks, formatPreflightResults } from '../utils/preflight.js'
-import { logger } from '../utils/logger.js'
 import { readFileSync } from 'fs'
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
+import type { PipecraftConfig } from '../types/index.js'
+import { loadConfig, validateConfig } from '../utils/config.js'
+import { setupGitHubPermissions } from '../utils/github-setup.js'
+import { logger } from '../utils/logger.js'
+import { formatPreflightResults, runPreflightChecks } from '../utils/preflight.js'
+import { VersionManager } from '../utils/versioning.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -99,12 +98,19 @@ program
   .description('CLI tool for managing trunk-based development workflows')
   .version(version)
 
-
 // Global options
 program
-  .option('-c, --config <path>', 'path to config file', '.pipecraftrc.json')
-  .option('-p, --pipeline <path>', 'path to existing pipeline file for merging', '.github/workflows/pipeline.yml')
-  .option('-o, --output-pipeline <path>', 'path to output pipeline file (for testing)', '.github/workflows/pipeline.yml')
+  .option('-c, --config <path>', 'path to config file', '.pipecraftrc')
+  .option(
+    '-p, --pipeline <path>',
+    'path to existing pipeline file for merging',
+    '.github/workflows/pipeline.yml'
+  )
+  .option(
+    '-o, --output-pipeline <path>',
+    'path to output pipeline file (for testing)',
+    '.github/workflows/pipeline.yml'
+  )
   .option('-v, --verbose', 'verbose output')
   .option('--debug', 'debug output (includes all verbose output plus additional debugging info)')
   .option('--force', 'force regeneration even if files unchanged')
@@ -121,10 +127,10 @@ program
   .option('--merge-strategy <strategy>', 'merge strategy (fast-forward|merge)', 'fast-forward')
   .option('--initial-branch <branch>', 'initial development branch', 'develop')
   .option('--final-branch <branch>', 'final production branch', 'main')
-  .action(async (options) => {
+  .action(async options => {
     try {
       const globalOptions = program.opts()
-      
+
       await runModule(join(__dirname, '../generators/init.tpl.js'), {
         cwd: process.cwd(),
         argv: process.argv,
@@ -146,7 +152,7 @@ program
           }
         }
       })
-      
+
       // Setup version management if requested
       if (options.withVersioning) {
         const config = loadConfig(globalOptions.config)
@@ -154,7 +160,7 @@ program
         versionManager.setupVersionManagement()
         console.log('✅ Version management setup completed!')
       }
-      
+
       console.log('✅ Configuration initialized successfully!')
     } catch (error: any) {
       console.error('❌ Failed to initialize configuration:', error.message)
@@ -167,9 +173,9 @@ program
   .command('generate')
   .description('Generate CI/CD workflows from configuration')
   .option('-o, --output <path>', 'output directory for generated workflows', '.github/workflows')
-  .option('--skip-unchanged', 'skip files that haven\'t changed')
+  .option('--skip-unchanged', "skip files that haven't changed")
   .option('--skip-checks', 'skip pre-flight checks (not recommended)')
-  .action(async (options) => {
+  .action(async options => {
     try {
       const globalOptions = program.opts()
       const configPath = globalOptions.config
@@ -203,7 +209,7 @@ program
 
         // Store next steps for later display (after successful generation)
         if (nextSteps) {
-          (options as any)._nextSteps = nextSteps
+          ;(options as any)._nextSteps = nextSteps
         }
 
         logger.info('')
@@ -270,14 +276,14 @@ program
 program
   .command('validate')
   .description('Validate configuration file')
-  .action(async (options) => {
+  .action(async options => {
     try {
       const globalOptions = program.opts()
       const configPath = globalOptions.config
-      
+
       const config = loadConfig(configPath)
       validateConfig(config)
-      
+
       console.log('✅ Configuration is valid!')
     } catch (error: any) {
       console.error('❌ Configuration validation failed:', error.message)
@@ -293,31 +299,32 @@ program
     try {
       const explorer = cosmiconfigSync('trunkflow')
       const result = explorer.search()
-      
+
       if (!result) {
         console.log('⚠️  No configuration file found. Run "pipecraft init" to get started.')
         process.exit(1)
       }
-      
+
       console.log(`✅ Found configuration at: ${result.filepath}`)
-      
+
       const config = result.config
       validateConfig(config)
       console.log('✅ Configuration is valid!')
-      
+
       // Check if workflows exist
       const fs = await import('fs')
       const path = await import('path')
-      
+
       if (config.ciProvider === 'github') {
         const workflowPath = path.join(process.cwd(), '.github/workflows/pipeline.yml')
         if (fs.existsSync(workflowPath)) {
           console.log('✅ GitHub Actions workflows exist!')
         } else {
-          console.log('⚠️  GitHub Actions workflows not found. Run "pipecraft generate" to create them.')
+          console.log(
+            '⚠️  GitHub Actions workflows not found. Run "pipecraft generate" to create them.'
+          )
         }
       }
-      
     } catch (error: any) {
       console.error('❌ Verification failed:', error.message)
       process.exit(1)
@@ -331,36 +338,35 @@ program
   .option('--check', 'check current version and next version')
   .option('--bump', 'bump version using conventional commits')
   .option('--release', 'create release with version bump')
-  .action(async (options) => {
+  .action(async options => {
     try {
       const globalOptions = program.opts()
       const config = loadConfig(globalOptions.config) as PipecraftConfig
       const versionManager = new VersionManager(config)
-      
+
       if (options.check) {
         const currentVersion = versionManager.getCurrentVersion()
         const nextVersion = versionManager.calculateNextVersion()
-        
+
         console.log(`📦 Current version: ${currentVersion}`)
         console.log(`📦 Next version: ${nextVersion.version} (${nextVersion.type})`)
-        
+
         // Check conventional commits
         const isValid = versionManager.validateConventionalCommits()
         console.log(`📝 Conventional commits: ${isValid ? '✅ Valid' : '❌ Invalid'}`)
       }
-      
+
       if (options.bump) {
         console.log('🔄 Bumping version...')
         // This would run release-it in dry-run mode first
         console.log('✅ Version bump completed!')
       }
-      
+
       if (options.release) {
         console.log('🚀 Creating release...')
         // This would run the actual release process
         console.log('✅ Release created!')
       }
-      
     } catch (error: any) {
       console.error('❌ Version command failed:', error.message)
       process.exit(1)
@@ -372,38 +378,38 @@ program
   .command('setup')
   .description('Set up the repository with necessary branches from branch flow')
   .option('--force', 'Force creation even if branches exist')
-  .action(async (options) => {
+  .action(async options => {
     try {
       const globalOptions = program.opts()
       const configPath = globalOptions.config
-      
+
       if (globalOptions.verbose) {
         console.log(`📖 Reading config from: ${configPath}`)
       }
-      
+
       // Load configuration
       const config = loadConfig(configPath) as PipecraftConfig
-      
+
       if (!config.branchFlow || config.branchFlow.length === 0) {
         console.log('⚠️  No branch flow configured in config file')
         return
       }
-      
+
       console.log(`🌿 Setting up branches: ${config.branchFlow.join(' → ')}`)
-      
+
       // Check current branch
       const { execSync } = await import('child_process')
       const currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim()
       console.log(`📍 Current branch: ${currentBranch}`)
-      
+
       // Check which branches exist
       const existingBranches = execSync('git branch -a', { encoding: 'utf8' })
         .split('\n')
         .map(line => line.trim().replace('* ', '').replace('remotes/origin/', ''))
         .filter(line => line.length > 0)
-      
+
       console.log(`📋 Existing branches: ${existingBranches.join(', ')}`)
-      
+
       // Create missing branches
       for (const branch of config.branchFlow) {
         if (existingBranches.includes(branch)) {
@@ -421,7 +427,7 @@ program
             }
           }
         }
-        
+
         // Push branch to remote if it doesn't exist there
         try {
           console.log(`📤 Checking if '${branch}' exists on remote...`)
@@ -433,13 +439,12 @@ program
           console.log(`✅ Pushed branch '${branch}' to remote`)
         }
       }
-      
+
       // Return to original branch
       execSync(`git checkout ${currentBranch}`, { stdio: 'inherit' })
       console.log(`🔄 Returned to original branch: ${currentBranch}`)
-      
-      console.log('✅ Branch setup complete!')
 
+      console.log('✅ Branch setup complete!')
     } catch (error: any) {
       console.error('❌ Setup command failed:', error.message)
       process.exit(1)
@@ -454,7 +459,7 @@ program
   .option('--force', 'Alias for --apply')
   .option('--clean', 'Use clean messaging system (default)')
   .option('--verbose', 'Show detailed technical information')
-  .action(async (options) => {
+  .action(async options => {
     try {
       const autoApply = options.apply || options.force
 

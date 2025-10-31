@@ -1,42 +1,40 @@
 /**
  * Init Template Generator
- * 
- * Generates the initial PipeCraft configuration file (.pipecraftrc.json) with default settings.
+ *
+ * Generates the initial PipeCraft configuration file (.pipecraftrc) with default settings.
  * This generator is invoked by the `pipecraft init` command and prompts the user for
  * basic project configuration preferences.
- * 
+ *
  * @module generators/init.tpl
- * 
+ *
  * @example
  * ```typescript
  * import { generate } from './generators/init.tpl.js'
- * 
+ *
  * // Called by CLI with Pinion context
  * await generate(pinionContext)
- * 
- * // Creates .pipecraftrc.json with:
+ *
+ * // Creates .pipecraftrc with:
  * // - CI provider (GitHub/GitLab)
  * // - Merge strategy (fast-forward/merge)
  * // - Branch flow configuration
  * // - Domain-based change detection
  * // - Semantic versioning rules
  * ```
- * 
+ *
  * @note Current Implementation: The generator currently uses hardcoded defaults
  * from `defaultConfig` regardless of user prompt responses. This is intentional
  * for the initial release to ensure consistent behavior. Future versions will
  * respect user input and allow customization.
  */
 
-import { PinionContext, toFile, renderTemplate, writeJSON } from '@featherscloud/pinion'
-import { existsSync, readFileSync } from 'fs'
+import type { PinionContext } from '@featherscloud/pinion'
+import { existsSync, readFileSync, writeFileSync } from 'fs'
 import inquirer from 'inquirer'
-import { VersionManager } from '../utils/versioning.js'
-import { PipecraftConfig } from '../types/index.js'
 
 /**
  * Default PipeCraft configuration for new projects.
- * 
+ *
  * Provides a complete, working trunk-based development workflow with:
  * - GitHub Actions CI/CD
  * - Fast-forward merge strategy
@@ -44,7 +42,7 @@ import { PipecraftConfig } from '../types/index.js'
  * - Conventional commits enforcement
  * - Semantic versioning with standard bump rules
  * - Domain-based change detection for monorepos
- * 
+ *
  * @const
  */
 const defaultConfig = {
@@ -60,23 +58,23 @@ const defaultConfig = {
   },
   semver: {
     bumpRules: {
-      test:     'ignore',
-      build:    'ignore',
+      test: 'ignore',
+      build: 'ignore',
 
-      ci:       'patch',
-      docs:     'patch',
-      style:    'patch',
-      fix:      'patch',
-      perf:     'patch',
+      ci: 'patch',
+      docs: 'patch',
+      style: 'patch',
+      fix: 'patch',
+      perf: 'patch',
       refactor: 'patch',
-      chore:    'patch',
-      patch:    'patch',
+      chore: 'patch',
+      patch: 'patch',
 
-      feat:     'minor',
-      minor:    'minor',
-      
-      major:    'major',
-      breaking: 'major',
+      feat: 'minor',
+      minor: 'minor',
+
+      major: 'major',
+      breaking: 'major'
     }
   },
   domains: {
@@ -100,54 +98,229 @@ const defaultConfig = {
 }
 
 /**
- * Generates a JSON string representation of the PipeCraft configuration.
- * 
- * Serializes the configuration object with proper formatting (2-space indentation)
- * for writing to .pipecraftrc.json file.
- * 
- * @param {PipecraftConfig} ctx - The configuration context to serialize
- * @returns {string} JSON string representation of the configuration
- * 
- * @note The function extracts specific fields from the context to ensure
- * only valid configuration properties are included in the output file.
+ * Generates a YAML configuration file with comprehensive comments.
+ *
+ * Creates a .pipecraftrc file with:
+ * - Descriptive section headers
+ * - Inline comments for each configuration option
+ * - Examples and valid values
+ * - Proper YAML formatting
+ *
+ * @param {any} config - The configuration object to serialize
+ * @returns {string} YAML string with comments
  */
-const configTemplate = (ctx: PipecraftConfig) => {
-  const config: any = {
-    ciProvider: ctx.ciProvider,
-    mergeStrategy: ctx.mergeStrategy,
-    requireConventionalCommits: ctx.requireConventionalCommits,
-    initialBranch: ctx.initialBranch,
-    finalBranch: ctx.finalBranch,
-    branchFlow: ctx.branchFlow,
-    autoMerge: ctx.autoMerge,
-    semver: {
-      bumpRules: ctx.semver.bumpRules
-    },
-    domains: ctx.domains
+const generateYamlConfig = (config: any): string => {
+  const lines: string[] = []
+
+  // Header
+  lines.push('# PipeCraft Configuration')
+  lines.push('# Trunk-based development workflow automation')
+  lines.push('# https://pipecraft.thecraftlab.dev')
+  lines.push('')
+
+  // CI Provider
+  lines.push('# CI/CD Platform')
+  lines.push(`ciProvider: ${config.ciProvider}`)
+  lines.push('')
+
+  // Merge Strategy
+  lines.push('# Merge strategy for automatic promotions')
+  lines.push("# Options: 'fast-forward' (clean linear history, recommended) | 'merge' (creates merge commits)")
+  lines.push(`mergeStrategy: ${config.mergeStrategy}`)
+  lines.push('')
+
+  // Conventional Commits
+  lines.push('# Enforce conventional commit messages (feat:, fix:, etc.)')
+  lines.push(`requireConventionalCommits: ${config.requireConventionalCommits}`)
+  lines.push('')
+
+  // Branch Configuration
+  lines.push('# Branch flow configuration')
+  lines.push(`initialBranch: ${config.initialBranch}  # Where features land`)
+  lines.push(`finalBranch: ${config.finalBranch}       # Production branch`)
+  lines.push('')
+
+  // Branch Flow
+  lines.push(`# Promotion flow: ${config.branchFlow.join(' → ')}`)
+  lines.push('branchFlow:')
+  config.branchFlow.forEach((branch: string, index: number) => {
+    const comments = [
+      '# Feature integration and initial testing',
+      '# Pre-production validation',
+      '# Production releases'
+    ]
+    lines.push(`  - ${branch}  ${comments[index] || ''}`)
+  })
+  lines.push('')
+
+  // Auto Merge
+  lines.push('# Automatic promotion after successful tests')
+  lines.push('autoMerge:')
+  const autoMergeEntries = Object.entries(config.autoMerge)
+  autoMergeEntries.forEach(([key, value]) => {
+    const flowIndex = config.branchFlow.indexOf(key)
+    const fromBranch = flowIndex > 0 ? config.branchFlow[flowIndex - 1] : ''
+    const comment = fromBranch ? `  # Auto-promote ${fromBranch} → ${key}` : ''
+    lines.push(`  ${key}: ${value}${comment}`)
+  })
+  lines.push('')
+
+  // Package Manager (if present)
+  if (config.packageManager) {
+    lines.push('# Package manager')
+    lines.push(`packageManager: ${config.packageManager}`)
+    lines.push('')
   }
 
-  // Include Nx configuration if detected
-  if (ctx.nx) {
-    config.nx = ctx.nx
+  // Semantic Versioning
+  lines.push('# Semantic versioning rules')
+  lines.push('# Prefixes are used to determine the type of change and the version bump level')
+  lines.push('semver:')
+  lines.push('  bumpRules:')
+  
+  const bumpRules = config.semver.bumpRules
+  const ruleGroups = [
+    { title: '# Ignored types (no version bump)', keys: ['test', 'build'] },
+    { title: '# Patch-level changes (0.0.x)', keys: ['ci', 'docs', 'style', 'fix', 'perf', 'refactor', 'chore', 'patch'] },
+    { title: '# Minor-level changes (0.x.0)', keys: ['feat', 'minor'] },
+    { title: '# Major-level changes (x.0.0)', keys: ['major', 'breaking'] }
+  ]
+
+  ruleGroups.forEach((group, groupIndex) => {
+    if (groupIndex > 0) lines.push('')
+    lines.push(`    ${group.title}`)
+    group.keys.forEach(key => {
+      if (bumpRules[key]) {
+        lines.push(`    ${key}: '${bumpRules[key]}'`)
+      }
+    })
+  })
+  lines.push('')
+
+  // Domains
+  lines.push('# Domain definitions - what parts of your codebase trigger which jobs')
+  lines.push('# Will create placeholder jobs for each domain if no jobs are defined in the pipeline.yml')
+  lines.push('domains:')
+  
+  Object.entries(config.domains).forEach(([domainName, domainConfig]: [string, any]) => {
+    lines.push(`  ${domainName}:`)
+    
+    // Paths
+    if (domainConfig.paths) {
+      if (domainConfig.description && domainName !== 'cicd') {
+        lines.push(`    # ${domainConfig.description}`)
+      } else if (domainName === 'cicd') {
+        lines.push('    # CI/CD configuration changes')
+      }
+      lines.push('    paths:')
+      domainConfig.paths.forEach((path: string) => {
+        lines.push(`      - ${path}`)
+      })
+    }
+    
+    // Prefixes (if present)
+    if (domainConfig.prefixes) {
+      lines.push(`    prefixes: [${domainConfig.prefixes.map((p: string) => `'${p}'`).join(', ')}]`)
+    }
+    
+    // Description (standalone if no paths)
+    if (!domainConfig.paths && domainConfig.description) {
+      lines.push(`    description: ${domainConfig.description}`)
+    }
+    
+    lines.push('')
+  })
+
+  // Nx Configuration (if present)
+  if (config.nx) {
+    lines.push('# Nx integration for monorepo optimization')
+    lines.push('nx:')
+    lines.push(`  enabled: ${config.nx.enabled}`)
+    if (config.nx.tasks) {
+      lines.push('  tasks:')
+      config.nx.tasks.forEach((task: string) => {
+        lines.push(`    - ${task}`)
+      })
+    }
+    if (config.nx.baseRef) {
+      lines.push(`  baseRef: ${config.nx.baseRef}`)
+    }
+    if (config.nx.enableCache !== undefined) {
+      lines.push(`  enableCache: ${config.nx.enableCache}`)
+    }
+    lines.push('')
   }
 
-  return JSON.stringify(config, null, 2)
+  // Versioning (if present)
+  if (config.versioning) {
+    lines.push('# Version calculation and release automation')
+    lines.push('versioning:')
+    lines.push(`  enabled: ${config.versioning.enabled}`)
+    if (config.versioning.releaseItConfig) {
+      lines.push(`  releaseItConfig: ${config.versioning.releaseItConfig}`)
+    }
+    if (config.versioning.conventionalCommits !== undefined) {
+      lines.push(`  conventionalCommits: ${config.versioning.conventionalCommits}  # Use conventional commits for version bumps`)
+    }
+    if (config.versioning.autoTag !== undefined) {
+      lines.push(`  autoTag: ${config.versioning.autoTag}              # Automatically create git tags`)
+    }
+    if (config.versioning.autoPush !== undefined) {
+      lines.push(`  autoPush: ${config.versioning.autoPush}            # Manual control over git push`)
+    }
+    if (config.versioning.changelog !== undefined) {
+      lines.push(`  changelog: ${config.versioning.changelog}            # Generate CHANGELOG.md`)
+    }
+    if (config.versioning.bumpRules) {
+      lines.push('  bumpRules:')
+      Object.entries(config.versioning.bumpRules).forEach(([key, value]) => {
+        lines.push(`    ${key}: ${value}`)
+      })
+    }
+    lines.push('')
+  }
+
+  // Rebuild configuration (if present)
+  if (config.rebuild) {
+    lines.push('# Workflow rebuild optimization')
+    lines.push('rebuild:')
+    lines.push(`  enabled: ${config.rebuild.enabled}           # Enable smart rebuild detection`)
+    if (config.rebuild.skipIfUnchanged !== undefined) {
+      lines.push(`  skipIfUnchanged: ${config.rebuild.skipIfUnchanged}   # Skip regeneration if config hasn't changed`)
+    }
+    if (config.rebuild.forceRegenerate !== undefined) {
+      lines.push(`  forceRegenerate: ${config.rebuild.forceRegenerate}  # Force regenerate even if unchanged`)
+    }
+    if (config.rebuild.cacheFile) {
+      lines.push(`  cacheFile: ${config.rebuild.cacheFile}`)
+    }
+    lines.push('')
+  }
+
+  // Remove trailing empty line
+  while (lines[lines.length - 1] === '') {
+    lines.pop()
+  }
+  
+  lines.push('') // Single trailing newline
+
+  return lines.join('\n')
 }
 
 /**
  * Init generator main entry point.
- * 
+ *
  * Orchestrates the initialization process by:
  * 1. Prompting user for project preferences (currently unused - see note)
  * 2. Merging user input with default configuration
  * 3. Generating and writing .pipecraftrc.json file
- * 
+ *
  * @param {PinionContext} ctx - Pinion generator context from CLI
  * @returns {Promise<PinionContext>} Updated context after file generation
- * 
+ *
  * @throws {Error} If configuration file cannot be written
  * @throws {Error} If user input validation fails
- * 
+ *
  * @example
  * ```typescript
  * // Called by Pinion framework when user runs `pipecraft init`
@@ -156,16 +329,16 @@ const configTemplate = (ctx: PipecraftConfig) => {
  *   argv: ['init'],
  *   pinion: { ... }
  * })
- * 
+ *
  * // Results in: /path/to/project/.pipecraftrc.json
  * ```
- * 
+ *
  * @note Current Behavior: Despite prompting for user input, the generator
  * currently overwrites all responses with `defaultConfig` values (line 167).
  * This ensures consistency for the initial release. Future versions will
  * respect user choices and allow customization of branch names, merge strategies,
  * and domain configurations.
- * 
+ *
  * Prompts Presented (currently unused):
  * - Project name
  * - CI provider (GitHub/GitLab)
@@ -178,14 +351,17 @@ const configTemplate = (ctx: PipecraftConfig) => {
 export const generate = async (ctx: PinionContext) => {
   const cwd = ctx.cwd || process.cwd()
 
-  // Check if .pipecraftrc.json already exists
-  const configPath = `${cwd}/.pipecraftrc.json`
-  if (existsSync(configPath)) {
+  // Check if .pipecraftrc already exists (YAML format)
+  const configPath = `${cwd}/.pipecraftrc`
+  const legacyConfigPath = `${cwd}/.pipecraftrc.json`
+  
+  if (existsSync(configPath) || existsSync(legacyConfigPath)) {
+    const existingPath = existsSync(configPath) ? '.pipecraftrc' : '.pipecraftrc.json'
     const overwriteAnswer = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'overwrite',
-        message: '⚠️  .pipecraftrc.json already exists. Overwrite it?',
+        message: `⚠️  ${existingPath} already exists. Overwrite it?`,
         default: false
       }
     ])
@@ -227,7 +403,16 @@ export const generate = async (ctx: PinionContext) => {
       const tasks = nxJson.targetDefaults ? Object.keys(nxJson.targetDefaults) : []
 
       // Sort tasks in a logical order (quality → test → build → e2e)
-      const taskOrder = ['lint', 'typecheck', 'test', 'unit-test', 'build', 'integration-test', 'e2e', 'e2e-ci']
+      const taskOrder = [
+        'lint',
+        'typecheck',
+        'test',
+        'unit-test',
+        'build',
+        'integration-test',
+        'e2e',
+        'e2e-ci'
+      ]
       detectedNxTasks = tasks.sort((a, b) => {
         const aIdx = taskOrder.indexOf(a)
         const bIdx = taskOrder.indexOf(b)
@@ -338,13 +523,20 @@ export const generate = async (ctx: PinionContext) => {
           if (!input.trim()) {
             return 'Please enter at least one domain'
           }
-          const domains = input.split(',').map(d => d.trim()).filter(d => d)
+          const domains = input
+            .split(',')
+            .map(d => d.trim())
+            .filter(d => d)
           if (domains.length === 0) {
             return 'Please enter valid domain names'
           }
           return true
         },
-        filter: (input: string) => input.split(',').map(d => d.trim()).filter(d => d)
+        filter: (input: string) =>
+          input
+            .split(',')
+            .map(d => d.trim())
+            .filter(d => d)
       }
     ])
     selectedDomains = customDomainsAnswer.customDomains
@@ -355,7 +547,10 @@ export const generate = async (ctx: PinionContext) => {
       'frontend-backend': ['frontend', 'backend'],
       'apps-libs': ['apps', 'libs']
     }
-    selectedDomains = domainMappings[answers.domainSelection as keyof typeof domainMappings] || ['api', 'web']
+    selectedDomains = domainMappings[answers.domainSelection as keyof typeof domainMappings] || [
+      'api',
+      'web'
+    ]
   }
 
   // Generate domain configuration
@@ -376,7 +571,7 @@ export const generate = async (ctx: PinionContext) => {
   // Show warning for custom domains about path editing
   if (answers.domainSelection === 'custom') {
     console.log('\n⚠️  Custom domains selected!')
-    console.log('   You will need to edit the paths in .pipecraftrc.json after generation')
+    console.log('   You will need to edit the paths in .pipecraftrc after generation')
     console.log('   to match your actual project structure.\n')
   }
 
@@ -384,7 +579,7 @@ export const generate = async (ctx: PinionContext) => {
   const mergedCtx = { ...ctx, ...defaultConfig, ...answers } as any
 
   // Configure Nx based on detection and user confirmation
-  let nxConfig = undefined
+  let nxConfig: { enabled: boolean; tasks: string[]; baseRef: string; enableCache: boolean } | undefined
   if (nxDetected && answers.enableNx) {
     console.log('\n✅ Nx integration enabled!')
     console.log(`   Tasks to run: ${detectedNxTasks.join(', ')}\n`)
@@ -397,7 +592,7 @@ export const generate = async (ctx: PinionContext) => {
     }
   } else if (nxDetected && !answers.enableNx) {
     console.log('\n⚠️  Nx detected but integration disabled.')
-    console.log('   You can enable it later by editing .pipecraftrc.json\n')
+    console.log('   You can enable it later by editing .pipecraftrc\n')
   }
 
   const configData: any = {
@@ -420,5 +615,14 @@ export const generate = async (ctx: PinionContext) => {
     configData.nx = nxConfig
   }
 
-  return writeJSON(() => configData, toFile('.pipecraftrc.json'))(mergedCtx)
+  // Generate YAML content with comments
+  const yamlContent = generateYamlConfig(configData)
+
+  // Write the .pipecraftrc file
+  const outputPath = `${cwd}/.pipecraftrc`
+  writeFileSync(outputPath, yamlContent, 'utf-8')
+
+  console.log(`\n✅ Created ${outputPath}\n`)
+
+  return mergedCtx
 }
