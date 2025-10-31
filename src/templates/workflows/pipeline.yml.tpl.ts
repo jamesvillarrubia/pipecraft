@@ -93,7 +93,8 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         ...createTagPromoteReleaseOperations({
           branchFlow,
           deployJobNames: [], // No deployment dependencies in new model
-          remoteTestJobNames: []
+          remoteTestJobNames: [],
+          autoMerge: typeof config.autoMerge === 'object' ? config.autoMerge : {}
         })
       ]
 

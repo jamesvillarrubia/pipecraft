@@ -291,6 +291,55 @@ program
     }
   })
 
+// Get-config command - Get configuration value
+program
+  .command('get-config')
+  .description('Get a configuration value by key path (supports JSON, YAML, JS, etc.)')
+  .argument('<key>', 'key path to retrieve (e.g., "branchFlow" or "autoMerge.staging")')
+  .option('--format <format>', 'output format: json, space-separated, or raw', 'raw')
+  .action(async (key, options) => {
+    try {
+      const globalOptions = program.opts()
+      const configPath = globalOptions.config
+
+      const config = loadConfig(configPath)
+      validateConfig(config)
+
+      // Parse nested key path (e.g., "autoMerge.staging")
+      const getValue = (obj: any, path: string): any => {
+        return path.split('.').reduce((current, key) => {
+          return current?.[key]
+        }, obj)
+      }
+
+      const value = getValue(config, key)
+
+      if (value === undefined) {
+        console.error(`Key "${key}" not found in configuration`)
+        process.exit(1)
+      }
+
+      // Output value based on format
+      if (options.format === 'json') {
+        console.log(JSON.stringify(value))
+      } else if (options.format === 'space-separated' && Array.isArray(value)) {
+        console.log(value.join(' '))
+      } else if (Array.isArray(value)) {
+        // Default for arrays: space-separated
+        console.log(value.join(' '))
+      } else if (typeof value === 'object' && value !== null) {
+        // Default for objects: JSON
+        console.log(JSON.stringify(value))
+      } else {
+        // Default for primitives: raw value
+        console.log(value)
+      }
+    } catch (error: any) {
+      console.error(`❌ Failed to get config value: ${error.message}`)
+      process.exit(1)
+    }
+  })
+
 // Verify command - Check if setup is correct
 program
   .command('verify')
