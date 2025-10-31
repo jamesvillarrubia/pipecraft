@@ -1,6 +1,7 @@
 import { beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest'
 import { mkdirSync, rmSync, existsSync } from 'fs'
 import { join } from 'path'
+import { activateGitRepo, deactivateGitRepo } from './helpers/workspace.js'
 
 // Test utilities
 export const TEST_DIR = join(process.cwd(), 'test-temp')
@@ -8,6 +9,21 @@ export const FIXTURES_DIR = join(__dirname, 'fixtures')
 
 // Setup test environment
 beforeAll(() => {
+  // Activate example git repos for testing
+  const examplesRoot = join(process.cwd(), 'examples')
+  const exampleRepos = ['pipecraft-example-basic', 'pipecraft-example-gated', 'pipecraft-example-minimal']
+  
+  for (const repo of exampleRepos) {
+    const repoPath = join(examplesRoot, repo)
+    if (existsSync(join(repoPath, '.git.stored'))) {
+      try {
+        activateGitRepo(repoPath)
+      } catch (error) {
+        // Repo might not have .git.stored yet, that's okay
+      }
+    }
+  }
+
   // Create test directory
   if (existsSync(TEST_DIR)) {
     try {
@@ -23,6 +39,21 @@ beforeAll(() => {
 })
 
 afterAll(() => {
+  // Deactivate example git repos after all tests complete
+  const examplesRoot = join(process.cwd(), 'examples')
+  const exampleRepos = ['pipecraft-example-basic', 'pipecraft-example-gated', 'pipecraft-example-minimal']
+  
+  for (const repo of exampleRepos) {
+    const repoPath = join(examplesRoot, repo)
+    if (existsSync(join(repoPath, '.git'))) {
+      try {
+        deactivateGitRepo(repoPath)
+      } catch (error) {
+        // Ignore errors during cleanup
+      }
+    }
+  }
+
   // Don't delete TEST_DIR as other test files may still need it
   // The directory will be cleaned up at the start of the next test run by beforeAll
 })

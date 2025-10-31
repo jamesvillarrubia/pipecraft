@@ -1,0 +1,6 @@
+chore: regenerate PipeCraft workflows with updated configuration
+
+Updated workflows to match current .pipecraftrc.json with:
+- 4 domains (frontend, backend, api, shared)
+- Full auto-merge enabled
+- 3-branch flow (develop → staging → main)

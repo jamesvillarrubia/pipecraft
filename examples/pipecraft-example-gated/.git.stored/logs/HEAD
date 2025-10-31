@@ -1,0 +1,10 @@
+0000000000000000000000000000000000000000 b894371e2a5c9a9e8db4d67252df94283cbd452c James Villarrubia <james.villarrubia@gmail.com> 1761598804 -0400	commit (initial): feat: initial commit - gated PipeCraft example
+b894371e2a5c9a9e8db4d67252df94283cbd452c 0000000000000000000000000000000000000000 James Villarrubia <james.villarrubia@gmail.com> 1761598808 -0400	Branch: renamed refs/heads/main to refs/heads/develop
+0000000000000000000000000000000000000000 b894371e2a5c9a9e8db4d67252df94283cbd452c James Villarrubia <james.villarrubia@gmail.com> 1761598808 -0400	Branch: renamed refs/heads/main to refs/heads/develop
+b894371e2a5c9a9e8db4d67252df94283cbd452c b894371e2a5c9a9e8db4d67252df94283cbd452c James Villarrubia <james.villarrubia@gmail.com> 1761598809 -0400	checkout: moving from develop to alpha
+b894371e2a5c9a9e8db4d67252df94283cbd452c b894371e2a5c9a9e8db4d67252df94283cbd452c James Villarrubia <james.villarrubia@gmail.com> 1761598809 -0400	checkout: moving from alpha to beta
+b894371e2a5c9a9e8db4d67252df94283cbd452c b894371e2a5c9a9e8db4d67252df94283cbd452c James Villarrubia <james.villarrubia@gmail.com> 1761598809 -0400	checkout: moving from beta to release
+b894371e2a5c9a9e8db4d67252df94283cbd452c b894371e2a5c9a9e8db4d67252df94283cbd452c James Villarrubia <james.villarrubia@gmail.com> 1761598809 -0400	checkout: moving from release to production
+b894371e2a5c9a9e8db4d67252df94283cbd452c b894371e2a5c9a9e8db4d67252df94283cbd452c James Villarrubia <james.villarrubia@gmail.com> 1761598809 -0400	checkout: moving from production to develop
+b894371e2a5c9a9e8db4d67252df94283cbd452c 9513f7c6685ed9a20c5db58a638da28d17a467ef James Villarrubia <james.villarrubia@gmail.com> 1761599574 -0400	commit: chore: generate PipeCraft workflows
+9513f7c6685ed9a20c5db58a638da28d17a467ef 2fbc52d6f57bc02b476b2ca6c55ea3ce70a4e680 James Villarrubia <james.villarrubia@gmail.com> 1761611201 -0400	commit: fix: use production branch as baseRef instead of hardcoded main
