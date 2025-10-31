@@ -1,9 +1,0 @@
-chore: generate PipeCraft workflows
-
-Generated CI/CD pipeline with:
-- Domain-based change detection
-- Automated version bumping
-- Auto-merge to main
-- Comprehensive GitHub Actions workflows
-
-This enables the full trunk-based development workflow.

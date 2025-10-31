@@ -1,3 +1,0 @@
-0000000000000000000000000000000000000000 851dc0f7130872b375e24cfc6f041c7fe4763cd3 James Villarrubia <james.villarrubia@gmail.com> 1761594227 -0400	commit (initial): feat: initial commit - minimal PipeCraft example
-851dc0f7130872b375e24cfc6f041c7fe4763cd3 851dc0f7130872b375e24cfc6f041c7fe4763cd3 James Villarrubia <james.villarrubia@gmail.com> 1761594231 -0400	Branch: renamed refs/heads/main to refs/heads/develop
-851dc0f7130872b375e24cfc6f041c7fe4763cd3 58b9c7c72e36d3ed1b9bb466676515984e13cb58 James Villarrubia <james.villarrubia@gmail.com> 1761599523 -0400	cherry-pick: chore: generate PipeCraft workflows
