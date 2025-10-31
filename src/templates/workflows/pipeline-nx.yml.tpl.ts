@@ -100,6 +100,9 @@ function createTestNxJobOperation(ctx: NxPipelineContext): PathOperationConfig {
           packageManager: '${packageManager}'
           enableCache: '${enableCache}'
           reportResults: 'true'
+          node-version: \${{ env.NODE_VERSION }}
+          pnpm-version: \${{ env.PNPM_VERSION }}
+          exclude: ''
   `)
   }
 }

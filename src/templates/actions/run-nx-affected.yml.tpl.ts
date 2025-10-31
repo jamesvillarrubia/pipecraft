@@ -67,10 +67,6 @@ inputs:
     description: 'pnpm version to use'
     required: false
     default: '9'
-  verbose:
-    description: 'Enable verbose logging for debugging affected detection'
-    required: false
-    default: 'false'
 
 runs:
   using: composite
@@ -131,7 +127,6 @@ runs:
           nx-\${{ runner.os }}-
 
     - name: Show Nx Comparison Info
-      if: inputs.verbose == 'true'
       shell: bash
       run: |
         echo "=========================================="
