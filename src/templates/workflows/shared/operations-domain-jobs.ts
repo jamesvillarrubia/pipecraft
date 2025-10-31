@@ -28,10 +28,10 @@ export function createDomainTestJobOperations(ctx: DomainJobsContext): PathOpera
       ...(index === 0 && {
         commentBefore: `
 =============================================================================
-TESTING JOBS (✅ Customize these with your test logic)
+ TESTING JOBS (✅ Customize these with your test logic)
 =============================================================================
-These jobs run tests for each domain when changes are detected.
-Replace the TODO comments with your actual test commands.
+ These jobs run tests for each domain when changes are detected.
+ Replace the TODO comments with your actual test commands.
 `
       }),
       value: createValueFromString(`
@@ -72,10 +72,10 @@ export function createDomainDeployJobOperations(ctx: DomainJobsContext): PathOpe
       ...(index === 0 && {
         commentBefore: `
 =============================================================================
-DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
+ DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
 =============================================================================
-These jobs deploy each domain when changes are detected and tests pass.
-Replace the TODO comments with your actual deployment commands.
+ These jobs deploy each domain when changes are detected and tests pass.
+ Replace the TODO commands with your actual deployment commands.
 `
       }),
       value: createValueFromString(`
@@ -116,10 +116,10 @@ export function createDomainRemoteTestJobOperations(ctx: DomainJobsContext): Pat
       ...(index === 0 && {
         commentBefore: `
 =============================================================================
-REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
+ REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
 =============================================================================
-These jobs test deployed services remotely after deployment succeeds.
-Replace the TODO comments with your actual remote testing commands.
+ These jobs test deployed services remotely after deployment succeeds.
+ Replace the TODO comments with your actual remote testing commands.
 `
       }),
       value: createValueFromString(`

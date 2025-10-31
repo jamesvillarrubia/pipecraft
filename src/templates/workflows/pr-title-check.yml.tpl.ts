@@ -61,7 +61,40 @@ export const generate = (ctx: PinionContext) =>
       }
       
       return renderTemplate(
-        (ctx: any) => `name: "PR Title Format Check"
+        (ctx: any) => {
+          // Get all commit types from bumpRules config
+          const bumpRules = ctx.config?.semver?.bumpRules || ctx.config?.versioning?.bumpRules || {}
+          const allTypes = Object.keys(bumpRules)
+
+          // Get major bump types for breaking change detection
+          const majorTypes = Object.entries(bumpRules)
+            .filter(([_, level]) => level === 'major')
+            .map(([type, _]) => type)
+
+          // Build the types list for the PR title validator
+          // Use config types, or fall back to common conventional commit types
+          const typesList = allTypes.length > 0
+            ? allTypes.map(type => `            ${type}`).join('\n')
+            : `            fix
+            feat
+            docs
+            style
+            chore
+            refactor
+            perf
+            test
+            ci
+            build
+            revert
+            major`
+
+          // Build regex pattern for detecting major bump types
+          // Format: ^(major|breaking|othermajortype):
+          const majorTypesPattern = majorTypes.length > 0
+            ? `^(${majorTypes.join('|')}):`
+            : '^major:'
+
+          return `name: "PR Title Format Check"
 
 on:
   pull_request:
@@ -72,7 +105,8 @@ on:
       - reopened
 
 permissions:
-  pull-requests: read
+  pull-requests: write
+  contents: read
 
 jobs:
   main:
@@ -85,22 +119,30 @@ jobs:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         with:
           # Configure which types are allowed (newline-delimited).
-          # Default: https://github.com/commitizen/conventional-commit-types
+          # Types are derived from pipecraft config bumpRules
           types: |
-            fix
-            feat
-            docs
-            style
-            chore
-            refactor
-            perf
-            test
-            ci
-            build
-            revert
-            major
+${typesList}
           requireScope: false
 
+      # Check for breaking changes
+      - name: Check for breaking changes
+        id: breaking_check
+        if: always()
+        run: |
+          PR_TITLE="\${{ github.event.pull_request.title }}"
+          PR_BODY="\${{ github.event.pull_request.body }}"
+
+          # Check if title starts with types that bump major version or contains "!" or "BREAKING"
+          # Types that bump major: ${majorTypes.join(', ')}
+          if [[ "\$PR_TITLE" =~ ${majorTypesPattern}|^[a-z]+\!:|BREAKING|breaking ]]; then
+            echo "is_breaking=true" >> \$GITHUB_OUTPUT
+            echo "⚠️  Breaking change detected in PR title"
+          elif [[ "\$PR_BODY" =~ BREAKING[[:space:]]CHANGE ]]; then
+            echo "is_breaking=true" >> \$GITHUB_OUTPUT
+            echo "⚠️  Breaking change detected in PR body"
+          else
+            echo "is_breaking=false" >> \$GITHUB_OUTPUT
+          fi
 
       - uses: marocchino/sticky-pull-request-comment@v2
         # When the previous steps fails, the workflow would stop. By adding this
@@ -110,11 +152,11 @@ jobs:
           header: pr-title-lint-error
           message: |
             Hey there and thank you for opening this pull request! 👋🏼
-            
+
             We require pull request titles to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and it looks like your proposed title needs to be adjusted.
 
             Details:
-            
+
             \`\`\`
             \${{ steps.lint_pr_title.outputs.error_message }}
             \`\`\`
@@ -122,9 +164,43 @@ jobs:
       # Delete a previous comment when the issue has been resolved
       - if: \${{ steps.lint_pr_title.outputs.error_message == null }}
         uses: marocchino/sticky-pull-request-comment@v2
-        with:   
+        with:
           header: pr-title-lint-error
-          delete: true`,
+          delete: true
+
+      # Add warning comment for breaking changes
+      - name: Add breaking change warning
+        if: always() && steps.breaking_check.outputs.is_breaking == 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: breaking-change-warning
+          message: |
+            ## ⚠️  BREAKING CHANGE DETECTED
+
+            This PR contains a **BREAKING CHANGE** which will result in a **MAJOR version bump**.
+
+            **Important considerations:**
+            - Breaking changes require careful review by maintainers
+            - This will increment the major version (e.g., 1.x.x → 2.0.0)
+            - Users will need to update their code when upgrading
+            - Documentation should be updated to reflect the breaking changes
+            - Consider if this change can be made backwards-compatible
+
+            **Required actions:**
+            - [ ] Breaking changes are documented in the PR description
+            - [ ] Migration guide is provided (if applicable)
+            - [ ] All maintainers have been notified for review
+
+            **Reviewers:** This PR requires additional scrutiny due to the breaking change.
+
+      # Delete breaking change warning when resolved
+      - name: Remove breaking change warning
+        if: always() && steps.breaking_check.outputs.is_breaking == 'false'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: breaking-change-warning
+          delete: true`
+        },
         toFile('.github/workflows/pr-title-check.yml')
       )(ctx)
     })
