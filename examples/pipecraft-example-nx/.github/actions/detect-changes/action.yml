@@ -1,0 +1,55 @@
+name: 'Detect Changes'
+description: 'Detect changes in different application domains based on file paths'
+author: 'Pipecraft'
+
+inputs:
+  baseRef:
+    description: 'Base reference to compare against'
+    required: false
+    default: 'main'
+
+outputs:
+  migrations:
+    description: 'Whether migrations domain has changes'
+    value: ${{ steps.merge.outputs.migrations }}
+  infra:
+    description: 'Whether infra domain has changes'
+    value: ${{ steps.merge.outputs.infra }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set Base Branch
+      id: set-base
+      shell: bash
+      run: |
+        base_branch=${{ inputs.baseRef || 'main' }}
+        echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
+        echo "base_branch=$base_branch" >> $GITHUB_ENV
+
+    - name: Detect Changes
+      uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        base: ${{ steps.set-base.outputs.base_branch }}
+        filters: |
+          migrations:
+            - 'migrations/**'
+          infra:
+            - 'infra/**'
+
+    - name: Merge filter outputs
+      id: merge
+      shell: bash
+      run: |
+        echo "migrations=${{ contains(steps.filter.outputs.changes, 'migrations') }}" >> $GITHUB_OUTPUT
+        echo "infra=${{ contains(steps.filter.outputs.changes, 'infra') }}" >> $GITHUB_OUTPUT
+        
+        echo "📋 Change Detection Results:"
+        echo "  migrations: ${{ contains(steps.filter.outputs.changes, 'migrations') }}"
+        echo "  infra: ${{ contains(steps.filter.outputs.changes, 'infra') }}"

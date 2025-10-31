@@ -25,8 +25,19 @@ jobs:
           # Configure which types are allowed (newline-delimited).
           # Types are derived from pipecraft config bumpRules
           types: |
-            feat
+            test
+            build
+            ci
+            docs
+            style
             fix
+            perf
+            refactor
+            chore
+            patch
+            feat
+            minor
+            major
             breaking
           requireScope: false
 
@@ -40,9 +51,9 @@ jobs:
         run: |
 
           # Check if title starts with types that bump major version or contains "!" or "BREAKING"
-          # Types that bump major: breaking
+          # Types that bump major: major, breaking
           IS_MAJOR_TYPE=false
-          for type in "breaking"; do
+          for type in "major" "breaking"; do
             if [[ "$PR_TITLE" =~ ^$type: ]]; then
               IS_MAJOR_TYPE=true
               break

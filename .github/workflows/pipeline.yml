@@ -19,7 +19,7 @@
 # Running 'pipecraft generate' updates managed sections while preserving
 # your customizations in test/deploy/remote-test jobs.
 
-# 📖 Learn more: https://docs.pipecraft.dev
+# 📖 Learn more: https://pipecraft.thecraftlab.dev
 #=============================================================================
 
 name: Pipeline
@@ -97,7 +97,7 @@ jobs:
   #=============================================================================
   # This job detects which domains have changed.
   # Domain definitions are baked into this file at generation time.
-  # Run 'pipecraft generate' to update when domains change in .pipecraftrc.json.
+  # Run 'pipecraft generate' to update when domains change in .pipecraftrc.
 
   changes:
     runs-on: ubuntu-latest
