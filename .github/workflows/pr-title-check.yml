@@ -43,9 +43,10 @@ jobs:
       - name: Check for breaking changes
         id: breaking_check
         if: always()
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_BODY="${{ github.event.pull_request.body }}"
 
           # Check if title starts with types that bump major version or contains "!" or "BREAKING"
           # Types that bump major: breaking
