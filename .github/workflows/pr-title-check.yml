@@ -49,7 +49,7 @@ jobs:
 
           # Check if title starts with types that bump major version or contains "!" or "BREAKING"
           # Types that bump major: breaking
-          if [[ "$PR_TITLE" =~ ^(breaking):|^[a-z]+!:|BREAKING|breaking ]]; then
+          if [[ "$PR_TITLE" =~ ^(breaking): ]] || [[ "$PR_TITLE" =~ ^[a-z]+!: ]] || [[ "$PR_TITLE" =~ BREAKING ]] || [[ "$PR_TITLE" =~ breaking ]]; then
             echo "is_breaking=true" >> $GITHUB_OUTPUT
             echo "⚠️  Breaking change detected in PR title"
           elif [[ "$PR_BODY" =~ BREAKING[[:space:]]CHANGE ]]; then
