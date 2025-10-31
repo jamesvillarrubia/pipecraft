@@ -10,7 +10,9 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       '**/examples/**/*.spec.ts',
-      '**/examples/**/*.test.ts'
+      '**/examples/**/*.test.ts',
+      '**/examples/**/*.spec.js',
+      '**/examples/**/*.test.js'
     ],
     coverage: {
       provider: 'v8',
