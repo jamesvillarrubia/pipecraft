@@ -18,16 +18,17 @@ export interface ChangesContext {
  */
 export function createChangesJobOperation(ctx: ChangesContext): PathOperationConfig {
   const { domains, useNx = false, baseRef = 'main' } = ctx
-  const action = useNx ? 'detect-changes-nx' : 'detect-changes'
+  // Always use 'detect-changes' - it handles both Nx and path-based detection
+  const action = 'detect-changes'
   const sortedDomains = Object.keys(domains).sort()
 
   const comment = `
 =============================================================================
-CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
+ CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
 =============================================================================
-${useNx
-    ? 'Detects which domains have changed using Nx dependency graph and path-based fallback'
-    : 'Detects which domains have changed using path-based detection'
+ ${useNx
+    ? 'This job detects which domains have changed and sets outputs for downstream jobs.'
+    : 'This job detects which domains have changed and sets outputs for downstream jobs.'
 }
 `
 
@@ -41,6 +42,7 @@ ${useNx
   return {
     path: 'jobs.changes',
     operation: 'overwrite',
+    spaceBefore: true,
     commentBefore: comment,
     value: createValueFromString(`
     runs-on: ubuntu-latest
@@ -48,7 +50,7 @@ ${useNx
       - uses: actions/checkout@v4
         with:
           ref: \${{ inputs.commitSha || github.sha }}
-          fetch-depth: 0
+          fetch-depth: \${{ env.FETCH_DEPTH_AFFECTED }}
       - uses: ./.github/actions/${action}
         id: detect
         with:
