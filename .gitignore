@@ -60,3 +60,9 @@ custom-pipeline.yml
 .lockor
 .actrc
 
+
+# Expedition analysis
+_expedition/
+
+# Debug examples
+examples/debug/
