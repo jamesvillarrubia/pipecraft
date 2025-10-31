@@ -28,11 +28,7 @@ export function createHeaderOperations(ctx: HeaderContext): PathOperationConfig[
     {
       path: 'name',
       operation: 'preserve',
-      value: (() => {
-        const nameScalar = new Scalar('Pipeline')
-        nameScalar.type = Scalar.QUOTE_DOUBLE
-        return nameScalar
-      })(),
+      value: new Scalar('Pipeline'),
       required: true
     },
 
@@ -47,10 +43,56 @@ export function createHeaderOperations(ctx: HeaderContext): PathOperationConfig[
           `\${{ github.event_name == 'pull_request' && !contains('${branchList}', github.head_ref) && github.event.pull_request.title || github.ref_name }} #\${{ inputs.run_number || github.run_number }}\${{ inputs.version && format(' - {0}', inputs.version) || '' }}`
         )
         runNameScalar.type = Scalar.QUOTE_DOUBLE
+        // Prevent line breaking by treating as a single unit
+        ;(runNameScalar as any).type = 'QUOTE_DOUBLE'
         return runNameScalar
       })(),
       required: true,
       spaceBefore: true
+    },
+
+    // =============================================================================
+    // ENVIRONMENT VARIABLES
+    // =============================================================================
+    {
+      path: 'env',
+      operation: 'preserve',
+      value: {},
+      required: true,
+      spaceBefore: true,
+      commentBefore: `Git fetch depth configuration
+ - FETCH_DEPTH_AFFECTED: For change detection and Nx affected analysis
+   Lower values (50-100) improve performance, higher values (200+) improve accuracy
+   Use 0 for complete history if your branches diverge significantly
+ - FETCH_DEPTH_VERSIONING: For semantic version calculation (needs git tags)
+   Should almost always be 0 to access all tags
+
+Runtime versions
+ Update these to match your project's requirements without regenerating workflows`
+    },
+    {
+      path: 'env.FETCH_DEPTH_AFFECTED',
+      operation: 'preserve',
+      value: new Scalar('100'),
+      required: true
+    },
+    {
+      path: 'env.FETCH_DEPTH_VERSIONING',
+      operation: 'preserve',
+      value: new Scalar('0'),
+      required: true
+    },
+    {
+      path: 'env.NODE_VERSION',
+      operation: 'preserve',
+      value: new Scalar('20'),
+      required: true
+    },
+    {
+      path: 'env.PNPM_VERSION',
+      operation: 'preserve',
+      value: new Scalar('9'),
+      required: true
     },
 
     // =============================================================================

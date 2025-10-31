@@ -1,0 +1,26 @@
+name: Enforce PR Target Branch
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  check-pr-target:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR base branch
+        if: github.base_ref == 'production'
+        run: |
+          echo "::error::Pull requests must target 'develop' branch, not 'production'"
+          echo "::error::Please change the base branch to 'develop'"
+          echo ""
+          echo "To fix this:"
+          echo "1. Go to your PR"
+          echo "2. Click 'Edit' next to the title"
+          echo "3. Change base branch from 'production' to 'develop'"
+          exit 1
+      
+      - name: Confirm correct target
+        if: github.base_ref == 'develop'
+        run: |
+          echo "✅ PR correctly targets 'develop' branch"

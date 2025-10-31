@@ -1,0 +1,26 @@
+{
+  "name": "pipecraft-example-gated",
+  "version": "1.0.0",
+  "description": "Enterprise gated workflow example demonstrating PipeCraft with manual approvals at each stage",
+  "type": "module",
+  "scripts": {
+    "test": "node test-runner.js",
+    "test:services": "node test-runner.js services",
+    "test:web": "node test-runner.js web",
+    "test:api": "node test-runner.js api",
+    "test:shared": "node test-runner.js shared",
+    "build": "node build.js",
+    "lint": "node lint.js"
+  },
+  "keywords": ["pipecraft", "gated", "enterprise", "example", "ci-cd", "manual-approval"],
+  "author": "PipeCraft Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jamesvillarrubia/pipecraft-example-gated.git"
+  },
+  "homepage": "https://github.com/jamesvillarrubia/pipecraft-example-gated#readme",
+  "bugs": {
+    "url": "https://github.com/jamesvillarrubia/pipecraft-example-gated/issues"
+  }
+}

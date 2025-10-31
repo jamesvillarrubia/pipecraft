@@ -1,0 +1,47 @@
+{
+  "ciProvider": "github",
+  "mergeStrategy": "merge",
+  "requireConventionalCommits": true,
+  "initialBranch": "develop",
+  "finalBranch": "production",
+  "branchFlow": ["develop", "alpha", "beta", "release", "production"],
+  "autoMerge": {
+    "alpha": false,
+    "beta": false,
+    "release": false,
+    "production": false
+  },
+  "semver": {
+    "bumpRules": {
+      "feat": "minor",
+      "fix": "patch",
+      "breaking": "major"
+    }
+  },
+  "domains": {
+    "services": {
+      "paths": ["services/**"],
+      "description": "Microservices",
+      "test": true,
+      "deployable": true
+    },
+    "web": {
+      "paths": ["web/**"],
+      "description": "Web applications",
+      "test": true,
+      "deployable": true
+    },
+    "api": {
+      "paths": ["api/**"],
+      "description": "API gateway",
+      "test": true,
+      "deployable": true
+    },
+    "shared": {
+      "paths": ["shared/**"],
+      "description": "Shared libraries",
+      "test": true,
+      "deployable": false
+    }
+  }
+}

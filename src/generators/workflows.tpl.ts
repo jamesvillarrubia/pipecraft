@@ -42,7 +42,6 @@
  */
 
 import { PinionContext, toFile, renderTemplate, loadJSON, when } from '@featherscloud/pinion'
-import { IdempotencyManager } from '../utils/idempotency.js'
 import { PipecraftConfig } from '../types/index.js'
 import { readFileSync, existsSync } from 'fs'
 import { parse } from 'yaml'
@@ -51,12 +50,12 @@ import { logger } from '../utils/logger.js'
 // Import individual workflow templates
 import { generate as generateTagWorkflow } from '../templates/actions/create-tag.yml.tpl.js'
 import { generate as generateChangesWorkflow } from '../templates/actions/detect-changes.yml.tpl.js'
-import { generate as generateChangesNxWorkflow } from '../templates/actions/detect-changes-nx.yml.tpl.js'
 import { generate as generateVersionWorkflow } from '../templates/actions/calculate-version.yml.tpl.js'
 import { generate as generateCreatePRWorkflow } from '../templates/actions/create-pr.yml.tpl.js'
 import { generate as generateBranchWorkflow } from '../templates/actions/manage-branch.yml.tpl.js'
 import { generate as generatePromoteBranchWorkflow } from '../templates/actions/promote-branch.yml.tpl.js'
 import { generate as generateReleaseWorkflow } from '../templates/actions/create-release.yml.tpl.js'
+import { generate as generateRunNxAffectedWorkflow } from '../templates/actions/run-nx-affected.yml.tpl.js'
 import { generate as generatePathBasedPipeline } from '../templates/workflows/pipeline.yml.tpl.js'
 import { generate as generateNxPipeline } from '../templates/workflows/pipeline-nx.yml.tpl.js'
 import { generate as generateEnforcePRTarget } from '../templates/workflows/enforce-pr-target.yml.tpl.js'
@@ -161,6 +160,7 @@ export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPip
     .then((ctx) => {
       // Generate individual GitHub Actions and release-it config
       const generators = [
+        // Unified detect-changes action works for all stacks
         generateChangesWorkflow(ctx),
         generateTagWorkflow(ctx),
         generateVersionWorkflow(ctx),
@@ -173,7 +173,7 @@ export const generate = (ctx: PinionContext & { pipelinePath?: string, outputPip
 
       // Add Nx-specific action if Nx is enabled
       if (ctx.config?.nx?.enabled) {
-        generators.push(generateChangesNxWorkflow(ctx))
+        generators.push(generateRunNxAffectedWorkflow(ctx))
       }
 
       return Promise.all(generators).then(() => ctx)

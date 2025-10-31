@@ -1,0 +1,3 @@
+# Force text mode for example repo git files (they're test data)
+examples/pipecraft-example-*/.git/** text eol=lf
+

@@ -28,34 +28,34 @@ import { logger } from '../utils/logger.js'
  * @returns {string} JavaScript configuration content
  */
 const releaseItTemplate = (ctx: any) => {
-  const bumpRules = ctx.semver?.bumpRules || {
-    feat: 'minor',
+  // Base default prefixes for conventional commits
+  const baseDefaults: Record<string, string> = {
+    test: 'ignore',
+    build: 'ignore',
+    ci: 'patch',
+    docs: 'patch',
+    chore: 'minor',
+    style: 'patch',
     fix: 'patch',
-    breaking: 'major'
+    perf: 'patch',
+    refactor: 'patch',
+    feat: 'minor',
+    major: 'major',
   }
 
-  // Convert bump rules to release-it format
-  const releaseItTypes = Object.entries(bumpRules).map(([type, level]) => {
-    const releaseItLevel = level === 'major' ? 'major' : 
-                          level === 'minor' ? 'minor' : 
-                          level === 'patch' ? 'patch' : 'ignore'
-    return `              ${type}: '${releaseItLevel}'`
-  }).join(',\n')
+  // Get user-defined bump rules from config
+  const userBumpRules = ctx.config?.semver?.bumpRules || ctx.semver?.bumpRules || {}
+
+  // Merge user rules with defaults (user rules take precedence)
+  const mergedRules = { ...baseDefaults, ...userBumpRules }
+
+  // Convert to formatted string for the config file
+  const rulesEntries = Object.entries(mergedRules)
+    .map(([type, level]) => `  ${type}: '${level}'`)
+    .join(',\n')
 
   return `const DEFAULT_PREFIXES = {
-  test: 'ignore',
-  build: 'ignore',
-
-  ci: 'patch',
-  docs: 'patch',
-  chore: 'minor',
-  style: 'patch',
-  fix: 'patch',
-  perf: 'patch',
-  refactor: 'patch',
-
-  feat: 'minor',
-  major: 'major',
+${rulesEntries}
 }
 
 module.exports = {

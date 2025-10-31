@@ -31,7 +31,6 @@
 import { PinionContext, toFile, renderTemplate, writeJSON } from '@featherscloud/pinion'
 import { existsSync, readFileSync } from 'fs'
 import inquirer from 'inquirer'
-import { IdempotencyManager } from '../utils/idempotency.js'
 import { VersionManager } from '../utils/versioning.js'
 import { PipecraftConfig } from '../types/index.js'
 
@@ -61,9 +60,23 @@ const defaultConfig = {
   },
   semver: {
     bumpRules: {
-      feat: 'minor',
-      fix: 'patch',
-      breaking: 'major'
+      test:     'ignore',
+      build:    'ignore',
+
+      ci:       'patch',
+      docs:     'patch',
+      style:    'patch',
+      fix:      'patch',
+      perf:     'patch',
+      refactor: 'patch',
+      chore:    'patch',
+      patch:    'patch',
+
+      feat:     'minor',
+      minor:    'minor',
+      
+      major:    'major',
+      breaking: 'major',
     }
   },
   domains: {
@@ -165,6 +178,31 @@ const configTemplate = (ctx: PipecraftConfig) => {
 export const generate = async (ctx: PinionContext) => {
   const cwd = ctx.cwd || process.cwd()
 
+  // Check if .pipecraftrc.json already exists
+  const configPath = `${cwd}/.pipecraftrc.json`
+  if (existsSync(configPath)) {
+    const overwriteAnswer = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'overwrite',
+        message: '⚠️  .pipecraftrc.json already exists. Overwrite it?',
+        default: false
+      }
+    ])
+
+    if (!overwriteAnswer.overwrite) {
+      console.log('\n❌ Init cancelled. Existing configuration preserved.\n')
+      return
+    }
+
+    console.log('\n✅ Proceeding with overwrite...\n')
+
+    // Set force flag to true so Pinion will overwrite the file
+    if (ctx.pinion) {
+      ctx.pinion.force = true
+    }
+  }
+
   // Detect package manager before prompting
   let detectedPackageManager: 'npm' | 'yarn' | 'pnpm' = 'npm'
   if (existsSync(`${cwd}/pnpm-lock.yaml`)) {
@@ -175,14 +213,44 @@ export const generate = async (ctx: PinionContext) => {
     detectedPackageManager = 'npm'
   }
 
+  // Detect Nx workspace before prompting
+  const nxJsonPath = `${cwd}/nx.json`
+  let detectedNxTasks: string[] = []
+  let nxDetected = false
+
+  if (existsSync(nxJsonPath)) {
+    try {
+      const nxJsonContent = readFileSync(nxJsonPath, 'utf8')
+      const nxJson = JSON.parse(nxJsonContent)
+
+      // Extract tasks from targetDefaults
+      const tasks = nxJson.targetDefaults ? Object.keys(nxJson.targetDefaults) : []
+
+      // Sort tasks in a logical order (quality → test → build → e2e)
+      const taskOrder = ['lint', 'typecheck', 'test', 'unit-test', 'build', 'integration-test', 'e2e', 'e2e-ci']
+      detectedNxTasks = tasks.sort((a, b) => {
+        const aIdx = taskOrder.indexOf(a)
+        const bIdx = taskOrder.indexOf(b)
+        if (aIdx === -1 && bIdx === -1) return 0
+        if (aIdx === -1) return 1
+        if (bIdx === -1) return -1
+        return aIdx - bIdx
+      })
+
+      nxDetected = true
+      console.log('\n✅ Nx workspace detected!')
+      console.log(`   Found tasks: ${detectedNxTasks.join(', ')}`)
+      console.log('   Pipecraft can optimize your CI pipeline using Nx affected commands.\n')
+    } catch (error) {
+      console.warn('\n⚠️  Found nx.json but could not parse it:', error)
+      console.log('   Nx integration will use default tasks.\n')
+      nxDetected = true
+      detectedNxTasks = ['lint', 'test', 'build', 'integration-test']
+    }
+  }
+
   // Run inquirer prompts
   const answers = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'projectName',
-      message: 'What is your project name?',
-      default: 'my-project'
-    },
     {
       type: 'list',
       name: 'ciProvider',
@@ -234,6 +302,15 @@ export const generate = async (ctx: PinionContext) => {
       message: `Which package manager do you use? (detected: ${detectedPackageManager})`,
       choices: ['npm', 'yarn', 'pnpm'],
       default: detectedPackageManager
+    },
+    {
+      type: 'confirm',
+      name: 'enableNx',
+      message: nxDetected
+        ? `Enable Nx integration? (detected ${detectedNxTasks.length} tasks)`
+        : 'Enable Nx integration?',
+      default: nxDetected,
+      when: () => nxDetected // Only show if Nx is detected
     },
     {
       type: 'list',
@@ -292,7 +369,7 @@ export const generate = async (ctx: PinionContext) => {
 
   // Add cicd domain for CI/CD changes
   domainConfig.cicd = {
-    paths: ['.github/workflows/**'],
+    paths: ['.github/**'],
     description: 'CI/CD configuration changes'
   }
 
@@ -306,48 +383,21 @@ export const generate = async (ctx: PinionContext) => {
   // Merge answers with context and defaults
   const mergedCtx = { ...ctx, ...defaultConfig, ...answers } as any
 
-  // Detect Nx workspace
-  const nxJsonPath = `${cwd}/nx.json`
+  // Configure Nx based on detection and user confirmation
   let nxConfig = undefined
+  if (nxDetected && answers.enableNx) {
+    console.log('\n✅ Nx integration enabled!')
+    console.log(`   Tasks to run: ${detectedNxTasks.join(', ')}\n`)
 
-  if (existsSync(nxJsonPath)) {
-    try {
-      const nxJsonContent = readFileSync(nxJsonPath, 'utf8')
-      const nxJson = JSON.parse(nxJsonContent)
-
-      // Extract tasks from targetDefaults
-      const tasks = nxJson.targetDefaults ? Object.keys(nxJson.targetDefaults) : []
-
-      // Sort tasks in a logical order (quality → test → build → e2e)
-      const taskOrder = ['lint', 'typecheck', 'test', 'unit-test', 'build', 'integration-test', 'e2e', 'e2e-ci']
-      const sortedTasks = tasks.sort((a, b) => {
-        const aIdx = taskOrder.indexOf(a)
-        const bIdx = taskOrder.indexOf(b)
-        if (aIdx === -1 && bIdx === -1) return 0
-        if (aIdx === -1) return 1
-        if (bIdx === -1) return -1
-        return aIdx - bIdx
-      })
-
-      console.log('✅ Nx workspace detected - enabling Nx integration')
-      console.log(`   Detected tasks: ${sortedTasks.join(', ')}`)
-
-      nxConfig = {
-        enabled: true,
-        tasks: sortedTasks,
-        baseRef: 'origin/main',
-        enableCache: true
-      }
-    } catch (error) {
-      console.warn('⚠️  Found nx.json but could not parse it:', error)
-      console.log('   Using default Nx configuration')
-      nxConfig = {
-        enabled: true,
-        tasks: ['lint', 'test', 'build', 'integration-test'],
-        baseRef: 'origin/main',
-        enableCache: true
-      }
+    nxConfig = {
+      enabled: true,
+      tasks: detectedNxTasks,
+      baseRef: 'origin/main',
+      enableCache: true
     }
+  } else if (nxDetected && !answers.enableNx) {
+    console.log('\n⚠️  Nx detected but integration disabled.')
+    console.log('   You can enable it later by editing .pipecraftrc.json\n')
   }
 
   const configData: any = {

@@ -56,10 +56,18 @@ custom-pipeline.yml
 # Backup files
 *.backup
 
-# Cache files
-.pipecraft-cache.json
-
 # Misc
 .lockor
 .actrc
 
+
+# Expedition analysis
+_expedition/
+
+# Debug examples
+examples/debug/
+
+# Track .git.stored directories for example test repos
+# These are renamed to .git during tests, then back to .git.stored after
+!examples/pipecraft-example-*/.git.stored/
+!examples/pipecraft-example-*/.git.stored/**

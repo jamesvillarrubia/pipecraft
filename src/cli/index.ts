@@ -76,12 +76,11 @@ import { runModule, prompt } from '@featherscloud/pinion'
 import { join } from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
-import { IdempotencyManager } from '../utils/idempotency.js'
 import { VersionManager } from '../utils/versioning.js'
 import { loadConfig, validateConfig } from '../utils/config.js'
 import { PipecraftConfig } from '../types/index.js'
 import { setupGitHubPermissions } from '../utils/github-setup.js'
-import { runPreflightChecks, formatPreflightResults, checkNodeVersion } from '../utils/preflight.js'
+import { runPreflightChecks, formatPreflightResults } from '../utils/preflight.js'
 import { logger } from '../utils/logger.js'
 import { readFileSync } from 'fs'
 
@@ -216,23 +215,18 @@ program
       // Load configuration
       const config = loadConfig(configPath) as PipecraftConfig
 
-      // Check idempotency if not forcing
-      if (!globalOptions.force && !globalOptions.dryRun) {
-        const idempotencyManager = new IdempotencyManager(config)
-
-        if (!(await idempotencyManager.hasChanges())) {
-          logger.info('ℹ️  No changes detected. Use --force to regenerate anyway.')
-          return
-        }
-
-        logger.verbose('🔄 Changes detected, regenerating workflows...')
-      }
-
       if (globalOptions.dryRun) {
         logger.info('🔍 Dry run mode - would generate workflows')
         return
       }
-      
+
+      // Display mode message
+      if (globalOptions.force) {
+        logger.info('🔄 Force mode: Complete rebuild of all workflows')
+      } else {
+        logger.info('✨ Additive mode: Merging with existing workflows')
+      }
+
       await runModule(join(__dirname, '../generators/workflows.tpl.js'), {
         cwd: process.cwd(),
         argv: process.argv,
@@ -257,10 +251,6 @@ program
           }
         }
       } as any)
-      
-      // Update idempotency cache
-      const idempotencyManager = new IdempotencyManager(config)
-      await idempotencyManager.updateCache()
 
       logger.success(`✅ Generated workflows in: ${options.output}`)
 

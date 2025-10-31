@@ -1,83 +1,43 @@
 /**
  * Detect Changes Action Template
- * 
- * Generates a GitHub composite action that detects which domains (application areas)
- * have changes in a pull request. This is the foundation for PipeCraft's path-based
- * conditional workflow execution.
- * 
+ *
+ * Generates a GitHub composite action that detects which domains have changed.
+ * Supports both Nx dependency graph analysis and path-based change detection.
+ *
  * ## Purpose
- * 
- * In monorepos or multi-domain projects, not every change affects every part of the
- * system. This action uses GitHub's `dorny/paths-filter` to detect which domains
- * have modifications, allowing subsequent jobs to run conditionally.
- * 
- * ## How It Works
- * 
- * 1. Checks out the repository with full history
- * 2. Uses paths-filter action to check each domain's file patterns
- * 3. Outputs a boolean for each domain (true if changed, false if not)
- * 4. Logs results for debugging
- * 
+ *
+ * This action intelligently detects changes in monorepos:
+ * - For Nx monorepos: Uses `nx show projects --affected` to leverage the dependency graph
+ * - For path-based projects: Uses path filters to detect which domains changed
+ * - Automatically falls back to path-based detection if Nx is unavailable
+ *
  * ## Generated Action Location
- * 
+ *
  * `.github/actions/detect-changes/action.yml`
- * 
- * ## Usage in Workflows
- * 
- * ```yaml
- * jobs:
- *   changes:
- *     runs-on: ubuntu-latest
- *     outputs:
- *       api: ${{ steps.changes.outputs.api }}
- *       web: ${{ steps.changes.outputs.web }}
- *     steps:
- *       - uses: ./.github/actions/detect-changes
- *         id: changes
- *         with:
- *           baseRef: main
- * 
- *   test-api:
- *     needs: changes
- *     if: needs.changes.outputs.api == 'true'
- *     # Only runs if API domain changed
- * ```
- * 
+ *
  * @module templates/actions/detect-changes.yml.tpl
  */
 
 import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
 import fs from 'fs'
-import dedent from 'dedent'
 import { DomainConfig } from '../../types/index.js'
 import { logger } from '../../utils/logger.js'
 
 /**
  * Generates the detect-changes composite action YAML content.
- * 
+ *
  * Creates a GitHub Actions composite action that:
- * - Accepts a base branch reference for comparison
- * - Defines outputs for each configured domain
- * - Uses dorny/paths-filter to detect file changes
- * - Merges filter outputs into domain-specific outputs
- * - Logs detection results
- * 
+ * - Checks for Nx availability in the repository
+ * - Uses `nx show projects --affected` for dependency graph analysis
+ * - Maps affected projects to domains
+ * - Falls back to path-based detection if Nx isn't available
+ * - Outputs Nx-specific information (affected projects, Nx availability)
+ *
  * @param {any} ctx - Context containing domains configuration
  * @param {Record<string, DomainConfig>} ctx.domains - Domain configurations with path patterns
  * @returns {string} YAML content for the composite action
- * 
- * @example
- * ```typescript
- * const yaml = changesActionTemplate({
- *   domains: {
- *     api: { paths: ['src/api/**'] },
- *     web: { paths: ['src/web/**'] }
- *   }
- * })
- * // Generates action with 'api' and 'web' outputs
- * ```
  */
-const changesActionTemplate = (ctx: any) => {
+const changesNxActionTemplate = (ctx: any) => {
   const domainOutputs = Object.entries(ctx.domains).map((entry) => {
     const [domainName, domainConfig] = entry as [string, DomainConfig];
     return `  ${domainName}:
@@ -87,22 +47,47 @@ const changesActionTemplate = (ctx: any) => {
 
   const domainFilters = Object.entries(ctx.domains).map((entry) => {
     const [domainName, domainConfig] = entry as [string, DomainConfig];
-    return `          ${domainName}:\n            - '${domainConfig.paths.join("'\\n            - '")}'`;
+    const pathsList = domainConfig.paths.map(path => `            - '${path}'`).join('\n');
+    return `          ${domainName}:\n${pathsList}`;
   }).join('\n');
 
-  const domainEchoes = Object.entries(ctx.domains).map((entry) => {
-    const [domainName, domainConfig] = entry as [string, DomainConfig];
-    return `        echo "${domainName}=\${{ contains(steps.filter.outputs.changes, '${domainName}') }}" >> $GITHUB_OUTPUT`
+  // Generate Nx pattern matching logic for each domain
+  const domainNames = Object.keys(ctx.domains);
+  const nxPatternMatching = domainNames.map(domainName => {
+    return `              # Check ${domainName} domain patterns
+              if echo "$project" | grep -qE "(${domainName}|$(echo "${domainName}" | sed 's/-/[-_]/g'))"; then
+                ${domainName.toUpperCase()}_AFFECTED=true
+                echo "  ✅ $project matches ${domainName} domain"
+              fi`;
   }).join('\n');
 
-  const domainResults = Object.entries(ctx.domains).map((entry) => {
-    const [domainName, domainConfig] = entry as [string, DomainConfig];
-    return `        echo "  ${domainName}: \${{ contains(steps.filter.outputs.changes, '${domainName}') }}"`
-  }).join('\n');
+  const nxFlagInit = domainNames.map(domainName =>
+    `            ${domainName.toUpperCase()}_AFFECTED=false`
+  ).join('\n');
+
+  const nxOutputs = domainNames.map(domainName =>
+    `            echo "${domainName}=$${domainName.toUpperCase()}_AFFECTED" >> $GITHUB_OUTPUT`
+  ).join('\n');
+
+  const nxFallbackOutputs = domainNames.map(domainName =>
+    `            echo "${domainName}=false" >> $GITHUB_OUTPUT`
+  ).join('\n');
+
+  const pathFilterOutputs = domainNames.map(domainName =>
+    `          echo "${domainName}=\${{ contains(steps.filter.outputs.changes, '${domainName}') }}" >> $GITHUB_OUTPUT`
+  ).join('\n');
+
+  const nxMergeOutputs = domainNames.map(domainName =>
+    `          echo "${domainName}=\${{ steps.nx-filter.outputs.${domainName} }}" >> $GITHUB_OUTPUT`
+  ).join('\n');
+
+  const resultEchoes = domainNames.map(domainName =>
+    `        echo "  ${domainName}: \${{ steps.merge.outputs.${domainName} }}"`
+  ).join('\n');
 
   // Generate the composite action YAML
-  return `name: 'Detect Changes'
-description: 'Detect changes in different application domains based on file paths'
+  return `name: 'Detect Changes with Nx Support'
+description: 'Enhanced change detection using Nx dependency graph with path-based fallback'
 author: 'Pipecraft'
 
 inputs:
@@ -110,9 +95,27 @@ inputs:
     description: 'Base reference to compare against'
     required: false
     default: 'main'
+  useNx:
+    description: 'Whether to use Nx dependency graph for change detection'
+    required: false
+    default: 'true'
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '20'
+  pnpm-version:
+    description: 'pnpm version to use (only used if pnpm detected)'
+    required: false
+    default: '9'
 
 outputs:
 ${domainOutputs}
+  nxAvailable:
+    description: 'Whether Nx is available in the repository'
+    value: \${{ steps.nx-check.outputs.available }}
+  affectedProjects:
+    description: 'Comma-separated list of affected Nx projects'
+    value: \${{ steps.nx-filter.outputs.affectedProjects }}
 
 runs:
   using: 'composite'
@@ -130,9 +133,86 @@ runs:
         echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
         echo "base_branch=$base_branch" >> $GITHUB_ENV
 
-    - name: Detect Changes
+    - name: Check for Nx
+      id: nx-check
+      shell: bash
+      run: |
+        if [ -f "nx.json" ] || ([ -f "package.json" ] && grep -q '"nx"' package.json); then
+          echo "available=true" >> $GITHUB_OUTPUT
+          echo "🔍 Nx detected in repository"
+        else
+          echo "available=false" >> $GITHUB_OUTPUT
+          echo "⚠️  Nx not detected, falling back to path-based detection"
+        fi
+
+    - name: Setup Node.js
+      if: steps.nx-check.outputs.available == 'true' && inputs.useNx == 'true'
+      uses: actions/setup-node@v4
+      with:
+        node-version: \${{ inputs.node-version }}
+
+    - name: Install Dependencies
+      if: steps.nx-check.outputs.available == 'true' && inputs.useNx == 'true'
+      shell: bash
+      run: |
+        echo "📦 Installing dependencies for Nx..."
+        if [ -f "pnpm-lock.yaml" ]; then
+          corepack enable
+          pnpm install --frozen-lockfile || pnpm install
+        elif [ -f "yarn.lock" ]; then
+          yarn install --frozen-lockfile || yarn install
+        elif [ -f "package-lock.json" ]; then
+          npm ci || npm install
+        else
+          npm install
+        fi
+
+    - name: Detect Changes with Nx (if available)
+      id: nx-filter
+      if: steps.nx-check.outputs.available == 'true' && inputs.useNx == 'true'
+      shell: bash
+      run: |
+        echo "🚀 Using Nx dependency graph for change detection"
+
+        # Get affected projects using Nx
+        if command -v npx >/dev/null 2>&1; then
+          # Get list of affected projects (newline-separated)
+          AFFECTED_PROJECTS_RAW=$(npx nx show projects --affected --base=\${{ steps.set-base.outputs.base_branch }} 2>/dev/null || echo "")
+
+          # Convert newlines to commas for storage
+          AFFECTED_PROJECTS=$(echo "$AFFECTED_PROJECTS_RAW" | tr '\\n' ',' | sed 's/,$//')
+          echo "affectedProjects=$AFFECTED_PROJECTS" >> $GITHUB_OUTPUT
+
+          if [ -n "$AFFECTED_PROJECTS" ]; then
+            echo "📦 Affected Nx projects: $AFFECTED_PROJECTS"
+
+            # Initialize domain flags
+${nxFlagInit}
+
+            # Check each affected project against domain patterns (comma-separated)
+            IFS=',' read -ra PROJECTS <<< "$AFFECTED_PROJECTS"
+            for project in "\${PROJECTS[@]}"; do
+              project=$(echo "$project" | xargs) # trim whitespace
+${nxPatternMatching}
+            done
+
+            # Set outputs
+${nxOutputs}
+
+          else
+            echo "No affected projects detected"
+${nxFallbackOutputs}
+          fi
+        else
+          echo "⚠️  npx not available, falling back to path-based detection"
+${nxFallbackOutputs}
+          echo "affectedProjects=" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Detect Changes with Paths Filter (fallback)
       uses: dorny/paths-filter@v3
       id: filter
+      if: steps.nx-check.outputs.available != 'true' || inputs.useNx != 'true'
       with:
         base: \${{ steps.set-base.outputs.base_branch }}
         filters: |
@@ -142,34 +222,31 @@ ${domainFilters}
       id: merge
       shell: bash
       run: |
-${domainEchoes}
-        
+        # Use Nx results if available, otherwise use path filter results
+        if [ "\${{ steps.nx-check.outputs.available }}" == "true" ] && [ "\${{ inputs.useNx }}" == "true" ]; then
+${nxMergeOutputs}
+          echo "🔍 Using Nx dependency analysis results"
+          echo "📦 Affected projects: \${{ steps.nx-filter.outputs.affectedProjects }}"
+        else
+${pathFilterOutputs}
+          echo "📁 Using path-based change detection"
+        fi
+
         echo "📋 Change Detection Results:"
-${domainResults}`
+${resultEchoes}
+        echo "  nx-available: \${{ steps.nx-check.outputs.available }}"
+`;
 }
 
 /**
  * Generator entry point for detect-changes composite action.
- * 
- * Generates the `.github/actions/detect-changes/action.yml` file with domain-specific
- * change detection logic. This action is used by the main pipeline to determine which
- * domains have changes and need to run tests/deployment.
- * 
+ *
+ * Generates the `.github/actions/detect-changes/action.yml` file with intelligent
+ * change detection logic. This action is used by Nx-enabled pipelines.
+ *
  * @param {PinionContext} ctx - Pinion generator context
  * @param {Record<string, DomainConfig>} ctx.domains - Domain configurations
  * @returns {Promise<PinionContext>} Updated context after file generation
- * 
- * @example
- * ```typescript
- * await generate({
- *   cwd: '/path/to/project',
- *   domains: {
- *     api: { paths: ['src/api/**'], description: 'API' },
- *     web: { paths: ['src/web/**'], description: 'Web' }
- *   }
- * })
- * // Creates: .github/actions/detect-changes/action.yml
- * ```
  */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
@@ -181,4 +258,4 @@ export const generate = (ctx: PinionContext) =>
       logger.verbose(`${status} ${filePath}`)
       return ctx
     })
-    .then(renderTemplate(changesActionTemplate, toFile('.github/actions/detect-changes/action.yml')))
+    .then(renderTemplate(changesNxActionTemplate, toFile('.github/actions/detect-changes/action.yml')))

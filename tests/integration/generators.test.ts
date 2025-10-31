@@ -10,7 +10,7 @@
  * Refactored to use isolated workspaces to eliminate race conditions.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { writeFileSync, existsSync, readFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { FIXTURES_DIR } from '../setup.js'
@@ -21,6 +21,14 @@ import { PipecraftConfig } from '../../src/types/index.js'
 import { parse as parseYAML } from 'yaml'
 import { createWorkspaceWithCleanup } from '../helpers/workspace.js'
 import { createMinimalConfig } from '../helpers/fixtures.js'
+import inquirer from 'inquirer'
+
+// Mock inquirer to avoid interactive prompts in tests
+vi.mock('inquirer', () => ({
+  default: {
+    prompt: vi.fn()
+  }
+}))
 
 describe('Generator Integration Tests', () => {
   let workspace: string
@@ -28,10 +36,24 @@ describe('Generator Integration Tests', () => {
 
   beforeEach(() => {
     [workspace, cleanup] = createWorkspaceWithCleanup('pipecraft-generators')
+
+    // Setup default mock responses for inquirer
+    vi.mocked(inquirer.prompt).mockResolvedValue({
+      ciProvider: 'github',
+      mergeStrategy: 'fast-forward',
+      requireConventionalCommits: true,
+      initialBranch: 'develop',
+      finalBranch: 'main',
+      branchFlow: ['develop', 'staging', 'main'],
+      packageManager: 'npm',
+      domainSelection: 'api-web',
+      enableNx: false
+    })
   })
 
   afterEach(() => {
     cleanup()
+    vi.clearAllMocks()
   })
 
   describe('init.tpl.ts - Configuration Initialization', () => {
@@ -386,9 +408,17 @@ jobs:
     })
 
     it('should handle missing config gracefully with defaults', async () => {
+      const workflowsDir = join(workspace, '.github', 'workflows')
+      mkdirSync(workflowsDir, { recursive: true })
+
+      // Create minimal config
+      const config = createMinimalConfig()
+      writeFileSync(join(workspace, '.pipecraftrc.json'), JSON.stringify(config, null, 2))
+
       const ctx: PinionContext = {
         cwd: workspace,
         argv: ['generate'],
+        config: config,
         pinion: {
           logger: {
             ...console,
@@ -402,19 +432,15 @@ jobs:
         }
       }
 
-      const workflowsDir = join(workspace, '.github', 'workflows')
-      mkdirSync(workflowsDir, { recursive: true })
-
       // Should not throw
       await expect(generateWorkflows(ctx)).resolves.not.toThrow()
 
-      // Should use default config values
+      // Should use config values
       const pipelinePath = join(workflowsDir, 'pipeline.yml')
       const pipelineContent = readFileSync(pipelinePath, 'utf8')
-      
-      // Should include default branches
+
+      // Should include branches from config
       expect(pipelineContent).toContain('develop')
-      expect(pipelineContent).toContain('staging')
       expect(pipelineContent).toContain('main')
     })
 

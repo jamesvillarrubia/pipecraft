@@ -43,10 +43,12 @@ runs:
         filters: |
           core:
             - 'src/**'
+            - 'tests/**'
           cicd:
             - '.github/**'
           docs:
             - 'docs/**'
+            - 'docs-site/**'
 
     - name: Merge filter outputs
       id: merge

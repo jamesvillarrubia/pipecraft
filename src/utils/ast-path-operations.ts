@@ -196,11 +196,9 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue, docum
     // For non-job paths with comments, we add comments to the VALUE node.
     const isJobKey = pathParts.length === 2 && pathParts[0] === 'jobs'
 
-    // Check if key already exists - if so, delete it first to avoid duplicates
+    // Check if key already exists
     const existingValue = current.get(finalKey)
-    if (existingValue !== undefined) {
-      current.delete(finalKey)
-    }
+    const keyExists = existingValue !== undefined
 
     if (isJobKey || commentBefore || spaceBeforeComment) {
       // For job keys OR any field with comments/spacing: Create a Scalar key
@@ -208,20 +206,31 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue, docum
       const scalarKey = new Scalar(finalKey)
       if (commentBefore) {
         ;(scalarKey as any).commentBefore = commentBefore
-        // For job keys, also add to value for backwards compatibility with tests
-        if (isJobKey && node) {
-          ;(node as any).commentBefore = commentBefore
-        }
       }
       if (spaceBeforeComment) {
         ;(scalarKey as any).spaceBefore = true
-        if (isJobKey && node) {
-          ;(node as any).spaceBefore = true
-        }
       }
-      current.add({ key: scalarKey, value: node })
+
+      if (keyExists) {
+        // Update existing key in-place to preserve order
+        // Find the existing pair and update it
+        const pair = current.items.find((p: any) => {
+          const keyStr = p.key instanceof Scalar ? p.key.value : p.key
+          return keyStr === finalKey
+        })
+        if (pair) {
+          pair.key = scalarKey
+          pair.value = node
+        } else {
+          // Shouldn't happen, but fallback to add
+          current.add({ key: scalarKey, value: node })
+        }
+      } else {
+        // Key doesn't exist, add it
+        current.add({ key: scalarKey, value: node })
+      }
     } else {
-      // Normal case: use the simple set() method which creates a string key
+      // Normal case: use the simple set() method which updates in-place and preserves order
       current.set(finalKey, node)
     }
   } else {
@@ -545,7 +554,41 @@ export function createValueFromString(yamlString: string, context?: any, documen
   
   // Parse the YAML string and return the root content as a proper Node
   const doc = parseDocument(processedString)
-  return doc.contents as Node
+  const contents = doc.contents as Node
+
+  // Set all maps and seqs to use block style (not flow/compact)
+  setBlockStyle(contents)
+
+  return contents
+}
+
+/**
+ * Recursively set block style on all YAMLMap and YAMLSeq nodes
+ * This ensures proper YAML formatting instead of compact JSON-like flow style
+ */
+function setBlockStyle(node: Node): void {
+  if (node instanceof YAMLMap) {
+    node.flow = false
+    for (const pair of node.items) {
+      if (pair.value) {
+        setBlockStyle(pair.value as Node)
+      }
+    }
+  } else if (node instanceof YAMLSeq) {
+    // Check if this is a simple array (only scalar values)
+    const isSimpleArray = node.items.every(item => {
+      return item instanceof Scalar || typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
+    })
+
+    // Keep flow style (inline) for simple arrays, use block style for complex arrays
+    node.flow = isSimpleArray
+
+    for (const item of node.items) {
+      if (item && typeof item === 'object' && !(item instanceof Scalar)) {
+        setBlockStyle(item as Node)
+      }
+    }
+  }
 }
 
 /**

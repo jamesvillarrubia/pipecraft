@@ -1,21 +1,16 @@
 const DEFAULT_PREFIXES = {
   test: 'ignore',
   build: 'ignore',
-  ignore: 'ignore',
-
   ci: 'patch',
   docs: 'patch',
-  chore: 'patch',
+  chore: 'minor',
   style: 'patch',
   fix: 'patch',
   perf: 'patch',
   refactor: 'patch',
-  patch: 'patch',
-
   feat: 'minor',
-  minor: 'minor',
-  
   major: 'major',
+  breaking: 'major'
 }
 
 module.exports = {

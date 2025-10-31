@@ -19,11 +19,11 @@ export function createVersionJobOperation(ctx: VersionContext): PathOperationCon
   const { testJobNames, nxEnabled = false, baseRef = 'main' } = ctx
 
   // Build the needs array
-  const nxJobName = nxEnabled ? 'nx-ci' : null
+  const nxJobName = nxEnabled ? 'test-nx' : null
   const needsArray = ['changes', nxJobName, ...testJobNames].filter(Boolean)
 
   // Build the conditional logic
-  const nxCondition = nxEnabled ? 'needs.nx-ci.result == \'success\'' : ''
+  const nxCondition = nxEnabled ? 'needs.test-nx.result == \'success\'' : ''
   const testConditions = testJobNames.length > 0
     ? [
         `(${testJobNames.map(job => `needs.${job}.result == 'success'`).join(' || ')})`,
@@ -41,26 +41,29 @@ export function createVersionJobOperation(ctx: VersionContext): PathOperationCon
   return {
     path: 'jobs.version',
     operation: 'overwrite',
+    spaceBefore: true,
     commentBefore: `
 =============================================================================
-VERSIONING (⚠️  Managed by Pipecraft - do not modify)
+ VERSIONING (⚠️  Managed by Pipecraft - do not modify)
 =============================================================================
-Calculates the next semantic version based on conventional commits.
-Only runs on push events (skipped on pull requests).
+ Calculates the next semantic version based on conventional commits.
+ Only runs on push events (skipped on pull requests).
 `,
     value: createValueFromString(`
-    if: \${{ ${allConditions} }}
     needs: [ ${needsArray.join(', ')} ]
+    if: \${{ ${allConditions} }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: \${{ inputs.commitSha || github.sha }}
+          fetch-depth: \${{ env.FETCH_DEPTH_VERSIONING }}
       - uses: ./.github/actions/calculate-version
         id: version
         with:
           baseRef: \${{ inputs.baseRef || '${baseRef}' }}
           commitSha: \${{ inputs.commitSha || github.sha }}
+          node-version: \${{ env.NODE_VERSION }}
     outputs:
       version: \${{ steps.version.outputs.version }}
   `)

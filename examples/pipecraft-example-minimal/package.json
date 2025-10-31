@@ -1,0 +1,22 @@
+{
+  "name": "pipecraft-example-minimal",
+  "version": "0.1.0",
+  "description": "Minimal example demonstrating PipeCraft with the simplest possible configuration",
+  "type": "module",
+  "scripts": {
+    "test": "node test-runner.js",
+    "build": "node build.js",
+    "start": "node src/index.js"
+  },
+  "keywords": ["pipecraft", "example", "minimal", "quickstart", "ci-cd"],
+  "author": "PipeCraft Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jamesvillarrubia/pipecraft-example-minimal.git"
+  },
+  "homepage": "https://github.com/jamesvillarrubia/pipecraft-example-minimal#readme",
+  "bugs": {
+    "url": "https://github.com/jamesvillarrubia/pipecraft-example-minimal/issues"
+  }
+}

@@ -47,18 +47,19 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
       operation: 'overwrite',
       commentBefore: `
 =============================================================================
-TAG & PROMOTE (⚠️  Managed by Pipecraft - do not modify)
+ TAG (⚠️  Managed by Pipecraft - do not modify)
 =============================================================================
-Creates git tags and promotes code through branch flow.
+ Creates git tags and promotes code through branch flow.
 `,
       value: createValueFromString(`
-    if: \${{ ${tagConditions.join(' && ')} }}
     needs: [ ${tagNeedsArray.join(', ')} ]
+    if: \${{ ${tagConditions.join(' && ')} }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: \${{ inputs.commitSha || github.sha }}
+          fetch-depth: \${{ env.FETCH_DEPTH_VERSIONING }}
       - uses: ./.github/actions/create-tag
         with:
           version: \${{ needs.version.outputs.version }}
@@ -70,14 +71,22 @@ Creates git tags and promotes code through branch flow.
     {
       path: 'jobs.promote',
       operation: 'overwrite',
+      spaceBefore: true,
+      commentBefore: `
+=============================================================================
+ PROMOTE (⚠️  Managed by Pipecraft - do not modify)
+=============================================================================
+ Promotes code from develop to staging or main via PR.
+`,
       value: createValueFromString(`
-    if: \${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && (${buildPromotableBranchesCondition(validBranchFlow)}) }}
     needs: [ version, tag ]
+    if: \${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && (${buildPromotableBranchesCondition(validBranchFlow)}) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: \${{ inputs.commitSha || github.sha }}
+          fetch-depth: \${{ env.FETCH_DEPTH_VERSIONING }}
       - uses: ./.github/actions/promote-branch
         with:
           version: \${{ needs.version.outputs.version }}
@@ -91,14 +100,22 @@ Creates git tags and promotes code through branch flow.
     {
       path: 'jobs.release',
       operation: 'overwrite',
+      spaceBefore: true,
+      commentBefore: `
+=============================================================================
+ RELEASE (⚠️  Managed by Pipecraft - do not modify)
+=============================================================================
+ Creates a release for the version.
+`,
       value: createValueFromString(`
-    if: \${{ always() && github.ref_name == '${validBranchFlow[validBranchFlow.length - 1]}' && needs.version.result == 'success' && needs.version.outputs.version != '' && needs.tag.result == 'success' }}
     needs: [ tag, version ]
+    if: \${{ always() && github.ref_name == '${validBranchFlow[validBranchFlow.length - 1]}' && needs.version.result == 'success' && needs.version.outputs.version != '' && needs.tag.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: \${{ inputs.commitSha || github.sha }}
+          fetch-depth: \${{ env.FETCH_DEPTH_VERSIONING }}
       - uses: ./.github/actions/create-release
         with:
           version: \${{ needs.version.outputs.version }}

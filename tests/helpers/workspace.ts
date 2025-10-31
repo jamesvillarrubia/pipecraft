@@ -215,3 +215,76 @@ export function createWorkspaceWithCleanup(
   return [workspace, cleanup]
 }
 
+/**
+ * Activate a git repository by renaming .git.stored back to .git.
+ * Used for example test repos that are tracked in the parent repo.
+ *
+ * @param repoPath - Path to the repository directory
+ * @param remoteUrl - Optional remote URL to ensure is set
+ * @throws Error if .git.stored doesn't exist
+ */
+export function activateGitRepo(repoPath: string, remoteUrl?: string): void {
+  const storedGitPath = join(repoPath, '.git.stored')
+  const activeGitPath = join(repoPath, '.git')
+
+  if (!existsSync(storedGitPath)) {
+    throw new Error(`Cannot activate git repo: .git.stored not found at ${repoPath}`)
+  }
+
+  // Remove active .git if it exists (shouldn't normally)
+  if (existsSync(activeGitPath)) {
+    rmSync(activeGitPath, { recursive: true, force: true })
+  }
+
+  // Rename .git.stored to .git
+  const { renameSync } = require('fs')
+  renameSync(storedGitPath, activeGitPath)
+
+  // Ensure remote is set if provided
+  if (remoteUrl) {
+    const { execSync } = require('child_process')
+    try {
+      execSync(`git remote remove origin`, { cwd: repoPath, stdio: 'pipe' })
+    } catch {
+      // Remote might not exist, that's fine
+    }
+    execSync(`git remote add origin ${remoteUrl}`, { cwd: repoPath, stdio: 'pipe' })
+  }
+}
+
+/**
+ * Deactivate a git repository by renaming .git back to .git.stored.
+ * Used to return example repos to their tracked state after tests.
+ *
+ * @param repoPath - Path to the repository directory
+ * @param resetWorkingTree - If true, reset any uncommitted changes (default: true)
+ */
+export function deactivateGitRepo(repoPath: string, resetWorkingTree: boolean = true): void {
+  const activeGitPath = join(repoPath, '.git')
+  const storedGitPath = join(repoPath, '.git.stored')
+
+  if (!existsSync(activeGitPath)) {
+    // Already deactivated or never activated
+    return
+  }
+
+  // Reset working tree to clean state if requested
+  if (resetWorkingTree) {
+    try {
+      const { execSync } = require('child_process')
+      // Reset to HEAD, discard all changes
+      execSync('git reset --hard HEAD', { cwd: repoPath, stdio: 'pipe' })
+      execSync('git clean -fd', { cwd: repoPath, stdio: 'pipe' })
+    } catch (error) {
+      // Ignore errors - repo might not have commits yet
+    }
+  }
+
+  // Rename .git back to .git.stored
+  if (existsSync(storedGitPath)) {
+    rmSync(storedGitPath, { recursive: true, force: true })
+  }
+  const { renameSync } = require('fs')
+  renameSync(activeGitPath, storedGitPath)
+}
+
