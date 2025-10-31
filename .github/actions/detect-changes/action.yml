@@ -193,8 +193,7 @@ runs:
       if: steps.nx-check.outputs.available != 'true' || inputs.useNx != 'true'
       with:
         base: ${{ steps.set-base.outputs.base_branch }}
-        filters: |
-          config: /tmp/path-filters.yml
+        filters: ${{ inputs.domains-config }}
 
     - name: Generate Outputs
       id: output
