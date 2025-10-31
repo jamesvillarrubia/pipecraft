@@ -1,26 +1,28 @@
 name: 'Promote Branch'
-description: 'Promote code from source to target branch via temporary branch + PR'
+description: 'Promote code from source to target branch via temporary branch + PR - fully decoupled, no config file dependencies'
 author: 'PipeCraft'
 
 inputs:
   sourceBranch:
-    description: 'Source branch to promote from (defaults to github.ref_name)'
-    required: false
-    default: ${{ github.ref_name }}
+    description: 'Source branch to promote from'
+    required: true
+  targetBranch:
+    description: 'Target branch to promote to'
+    required: true
   version:
     description: 'Version being promoted (e.g., v1.2.3, auto-detected from git tags if not provided)'
     required: false
     default: ''
-  run_number:
-    description: 'The original run number from develop branch for traceability'
+  autoMerge:
+    description: 'Whether to automatically fast-forward merge (true) or require manual approval (false)'
+    required: false
+    default: 'false'
+  runNumber:
+    description: 'The original run number from source branch for traceability'
     required: false
     default: ''
-  configPath:
-    description: 'Path to .pipecraftrc config file'
-    required: false
-    default: '.pipecraftrc'
   tempBranchPattern:
-    description: 'Pattern for temp branch name'
+    description: 'Pattern for temp branch name (supports {source}, {target}, {version} tokens)'
     required: false
     default: 'release/{source}-to-{target}-{version}'
   token:
@@ -31,19 +33,13 @@ inputs:
 outputs:
   prNumber:
     description: 'The created PR number'
-    value: ${{ steps.create-pr.outputs.prNumber }}
+    value: ${{ steps.check-pr.outputs.prNumber || steps.create-pr.outputs.prNumber }}
   prUrl:
     description: 'The created PR URL'
-    value: ${{ steps.create-pr.outputs.prUrl }}
+    value: ${{ steps.check-pr.outputs.prUrl || steps.create-pr.outputs.prUrl }}
   tempBranch:
     description: 'The temporary branch name'
     value: ${{ steps.create-temp.outputs.tempBranch }}
-  targetBranch:
-    description: 'The target branch determined from config'
-    value: ${{ steps.read-config.outputs.targetBranch }}
-  autoMerge:
-    description: 'The autoMerge setting for the target branch'
-    value: ${{ steps.read-config.outputs.autoMerge }}
 
 runs:
   using: 'composite'
@@ -54,54 +50,31 @@ runs:
         fetch-depth: 0
         token: ${{ inputs.token }}
 
-    - name: Read Config and Determine Target Branch
-      id: read-config
+    - name: Validate Inputs
       shell: bash
       run: |
         SOURCE="${{ inputs.sourceBranch }}"
-        CONFIG_PATH="${{ inputs.configPath }}"
-
-        echo "📖 Reading config from $CONFIG_PATH"
-
-        # Check if config file exists
-        if [ ! -f "$CONFIG_PATH" ]; then
-          echo "❌ Config file not found: $CONFIG_PATH"
+        TARGET="${{ inputs.targetBranch }}"
+        
+        if [ -z "$SOURCE" ]; then
+          echo "❌ sourceBranch is required"
           exit 1
         fi
-
-        # Read branchFlow array from config
-        BRANCH_FLOW=$(cat "$CONFIG_PATH" | jq -r '.branchFlow | join(" ")')
-        echo "🔍 Branch flow: $BRANCH_FLOW"
-
-        # Convert to array
-        IFS=' ' read -ra BRANCHES <<< "$BRANCH_FLOW"
-
-        # Find current branch index and determine target
-        TARGET=""
-        for i in "${!BRANCHES[@]}"; do
-          if [ "${BRANCHES[$i]}" == "$SOURCE" ]; then
-            # Get next branch in flow
-            NEXT_INDEX=$((i + 1))
-            if [ $NEXT_INDEX -lt ${#BRANCHES[@]} ]; then
-              TARGET="${BRANCHES[$NEXT_INDEX]}"
-            fi
-            break
-          fi
-        done
-
+        
         if [ -z "$TARGET" ]; then
-          echo "❌ Could not determine target branch for source: $SOURCE"
-          echo "   Branch flow: $BRANCH_FLOW"
+          echo "❌ targetBranch is required"
           exit 1
         fi
-
-        echo "✅ Target branch: $TARGET"
-        echo "targetBranch=$TARGET" >> $GITHUB_OUTPUT
-
-        # Determine autoMerge setting for target branch
-        AUTO_MERGE=$(cat "$CONFIG_PATH" | jq -r ".autoMerge.\"$TARGET\" // false")
-        echo "🔍 Auto-merge for $TARGET: $AUTO_MERGE"
-        echo "autoMerge=$AUTO_MERGE" >> $GITHUB_OUTPUT
+        
+        if [ "$SOURCE" == "$TARGET" ]; then
+          echo "❌ sourceBranch and targetBranch cannot be the same"
+          exit 1
+        fi
+        
+        echo "✅ Inputs validated"
+        echo "   Source: $SOURCE"
+        echo "   Target: $TARGET"
+        echo "   Auto-merge: ${{ inputs.autoMerge }}"
 
     - name: Get Version
       id: get-version
@@ -125,7 +98,7 @@ runs:
       shell: bash
       run: |
         SOURCE="${{ inputs.sourceBranch }}"
-        TARGET="${{ steps.read-config.outputs.targetBranch }}"
+        TARGET="${{ inputs.targetBranch }}"
         VERSION="${{ steps.get-version.outputs.version }}"
         PATTERN="${{ inputs.tempBranchPattern }}"
 
@@ -170,19 +143,25 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
       run: |
         TEMP_BRANCH="${{ steps.create-temp.outputs.tempBranch }}"
-        TARGET="${{ steps.read-config.outputs.targetBranch }}"
+        TARGET="${{ inputs.targetBranch }}"
 
         # Check if PR already exists from temp branch to target
-        EXISTING_PR=$(gh pr list --head "$TEMP_BRANCH" --base "$TARGET" --json number --jq '.[0].number' 2>/dev/null || echo "")
+        EXISTING_PR=$(gh pr list --head "$TEMP_BRANCH" --base "$TARGET" --json number,url --jq '.[0] | {number, url}' 2>/dev/null || echo "")
 
-        if [ -n "$EXISTING_PR" ]; then
-          echo "exists=true" >> $GITHUB_OUTPUT
-          echo "prNumber=$EXISTING_PR" >> $GITHUB_OUTPUT
-          echo "⚠️  PR already exists: #$EXISTING_PR"
-
-          # Get PR URL
-          PR_URL=$(gh pr view "$EXISTING_PR" --json url --jq '.url')
-          echo "prUrl=$PR_URL" >> $GITHUB_OUTPUT
+        if [ -n "$EXISTING_PR" ] && [ "$EXISTING_PR" != "null" ]; then
+          PR_NUMBER=$(echo "$EXISTING_PR" | jq -r '.number')
+          PR_URL=$(echo "$EXISTING_PR" | jq -r '.url')
+          
+          if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "prNumber=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "prUrl=$PR_URL" >> $GITHUB_OUTPUT
+            echo "⚠️  PR already exists: #$PR_NUMBER"
+            echo "🔗 URL: $PR_URL"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "✅ No existing PR found"
+          fi
         else
           echo "exists=false" >> $GITHUB_OUTPUT
           echo "✅ No existing PR found"
@@ -196,25 +175,40 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
       run: |
         TEMP_BRANCH="${{ steps.create-temp.outputs.tempBranch }}"
-        TARGET="${{ steps.read-config.outputs.targetBranch }}"
+        TARGET="${{ inputs.targetBranch }}"
         SOURCE="${{ inputs.sourceBranch }}"
         VERSION="${{ steps.get-version.outputs.version }}"
-        AUTO_MERGE="${{ steps.read-config.outputs.autoMerge }}"
+        AUTO_MERGE="${{ inputs.autoMerge }}"
 
         TITLE="🚀 Release $VERSION to $TARGET"
+        
+        # Build body with promotion details
+        BODY="## Automated Promotion
 
-        # Determine merge behavior text
+**Version:** \`$VERSION\`
+**Source:** \`$SOURCE\`
+**Target:** \`$TARGET\`
+
+---
+
+This PR promotes code from \`$SOURCE\` to \`$TARGET\` for release \`$VERSION\`.
+
+"
         if [ "$AUTO_MERGE" == "true" ]; then
-          MERGE_TEXT="merge automatically"
+          BODY+="🔄 **Auto-merge:** Enabled - will fast-forward merge automatically"
         else
-          MERGE_TEXT="require manual approval"
+          BODY+="🔐 **Manual approval:** Required before merge"
         fi
 
         # Disable error exit to capture gh pr create output even on failure
         set +e
 
         # Create the PR - gh pr create returns the PR URL on success
-        PR_URL=$(gh pr create \--title "$TITLE" \--body "Release $VERSION from $SOURCE to $TARGET" \--head "$TEMP_BRANCH" \--base "$TARGET" 2>&1)
+        PR_URL=$(gh pr create \
+          --title "$TITLE" \
+          --body "$BODY" \
+          --head "$TEMP_BRANCH" \
+          --base "$TARGET" 2>&1)
         PR_EXIT_CODE=$?
 
         # Re-enable error exit
@@ -235,13 +229,13 @@ runs:
         fi
 
     - name: Enable PR Auto-Merge with Rebase (Manual Approval Required)
-      if: steps.read-config.outputs.autoMerge == 'false'
+      if: inputs.autoMerge == 'false'
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.token }}
       run: |
         PR_NUMBER="${{ steps.check-pr.outputs.prNumber || steps.create-pr.outputs.prNumber }}"
-        TARGET="${{ steps.read-config.outputs.targetBranch }}"
+        TARGET="${{ inputs.targetBranch }}"
 
         echo "🔐 Enabling auto-merge with rebase for PR #$PR_NUMBER (requires approval)"
         echo "   This will fast-forward $TARGET when approved, maintaining linear history"
@@ -253,11 +247,11 @@ runs:
         echo "⚠️  Manual approval required before merge completes"
 
     - name: Fast-Forward Merge (Immediate Auto-Merge)
-      if: steps.read-config.outputs.autoMerge == 'true'
+      if: inputs.autoMerge == 'true'
       shell: bash
       run: |
         SOURCE="${{ inputs.sourceBranch }}"
-        TARGET="${{ steps.read-config.outputs.targetBranch }}"
+        TARGET="${{ inputs.targetBranch }}"
         VERSION="${{ steps.get-version.outputs.version }}"
 
         echo "🚀 Fast-forwarding $TARGET to $SOURCE (maintaining linear history)"
@@ -291,7 +285,7 @@ runs:
         echo "📝 PR will be closed automatically for audit trail"
 
     - name: Wait for Branch to Propagate
-      if: steps.read-config.outputs.autoMerge == 'true'
+      if: inputs.autoMerge == 'true'
       shell: bash
       run: |
         echo "⏳ Waiting 5 seconds for branch update to propagate..."
@@ -299,14 +293,14 @@ runs:
         echo "✅ Branch should be fully propagated"
 
     - name: Trigger Pipeline Workflow on Target Branch
-      if: steps.read-config.outputs.autoMerge == 'true'
+      if: inputs.autoMerge == 'true'
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.token }}
       run: |
-        TARGET="${{ steps.read-config.outputs.targetBranch }}"
+        TARGET="${{ inputs.targetBranch }}"
         VERSION="${{ steps.get-version.outputs.version }}"
-        RUN_NUMBER="${{ inputs.run_number }}"
+        RUN_NUMBER="${{ inputs.runNumber }}"
 
         # Get the exact commit SHA that was just pushed to target branch
         COMMIT_SHA=$(git rev-parse $TARGET)
@@ -329,7 +323,7 @@ runs:
         echo "✅ Pipeline workflow triggered on $TARGET with version $VERSION at commit $COMMIT_SHA"
 
     - name: Close PR and Delete Branch
-      if: steps.read-config.outputs.autoMerge == 'true'
+      if: inputs.autoMerge == 'true'
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.token }}
@@ -349,15 +343,3 @@ runs:
         git push origin --delete "$TEMP_BRANCH" || echo "⚠️  Branch may already be deleted"
 
         echo "✅ Deleted temporary branch $TEMP_BRANCH"
-
-    - name: Use Existing PR
-      if: steps.check-pr.outputs.exists == 'true'
-      shell: bash
-      run: |
-        PR_NUMBER="${{ steps.check-pr.outputs.prNumber }}"
-        PR_URL="${{ steps.check-pr.outputs.prUrl }}"
-
-        echo "ℹ️  Using existing PR #$PR_NUMBER"
-        echo "🔗 URL: $PR_URL"
-
-        # Note: Fast-forward merge happens in separate step if autoMerge is enabled

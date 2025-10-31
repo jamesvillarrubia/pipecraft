@@ -1,0 +1,112 @@
+name: 'Example: Decoupled Workflow'
+# This workflow demonstrates using decoupled actions
+# that don't depend on PipeCraft's config file format
+
+on:
+  push:
+    branches: [develop, staging]
+
+jobs:
+  # Config reading happens ONCE at workflow level
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      targetBranch: ${{ steps.read-config.outputs.targetBranch }}
+      autoMerge: ${{ steps.read-config.outputs.autoMerge }}
+      version: ${{ steps.read-config.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Read PipeCraft config (if using PipeCraft)
+      - name: Read Config
+        id: read-config
+        run: |
+          # This could be any config format: YAML, JSON, TOML, etc.
+          CONFIG_FILE=".pipecraftrc"
+          
+          if [ -f "$CONFIG_FILE" ]; then
+            # Using yq for YAML (or jq for JSON)
+            BRANCH_FLOW=$(yq eval '.branchFlow | join(",")' "$CONFIG_FILE")
+            IFS=',' read -ra BRANCHES <<< "$BRANCH_FLOW"
+            
+            # Find next branch in flow
+            CURRENT="${{ github.ref_name }}"
+            for i in "${!BRANCHES[@]}"; do
+              if [ "${BRANCHES[$i]}" = "$CURRENT" ]; then
+                NEXT_INDEX=$((i + 1))
+                if [ $NEXT_INDEX -lt ${#BRANCHES[@]} ]; then
+                  TARGET="${BRANCHES[$NEXT_INDEX]}"
+                  echo "targetBranch=$TARGET" >> $GITHUB_OUTPUT
+                fi
+                break
+              fi
+            done
+            
+            # Read auto-merge setting for target branch
+            AUTO_MERGE=$(yq eval ".branches[] | select(.name == \"$TARGET\") | .autoMerge" "$CONFIG_FILE")
+            echo "autoMerge=${AUTO_MERGE:-false}" >> $GITHUB_OUTPUT
+          else
+            # Fallback: hardcode for non-PipeCraft projects
+            case "${{ github.ref_name }}" in
+              develop) echo "targetBranch=staging" >> $GITHUB_OUTPUT ;;
+              staging) echo "targetBranch=main" >> $GITHUB_OUTPUT ;;
+            esac
+            echo "autoMerge=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Calculate Version
+        id: version
+        run: |
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+  # Use decoupled action with explicit parameters
+  promote:
+    needs: prepare
+    runs-on: ubuntu-latest
+    if: needs.prepare.outputs.targetBranch != ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      # Action is completely decoupled - works in ANY repository!
+      - name: Promote Branch
+        uses: ./.github/actions/promote-branch  # or published action
+        with:
+          sourceBranch: ${{ github.ref_name }}
+          targetBranch: ${{ needs.prepare.outputs.targetBranch }}
+          version: ${{ needs.prepare.outputs.version }}
+          autoMerge: ${{ needs.prepare.outputs.autoMerge }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+---
+
+# Example 2: Using WITHOUT PipeCraft config at all
+name: 'Manual Promotion (No Config File)'
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target branch'
+        required: true
+        type: choice
+        options: [staging, main]
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      # Use the same action with manual inputs!
+      - uses: ./.github/actions/promote-branch
+        with:
+          sourceBranch: ${{ github.ref_name }}
+          targetBranch: ${{ inputs.target }}
+          autoMerge: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+
