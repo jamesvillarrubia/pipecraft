@@ -63,6 +63,7 @@ export function createVersionJobOperation(ctx: VersionContext): PathOperationCon
         with:
           baseRef: \${{ inputs.baseRef || '${baseRef}' }}
           commitSha: \${{ inputs.commitSha || github.sha }}
+          node-version: \${{ env.NODE_VERSION }}
     outputs:
       version: \${{ steps.version.outputs.version }}
   `)

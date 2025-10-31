@@ -55,6 +55,8 @@ export function createChangesJobOperation(ctx: ChangesContext): PathOperationCon
         id: detect
         with:
           baseRef: \${{ inputs.baseRef || '${baseRef}' }}${useNx ? '\n          useNx: \'true\'' : ''}
+          node-version: \${{ env.NODE_VERSION }}
+          pnpm-version: \${{ env.PNPM_VERSION }}
     outputs:
 ${outputsSection}
 ${nxOutputs}
