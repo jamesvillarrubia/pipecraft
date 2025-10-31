@@ -1,0 +1,5 @@
+fix: use production branch as baseRef instead of hardcoded main
+
+- Fixed baseRef to use config.finalBranch (production for gated workflow)
+- Prevents git errors when comparing against non-existent main branch
+- Change detection now correctly compares against production branch
