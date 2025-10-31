@@ -16,9 +16,9 @@ inputs:
     required: false
     default: ''
   configPath:
-    description: 'Path to .pipecraftrc.json config file'
+    description: 'Path to .pipecraftrc config file'
     required: false
-    default: '.pipecraftrc.json'
+    default: '.pipecraftrc'
   tempBranchPattern:
     description: 'Pattern for temp branch name'
     required: false
