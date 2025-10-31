@@ -217,3 +217,4 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 [Documentation](https://pipecraft.thecraftlab.dev) · [Report Bug](https://github.com/jamesvillarrubia/pipecraft/issues) · [Request Feature](https://github.com/jamesvillarrubia/pipecraft/issues)
 
 </div>
+# Testing change detection
