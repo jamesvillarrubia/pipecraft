@@ -1,0 +1,25 @@
+{
+  "name": "user-management",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "outputPath": "dist/libs/user-management",
+        "main": "libs/user-management/src/index.ts",
+        "tsConfig": "libs/user-management/tsconfig.json"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/user-management/jest.config.ts"
+      }
+    },
+    "integration-test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/user-management/jest.config.ts"
+      }
+    }
+  }
+}

@@ -1,0 +1,280 @@
+{
+  name: "Pipeline",
+
+  run-name: "${{ github.event_name == 'pull_request' && !contains('develop,staging,main', github.head_ref) && github.event.pull_request.title || github.ref_name }} #${{ inputs.run_number || github.run_number }}${{ inputs.version && format(' - {0}', inputs.version) || '' }}",
+  jobs:
+    {
+      #=============================================================================
+    #CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
+    #=============================================================================
+    #Detects which domains have changed using Nx dependency graph and path-based fallback
+
+      changes:
+
+        #=============================================================================
+        #CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
+        #=============================================================================
+        #Detects which domains have changed using Nx dependency graph and path-based fallback
+
+        { runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}", fetch-depth: 0 } }, { uses: ./.github/actions/detect-changes-nx, id: detect, with: { baseRef: "${{ inputs.baseRef || 'origin/main' }}", useNx: 'true' } } ], outputs: { infra: "${{ steps.detect.outputs.infra }}", migrations: "${{ steps.detect.outputs.migrations }}", nxAvailable: "${{ steps.detect.outputs.nxAvailable }}", affectedProjects: "${{ steps.detect.outputs.affectedProjects }}" } },
+      #=============================================================================
+    #NX CI - All Tasks Sequential (⚠️  Managed by Pipecraft - do not modify)
+    #=============================================================================
+    #This job runs all Nx tasks sequentially using `nx affected`.
+    #Nx handles dependency detection, caching, and parallel execution internally.
+
+      nx-ci:
+
+        #=============================================================================
+        #NX CI - All Tasks Sequential (⚠️  Managed by Pipecraft - do not modify)
+        #=============================================================================
+        #This job runs all Nx tasks sequentially using `nx affected`.
+        #Nx handles dependency detection, caching, and parallel execution internally.
+
+        {
+          needs: changes,
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { name: Checkout Code, uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}", fetch-depth: 0 } },
+
+              { name: Setup Node.js, uses: actions/setup-node@v4, with: { node-version: '24' } },
+
+              {
+                  name: Install Dependencies,
+                  run: "case \"npm\" in
+
+                    \  pnpm)
+
+                    \    corepack enable
+
+                    \    pnpm install --frozen-lockfile || pnpm install
+
+                    \    ;;
+
+                    \  yarn)
+
+                    \    yarn install --frozen-lockfile || yarn install
+
+                    \    ;;
+
+                    \  npm)
+
+                    \    npm ci || npm install
+
+                    \    ;;
+
+                    \  *)
+
+                    \    npm install
+
+                    \    ;;
+
+                    esac\n",
+                  env: { packageManager: npm }
+                },
+
+              {
+                  name: Cache Nx,
+                  uses: actions/cache@v4,
+                  with:
+                    {
+                      path: .nx/cache,
+                      # Cache key includes run_number to allow saving updated cache on each run
+                    # Nx cache accumulates computation results, so we want to save after every run
+                    # restore-keys ensure we start from the most recent cache on this branch
+                      key: "nx-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.ref_name }}-${{ github.run_number }}",
+                      restore-keys: "nx-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.ref_name }}-
+
+                        nx-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+                        nx-${{ runner.os }}-\n"
+                    }
+                },
+
+              { name: Run Nx Affected - lint, run: "npx nx affected --target=lint --base=${{ inputs.baseRef || 'origin/main' }}" },
+              { name: Run Nx Affected - test, run: "npx nx affected --target=test --base=${{ inputs.baseRef || 'origin/main' }}" },
+              { name: Run Nx Affected - build, run: "npx nx affected --target=build --base=${{ inputs.baseRef || 'origin/main' }}" },
+              { name: Run Nx Affected - integration-test, run: "npx nx affected --target=integration-test --base=${{ inputs.baseRef || 'origin/main' }}" },
+              { name: Run Nx Affected - e2e, run: "npx nx affected --target=e2e --base=${{ inputs.baseRef || 'origin/main' }}" }
+            ]
+        },
+      #=============================================================================
+    #TESTING JOBS (✅ Customize these with your test logic)
+    #=============================================================================
+    #These jobs run tests for each domain when changes are detected.
+    #Replace the TODO comments with your actual test commands.
+
+      test-infra:
+
+        #=============================================================================
+        #TESTING JOBS (✅ Customize these with your test logic)
+        #=============================================================================
+        #These jobs run tests for each domain when changes are detected.
+        #Replace the TODO comments with your actual test commands.
+
+        {
+          needs: changes,
+          if: "${{ needs.changes.outputs.infra == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your infra test logic
+              {
+                  name: Run infra tests,
+                  run: 'echo "Running tests for infra domain"
+
+                    echo "Replace this with your actual test commands"
+
+                    # Example: npm test -- --testPathPattern=infra
+
+                    '
+                }
+            ]
+        },
+      test-migrations:
+        {
+          needs: changes,
+          if: "${{ needs.changes.outputs.migrations == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your migrations test logic
+              {
+                  name: Run migrations tests,
+                  run: 'echo "Running tests for migrations domain"
+
+                    echo "Replace this with your actual test commands"
+
+                    # Example: npm test -- --testPathPattern=migrations
+
+                    '
+                }
+            ]
+        },
+      #=============================================================================
+    #VERSIONING (⚠️  Managed by Pipecraft - do not modify)
+    #=============================================================================
+    #Calculates the next semantic version based on conventional commits.
+    #Only runs on push events (skipped on pull requests).
+
+      version:
+
+        #=============================================================================
+        #VERSIONING (⚠️  Managed by Pipecraft - do not modify)
+        #=============================================================================
+        #Calculates the next semantic version based on conventional commits.
+        #Only runs on push events (skipped on pull requests).
+
+        { if: "${{ always() && github.event_name != 'pull_request' && needs.nx-ci.result == 'success' && (needs.test-infra.result == 'success' || needs.test-migrations.result == 'success') && needs.test-infra.result != 'failure' && needs.test-migrations.result != 'failure' }}", needs: [ changes, nx-ci, test-infra, test-migrations ], runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } }, { uses: ./.github/actions/calculate-version, id: version, with: { baseRef: "${{ inputs.baseRef || 'origin/main' }}", commitSha: "${{ inputs.commitSha || github.sha }}" } } ], outputs: { version: "${{ steps.version.outputs.version }}" } },
+      #=============================================================================
+    #DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
+    #=============================================================================
+    #These jobs deploy each domain when changes are detected and tests pass.
+    #Replace the TODO comments with your actual deployment commands.
+
+      deploy-infra:
+
+        #=============================================================================
+        #DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
+        #=============================================================================
+        #These jobs deploy each domain when changes are detected and tests pass.
+        #Replace the TODO comments with your actual deployment commands.
+
+        {
+          needs: [ version, changes ],
+          if: "${{ always() && needs.version.result == 'success' && needs.changes.outputs.infra == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your infra deployment logic
+              {
+                  name: Deploy infra,
+                  run: 'echo "Deploying infra with version ${{ needs.version.outputs.version }}"
+
+                    echo "Replace this with your actual deploy commands"
+
+                    # Example: npm run deploy:infra
+
+                    '
+                }
+            ]
+        },
+      deploy-migrations:
+        {
+          needs: [ version, changes ],
+          if: "${{ always() && needs.version.result == 'success' && needs.changes.outputs.migrations == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your migrations deployment logic
+              {
+                  name: Deploy migrations,
+                  run: 'echo "Deploying migrations with version ${{ needs.version.outputs.version }}"
+
+                    echo "Replace this with your actual deploy commands"
+
+                    # Example: npm run deploy:migrations
+
+                    '
+                }
+            ]
+        },
+      #=============================================================================
+    #TAG & PROMOTE (⚠️  Managed by Pipecraft - do not modify)
+    #=============================================================================
+    #Creates git tags and promotes code through branch flow.
+
+      tag:
+
+        #=============================================================================
+        #TAG & PROMOTE (⚠️  Managed by Pipecraft - do not modify)
+        #=============================================================================
+        #Creates git tags and promotes code through branch flow.
+
+        { if: "${{ always() && github.event_name != 'pull_request' && github.ref_name == 'develop' && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.deploy-infra.result != 'failure' && needs.deploy-migrations.result != 'failure') && (needs.deploy-infra.result == 'success' || needs.deploy-migrations.result == 'success') }}", needs: [ version, deploy-infra, deploy-migrations ], runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } }, { uses: ./.github/actions/create-tag, with: { version: "${{ needs.version.outputs.version }}", commitSha: "${{ inputs.commitSha || github.sha }}" } } ] },
+      promote: { if: "${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && (github.ref_name == 'develop' || github.ref_name == 'staging') }}", needs: [ version, tag ], runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } }, { uses: ./.github/actions/promote-branch, with: { version: "${{ needs.version.outputs.version }}", currentBranch: "${{ github.ref_name }}", nextBranch: "${{ github.ref_name == 'develop' && 'staging' || 'main' }}", runNumber: "${{ github.run_number }}" } } ] },
+      release: { if: "${{ always() && github.ref_name == 'main' && needs.version.result == 'success' && needs.version.outputs.version != '' && needs.tag.result == 'success' }}", needs: [ tag, version ], runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } }, { uses: ./.github/actions/create-release, with: { version: "${{ needs.version.outputs.version }}", commitSha: "${{ inputs.commitSha || github.sha }}" } } ] },
+      #=============================================================================
+    #REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
+    #=============================================================================
+    #These jobs test deployed services remotely after deployment succeeds.
+    #Replace the TODO comments with your actual remote testing commands.
+
+      remote-test-infra:
+
+        #=============================================================================
+        #REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
+        #=============================================================================
+        #These jobs test deployed services remotely after deployment succeeds.
+        #Replace the TODO comments with your actual remote testing commands.
+
+        {
+          needs: [ deploy-infra, changes ],
+          if: "${{ always() }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your infra remote testing logic
+              {
+                  name: Test infra remotely,
+                  if: "${{ needs.changes.outputs.infra == 'true' && needs.deploy-infra.result == 'success' }}",
+                  run: 'echo "Testing infra remotely"
+
+                    echo "Replace this with your actual remote test commands"
+
+                    # Example: npm run test:remote:infra
+
+                    '
+                }
+            ]
+        }
+    },
+
+  on: { workflow_dispatch: { inputs: { version: { description: The version to deploy, required: false, type: string }, baseRef: { description: The base reference for comparison, required: false, type: string }, run_number: { description: The original run number from develop branch, required: false, type: string }, commitSha: { description: The exact commit SHA to checkout and test, required: false, type: string } } }, workflow_call: { inputs: { version: { description: The version to deploy, required: false, type: string }, baseRef: { description: The base reference for comparison, required: false, type: string }, run_number: { description: The original run number from develop branch, required: false, type: string }, commitSha: { description: The exact commit SHA to checkout and test, required: false, type: string } } }, push: { branches: [ develop, staging, main ] }, pull_request: { types: [ opened, synchronize, reopened ], branches: [ develop ] } }
+}

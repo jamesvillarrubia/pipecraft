@@ -1,0 +1,165 @@
+name: 'Detect Changes with Nx Support'
+description: 'Enhanced change detection using Nx dependency graph with path-based fallback'
+author: 'Pipecraft'
+
+inputs:
+  baseRef:
+    description: 'Base reference to compare against'
+    required: false
+    default: 'main'
+  useNx:
+    description: 'Whether to use Nx dependency graph for change detection'
+    required: false
+    default: 'true'
+
+outputs:
+  migrations:
+    description: 'Whether migrations domain has changes'
+    value: ${{ steps.merge.outputs.migrations }}
+  infra:
+    description: 'Whether infra domain has changes'
+    value: ${{ steps.merge.outputs.infra }}
+  nxAvailable:
+    description: 'Whether Nx is available in the repository'
+    value: ${{ steps.nx-check.outputs.available }}
+  affectedProjects:
+    description: 'Comma-separated list of affected Nx projects'
+    value: ${{ steps.nx-filter.outputs.affectedProjects }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set Base Branch
+      id: set-base
+      shell: bash
+      run: |
+        base_branch=${{ inputs.baseRef || 'main' }}
+        echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
+        echo "base_branch=$base_branch" >> $GITHUB_ENV
+
+    - name: Check for Nx
+      id: nx-check
+      shell: bash
+      run: |
+        if [ -f "nx.json" ] || ([ -f "package.json" ] && grep -q '"nx"' package.json); then
+          echo "available=true" >> $GITHUB_OUTPUT
+          echo "🔍 Nx detected in repository"
+        else
+          echo "available=false" >> $GITHUB_OUTPUT
+          echo "⚠️  Nx not detected, falling back to path-based detection"
+        fi
+
+    - name: Setup Node.js
+      if: steps.nx-check.outputs.available == 'true' && inputs.useNx == 'true'
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Dependencies
+      if: steps.nx-check.outputs.available == 'true' && inputs.useNx == 'true'
+      shell: bash
+      run: |
+        echo "📦 Installing dependencies for Nx..."
+        if [ -f "pnpm-lock.yaml" ]; then
+          corepack enable
+          pnpm install --frozen-lockfile || pnpm install
+        elif [ -f "yarn.lock" ]; then
+          yarn install --frozen-lockfile || yarn install
+        elif [ -f "package-lock.json" ]; then
+          npm ci || npm install
+        else
+          npm install
+        fi
+
+    - name: Detect Changes with Nx (if available)
+      id: nx-filter
+      if: steps.nx-check.outputs.available == 'true' && inputs.useNx == 'true'
+      shell: bash
+      run: |
+        echo "🚀 Using Nx dependency graph for change detection"
+
+        # Get affected projects using Nx
+        if command -v npx >/dev/null 2>&1; then
+          # Get list of affected projects (newline-separated)
+          AFFECTED_PROJECTS_RAW=$(npx nx show projects --affected --base=${{ steps.set-base.outputs.base_branch }} 2>/dev/null || echo "")
+
+          # Convert newlines to commas for storage
+          AFFECTED_PROJECTS=$(echo "$AFFECTED_PROJECTS_RAW" | tr '\n' ',' | sed 's/,$//')
+          echo "affectedProjects=$AFFECTED_PROJECTS" >> $GITHUB_OUTPUT
+
+          if [ -n "$AFFECTED_PROJECTS" ]; then
+            echo "📦 Affected Nx projects: $AFFECTED_PROJECTS"
+
+            # Initialize domain flags
+            MIGRATIONS_AFFECTED=false
+            INFRA_AFFECTED=false
+
+            # Check each affected project against domain patterns (comma-separated)
+            IFS=',' read -ra PROJECTS <<< "$AFFECTED_PROJECTS"
+            for project in "${PROJECTS[@]}"; do
+              project=$(echo "$project" | xargs) # trim whitespace
+              # Check migrations domain patterns
+              if echo "$project" | grep -qE "(migrations|$(echo "migrations" | sed 's/-/[-_]/g'))"; then
+                MIGRATIONS_AFFECTED=true
+                echo "  ✅ $project matches migrations domain"
+              fi
+              # Check infra domain patterns
+              if echo "$project" | grep -qE "(infra|$(echo "infra" | sed 's/-/[-_]/g'))"; then
+                INFRA_AFFECTED=true
+                echo "  ✅ $project matches infra domain"
+              fi
+            done
+
+            # Set outputs
+            echo "migrations=$MIGRATIONS_AFFECTED" >> $GITHUB_OUTPUT
+            echo "infra=$INFRA_AFFECTED" >> $GITHUB_OUTPUT
+
+          else
+            echo "No affected projects detected"
+            echo "migrations=false" >> $GITHUB_OUTPUT
+            echo "infra=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "⚠️  npx not available, falling back to path-based detection"
+            echo "migrations=false" >> $GITHUB_OUTPUT
+            echo "infra=false" >> $GITHUB_OUTPUT
+          echo "affectedProjects=" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Detect Changes with Paths Filter (fallback)
+      uses: dorny/paths-filter@v3
+      id: filter
+      if: steps.nx-check.outputs.available != 'true' || inputs.useNx != 'true'
+      with:
+        base: ${{ steps.set-base.outputs.base_branch }}
+        filters: |
+          migrations:
+            - 'migrations/**'
+          infra:
+            - 'infra/**'
+
+    - name: Merge filter outputs
+      id: merge
+      shell: bash
+      run: |
+        # Use Nx results if available, otherwise use path filter results
+        if [ "${{ steps.nx-check.outputs.available }}" == "true" ] && [ "${{ inputs.useNx }}" == "true" ]; then
+          echo "migrations=${{ steps.nx-filter.outputs.migrations }}" >> $GITHUB_OUTPUT
+          echo "infra=${{ steps.nx-filter.outputs.infra }}" >> $GITHUB_OUTPUT
+          echo "🔍 Using Nx dependency analysis results"
+          echo "📦 Affected projects: ${{ steps.nx-filter.outputs.affectedProjects }}"
+        else
+          echo "migrations=${{ contains(steps.filter.outputs.changes, 'migrations') }}" >> $GITHUB_OUTPUT
+          echo "infra=${{ contains(steps.filter.outputs.changes, 'infra') }}" >> $GITHUB_OUTPUT
+          echo "📁 Using path-based change detection"
+        fi
+
+        echo "📋 Change Detection Results:"
+        echo "  migrations: ${{ steps.merge.outputs.migrations }}"
+        echo "  infra: ${{ steps.merge.outputs.infra }}"
+        echo "  nx-available: ${{ steps.nx-check.outputs.available }}"

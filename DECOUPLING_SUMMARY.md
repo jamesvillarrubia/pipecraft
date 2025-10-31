@@ -5,27 +5,33 @@
 I've created a complete strategy for decoupling PipeCraft actions from configuration file dependencies. Here's what's included:
 
 ### 1. **Decoupled Action Example**
+
 📁 `.github/actions/promote-branch/action-decoupled.yml`
 
 A refactored version of `promote-branch` that:
+
 - ✅ Takes all config as inputs (no file reading)
 - ✅ Works in any repository
 - ✅ Can be published to GitHub Marketplace
 - ✅ Easy to test independently
 
 ### 2. **Workflow Examples**
+
 📁 `docs/examples/decoupled-workflow-example.yml`
 
 Shows how to:
+
 - Read config at workflow level (once)
 - Pass values to decoupled actions
 - Use actions without PipeCraft config
 - Support manual workflow dispatch
 
 ### 3. **Comprehensive Guide**
+
 📁 `docs/DECOUPLING_GUIDE.md`
 
 Complete documentation covering:
+
 - Architecture comparison (coupled vs decoupled)
 - Migration strategy
 - Testing approach
@@ -35,12 +41,14 @@ Complete documentation covering:
 ## Key Benefits
 
 ### For Action Users
+
 - 🔄 **Reusable** - Actions work in non-PipeCraft projects
 - 📦 **Publishable** - Can share on GitHub Marketplace
 - 🧪 **Testable** - Easy to test with mock inputs
 - 🎯 **Explicit** - Clear what inputs are needed
 
 ### For PipeCraft
+
 - 🏗️ **Better Architecture** - Separation of concerns
 - 🔧 **More Flexible** - Support multiple config formats
 - 📈 **More Adoptable** - Actions can be used standalone
@@ -49,14 +57,17 @@ Complete documentation covering:
 ## Current State Analysis
 
 ### Already Decoupled ✅
+
 - **`detect-changes`** - Takes `domains-config` as input (perfect!)
 
 ### Needs Decoupling ⚠️
+
 - **`promote-branch`** - Reads `.pipecraftrc` for `branchFlow`
 - **`calculate-version`** - May read config for versioning rules
 - **`manage-branch`** - Check if reads config
 
 ### Already Generic ✅
+
 - **`create-pr`** - Generic PR creation
 - **`create-tag`** - Generic tag creation
 - **`create-release`** - Generic release creation
@@ -90,6 +101,7 @@ steps:
 ```
 
 **Benefits:**
+
 - ✅ Existing workflows keep working
 - ✅ New workflows can use explicit mode
 - ✅ Gradual migration path
@@ -122,6 +134,7 @@ jobs:
 ```
 
 **Benefits:**
+
 - ✅ PipeCraft still orchestrates everything
 - ✅ Actions are reusable building blocks
 - ✅ Best of both worlds
@@ -140,16 +153,19 @@ Once stable, publish decoupled actions:
 ## Implementation Checklist
 
 ### Immediate (Low Risk)
+
 - [ ] Create `action-decoupled.yml` versions alongside existing
 - [ ] Update documentation to show both approaches
 - [ ] Test decoupled versions in non-PipeCraft repo
 
 ### Short Term
+
 - [ ] Update `promote-branch` to hybrid mode
 - [ ] Update PipeCraft CLI to generate workflows using decoupled pattern
 - [ ] Add integration tests for decoupled actions
 
 ### Long Term
+
 - [ ] Make decoupled mode the default
 - [ ] Deprecate config-reading mode in actions
 - [ ] Publish stable actions to Marketplace
@@ -158,15 +174,17 @@ Once stable, publish decoupled actions:
 ## Example: Side-by-Side Comparison
 
 ### Current (Coupled)
+
 ```yaml
 # Action reads config internally
 - uses: ./.github/actions/promote-branch
   with:
     sourceBranch: develop
-    configPath: .pipecraftrc  # Action reads this
+    configPath: .pipecraftrc # Action reads this
 ```
 
 ### Proposed (Decoupled)
+
 ```yaml
 # Workflow reads config, action receives values
 jobs:
@@ -189,6 +207,7 @@ jobs:
 ```
 
 ### Universal (No Config File)
+
 ```yaml
 # Works without ANY config file!
 - uses: ./.github/actions/promote-branch
@@ -201,12 +220,15 @@ jobs:
 ## Questions to Consider
 
 1. **Should decoupled actions be the default for new projects?**
+
    - Recommendation: Yes, with PipeCraft handling orchestration
 
 2. **How to handle complex config like domain arrays?**
+
    - Already solved! `detect-changes` passes `domains-config` as input
 
 3. **Should we version actions separately from PipeCraft?**
+
    - Yes, if publishing to Marketplace
    - No, if keeping them internal to generated projects
 
@@ -241,6 +263,7 @@ DECOUPLING_SUMMARY.md              # This file
 ## Conclusion
 
 Decoupling actions from PipeCraft configuration is:
+
 - ✅ **Feasible** - Clear implementation path
 - ✅ **Beneficial** - Increases reusability and testability
 - ✅ **Backward Compatible** - Can be done gradually
@@ -251,4 +274,3 @@ The hybrid approach allows you to maintain existing workflows while enabling new
 ---
 
 **Recommendation:** Start with Phase 1 (hybrid transition) for `promote-branch` action, test thoroughly, then expand to other actions.
-

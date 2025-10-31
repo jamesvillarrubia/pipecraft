@@ -18,6 +18,7 @@ This guide explains how to make PipeCraft-generated actions **transferable** and
 ```
 
 **Problems:**
+
 - ❌ Actions can't work without `.pipecraftrc`
 - ❌ Can't publish actions independently
 - ❌ Hard to test in isolation
@@ -38,6 +39,7 @@ This guide explains how to make PipeCraft-generated actions **transferable** and
 ```
 
 **Benefits:**
+
 - ✅ Actions work with ANY config format (YAML, JSON, TOML, env vars)
 - ✅ Actions can be published to GitHub Marketplace
 - ✅ Easy to test with mock inputs
@@ -51,19 +53,22 @@ This guide explains how to make PipeCraft-generated actions **transferable** and
 **Actions with PipeCraft coupling:**
 
 1. **`promote-branch`**
+
    - Currently reads: `branchFlow` array
    - Solution: Accept `targetBranch` as input
 
 2. **`calculate-version`**
+
    - Currently reads: Versioning config
    - Solution: Accept versioning rules as inputs
 
-3. **`detect-changes`** ✅ 
+3. **`detect-changes`** ✅
    - Already decoupled! Takes `domains-config` as input
 
 ### Phase 2: Refactor Pattern
 
 **Before (Coupled):**
+
 ```yaml
 # action.yml
 runs:
@@ -75,6 +80,7 @@ runs:
 ```
 
 **After (Decoupled):**
+
 ```yaml
 # action.yml
 inputs:
@@ -107,10 +113,10 @@ jobs:
           # Read from PipeCraft config
           TARGET=$(yq eval '.branchFlow[1]' .pipecraftrc)
           echo "targetBranch=$TARGET" >> $GITHUB_OUTPUT
-          
+
           # Or read from environment
           # TARGET=${{ vars.TARGET_BRANCH }}
-          
+
           # Or hardcode
           # TARGET="staging"
 
@@ -145,12 +151,13 @@ Update one workflow at a time to use decoupled actions:
 # New
 - uses: ./.github/actions/promote-branch/action-decoupled.yml
   with:
-    targetBranch: staging  # explicit
+    targetBranch: staging # explicit
 ```
 
 ### Step 3: Deprecate Coupled Versions
 
 After all workflows migrate:
+
 1. Rename `action-decoupled.yml` to `action.yml`
 2. Add deprecation notice to old version
 3. Remove old version in next major release
@@ -172,7 +179,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Publish promote-branch
         uses: actions/publish-action@v1
         with:
@@ -181,6 +188,7 @@ jobs:
 ```
 
 Users can then use:
+
 ```yaml
 - uses: pipecraft/promote-branch@v1
   with:
@@ -286,7 +294,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Test with Mock Inputs
         uses: ./.github/actions/promote-branch
         with:
@@ -300,6 +308,7 @@ jobs:
 ## Best Practices
 
 ### 1. **Explicit Over Implicit**
+
 ```yaml
 # ❌ Bad: Implicit dependencies
 - uses: ./.github/actions/promote-branch
@@ -312,6 +321,7 @@ jobs:
 ```
 
 ### 2. **Config Reading at Workflow Level**
+
 ```yaml
 # ✅ Read config ONCE at workflow level
 jobs:
@@ -321,7 +331,7 @@ jobs:
     steps:
       - id: read
         run: cat .pipecraftrc > $GITHUB_OUTPUT
-  
+
   use-config:
     needs: prepare
     steps:
@@ -331,6 +341,7 @@ jobs:
 ```
 
 ### 3. **Support Multiple Config Formats**
+
 ```bash
 # Workflow can adapt to any format
 if [ -f ".pipecraftrc" ]; then
@@ -343,25 +354,27 @@ fi
 ```
 
 ### 4. **Provide Defaults**
+
 ```yaml
 inputs:
   tempBranchPattern:
     required: false
-    default: 'release/{source}-to-{target}'  # Sensible default
+    default: 'release/{source}-to-{target}' # Sensible default
 ```
 
 ### 5. **Document Required Inputs**
+
 ```yaml
 name: 'Action Name'
 description: |
   Detailed description of what the action does.
-  
+
   Required Inputs:
     - targetBranch: The branch to promote to
     
   Optional Inputs:
     - version: Version tag (auto-detected if not provided)
-  
+
   Example:
     - uses: ./.github/actions/promote-branch
       with:
@@ -385,6 +398,7 @@ description: |
 ### Q: Can I still use PipeCraft if I decouple?
 
 **A:** Yes! PipeCraft would focus on:
+
 1. Generating workflows (not just actions)
 2. Reading your config
 3. Orchestrating decoupled actions
@@ -406,4 +420,3 @@ The actions become building blocks that PipeCraft (or any other tool) can use.
 - [GitHub Actions Best Practices](https://docs.github.com/en/actions/learn-github-actions/best-practices-for-github-actions)
 - [Creating Composite Actions](https://docs.github.com/en/actions/creating-actions/creating-a-composite-action)
 - [Publishing Actions to Marketplace](https://docs.github.com/en/actions/creating-actions/publishing-actions-in-github-marketplace)
-

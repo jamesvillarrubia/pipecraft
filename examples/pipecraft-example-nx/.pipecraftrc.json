@@ -1,0 +1,40 @@
+{
+  "ciProvider": "github",
+  "mergeStrategy": "fast-forward",
+  "requireConventionalCommits": true,
+  "initialBranch": "develop",
+  "finalBranch": "main",
+  "branchFlow": ["develop", "staging", "main"],
+  "packageManager": "npm",
+  "autoMerge": {
+    "staging": true,
+    "main": true
+  },
+  "semver": {
+    "bumpRules": {
+      "feat": "minor",
+      "fix": "patch",
+      "breaking": "major"
+    }
+  },
+  "domains": {
+    "migrations": {
+      "paths": ["migrations/**"],
+      "description": "Database migrations (pgroll)",
+      "test": true,
+      "deployable": true
+    },
+    "infra": {
+      "paths": ["infra/**"],
+      "description": "Infrastructure as code (Pulumi, Kubernetes)",
+      "test": true,
+      "deployable": true
+    }
+  },
+  "nx": {
+    "enabled": true,
+    "tasks": ["lint", "test", "build", "integration-test", "e2e"],
+    "baseRef": "origin/main",
+    "enableCache": true
+  }
+}
