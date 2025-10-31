@@ -1,0 +1,48 @@
+name: 'Detect Changes'
+description: 'Detect changes in different application domains based on file paths'
+author: 'Pipecraft'
+
+inputs:
+  baseRef:
+    description: 'Base reference to compare against'
+    required: false
+    default: 'main'
+
+outputs:
+  app:
+    description: 'Whether app domain has changes'
+    value: ${{ steps.merge.outputs.app }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set Base Branch
+      id: set-base
+      shell: bash
+      run: |
+        base_branch=${{ inputs.baseRef || 'main' }}
+        echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
+        echo "base_branch=$base_branch" >> $GITHUB_ENV
+
+    - name: Detect Changes
+      uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        base: ${{ steps.set-base.outputs.base_branch }}
+        filters: |
+          app:
+            - 'src/**'
+
+    - name: Merge filter outputs
+      id: merge
+      shell: bash
+      run: |
+        echo "app=${{ contains(steps.filter.outputs.changes, 'app') }}" >> $GITHUB_OUTPUT
+        
+        echo "📋 Change Detection Results:"
+        echo "  app: ${{ contains(steps.filter.outputs.changes, 'app') }}"

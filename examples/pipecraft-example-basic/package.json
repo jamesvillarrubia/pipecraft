@@ -1,0 +1,26 @@
+{
+  "name": "pipecraft-example-basic",
+  "version": "0.1.0",
+  "description": "Multi-domain example demonstrating PipeCraft trunk-based development workflow with standard 3-branch flow",
+  "type": "module",
+  "scripts": {
+    "test": "node test-runner.js",
+    "test:frontend": "node test-runner.js frontend",
+    "test:backend": "node test-runner.js backend",
+    "test:api": "node test-runner.js api",
+    "test:shared": "node test-runner.js shared",
+    "build": "node build.js",
+    "lint": "node lint.js"
+  },
+  "keywords": ["pipecraft", "trunk-based", "multi-domain", "example", "ci-cd"],
+  "author": "PipeCraft Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jamesvillarrubia/pipecraft-example-basic.git"
+  },
+  "homepage": "https://github.com/jamesvillarrubia/pipecraft-example-basic#readme",
+  "bugs": {
+    "url": "https://github.com/jamesvillarrubia/pipecraft-example-basic/issues"
+  }
+}

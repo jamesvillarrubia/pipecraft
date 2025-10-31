@@ -1,0 +1,226 @@
+{
+  name: "Pipeline",
+
+  run-name: "${{ github.event_name == 'pull_request' && !contains('develop,alpha,beta,release,production', github.head_ref) && github.event.pull_request.title || github.ref_name }} #${{ inputs.run_number || github.run_number }}${{ inputs.version && format(' - {0}', inputs.version) || '' }}",
+  jobs:
+    {
+      #=============================================================================
+    #CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
+    #=============================================================================
+    #Detects which domains have changed using path-based detection
+
+      changes:
+
+        #=============================================================================
+        #CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
+        #=============================================================================
+        #Detects which domains have changed using path-based detection
+
+        { runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}", fetch-depth: 0 } }, { uses: ./.github/actions/detect-changes, id: detect, with: { baseRef: "${{ inputs.baseRef || 'production' }}" } } ], outputs: { api: "${{ steps.detect.outputs.api }}", services: "${{ steps.detect.outputs.services }}", shared: "${{ steps.detect.outputs.shared }}", web: "${{ steps.detect.outputs.web }}" } },
+      #=============================================================================
+    #TESTING JOBS (✅ Customize these with your test logic)
+    #=============================================================================
+    #These jobs run tests for each domain when changes are detected.
+    #Replace the TODO comments with your actual test commands.
+
+      test-api:
+
+        #=============================================================================
+        #TESTING JOBS (✅ Customize these with your test logic)
+        #=============================================================================
+        #These jobs run tests for each domain when changes are detected.
+        #Replace the TODO comments with your actual test commands.
+
+        {
+          needs: changes,
+          if: "${{ needs.changes.outputs.api == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your api test logic
+              {
+                  name: Run api tests,
+                  run: 'echo "Running tests for api domain"
+
+                    echo "Replace this with your actual test commands"
+
+                    # Example: npm test -- --testPathPattern=api
+
+                    '
+                }
+            ]
+        },
+      test-services:
+        {
+          needs: changes,
+          if: "${{ needs.changes.outputs.services == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your services test logic
+              {
+                  name: Run services tests,
+                  run: 'echo "Running tests for services domain"
+
+                    echo "Replace this with your actual test commands"
+
+                    # Example: npm test -- --testPathPattern=services
+
+                    '
+                }
+            ]
+        },
+      test-shared:
+        {
+          needs: changes,
+          if: "${{ needs.changes.outputs.shared == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your shared test logic
+              {
+                  name: Run shared tests,
+                  run: 'echo "Running tests for shared domain"
+
+                    echo "Replace this with your actual test commands"
+
+                    # Example: npm test -- --testPathPattern=shared
+
+                    '
+                }
+            ]
+        },
+      test-web:
+        {
+          needs: changes,
+          if: "${{ needs.changes.outputs.web == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your web test logic
+              {
+                  name: Run web tests,
+                  run: 'echo "Running tests for web domain"
+
+                    echo "Replace this with your actual test commands"
+
+                    # Example: npm test -- --testPathPattern=web
+
+                    '
+                }
+            ]
+        },
+      #=============================================================================
+    #VERSIONING (⚠️  Managed by Pipecraft - do not modify)
+    #=============================================================================
+    #Calculates the next semantic version based on conventional commits.
+    #Only runs on push events (skipped on pull requests).
+
+      version:
+
+        #=============================================================================
+        #VERSIONING (⚠️  Managed by Pipecraft - do not modify)
+        #=============================================================================
+        #Calculates the next semantic version based on conventional commits.
+        #Only runs on push events (skipped on pull requests).
+
+        { if: "${{ always() && github.event_name != 'pull_request' && (needs.test-api.result == 'success' || needs.test-services.result == 'success' || needs.test-shared.result == 'success' || needs.test-web.result == 'success') && needs.test-api.result != 'failure' && needs.test-services.result != 'failure' && needs.test-shared.result != 'failure' && needs.test-web.result != 'failure' }}", needs: [ changes, test-api, test-services, test-shared, test-web ], runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } }, { uses: ./.github/actions/calculate-version, id: version, with: { baseRef: "${{ inputs.baseRef || 'production' }}", commitSha: "${{ inputs.commitSha || github.sha }}" } } ], outputs: { version: "${{ steps.version.outputs.version }}" } },
+      #=============================================================================
+    #DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
+    #=============================================================================
+    #These jobs deploy each domain when changes are detected and tests pass.
+    #Replace the TODO comments with your actual deployment commands.
+
+      deploy-api:
+
+        #=============================================================================
+        #DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
+        #=============================================================================
+        #These jobs deploy each domain when changes are detected and tests pass.
+        #Replace the TODO comments with your actual deployment commands.
+
+        {
+          needs: [ version, changes ],
+          if: "${{ always() && needs.version.result == 'success' && needs.changes.outputs.api == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your api deployment logic
+              {
+                  name: Deploy api,
+                  run: 'echo "Deploying api with version ${{ needs.version.outputs.version }}"
+
+                    echo "Replace this with your actual deploy commands"
+
+                    # Example: npm run deploy:api
+
+                    '
+                }
+            ]
+        },
+      deploy-services:
+        {
+          needs: [ version, changes ],
+          if: "${{ always() && needs.version.result == 'success' && needs.changes.outputs.services == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your services deployment logic
+              {
+                  name: Deploy services,
+                  run: 'echo "Deploying services with version ${{ needs.version.outputs.version }}"
+
+                    echo "Replace this with your actual deploy commands"
+
+                    # Example: npm run deploy:services
+
+                    '
+                }
+            ]
+        },
+      deploy-web:
+        {
+          needs: [ version, changes ],
+          if: "${{ always() && needs.version.result == 'success' && needs.changes.outputs.web == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your web deployment logic
+              {
+                  name: Deploy web,
+                  run: 'echo "Deploying web with version ${{ needs.version.outputs.version }}"
+
+                    echo "Replace this with your actual deploy commands"
+
+                    # Example: npm run deploy:web
+
+                    '
+                }
+            ]
+        },
+      #=============================================================================
+    #TAG & PROMOTE (⚠️  Managed by Pipecraft - do not modify)
+    #=============================================================================
+    #Creates git tags and promotes code through branch flow.
+
+      tag:
+
+        #=============================================================================
+        #TAG & PROMOTE (⚠️  Managed by Pipecraft - do not modify)
+        #=============================================================================
+        #Creates git tags and promotes code through branch flow.
+
+        { if: "${{ always() && github.event_name != 'pull_request' && github.ref_name == 'develop' && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.deploy-api.result != 'failure' && needs.deploy-services.result != 'failure' && needs.deploy-web.result != 'failure') && (needs.deploy-api.result == 'success' || needs.deploy-services.result == 'success' || needs.deploy-web.result == 'success') }}", needs: [ version, deploy-api, deploy-services, deploy-web ], runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } }, { uses: ./.github/actions/create-tag, with: { version: "${{ needs.version.outputs.version }}", commitSha: "${{ inputs.commitSha || github.sha }}" } } ] },
+      promote: { if: "${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && (github.ref_name == 'develop' || github.ref_name == 'alpha' || github.ref_name == 'beta' || github.ref_name == 'release') }}", needs: [ version, tag ], runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } }, { uses: ./.github/actions/promote-branch, with: { version: "${{ needs.version.outputs.version }}", currentBranch: "${{ github.ref_name }}", nextBranch: "${{ github.ref_name == 'develop' && 'alpha' || 'production' }}", runNumber: "${{ github.run_number }}" } } ] },
+      release: { if: "${{ always() && github.ref_name == 'production' && needs.version.result == 'success' && needs.version.outputs.version != '' && needs.tag.result == 'success' }}", needs: [ tag, version ], runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } }, { uses: ./.github/actions/create-release, with: { version: "${{ needs.version.outputs.version }}", commitSha: "${{ inputs.commitSha || github.sha }}" } } ] }
+    },
+
+  on: { workflow_dispatch: { inputs: { version: { description: The version to deploy, required: false, type: string }, baseRef: { description: The base reference for comparison, required: false, type: string }, run_number: { description: The original run number from develop branch, required: false, type: string }, commitSha: { description: The exact commit SHA to checkout and test, required: false, type: string } } }, workflow_call: { inputs: { version: { description: The version to deploy, required: false, type: string }, baseRef: { description: The base reference for comparison, required: false, type: string }, run_number: { description: The original run number from develop branch, required: false, type: string }, commitSha: { description: The exact commit SHA to checkout and test, required: false, type: string } } }, push: { branches: [ develop, alpha, beta, release, production ] }, pull_request: { types: [ opened, synchronize, reopened ], branches: [ develop ] } }
+}

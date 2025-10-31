@@ -1,0 +1,69 @@
+name: 'Detect Changes'
+description: 'Detect changes in different application domains based on file paths'
+author: 'Pipecraft'
+
+inputs:
+  baseRef:
+    description: 'Base reference to compare against'
+    required: false
+    default: 'main'
+
+outputs:
+  services:
+    description: 'Whether services domain has changes'
+    value: ${{ steps.merge.outputs.services }}
+  web:
+    description: 'Whether web domain has changes'
+    value: ${{ steps.merge.outputs.web }}
+  api:
+    description: 'Whether api domain has changes'
+    value: ${{ steps.merge.outputs.api }}
+  shared:
+    description: 'Whether shared domain has changes'
+    value: ${{ steps.merge.outputs.shared }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set Base Branch
+      id: set-base
+      shell: bash
+      run: |
+        base_branch=${{ inputs.baseRef || 'main' }}
+        echo "base_branch=$base_branch" >> $GITHUB_OUTPUT
+        echo "base_branch=$base_branch" >> $GITHUB_ENV
+
+    - name: Detect Changes
+      uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        base: ${{ steps.set-base.outputs.base_branch }}
+        filters: |
+          services:
+            - 'services/**'
+          web:
+            - 'web/**'
+          api:
+            - 'api/**'
+          shared:
+            - 'shared/**'
+
+    - name: Merge filter outputs
+      id: merge
+      shell: bash
+      run: |
+        echo "services=${{ contains(steps.filter.outputs.changes, 'services') }}" >> $GITHUB_OUTPUT
+        echo "web=${{ contains(steps.filter.outputs.changes, 'web') }}" >> $GITHUB_OUTPUT
+        echo "api=${{ contains(steps.filter.outputs.changes, 'api') }}" >> $GITHUB_OUTPUT
+        echo "shared=${{ contains(steps.filter.outputs.changes, 'shared') }}" >> $GITHUB_OUTPUT
+        
+        echo "📋 Change Detection Results:"
+        echo "  services: ${{ contains(steps.filter.outputs.changes, 'services') }}"
+        echo "  web: ${{ contains(steps.filter.outputs.changes, 'web') }}"
+        echo "  api: ${{ contains(steps.filter.outputs.changes, 'api') }}"
+        echo "  shared: ${{ contains(steps.filter.outputs.changes, 'shared') }}"

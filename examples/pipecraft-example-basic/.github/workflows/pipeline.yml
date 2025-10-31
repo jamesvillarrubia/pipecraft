@@ -1,0 +1,411 @@
+{
+  name: "Pipeline",
+
+  run-name: "${{ github.event_name == 'pull_request' && !contains('develop,staging,main', github.head_ref) && github.event.pull_request.title || github.ref_name }} #${{ inputs.run_number || github.run_number }}${{ inputs.version && format(' - {0}', inputs.version) || '' }}",
+  jobs:
+    {
+      #=============================================================================
+    #CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
+    #=============================================================================
+    #Detects which domains have changed using path-based detection
+
+      changes:
+
+        #=============================================================================
+        #CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
+        #=============================================================================
+        #Detects which domains have changed using path-based detection
+
+        { runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}", fetch-depth: 0 } }, { uses: ./.github/actions/detect-changes, id: detect, with: { baseRef: "${{ inputs.baseRef || 'main' }}" } } ], outputs: { api: "${{ steps.detect.outputs.api }}", backend: "${{ steps.detect.outputs.backend }}", frontend: "${{ steps.detect.outputs.frontend }}", shared: "${{ steps.detect.outputs.shared }}" } },
+      #=============================================================================
+    #TESTING JOBS (✅ Customize these with your test logic)
+    #=============================================================================
+    #These jobs run tests for each domain when changes are detected.
+    #Replace the TODO comments with your actual test commands.
+
+      test-api:
+
+        #=============================================================================
+        #TESTING JOBS (✅ Customize these with your test logic)
+        #=============================================================================
+        #These jobs run tests for each domain when changes are detected.
+        #Replace the TODO comments with your actual test commands.
+
+        {
+          needs: changes,
+          if: "${{ needs.changes.outputs.api == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your api test logic
+              {
+                  name: Run api tests,
+                  run: 'echo "Running tests for api domain"
+
+                    echo "Replace this with your actual test commands"
+
+                    # Example: npm test -- --testPathPattern=api
+
+                    '
+                }
+            ]
+        },
+      test-backend:
+        {
+          needs: changes,
+          if: "${{ needs.changes.outputs.backend == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your backend test logic
+              {
+                  name: Run backend tests,
+                  run: 'echo "Running tests for backend domain"
+
+                    echo "Replace this with your actual test commands"
+
+                    # Example: npm test -- --testPathPattern=backend
+
+                    '
+                }
+            ]
+        },
+      test-frontend:
+        {
+          needs: changes,
+          if: "${{ needs.changes.outputs.frontend == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your frontend test logic
+              {
+                  name: Run frontend tests,
+                  run: 'echo "Running tests for frontend domain"
+
+                    echo "Replace this with your actual test commands"
+
+                    # Example: npm test -- --testPathPattern=frontend
+
+                    '
+                }
+            ]
+        },
+      test-shared:
+        {
+          needs: changes,
+          if: "${{ needs.changes.outputs.shared == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your shared test logic
+              {
+                  name: Run shared tests,
+                  run: 'echo "Running tests for shared domain"
+
+                    echo "Replace this with your actual test commands"
+
+                    # Example: npm test -- --testPathPattern=shared
+
+                    '
+                }
+            ]
+        },
+      #=============================================================================
+    #VERSIONING (⚠️  Managed by Pipecraft - do not modify)
+    #=============================================================================
+    #Calculates the next semantic version based on conventional commits.
+    #Only runs on push events (skipped on pull requests).
+
+      version:
+
+        #=============================================================================
+        #VERSIONING (⚠️  Managed by Pipecraft - do not modify)
+        #=============================================================================
+        #Calculates the next semantic version based on conventional commits.
+        #Only runs on push events (skipped on pull requests).
+
+        { if: "${{ always() && github.event_name != 'pull_request' && (needs.test-api.result == 'success' || needs.test-backend.result == 'success' || needs.test-frontend.result == 'success' || needs.test-shared.result == 'success') && needs.test-api.result != 'failure' && needs.test-backend.result != 'failure' && needs.test-frontend.result != 'failure' && needs.test-shared.result != 'failure' }}", needs: [ changes, test-api, test-backend, test-frontend, test-shared ], runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } }, { uses: ./.github/actions/calculate-version, id: version, with: { baseRef: "${{ inputs.baseRef || 'main' }}", commitSha: "${{ inputs.commitSha || github.sha }}" } } ], outputs: { version: "${{ steps.version.outputs.version }}" } },
+      #=============================================================================
+    #DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
+    #=============================================================================
+    #These jobs deploy each domain when changes are detected and tests pass.
+    #Replace the TODO comments with your actual deployment commands.
+
+      deploy-api:
+
+        #=============================================================================
+        #DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
+        #=============================================================================
+        #These jobs deploy each domain when changes are detected and tests pass.
+        #Replace the TODO comments with your actual deployment commands.
+
+        {
+          needs: [ version, changes ],
+          if: "${{ always() && needs.version.result == 'success' && needs.changes.outputs.api == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your api deployment logic
+              {
+                  name: Deploy api,
+                  run: 'echo "Deploying api with version ${{ needs.version.outputs.version }}"
+
+                    echo "Replace this with your actual deploy commands"
+
+                    # Example: npm run deploy:api
+
+                    '
+                }
+            ]
+        },
+      deploy-backend:
+        {
+          needs: [ version, changes ],
+          if: "${{ always() && needs.version.result == 'success' && needs.changes.outputs.backend == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your backend deployment logic
+              {
+                  name: Deploy backend,
+                  run: 'echo "Deploying backend with version ${{ needs.version.outputs.version }}"
+
+                    echo "Replace this with your actual deploy commands"
+
+                    # Example: npm run deploy:backend
+
+                    '
+                }
+            ]
+        },
+      deploy-frontend:
+        {
+          needs: [ version, changes ],
+          if: "${{ always() && needs.version.result == 'success' && needs.changes.outputs.frontend == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your frontend deployment logic
+              {
+                  name: Deploy frontend,
+                  run: 'echo "Deploying frontend with version ${{ needs.version.outputs.version }}"
+
+                    echo "Replace this with your actual deploy commands"
+
+                    # Example: npm run deploy:frontend
+
+                    '
+                }
+            ]
+        },
+      #=============================================================================
+    #REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
+    #=============================================================================
+    #These jobs test deployed services remotely after deployment succeeds.
+    #Replace the TODO comments with your actual remote testing commands.
+
+      remote-test-backend:
+
+        #=============================================================================
+        #REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
+        #=============================================================================
+        #These jobs test deployed services remotely after deployment succeeds.
+        #Replace the TODO comments with your actual remote testing commands.
+
+        {
+          needs: [ deploy-backend, changes ],
+          if: "${{ always() }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your backend remote testing logic
+              {
+                  name: Test backend remotely,
+                  if: "${{ needs.changes.outputs.backend == 'true' && needs.deploy-backend.result == 'success' }}",
+                  run: 'echo "Testing backend remotely"
+
+                    echo "Replace this with your actual remote test commands"
+
+                    # Example: npm run test:remote:backend
+
+                    '
+                }
+            ]
+        },
+      remote-test-frontend:
+        {
+          needs: [ deploy-frontend, changes ],
+          if: "${{ always() }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your frontend remote testing logic
+              {
+                  name: Test frontend remotely,
+                  if: "${{ needs.changes.outputs.frontend == 'true' && needs.deploy-frontend.result == 'success' }}",
+                  run: 'echo "Testing frontend remotely"
+
+                    echo "Replace this with your actual remote test commands"
+
+                    # Example: npm run test:remote:frontend
+
+                    '
+                }
+            ]
+        },
+      #=============================================================================
+    #TAG & PROMOTE (⚠️  Managed by Pipecraft - do not modify)
+    #=============================================================================
+    #Creates git tags and promotes code through branch flow.
+
+      tag:
+
+        #=============================================================================
+        #TAG & PROMOTE (⚠️  Managed by Pipecraft - do not modify)
+        #=============================================================================
+        #Creates git tags and promotes code through branch flow.
+
+        { if: "${{ always() && github.event_name != 'pull_request' && github.ref_name == 'develop' && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.deploy-api.result != 'failure' && needs.deploy-backend.result != 'failure' && needs.deploy-frontend.result != 'failure' && needs.remote-test-backend.result != 'failure' && needs.remote-test-frontend.result != 'failure') && (needs.deploy-api.result == 'success' || needs.deploy-backend.result == 'success' || needs.deploy-frontend.result == 'success' || needs.remote-test-backend.result == 'success' || needs.remote-test-frontend.result == 'success') }}", needs: [ version, deploy-api, deploy-backend, deploy-frontend, remote-test-backend, remote-test-frontend ], runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } }, { uses: ./.github/actions/create-tag, with: { version: "${{ needs.version.outputs.version }}", commitSha: "${{ inputs.commitSha || github.sha }}" } } ] },
+      promote: { if: "${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && (github.ref_name == 'develop' || github.ref_name == 'staging') }}", needs: [ version, tag ], runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } }, { uses: ./.github/actions/promote-branch, with: { version: "${{ needs.version.outputs.version }}", currentBranch: "${{ github.ref_name }}", nextBranch: "${{ github.ref_name == 'develop' && 'staging' || 'main' }}", runNumber: "${{ github.run_number }}" } } ] },
+      release: { if: "${{ always() && github.ref_name == 'main' && needs.version.result == 'success' && needs.version.outputs.version != '' && needs.tag.result == 'success' }}", needs: [ tag, version ], runs-on: ubuntu-latest, steps: [ { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } }, { uses: ./.github/actions/create-release, with: { version: "${{ needs.version.outputs.version }}", commitSha: "${{ inputs.commitSha || github.sha }}" } } ] },
+      test-cicd:
+        {
+          needs: changes,
+          if: "${{ needs.changes.outputs.cicd == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your cicd test logic
+              {
+                  name: Run cicd tests,
+                  run: 'echo "Running tests for cicd domain"
+
+                    echo "Replace this with your actual test commands"
+
+                    # Example: npm test -- --testPathPattern=cicd
+
+                    '
+                }
+            ]
+        },
+      test-mobile:
+        {
+          needs: changes,
+          if: "${{ needs.changes.outputs.mobile == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your mobile test logic
+              {
+                  name: Run mobile tests,
+                  run: 'echo "Running tests for mobile domain"
+
+                    echo "Replace this with your actual test commands"
+
+                    # Example: npm test -- --testPathPattern=mobile
+
+                    '
+                }
+            ]
+        },
+      deploy-mobile:
+        {
+          needs: [ version, changes ],
+          if: "${{ always() && needs.version.result == 'success' && needs.changes.outputs.mobile == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your mobile deployment logic
+              {
+                  name: Deploy mobile,
+                  run: 'echo "Deploying mobile with version ${{ needs.version.outputs.version }}"
+
+                    echo "Replace this with your actual deploy commands"
+
+                    # Example: npm run deploy:mobile
+
+                    '
+                }
+            ]
+        },
+      deploy-shared:
+        {
+          needs: [ version, changes ],
+          if: "${{ always() && needs.version.result == 'success' && needs.changes.outputs.shared == 'true' }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your shared deployment logic
+              {
+                  name: Deploy shared,
+                  run: 'echo "Deploying shared with version ${{ needs.version.outputs.version }}"
+
+                    echo "Replace this with your actual deploy commands"
+
+                    # Example: npm run deploy:shared
+
+                    '
+                }
+            ]
+        },
+      remote-test-mobile:
+        {
+          needs: [ deploy-mobile, changes ],
+          if: "${{ always() }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your mobile remote testing logic
+              {
+                  name: Test mobile remotely,
+                  if: "${{ needs.changes.outputs.mobile == 'true' && needs.deploy-mobile.result == 'success' }}",
+                  run: 'echo "Testing mobile remotely"
+
+                    echo "Replace this with your actual remote test commands"
+
+                    # Example: npm run test:remote:mobile
+
+                    '
+                }
+            ]
+        },
+      remote-test-shared:
+        {
+          needs: [ deploy-shared, changes ],
+          if: "${{ always() }}",
+          runs-on: ubuntu-latest,
+          steps:
+            [
+              { uses: actions/checkout@v4, with: { ref: "${{ inputs.commitSha || github.sha }}" } },
+              # TODO: Replace with your shared remote testing logic
+              {
+                  name: Test shared remotely,
+                  if: "${{ needs.changes.outputs.shared == 'true' && needs.deploy-shared.result == 'success' }}",
+                  run: 'echo "Testing shared remotely"
+
+                    echo "Replace this with your actual remote test commands"
+
+                    # Example: npm run test:remote:shared
+
+                    '
+                }
+            ]
+        }
+    },
+
+  on: { workflow_dispatch: { inputs: { version: { description: The version to deploy, required: false, type: string }, baseRef: { description: The base reference for comparison, required: false, type: string }, run_number: { description: The original run number from develop branch, required: false, type: string }, commitSha: { description: The exact commit SHA to checkout and test, required: false, type: string } } }, workflow_call: { inputs: { version: { description: The version to deploy, required: false, type: string }, baseRef: { description: The base reference for comparison, required: false, type: string }, run_number: { description: The original run number from develop branch, required: false, type: string }, commitSha: { description: The exact commit SHA to checkout and test, required: false, type: string } } }, push: { branches: [ develop, staging, main ] }, pull_request: { types: [ opened, synchronize, reopened ], branches: [ develop ] } }
+}

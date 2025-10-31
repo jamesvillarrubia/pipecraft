@@ -66,3 +66,8 @@ _expedition/
 
 # Debug examples
 examples/debug/
+
+# Allow .git directories in example test repos (they need to be functional git repos)
+# We track them completely in the parent repo as test data
+!examples/pipecraft-example-*/.git/
+!examples/pipecraft-example-*/.git/**
