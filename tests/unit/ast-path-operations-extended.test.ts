@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { parseDocument, stringify } from 'yaml'
+import { parseDocument, stringify, Scalar } from 'yaml'
 import {
   setPathValue,
   getPathValue,
@@ -27,8 +27,14 @@ describe('AST Path Operations - Extended Coverage', () => {
 
     it('should apply commentBefore to node', () => {
       setPathValue(doc.contents, 'jobs.test', { name: 'Test' }, doc, 'Test comment')
-      const jobNode = doc.contents.get('jobs').get('test')
-      expect(jobNode.commentBefore).toContain('Test comment')
+      const jobsMap = doc.contents.get('jobs')
+      // Find the pair with key 'test' and check the key's commentBefore
+      const pair = jobsMap.items.find((p: any) => {
+        const keyStr = p.key instanceof Scalar ? p.key.value : p.key
+        return keyStr === 'test'
+      })
+      expect(pair).toBeDefined()
+      expect((pair.key as any).commentBefore).toContain('Test comment')
     })
 
     it('should handle setting value on existing path', () => {
@@ -148,8 +154,14 @@ describe('AST Path Operations - Extended Coverage', () => {
         commentBefore: 'Job comment'
       }
       ensurePathAndApply(doc.contents, config, doc)
-      const jobNode = doc.contents.get('jobs').get('test')
-      expect(jobNode.commentBefore).toContain('Job comment')
+      const jobsMap = doc.contents.get('jobs')
+      // Find the pair with key 'test' and check the key's commentBefore
+      const pair = jobsMap.items.find((p: any) => {
+        const keyStr = p.key instanceof Scalar ? p.key.value : p.key
+        return keyStr === 'test'
+      })
+      expect(pair).toBeDefined()
+      expect((pair.key as any).commentBefore).toContain('Job comment')
     })
   })
 

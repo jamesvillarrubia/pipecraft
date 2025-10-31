@@ -60,10 +60,10 @@ describe('Nx Pipeline Template', () => {
     const workflow = parseYAML(result.yamlContent)
     expect(workflow.name).toBe('Pipeline')
     expect(workflow.jobs).toBeDefined()
-    expect(workflow.jobs['nx-ci']).toBeDefined()
+    expect(workflow.jobs['test-nx']).toBeDefined()
   })
 
-  it('should include nx-ci job with all Nx tasks', async () => {
+  it('should include test-nx job with all Nx tasks', async () => {
     const ctx = createContext({
       config: {
         branchFlow: ['develop', 'main'],
@@ -161,7 +161,7 @@ jobs:
 
     expect(result.mergeStatus).toBe('merged')
     expect(result.yamlContent).toContain('my-custom-job')
-    expect(result.yamlContent).toContain('nx-ci')
+    expect(result.yamlContent).toContain('test-nx')
   })
 
   it('should use custom output path when specified', async () => {
@@ -192,17 +192,17 @@ jobs:
     const result = await generate(ctx)
     const workflow = parseYAML(result.yamlContent)
 
-    const nxJob = workflow.jobs['nx-ci']
-    expect(nxJob.needs).toBe('changes')
+    const nxJob = workflow.jobs['test-nx']
+    expect(nxJob.needs).toEqual(['changes'])
   })
 
-  it('should include version job after nx-ci', async () => {
+  it('should include version job after test-nx', async () => {
     const ctx = createContext()
     const result = await generate(ctx)
     const workflow = parseYAML(result.yamlContent)
 
     const versionJob = workflow.jobs['version']
     expect(versionJob).toBeDefined()
-    expect(versionJob.needs).toContain('nx-ci')
+    expect(versionJob.needs).toContain('test-nx')
   })
 })

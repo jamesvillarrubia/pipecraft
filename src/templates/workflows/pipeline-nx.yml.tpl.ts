@@ -10,7 +10,7 @@
 
 import { PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import { PipecraftConfig } from '../../types/index.js'
-import { parseDocument, stringify } from 'yaml'
+import { parseDocument, stringify, Scalar } from 'yaml'
 import fs from 'fs'
 import { logger } from '../../utils/logger.js'
 import { PathOperationConfig, applyPathOperations, createValueFromString } from '../../utils/ast-path-operations.js'
@@ -74,12 +74,29 @@ function createTestNxJobOperation(ctx: NxPipelineContext): PathOperationConfig {
   const enableCache = nxConfig.enableCache !== false
   const targets = nxConfig.tasks.join(',')
 
+  // Build the job steps
+  const cacheStep = enableCache ? `
+      - name: Cache Nx
+        uses: actions/cache@v4
+        with:
+          path: .nx/cache
+          key: \${{ runner.os }}-nx-\${{ hashFiles('**/nx.json', '**/.nxignore', '**/package-lock.json', '**/pnpm-lock.yaml', '**/yarn.lock') }}
+          restore-keys: |
+            \${{ runner.os }}-nx-` : ''
+
+  // Build individual task steps
+  const taskSteps = nxConfig.tasks.map(target => `
+      - name: Run nx affected --target=${target}
+        run: |
+          npx nx affected --target=${target} --base=\${{ inputs.baseRef || '${nxConfig.baseRef || 'origin/main'}' }} || echo "No affected projects"`
+  ).join('')
+
   return {
     path: 'jobs.test-nx',
     operation: 'preserve', // User can customize this job!
     commentBefore: `
 =============================================================================
- Test-NX ( ✅ Customize these with your test logic)
+ TEST-NX ( ✅ Customize these with your test logic)
 =============================================================================
  This job runs all Nx tasks sequentially using \`nx affected\`.
  Nx handles dependency detection, caching, and parallel execution internally.
@@ -92,17 +109,22 @@ function createTestNxJobOperation(ctx: NxPipelineContext): PathOperationConfig {
         with:
           ref: \${{ inputs.commitSha || github.sha }}
           fetch-depth: \${{ env.FETCH_DEPTH_AFFECTED }}
-      - uses: ./.github/actions/run-nx-affected
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          targets: '${targets}'
-          baseRef: \${{ inputs.baseRef || '${nxConfig.baseRef || 'origin/main'}' }}
-          commitSha: \${{ inputs.commitSha || github.sha }}
-          packageManager: '${packageManager}'
-          enableCache: '${enableCache}'
-          reportResults: 'true'
           node-version: \${{ env.NODE_VERSION }}
-          pnpm-version: \${{ env.PNPM_VERSION }}
-          exclude: ''
+      ${packageManager === 'pnpm' ? `
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: \${{ env.PNPM_VERSION }}
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile` : packageManager === 'yarn' ? `
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile` : `
+      - name: Install dependencies
+        run: npm ci`}
+      ${cacheStep}${taskSteps}
   `)
   }
 }
@@ -133,10 +155,13 @@ export const generate = (ctx: NxPipelineContext) =>
           baseRef: nxConfig.baseRef || 'origin/main'
         }),
 
-        // Version calculation (simplified - only depends on changes)
+        // Nx test job (runs all Nx tasks)
+        createTestNxJobOperation(ctx),
+
+        // Version calculation (depends on test-nx and changes)
         createVersionJobOperation({
-          testJobNames: [], // No test job dependencies in new model
-          nxEnabled: false, // Simplified version job
+          testJobNames: [], // No domain test job dependencies
+          nxEnabled: true, // Depends on test-nx job
           baseRef: nxConfig.baseRef || 'origin/main'
         }),
 
@@ -151,13 +176,30 @@ export const generate = (ctx: NxPipelineContext) =>
       // Check if file exists
       const fileExists = fs.existsSync(filePath)
 
-      // Extract user-customized section from existing file if it exists
+      // Extract user-customized section and custom jobs from existing file if it exists
       let userSection: string | null = null
+      let customJobsFromExisting: any[] = []
       if (fileExists) {
         const existingContent = fs.readFileSync(filePath, 'utf8')
         userSection = extractUserSection(existingContent)
         if (userSection) {
           logger.verbose('📋 Found user-customized section between markers')
+        }
+        
+        // Also extract custom jobs (for force mode preservation)
+        const existingDoc = parseDocument(existingContent)
+        const existingJobs = existingDoc.contents && (existingDoc.contents as any).get ? (existingDoc.contents as any).get('jobs') : null
+        const managedJobs = new Set(['changes', 'version', 'tag', 'promote', 'release', 'test-nx'])
+        if (existingJobs && (existingJobs as any).items) {
+          for (const pair of (existingJobs as any).items) {
+            const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
+            if (!managedJobs.has(keyStr as string)) {
+              customJobsFromExisting.push(pair)
+            }
+          }
+        }
+        if (customJobsFromExisting.length > 0) {
+          logger.verbose(`📋 Found ${customJobsFromExisting.length} custom job(s) to preserve`)
         }
       }
 
@@ -213,33 +255,55 @@ export const generate = (ctx: NxPipelineContext) =>
           minContentWidth: 0
         })
 
-        // Insert user section after version job if it exists
-        if (userSection) {
+        // Insert user section and custom jobs after version job if they exist
+        const hasCustomContent = userSection || customJobsFromExisting.length > 0
+        if (hasCustomContent) {
           // Find the insertion point (after version job outputs)
-          const versionOutputsPattern = /^  version:\s*\n(?:.*\n)*?    outputs:\s*\n\s*version:.*$/m
+          const versionOutputsPattern = /^ {2}version:\s*\n(?:.*\n)*? {4}outputs:\s*\n\s*version:.*$/m
           const match = yamlContent.match(versionOutputsPattern)
 
           if (match) {
             const insertionIndex = match.index! + match[0].length
-            // userSection has been normalized (no leading/trailing newlines)
-            // Add blank lines explicitly for consistent formatting
-            const userSectionWithMarkers = `# <--START CUSTOM JOBS-->\n\n${userSection}\n\n  # <--END CUSTOM JOBS-->`
-            yamlContent = yamlContent.slice(0, insertionIndex) + '\n\n  ' + userSectionWithMarkers + '\n' + yamlContent.slice(insertionIndex)
-            logger.verbose('📋 Inserted user-customized section after version job')
+            let contentToInsert = ''
+            
+            // Add user section if exists
+            if (userSection) {
+              contentToInsert += `# <--START CUSTOM JOBS-->\n\n${userSection}\n\n  # <--END CUSTOM JOBS-->`
+            }
+            
+            // Add custom jobs if they exist (and weren't in user section)
+            if (customJobsFromExisting.length > 0 && !userSection) {
+              const customJobsYaml = customJobsFromExisting.map(pair => {
+                const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
+                const valueYaml = stringify(pair.value, { indent: 2 })
+                return `  ${keyStr}:\n${valueYaml.split('\n').map((line: string) => line ? '  ' + line : line).join('\n')}`
+              }).join('\n\n')
+              contentToInsert = `# <--START CUSTOM JOBS-->\n\n${customJobsYaml}\n\n  # <--END CUSTOM JOBS-->`
+            }
+            
+            if (contentToInsert) {
+              yamlContent = yamlContent.slice(0, insertionIndex) + '\n\n  ' + contentToInsert + '\n' + yamlContent.slice(insertionIndex)
+              logger.verbose('📋 Inserted user-customized section after version job')
+            }
           } else {
             logger.verbose('⚠️  Could not find version job outputs, appending user section at end')
-            const userSectionWithMarkers = `# <--START CUSTOM JOBS-->\n\n${userSection}\n\n  # <--END CUSTOM JOBS-->`
+            const contentToInsert = userSection || (customJobsFromExisting.length > 0 ? customJobsFromExisting.map(pair => {
+              const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
+              const valueYaml = stringify(pair.value, { indent: 2 })
+              return `  ${keyStr}:\n${valueYaml.split('\n').map((line: string) => line ? '  ' + line : line).join('\n')}`
+            }).join('\n\n') : '')
+            const userSectionWithMarkers = `# <--START CUSTOM JOBS-->\n\n${contentToInsert}\n\n  # <--END CUSTOM JOBS-->`
             yamlContent = yamlContent + '\n\n  ' + userSectionWithMarkers
           }
         } else if (!fileExists) {
           // For new files, add placeholder markers
-          const versionOutputsPattern = /^(  version:\s*\n(?:.*\n)*?    outputs:\s*\n\s*version:.*)$/m
+          const versionOutputsPattern = /^( {2}version:\s*\n(?:.*\n)*? {4}outputs:\s*\n\s*version:.*)$/m
           yamlContent = yamlContent.replace(versionOutputsPattern, '$1\n\n  # <--START CUSTOM JOBS-->\n\n  # <--END CUSTOM JOBS-->\n')
           logger.verbose('📝 Added placeholder user section markers')
         }
 
         const formattedContent = formatIfConditions(yamlContent)
-        const status = userSection ? 'merged' : (fileExists ? 'rebuilt' : 'created')
+        const status = hasCustomContent ? 'merged' : (fileExists ? 'rebuilt' : 'created')
         return { ...ctx, yamlContent: formattedContent, mergeStatus: status }
       }
 
@@ -248,20 +312,35 @@ export const generate = (ctx: NxPipelineContext) =>
       const doc = parseDocument(existingContent)
 
       // Get managed jobs (always overwritten)
-      const managedJobs = new Set(['changes', 'version', 'tag', 'promote', 'release'])
-      // test-nx is preserved (user can customize), so it's not in managed jobs
-
-      // Note: userJobs already extracted above from existingDoc, now get jobs from current doc
-
-      // Clear all jobs before applying operations to prevent duplicates
+      const managedJobs = new Set(['changes', 'version', 'tag', 'promote', 'release', 'test-nx'])
+      // test-nx is preserved (user can customize), but still managed if it doesn't exist
+      
+      // Extract custom jobs (not managed and not in user section between markers)
       const existingJobs = doc.contents && (doc.contents as any).get ? (doc.contents as any).get('jobs') : null
+      const customJobs: any[] = []
       if (existingJobs && (existingJobs as any).items) {
+        // Preserve jobs that are not managed
+        for (const pair of (existingJobs as any).items) {
+          const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
+          if (!managedJobs.has(keyStr as string)) {
+            customJobs.push(pair)
+          }
+        }
+        // Clear all jobs before applying operations to prevent duplicates
         ;(existingJobs as any).items = []
       }
 
       // Apply operations to update managed jobs
       if (doc.contents) {
         applyPathOperations(doc.contents as any, operations, doc)
+      }
+
+      // Reinsert custom jobs (preserved from existing pipeline)
+      if (existingJobs && customJobs.length > 0) {
+        for (const customPair of customJobs) {
+          existingJobs.add(customPair)
+        }
+        logger.verbose(`📋 Preserved ${customJobs.length} custom job(s) from existing pipeline`)
       }
 
       let yamlContent = stringify(doc, {
@@ -274,7 +353,7 @@ export const generate = (ctx: NxPipelineContext) =>
 
       // Insert user section after version job if it exists
       if (userSection) {
-        const versionOutputsPattern = /^  version:\s*\n(?:.*\n)*?    outputs:\s*\n\s*version:.*$/m
+        const versionOutputsPattern = /^ {2}version:\s*\n(?:.*\n)*? {4}outputs:\s*\n\s*version:.*$/m
         const match = yamlContent.match(versionOutputsPattern)
 
         if (match) {
@@ -284,8 +363,23 @@ export const generate = (ctx: NxPipelineContext) =>
           logger.verbose('📋 Inserted user-customized section after version job')
         }
       }
+      
+      // Also insert custom jobs that weren't in the user section
+      if (customJobs.length > 0 && !userSection) {
+        const versionOutputsPattern = /^ {2}version:\s*\n(?:.*\n)*? {4}outputs:\s*\n\s*version:.*$/m
+        const match = yamlContent.match(versionOutputsPattern)
+        if (match) {
+          const insertionIndex = match.index! + match[0].length
+          const customJobsYaml = customJobs.map(pair => {
+            const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
+            const valueYaml = stringify(pair.value, { indent: 2 })
+            return `  ${keyStr}:\n${valueYaml.split('\n').map((line: string) => line ? '  ' + line : line).join('\n')}`
+          }).join('\n\n')
+          yamlContent = yamlContent.slice(0, insertionIndex) + '\n\n  # <--START CUSTOM JOBS-->\n\n' + customJobsYaml + '\n\n  # <--END CUSTOM JOBS-->\n' + yamlContent.slice(insertionIndex)
+        }
+      }
 
-      const status = userSection ? 'merged' : 'updated'
+      const status = (userSection || customJobs.length > 0) ? 'merged' : 'updated'
       const formattedContent = formatIfConditions(yamlContent)
       return { ...ctx, yamlContent: formattedContent, mergeStatus: status }
     })

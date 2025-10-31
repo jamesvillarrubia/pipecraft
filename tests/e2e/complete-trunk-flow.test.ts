@@ -236,9 +236,11 @@ describe('Complete Trunk Flow E2E', () => {
           env: { ...process.env, CI: 'true' }
         })
         
-        // Add user comment
+        // Add a custom job with a comment (job-level comments should be preserved)
         let pipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
-        pipeline = `# USER COMMENT\n${pipeline}\n# END USER COMMENT`
+        // Find the custom jobs section and add a job with a comment
+        const customJobInsertion = `  # <--START CUSTOM JOBS-->\n\n  # Custom security scan job\n  security-scan:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Running security scan"\n\n  # <--END CUSTOM JOBS-->`
+        pipeline = pipeline.replace(/# <--START CUSTOM JOBS-->[\s\S]*?# <--END CUSTOM JOBS-->/, customJobInsertion)
         writeFileSync('.github/workflows/pipeline.yml', pipeline)
         
         // Regenerate
@@ -249,9 +251,11 @@ describe('Complete Trunk Flow E2E', () => {
           env: { ...process.env, CI: 'true' }
         })
         
-        // Check if comments preserved
+        // Check if job-level comment and custom job are preserved
         const newPipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
-        expect(newPipeline).toContain('USER COMMENT')
+        expect(newPipeline).toContain('Custom security scan job')
+        expect(newPipeline).toContain('security-scan:')
+        expect(newPipeline).toContain('Running security scan')
       })
     }, 30000)
   })
