@@ -1,2 +1,2 @@
 // Pulumi IaC
-export const bucket = 'demo-bucket';
+export const bucket = 'demo-bucket'

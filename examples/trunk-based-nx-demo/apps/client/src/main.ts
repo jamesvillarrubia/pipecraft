@@ -1,1 +1,1 @@
-console.log('client app started!');
+console.log('client app started!')

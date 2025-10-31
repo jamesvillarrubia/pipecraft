@@ -10,16 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Preparing for 1.0.0 Release
 
 #### Added
+
 - Multi-line formatting for GitHub Actions `if:` conditions for improved readability
 - Comprehensive YAML formatting utilities for workflow generation
 - Open-source release preparation documentation
 
 #### Changed
+
 - Improved template organization with shared operations architecture
 - Enhanced Nx integration with sequential pipeline strategy
 - Standardized template naming conventions
 
 #### Fixed
+
 - YAML formatting now respects multi-line `if:` conditions for better DX
 - Resolved hyphenated function names in Nx demo libraries
 
@@ -30,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 PipeCraft has been in active internal development through versions 0.0.1 to 0.28.2. Key features developed:
 
 #### Core Features
+
 - **Trunk-Based Development Flow**: Automated CI/CD pipeline generation for develop → staging → main workflows
 - **Domain-Based Change Detection**: Intelligent path-based and Nx-based change detection to run only affected jobs
 - **Semantic Versioning**: Automated version calculation using conventional commits
@@ -37,6 +41,7 @@ PipeCraft has been in active internal development through versions 0.0.1 to 0.28
 - **GitHub Actions Integration**: Complete workflow and composite action generation
 
 #### Advanced Capabilities
+
 - **Nx Monorepo Support**: Full integration with Nx workspaces including:
   - Automatic Nx detection and configuration
   - Project-to-domain mapping
@@ -47,6 +52,7 @@ PipeCraft has been in active internal development through versions 0.0.1 to 0.28
 - **Idempotent Generation**: Safe to regenerate workflows without losing manual changes
 
 #### CLI Commands
+
 - `pipecraft init` - Interactive project initialization
 - `pipecraft generate` - Workflow generation with smart merging
 - `pipecraft verify` - Configuration validation
@@ -54,6 +60,7 @@ PipeCraft has been in active internal development through versions 0.0.1 to 0.28
 - `pipecraft setup-github` - GitHub permissions configuration
 
 #### Composite Actions
+
 - `detect-changes` - Path-based change detection
 - `detect-changes-nx` - Nx-aware change detection
 - `calculate-version` - Semantic version calculation
@@ -64,6 +71,7 @@ PipeCraft has been in active internal development through versions 0.0.1 to 0.28
 - `manage-branch` - Branch management operations
 
 #### Testing & Validation
+
 - Comprehensive test suite (347+ tests)
 - Unit, integration, and E2E test coverage
 - Test coverage reporting and thresholds
@@ -71,6 +79,7 @@ PipeCraft has been in active internal development through versions 0.0.1 to 0.28
 - Example repositories for testing patterns
 
 #### Documentation
+
 - Complete Docusaurus documentation site at pipecraft.thecraftlab.dev
 - Getting started guides
 - Configuration reference
@@ -80,6 +89,7 @@ PipeCraft has been in active internal development through versions 0.0.1 to 0.28
 - Troubleshooting guides
 
 #### Developer Experience
+
 - Pre-flight checks with actionable suggestions
 - Verbose logging modes for debugging
 - Error handling with recovery instructions
@@ -89,24 +99,28 @@ PipeCraft has been in active internal development through versions 0.0.1 to 0.28
 ### Version History Highlights
 
 **v0.28.x Series** (Latest Pre-Release)
+
 - Enhanced Nx integration
 - Improved test coverage (>85% for core modules)
 - Refined template architecture
 - Better error messaging
 
 **v0.20.x - v0.27.x Series**
+
 - Nx monorepo support implementation
 - AST-based workflow merging
 - Custom job preservation
 - Enhanced change detection
 
 **v0.10.x - v0.19.x Series**
+
 - Core workflow generation refinement
 - Composite actions development
 - Version management improvements
 - Branch flow automation
 
 **v0.0.1 - v0.9.x Series**
+
 - Initial project architecture
 - Basic workflow generation
 - Domain-based testing concept
@@ -117,9 +131,11 @@ PipeCraft has been in active internal development through versions 0.0.1 to 0.28
 ## [1.0.0] - TBD
 
 ### Breaking Changes
+
 - None (initial stable release)
 
 ### Added
+
 - **First Stable Release**: Production-ready workflow generation for trunk-based development
 - **Full Feature Set**: Complete implementation of all core capabilities
 - **Open Source**: Public release under MIT license
@@ -128,6 +144,7 @@ PipeCraft has been in active internal development through versions 0.0.1 to 0.28
 - **Community**: Contributing guidelines and code of conduct
 
 ### Fixed
+
 - All known critical issues addressed
 - Test suite fully passing
 - Type safety improvements

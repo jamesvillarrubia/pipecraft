@@ -52,6 +52,7 @@ PipeCraft will ask you questions about your project:
 - **What domains exist in your codebase?** Choose from common patterns or enter custom domains
 
 For domains, you can select from:
+
 - **API + Web** (common monorepo pattern)
 - **Frontend + Backend** (full-stack pattern)
 - **Apps + Libs** (Nx-style monorepo)
@@ -121,9 +122,11 @@ pipecraft generate
 PipeCraft creates:
 
 **Main workflow:**
+
 - `.github/workflows/pipeline.yml` - Your main CI/CD pipeline
 
 **Reusable actions:**
+
 - `.github/actions/detect-changes/action.yml` - Path-based change detection
 - `.github/actions/calculate-version/action.yml` - Semantic version calculation
 - `.github/actions/create-tag/action.yml` - Git tag creation
@@ -133,13 +136,16 @@ PipeCraft creates:
 - `.github/actions/create-release/action.yml` - GitHub release creation
 
 **Additional workflows:**
+
 - `.github/workflows/enforce-pr-target.yml` - Ensures PRs target correct branches
 - `.github/workflows/pr-title-check.yml` - Validates conventional commit format
 
 **Configuration:**
+
 - `.release-it.cjs` - Release-it configuration for version management
 
 If you have an Nx workspace, PipeCraft also generates:
+
 - `.github/actions/detect-changes-nx/action.yml` - Nx-optimized change detection
 
 Open `.github/workflows/pipeline.yml` and you'll see a complete workflow with jobs for testing, versioning, and deploying both domains. The workflow is ready to use - you just need to add your specific test and deploy commands.
@@ -161,7 +167,7 @@ test-api:
       with:
         node-version: '24'
     - run: npm install
-    - run: npm test -- packages/api  # Your test command here
+    - run: npm test -- packages/api # Your test command here
 ```
 
 The generated jobs start with TODO placeholders that you replace with your actual commands. PipeCraft uses `operation: 'preserve'` for domain jobs, so your customizations survive regeneration. Only structural changes (like conditions and dependencies) are updated when you modify your configuration.
@@ -177,6 +183,7 @@ git push
 ```
 
 The workflow will run on your next push. Open GitHub Actions to watch it execute. You'll see it:
+
 1. Detect which domains changed (both, in this case, since it's the first run)
 2. Run tests for changed domains
 3. Calculate a version number from your commit message (since we used `feat:`)
@@ -321,7 +328,7 @@ test-api:
 **How preservation works:**
 
 - **Managed jobs** (always regenerated): `changes`, `version`, `tag`, `promote`, `release`
-- **Domain jobs** (preserved when customized): `test-*`, `deploy-*`, `remote-test-*` 
+- **Domain jobs** (preserved when customized): `test-*`, `deploy-*`, `remote-test-*`
 - **User jobs** (always preserved): Any job name not matching PipeCraft patterns
 
 PipeCraft uses **AST-based intelligent merging** that preserves your customizations by job name. When you edit a `test-api` job, your changes survive regeneration. When you add a custom `database-migrations` job, it's automatically preserved. Comments and formatting are maintained through precise YAML parsing.

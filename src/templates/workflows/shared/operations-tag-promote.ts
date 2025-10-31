@@ -86,7 +86,9 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
 `,
       value: createValueFromString(`
     needs: [ version, tag ]
-    if: \${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && (${buildPromotableBranchesCondition(validBranchFlow)}) }}
+    if: \${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && (${buildPromotableBranchesCondition(
+      validBranchFlow
+    )}) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -115,7 +117,9 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
 `,
       value: createValueFromString(`
     needs: [ tag, version ]
-    if: \${{ always() && github.ref_name == '${validBranchFlow[validBranchFlow.length - 1]}' && needs.version.result == 'success' && needs.version.outputs.version != '' && needs.tag.result == 'success' }}
+    if: \${{ always() && github.ref_name == '${
+      validBranchFlow[validBranchFlow.length - 1]
+    }' && needs.version.result == 'success' && needs.version.outputs.version != '' && needs.tag.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -148,5 +152,7 @@ function buildNextBranchExpression(branchFlow: string[]): string {
   if (branchFlow.length === 2) return `'${branchFlow[1]}'`
 
   // For 3+ branches: develop → staging, staging → main
-  return `github.ref_name == '${branchFlow[0]}' && '${branchFlow[1]}' || '${branchFlow[branchFlow.length - 1]}'`
+  return `github.ref_name == '${branchFlow[0]}' && '${branchFlow[1]}' || '${
+    branchFlow[branchFlow.length - 1]
+  }'`
 }

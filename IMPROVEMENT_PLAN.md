@@ -11,12 +11,14 @@
 The expedition project is a **production full-stack application** using PipeCraft successfully. Analysis reveals several valuable patterns that should be generalized and incorporated into PipeCraft core:
 
 **Core Philosophy**:
+
 - **Environment variables over config files** - users can tune without regeneration
 - **Document patterns over enforce opinions** - show how expedition does it, don't force it
 - **Configuration over hardcoding** - make runtime versions, depths, etc. tunable
 - **Provider independence** - design for GitHub + GitLab from day one
 
 **Key Improvements Identified**:
+
 1. Environment-based configuration (fetch-depth, versions)
 2. Workflow traceability (run_number propagation)
 3. Explicit gate patterns (test-gate, smoke-test-gate)
@@ -27,6 +29,7 @@ The expedition project is a **production full-stack application** using PipeCraf
 ## About the Expedition Project
 
 **What it is**:
+
 - Full-stack Nx monorepo (server, client, CLI apps)
 - Multiple environments: develop → staging → main → load
 - Real infrastructure: AWS ECS, S3, Pulumi, databases
@@ -34,12 +37,14 @@ The expedition project is a **production full-stack application** using PipeCraf
 - Complete deployment pipeline with smoke tests
 
 **Why it matters**:
+
 - Proves PipeCraft works for complex production use
 - Identifies pain points from real-world usage
 - Shows patterns worth teaching (gates, excludes, traceability)
 - Validates core value proposition: skip debugging cycles
 
 **Scale**:
+
 - ~20 Nx projects (apps + libraries)
 - Multiple domains (cicd, docs, infra, migrations)
 - Custom actions for deployment, testing, builds
@@ -70,6 +75,7 @@ Each improvement is evaluated against:
 ### 1.1 Pipeline Environment Variables
 
 **Problem**:
+
 - Users must regenerate workflows to change Node versions
 - Fetch depth is hardcoded, can't tune for performance
 - No single source of truth for runtime configuration
@@ -99,11 +105,13 @@ on:
 ```
 
 **Generalizability**: ✅ **High**
+
 - GitLab CI equivalent: top-level variables
 - Works for any CI provider with env vars
 - Common pattern in CI/CD configuration
 
 **Benefits**:
+
 - ✅ Edit directly in workflow file (no regeneration)
 - ✅ All config visible upfront
 - ✅ Well-documented with comments
@@ -113,6 +121,7 @@ on:
 **Complexity**: Low (template adds env block)
 
 **Implementation**:
+
 - Update `shared/operations-header.ts` to generate env block
 - Add after `run-name`, before `on` triggers
 - Include helpful comments for each variable
@@ -148,11 +157,13 @@ on:
 **Expedition Evidence**: Uses fetch-depth: 100 for Nx jobs (optimized)
 
 **Generalizability**: ✅ **High**
+
 - GitLab: `GIT_DEPTH` variable
 - Performance win for large repos
 - Configurable per use case
 
 **Benefits**:
+
 - ✅ Faster checkouts (100 commits vs entire history)
 - ✅ User can tune based on branch strategy
 - ✅ Accurate where needed (version needs all tags)
@@ -161,6 +172,7 @@ on:
 **Complexity**: Low
 
 **Implementation**:
+
 - Update `shared/operations-changes.ts` (use FETCH_DEPTH_AFFECTED)
 - Update `shared/operations-version.ts` (use FETCH_DEPTH_VERSIONING)
 - Update `shared/operations-tag-promote.ts` (use FETCH_DEPTH_VERSIONING)
@@ -171,6 +183,7 @@ on:
 ### 1.3 Runtime Version Inputs for Actions
 
 **Problem**:
+
 - Node version hardcoded in action templates (inconsistent across actions)
 - Users can't override without editing generated actions
 - Expedition has Node 20 in some places, 24 in others (inconsistent)
@@ -220,11 +233,13 @@ runs:
 ```
 
 **Generalizability**: ✅ **High**
+
 - Actions remain reusable (have defaults)
 - Pipeline controls versions centrally
 - GitLab: pass variables to included jobs
 
 **Benefits**:
+
 - ✅ Single source of truth (env vars)
 - ✅ Actions work standalone (have defaults)
 - ✅ Easy to upgrade: change one env var
@@ -233,6 +248,7 @@ runs:
 **Complexity**: Medium (update 3-4 action templates)
 
 **Implementation**:
+
 - Update `detect-changes.yml.tpl.ts` (add version inputs)
 - Update `run-nx-affected.yml.tpl.ts` (add version inputs)
 - Update `calculate-version.yml.tpl.ts` (add version inputs)
@@ -245,6 +261,7 @@ runs:
 ### 2.1 run_number Propagation for Traceability
 
 **Problem**:
+
 - When promote-branch triggers staging workflow, can't trace back to original develop run
 - Debugging: "Which develop build triggered this staging failure?"
 - Lost context across workflow boundaries
@@ -278,28 +295,32 @@ on:
 ```
 
 **In run-name**:
+
 ```yaml
 run-name: "${{ github.ref_name }} #${{ inputs.run_number || github.run_number }}${{ inputs.version && format(' - {0}', inputs.version) || '' }}"
 ```
 
 **In promote-branch action**:
+
 ```yaml
 gh workflow run pipeline.yml \
-  --ref ${{ inputs.nextBranch }} \
-  --field version=${{ inputs.version }} \
-  --field commitSha=${{ github.sha }} \
-  --field baseRef=${{ inputs.currentBranch }} \
-  --field run_number=${{ inputs.runNumber || github.run_number }}
+--ref ${{ inputs.nextBranch }} \
+--field version=${{ inputs.version }} \
+--field commitSha=${{ github.sha }} \
+--field baseRef=${{ inputs.currentBranch }} \
+--field run_number=${{ inputs.runNumber || github.run_number }}
 ```
 
 **Expedition Evidence**: Uses this pattern, shows "staging #45 (from develop #123)"
 
 **Generalizability**: ✅ **High**
+
 - GitLab: pass variables through pipeline triggers
 - Common need: trace deployments to source
 - Metadata propagation pattern
 
 **Benefits**:
+
 - ✅ Clear lineage: staging run links back to develop
 - ✅ Easier debugging: find original logs
 - ✅ Audit trail: know what triggered what
@@ -308,6 +329,7 @@ gh workflow run pipeline.yml \
 **Complexity**: Low (metadata passing)
 
 **Implementation**:
+
 - Update `shared/operations-header.ts` (add run_number input)
 - Update run-name expression to show it
 - Update `promote-branch.yml.tpl.ts` (pass run_number)
@@ -317,6 +339,7 @@ gh workflow run pipeline.yml \
 ### 2.2 Explicit Test Gate Pattern
 
 **Problem**:
+
 - GitHub Actions allows downstream jobs to run if tests are skipped
 - No built-in "all tests must pass" gate
 - Users want: "don't build/deploy if any test failed"
@@ -324,46 +347,48 @@ gh workflow run pipeline.yml \
 **Solution**: Generate test-gate job as example in custom section
 
 ```yaml
-  #=============================================================================
-  # TEST GATE (✅ Recommended Pattern)
-  #=============================================================================
-  # This job ensures all tests pass before proceeding to builds and deployments.
-  # It succeeds if:
-  #   1. No tests failed (any failure blocks everything downstream)
-  #   2. At least one test ran successfully (prevents accidental "all skipped" passes)
-  #
-  # Customize:
-  # - Add all your test jobs to the 'needs' array below
-  # - Add to conditionals for both "no failures" and "at least one success"
-  # - Make downstream jobs (build, deploy) depend on this gate
+#=============================================================================
+# TEST GATE (✅ Recommended Pattern)
+#=============================================================================
+# This job ensures all tests pass before proceeding to builds and deployments.
+# It succeeds if:
+#   1. No tests failed (any failure blocks everything downstream)
+#   2. At least one test ran successfully (prevents accidental "all skipped" passes)
+#
+# Customize:
+# - Add all your test jobs to the 'needs' array below
+# - Add to conditionals for both "no failures" and "at least one success"
+# - Make downstream jobs (build, deploy) depend on this gate
 
-  test-gate:
-    needs: [ test-cicd, test-docs, test-infra ]  # TODO: Add all your test jobs
-    if: ${{
-          always() && (
-            needs.test-cicd.result != 'failure' &&
-            needs.test-docs.result != 'failure' &&
-            needs.test-infra.result != 'failure'
-          ) && (
-            needs.test-cicd.result == 'success' ||
-            needs.test-docs.result == 'success' ||
-            needs.test-infra.result == 'success'
-          )
-        }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Tests passed
-        run: echo "✅ All tests passed or were skipped. Ready for deployment."
+test-gate:
+  needs: [test-cicd, test-docs, test-infra] # TODO: Add all your test jobs
+  if: ${{
+    always() && (
+    needs.test-cicd.result != 'failure' &&
+    needs.test-docs.result != 'failure' &&
+    needs.test-infra.result != 'failure'
+    ) && (
+    needs.test-cicd.result == 'success' ||
+    needs.test-docs.result == 'success' ||
+    needs.test-infra.result == 'success'
+    )
+    }}
+  runs-on: ubuntu-latest
+  steps:
+    - name: Tests passed
+      run: echo "✅ All tests passed or were skipped. Ready for deployment."
 ```
 
 **Expedition Evidence**: Uses this exact pattern, also has smoke-test-gate
 
 **Generalizability**: ✅ **High**
+
 - GitLab: `needs` with rules
 - Common pattern in trunk-based development
 - Prevents broken deployments
 
 **Benefits**:
+
 - ✅ Explicit intent: gate is obvious in workflow
 - ✅ Prevents errors: no deploying broken code
 - ✅ Pattern reusable: test-gate, smoke-test-gate, etc.
@@ -372,6 +397,7 @@ gh workflow run pipeline.yml \
 **Complexity**: Low (conditional logic, well-commented)
 
 **Implementation**:
+
 - Update custom section template in `pipeline.yml.tpl.ts`
 - Generate test-gate as commented example
 - Document pattern in "Workflow Patterns" guide
@@ -382,6 +408,7 @@ gh workflow run pipeline.yml \
 ### 2.3 Nx Exclude Parameter
 
 **Problem**:
+
 - Some Nx projects are broken, deprecated, or not ready for CI
 - Without exclude, entire affected run fails
 - Need incremental CI adoption
@@ -399,6 +426,7 @@ inputs:
 ```
 
 **In the action script**:
+
 ```bash
 # Build exclude flag if provided
 EXCLUDE_FLAG=""
@@ -412,22 +440,25 @@ $NX_CMD affected --target=$target --base=$BASE --head=$HEAD $EXCLUDE_FLAG
 ```
 
 **In pipeline test-nx job**:
+
 ```yaml
 - uses: ./.github/actions/run-nx-affected
   with:
     targets: 'lint,test,build'
-    exclude: ''  # TODO: Add excluded projects (comma-separated)
+    exclude: '' # TODO: Add excluded projects (comma-separated)
     # Example: exclude: '@myapp/legacy,@myapp/broken-tests'
 ```
 
 **Expedition Evidence**: Excludes 15+ projects during migration
 
 **Generalizability**: ✅ **High**
+
 - Nx-specific but aligns with Nx CLI
 - Common need: gradual CI adoption
 - Prevents "all or nothing" problem
 
 **Benefits**:
+
 - ✅ Incremental migration: exclude broken tests temporarily
 - ✅ Flexibility: keep deprecated code without CI burden
 - ✅ Clear documentation: excluded projects listed in workflow
@@ -436,6 +467,7 @@ $NX_CMD affected --target=$target --base=$BASE --head=$HEAD $EXCLUDE_FLAG
 **Complexity**: Low (pass-through to Nx)
 
 **Implementation**:
+
 - Update `run-nx-affected.yml.tpl.ts` (add exclude input)
 - Add exclude handling in script
 - Update `pipeline-nx.yml.tpl.ts` (add exclude with TODO comment)
@@ -446,6 +478,7 @@ $NX_CMD affected --target=$target --base=$BASE --head=$HEAD $EXCLUDE_FLAG
 ### 2.4 Verbose Debugging for Nx
 
 **Problem**:
+
 - "Why isn't Nx detecting my project?"
 - Hard to debug affected detection issues
 - Need visibility into comparison base, commit range
@@ -463,6 +496,7 @@ inputs:
 ```
 
 **Conditional debugging step**:
+
 ```yaml
 - name: Show Nx Comparison Info
   if: inputs.verbose == 'true'
@@ -493,11 +527,13 @@ inputs:
 **Expedition Evidence**: Has this detailed debugging output
 
 **Generalizability**: ⚠️ **Medium**
+
 - Very helpful for Nx users
 - Adds log noise if always on
 - Nx-specific (but pattern generalizable)
 
 **Benefits**:
+
 - ✅ Debug affected detection issues
 - ✅ Verify base ref and commit range
 - ✅ See what Nx is actually comparing
@@ -506,6 +542,7 @@ inputs:
 **Complexity**: Low (conditional logging)
 
 **Implementation**:
+
 - Update `run-nx-affected.yml.tpl.ts` (add verbose input)
 - Add conditional debugging step
 - Document when to enable (troubleshooting guide)
@@ -519,6 +556,7 @@ inputs:
 Create comprehensive guide in docs:
 
 **Topics**:
+
 - What each env var controls
 - When to change values
 - Performance tradeoffs (fetch-depth)
@@ -534,6 +572,7 @@ Create comprehensive guide in docs:
 Document patterns expedition demonstrates:
 
 **Patterns**:
+
 1. **Test Gate** - prevent deployments on test failure
 2. **Smoke Test Gate** - verify deployments before promoting
 3. **Build Artifacts** - separate build from deploy
@@ -549,6 +588,7 @@ Document patterns expedition demonstrates:
 Link to expedition project as example:
 
 **Content**:
+
 - "Real-world production example"
 - Link to `_expedition/.github/` directory
 - Highlight custom actions (build, deploy, smoke test)
@@ -562,6 +602,7 @@ Link to expedition project as example:
 ### 3.4 Nx Troubleshooting Guide
 
 **Topics**:
+
 - Why Nx isn't detecting expected projects
 - How to use verbose logging
 - Fetch depth issues (shallow history)
@@ -579,11 +620,13 @@ Link to expedition project as example:
 **What expedition has**: Posts Nx test results as PR comments
 
 **Why defer**:
+
 - GitHub-specific (doesn't generalize to GitLab)
 - Requires provider-specific code
 - Wait for plugin/hook system
 
 **Future approach**:
+
 - Design plugin architecture
 - GitHub plugin provides PR comments
 - GitLab plugin provides MR notes
@@ -594,6 +637,7 @@ Link to expedition project as example:
 ### 4.2 Provider Abstraction Layer
 
 **Research needed**:
+
 - How to express workflows in provider-agnostic way?
 - Common primitives across GitHub/GitLab/etc.
 - Template generation per provider
@@ -610,6 +654,7 @@ Link to expedition project as example:
 **Expedition uses**: Node 24 in some actions
 
 **Why reject**:
+
 - Node 24 isn't even released yet
 - Not generalizable (their specific need)
 - PipeCraft should default to LTS (Node 20)
@@ -622,6 +667,7 @@ Link to expedition project as example:
 **Improvement plan suggests**: Replace corepack with pnpm/action-setup@v4
 
 **Why reject**:
+
 - Current approach (corepack) works fine
 - corepack is built into Node, simpler
 - Less dependencies = better
@@ -636,6 +682,7 @@ Link to expedition project as example:
 **Expedition has**: lint (Biome), typecheck, build-client actions
 
 **Why reject**:
+
 - Too opinionated (forces Biome, specific tools)
 - Violates "fully customizable" principle
 - Application-specific, not template-worthy
@@ -647,6 +694,7 @@ Link to expedition project as example:
 ## Implementation Priorities
 
 ### P0: Foundation (Week 1)
+
 - [ ] Environment variables section generation
 - [ ] Update checkout steps to use fetch-depth env vars
 - [ ] Add version inputs to action templates
@@ -660,6 +708,7 @@ Link to expedition project as example:
 ---
 
 ### P1: Intelligence (Week 2)
+
 - [ ] Add run_number input and propagation
 - [ ] Generate test-gate example in custom section
 - [ ] Add exclude parameter to Nx
@@ -673,6 +722,7 @@ Link to expedition project as example:
 ---
 
 ### P2: Documentation (Week 3)
+
 - [ ] Environment variables reference
 - [ ] Workflow patterns guide
 - [ ] Expedition project example
@@ -686,6 +736,7 @@ Link to expedition project as example:
 ---
 
 ### P3: Polish & Release (Week 4)
+
 - [ ] E2E testing with example repos
 - [ ] Test with expedition project
 - [ ] Update CHANGELOG
@@ -707,8 +758,8 @@ describe('Environment Variables', () => {
   it('generates env block with defaults', () => {
     const ops = createHeaderOperations({ branchFlow: ['develop', 'main'] })
     const envOp = ops.find(op => op.path === 'env')
-    expect(envOp.value).toContain('FETCH_DEPTH_AFFECTED: \'100\'')
-    expect(envOp.value).toContain('NODE_VERSION: \'20\'')
+    expect(envOp.value).toContain("FETCH_DEPTH_AFFECTED: '100'")
+    expect(envOp.value).toContain("NODE_VERSION: '20'")
   })
 })
 
@@ -779,21 +830,25 @@ describe('Full Pipeline Generation', () => {
 ### E2E Tests
 
 1. **Environment Variables**
+
    - Generate workflow, modify env vars
    - Run workflow, verify checkout uses modified values
    - Confirm no regeneration needed
 
 2. **run_number Propagation**
+
    - Push to develop (run #100)
    - Verify promote triggers staging
    - Check staging run name shows "staging #45 (from #100)"
 
 3. **Test Gate**
+
    - Create failing test
    - Verify test-gate fails
    - Verify build/deploy don't run
 
 4. **Nx Exclude**
+
    - Add projects to exclude list
    - Run test-nx job
    - Verify excluded projects don't run
@@ -808,11 +863,13 @@ describe('Full Pipeline Generation', () => {
 ## Backward Compatibility
 
 ### For New Users
+
 - Get all new features by default
 - Well-documented env vars section
 - test-gate example to learn from
 
 ### For Existing Users
+
 - Run `pipecraft generate`
 - Existing workflows preserved (AST merging)
 - New env vars section added (doesn't break anything)
@@ -820,7 +877,9 @@ describe('Full Pipeline Generation', () => {
 - Existing custom jobs untouched
 
 ### Breaking Changes
+
 **None** - all changes are additive:
+
 - Env vars are new (don't affect existing workflows)
 - Inputs have defaults (actions work without them)
 - test-gate is example (user opts in)
@@ -834,28 +893,33 @@ describe('Full Pipeline Generation', () => {
 ### Updating from Previous Versions
 
 1. **Backup your customizations**
+
    ```bash
    git diff .github/workflows/pipeline.yml > my-customizations.patch
    ```
 
 2. **Run generate**
+
    ```bash
    pipecraft generate
    ```
 
 3. **Review new sections**
+
    - Check `env:` block at top of workflow
    - Review test-gate example in custom jobs section
    - Verify your customizations are preserved
 
 4. **Tune configuration**
+
    ```yaml
    env:
-     FETCH_DEPTH_AFFECTED: '100'  # Adjust for your repo size
-     NODE_VERSION: '24'           # Match your project
+     FETCH_DEPTH_AFFECTED: '100' # Adjust for your repo size
+     NODE_VERSION: '24' # Match your project
    ```
 
 5. **Optional: Add test-gate**
+
    - Copy test-gate example
    - Update needs array with your test jobs
    - Make build/deploy jobs depend on test-gate
@@ -876,18 +940,22 @@ describe('Full Pipeline Generation', () => {
 ### How We'll Know This Worked
 
 1. **Users edit env vars, not config files**
+
    - GitHub discussions: "How do I change Node version?" → "Edit env var"
    - No issues about "regeneration doesn't pick up my changes"
 
 2. **Clearer debugging**
+
    - Fewer issues: "Why isn't Nx detecting my project?"
    - Users use verbose logging to self-diagnose
 
 3. **Better deployment safety**
+
    - Users adopt test-gate pattern
    - Fewer "oops, deployed broken code" reports
 
 4. **Incremental CI adoption**
+
    - Users use exclude for gradual migration
    - No more "all or nothing" problems
 
@@ -900,19 +968,25 @@ describe('Full Pipeline Generation', () => {
 ## Risks & Mitigation
 
 ### Risk: Users confused by env vars
+
 **Mitigation**:
+
 - Excellent inline documentation
 - Configuration reference guide
 - Examples for common scenarios
 
 ### Risk: Fetch-depth too shallow
+
 **Mitigation**:
+
 - Conservative default (100)
 - Clear documentation on when to increase
 - Verbose logging shows what's being compared
 
 ### Risk: Breaking existing workflows
+
 **Mitigation**:
+
 - All changes are additive
 - Extensive testing with real repos
 - Beta release for feedback
@@ -924,11 +998,13 @@ describe('Full Pipeline Generation', () => {
 ### For Discussion
 
 1. **Default fetch-depth**: 100 vs 50 vs 0?
+
    - 100 = good balance for most workflows
    - 0 = safest but slower
    - Make it configurable and document tradeoffs
 
 2. **Should test-gate be auto-generated or example?**
+
    - Proposal: Generate as commented example (user opts in)
    - Rationale: Too opinionated to force on everyone
 
@@ -940,18 +1016,18 @@ describe('Full Pipeline Generation', () => {
 
 ## Appendix: File Changes Matrix
 
-| File | Change | Priority | Breaking |
-|------|--------|----------|----------|
-| `shared/operations-header.ts` | Add env vars generation | P0 | No |
-| `shared/operations-changes.ts` | Use FETCH_DEPTH_AFFECTED | P0 | No |
-| `shared/operations-version.ts` | Use FETCH_DEPTH_VERSIONING | P0 | No |
-| `shared/operations-tag-promote.ts` | Use FETCH_DEPTH_VERSIONING | P0 | No |
-| `pipeline.yml.tpl.ts` | test-gate example | P1 | No |
-| `pipeline-nx.yml.tpl.ts` | Fetch-depth, version inputs | P0 | No |
-| `detect-changes.yml.tpl.ts` | Version inputs | P0 | No |
-| `run-nx-affected.yml.tpl.ts` | Version inputs, exclude, verbose | P1 | No |
-| `calculate-version.yml.tpl.ts` | Version input | P0 | No |
-| `promote-branch.yml.tpl.ts` | Pass run_number | P1 | No |
+| File                               | Change                           | Priority | Breaking |
+| ---------------------------------- | -------------------------------- | -------- | -------- |
+| `shared/operations-header.ts`      | Add env vars generation          | P0       | No       |
+| `shared/operations-changes.ts`     | Use FETCH_DEPTH_AFFECTED         | P0       | No       |
+| `shared/operations-version.ts`     | Use FETCH_DEPTH_VERSIONING       | P0       | No       |
+| `shared/operations-tag-promote.ts` | Use FETCH_DEPTH_VERSIONING       | P0       | No       |
+| `pipeline.yml.tpl.ts`              | test-gate example                | P1       | No       |
+| `pipeline-nx.yml.tpl.ts`           | Fetch-depth, version inputs      | P0       | No       |
+| `detect-changes.yml.tpl.ts`        | Version inputs                   | P0       | No       |
+| `run-nx-affected.yml.tpl.ts`       | Version inputs, exclude, verbose | P1       | No       |
+| `calculate-version.yml.tpl.ts`     | Version input                    | P0       | No       |
+| `promote-branch.yml.tpl.ts`        | Pass run_number                  | P1       | No       |
 
 ---
 
@@ -960,12 +1036,14 @@ describe('Full Pipeline Generation', () => {
 The expedition project validates PipeCraft's core value proposition and reveals patterns worth generalizing:
 
 **Core Wins**:
+
 1. **Environment-based config** - tune without regeneration
 2. **Workflow intelligence** - traceability, gates, excludes
 3. **Better debugging** - verbose mode, clear fetch-depth strategy
 4. **Documented patterns** - show expedition's approach, don't force it
 
 **Philosophy**:
+
 - Configuration over hardcoding
 - Documentation over enforcement
 - User control over magic
@@ -977,4 +1055,4 @@ The expedition project validates PipeCraft's core value proposition and reveals 
 
 ---
 
-*This plan will be updated as implementation progresses and user feedback is gathered.*
+_This plan will be updated as implementation progresses and user feedback is gathered._

@@ -1,6 +1,6 @@
 [**pipecraft v0.0.0-releaseit**](../README.md)
 
-***
+---
 
 [pipecraft](../README.md) / utils/ast-path-operations
 
@@ -14,7 +14,7 @@ Defined in: [utils/ast-path-operations.ts:127](https://github.com/jamesvillarrub
 
 Configuration for a single path operation
 
- PathOperationConfig
+PathOperationConfig
 
 #### Example
 
@@ -105,7 +105,7 @@ Defined in: [utils/ast-path-operations.ts:93](https://github.com/jamesvillarrubi
 
 Available operation types for path-based AST manipulation
 
-***
+---
 
 ### PathValue
 
@@ -173,7 +173,7 @@ const operations: PathOperationConfig[] = [
 applyPathOperations(doc, operations)
 ```
 
-***
+---
 
 ### createValueFromArray()
 
@@ -205,7 +205,7 @@ The converted YAML sequence node
 const node = createValueFromArray(['develop', 'staging', 'main'])
 ```
 
-***
+---
 
 ### createValueFromObject()
 
@@ -245,7 +245,7 @@ const node = createValueFromObject({
 })
 ```
 
-***
+---
 
 ### createValueFromString()
 
@@ -293,7 +293,7 @@ const node = createValueFromString(`
 `)
 ```
 
-***
+---
 
 ### ensurePathAndApply()
 
@@ -342,7 +342,7 @@ const config: PathOperationConfig = {
 ensurePathAndApply(doc, config)
 ```
 
-***
+---
 
 ### getPathValue()
 
@@ -383,7 +383,7 @@ const value = getPathValue(doc.contents, 'jobs.changes.runs-on')
 console.log(value) // Scalar('ubuntu-latest')
 ```
 
-***
+---
 
 ### setPathValue()
 

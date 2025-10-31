@@ -1,58 +1,58 @@
 /**
  * Iterative GitHub Actions Debugging System
- * 
+ *
  * This module provides an interactive debugging system that can be run repeatedly
  * to iteratively fix workflow issues. It maintains state between runs and provides
  * intelligent suggestions for the next debugging steps.
  */
 
-import { execSync } from 'child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
-import { 
+import { execSync } from 'child_process'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { join } from 'path'
+import {
   type DebugAnalysis,
   GitHubWorkflowDebugger,
-  type LogAnalysis, 
-  WorkflowDebugOrchestrator 
-} from './debug-utils';
+  type LogAnalysis,
+  WorkflowDebugOrchestrator
+} from './debug-utils'
 
 export interface DebugSession {
-  sessionId: string;
-  workflowName: string;
-  branch?: string;
-  startTime: string;
-  lastRunId?: number;
-  totalRuns: number;
-  fixedIssues: string[];
-  remainingIssues: string[];
-  nextSteps: string[];
-  history: DebugHistoryEntry[];
+  sessionId: string
+  workflowName: string
+  branch?: string
+  startTime: string
+  lastRunId?: number
+  totalRuns: number
+  fixedIssues: string[]
+  remainingIssues: string[]
+  nextSteps: string[]
+  history: DebugHistoryEntry[]
 }
 
 export interface DebugHistoryEntry {
-  timestamp: string;
-  runId: number;
-  issues: string[];
-  actions: string[];
-  outcome: 'success' | 'failure' | 'partial';
+  timestamp: string
+  runId: number
+  issues: string[]
+  actions: string[]
+  outcome: 'success' | 'failure' | 'partial'
 }
 
 export interface DebuggingPlan {
-  priority: 'high' | 'medium' | 'low';
-  issue: string;
-  suggestedActions: string[];
-  estimatedTime: string;
-  dependencies: string[];
+  priority: 'high' | 'medium' | 'low'
+  issue: string
+  suggestedActions: string[]
+  estimatedTime: string
+  dependencies: string[]
 }
 
 /**
  * Interactive debugging orchestrator that maintains state between runs
  */
 export class IterativeDebugger {
-  private session: DebugSession;
-  private debugger: GitHubWorkflowDebugger;
-  private sessionFile: string;
-  private outputDir: string;
+  private session: DebugSession
+  private debugger: GitHubWorkflowDebugger
+  private sessionFile: string
+  private outputDir: string
 
   constructor(
     token: string,
@@ -62,12 +62,12 @@ export class IterativeDebugger {
     branch?: string,
     outputDir: string = './debug-sessions'
   ) {
-    this.iterativeDebugger = new GitHubWorkflowDebugger(token, owner, repo);
-    this.outputDir = outputDir;
-    this.sessionFile = join(outputDir, `session-${workflowName}-${Date.now()}.json`);
-    
+    this.iterativeDebugger = new GitHubWorkflowDebugger(token, owner, repo)
+    this.outputDir = outputDir
+    this.sessionFile = join(outputDir, `session-${workflowName}-${Date.now()}.json`)
+
     // Initialize or load session
-    this.session = this.initializeSession(workflowName, branch);
+    this.session = this.initializeSession(workflowName, branch)
   }
 
   /**
@@ -76,11 +76,11 @@ export class IterativeDebugger {
   private initializeSession(workflowName: string, branch?: string): DebugSession {
     if (existsSync(this.sessionFile)) {
       try {
-        const sessionData = JSON.parse(readFileSync(this.sessionFile, 'utf-8'));
-        console.log(`📂 Loaded existing session: ${sessionData.sessionId}`);
-        return sessionData;
+        const sessionData = JSON.parse(readFileSync(this.sessionFile, 'utf-8'))
+        console.log(`📂 Loaded existing session: ${sessionData.sessionId}`)
+        return sessionData
       } catch (error) {
-        console.warn('⚠️  Could not load existing session, starting fresh');
+        console.warn('⚠️  Could not load existing session, starting fresh')
       }
     }
 
@@ -94,7 +94,7 @@ export class IterativeDebugger {
       remainingIssues: [],
       nextSteps: [],
       history: []
-    };
+    }
   }
 
   /**
@@ -102,61 +102,60 @@ export class IterativeDebugger {
    */
   private saveSession(): void {
     if (!existsSync(this.outputDir)) {
-      mkdirSync(this.outputDir, { recursive: true });
+      mkdirSync(this.outputDir, { recursive: true })
     }
-    
-    writeFileSync(this.sessionFile, JSON.stringify(this.session, null, 2));
+
+    writeFileSync(this.sessionFile, JSON.stringify(this.session, null, 2))
   }
 
   /**
    * Run a complete debugging iteration
    */
   async runDebugIteration(): Promise<DebugAnalysis | null> {
-    console.log(`🔄 Starting debug iteration ${this.session.totalRuns + 1}`);
-    
+    console.log(`🔄 Starting debug iteration ${this.session.totalRuns + 1}`)
+
     try {
       // Get recent workflow runs
       const runs = await this.iterativeDebugger.getWorkflowRuns(
-        this.session.workflowName, 
-        this.session.branch, 
+        this.session.workflowName,
+        this.session.branch,
         5
-      );
+      )
 
       if (runs.length === 0) {
-        console.log('❌ No workflow runs found');
-        return null;
+        console.log('❌ No workflow runs found')
+        return null
       }
 
       // Find the most recent run
-      const latestRun = runs[0];
-      this.session.lastRunId = latestRun.id;
-      this.session.totalRuns++;
+      const latestRun = runs[0]
+      this.session.lastRunId = latestRun.id
+      this.session.totalRuns++
 
-      console.log(`📊 Analyzing run ${latestRun.id} (${latestRun.status})`);
+      console.log(`📊 Analyzing run ${latestRun.id} (${latestRun.status})`)
 
       // Get jobs for this run
-      const jobs = await this.iterativeDebugger.getWorkflowJobs(latestRun.id);
-      
+      const jobs = await this.iterativeDebugger.getWorkflowJobs(latestRun.id)
+
       // Analyze the run
-      const analysis = this.analyzeWorkflowRun(latestRun, jobs);
-      
+      const analysis = this.analyzeWorkflowRun(latestRun, jobs)
+
       // Update session with findings
-      this.updateSessionWithAnalysis(analysis);
-      
+      this.updateSessionWithAnalysis(analysis)
+
       // Generate next steps
-      this.generateNextSteps(analysis);
-      
+      this.generateNextSteps(analysis)
+
       // Save session
-      this.saveSession();
-      
+      this.saveSession()
+
       // Generate report
-      await this.generateIterationReport(analysis);
-      
-      return analysis;
-      
+      await this.generateIterationReport(analysis)
+
+      return analysis
     } catch (error) {
-      console.error(`❌ Debug iteration failed: ${error}`);
-      return null;
+      console.error(`❌ Debug iteration failed: ${error}`)
+      return null
     }
   }
 
@@ -164,25 +163,25 @@ export class IterativeDebugger {
    * Analyze a workflow run and extract issues
    */
   private analyzeWorkflowRun(run: any, jobs: any[]): DebugAnalysis {
-    const failedJobs = jobs.filter(job => 
-      job.conclusion === 'failure' || job.conclusion === 'cancelled'
-    );
+    const failedJobs = jobs.filter(
+      job => job.conclusion === 'failure' || job.conclusion === 'cancelled'
+    )
 
-    const successRate = jobs.length > 0 ? 
-      ((jobs.length - failedJobs.length) / jobs.length) * 100 : 0;
+    const successRate =
+      jobs.length > 0 ? ((jobs.length - failedJobs.length) / jobs.length) * 100 : 0
 
     // Extract issues from failed jobs
-    const issues: string[] = [];
+    const issues: string[] = []
     failedJobs.forEach(job => {
       job.steps.forEach((step: any) => {
         if (step.conclusion === 'failure') {
-          const issue = this.categorizeIssue(step.name, job.name);
+          const issue = this.categorizeIssue(step.name, job.name)
           if (!issues.includes(issue)) {
-            issues.push(issue);
+            issues.push(issue)
           }
         }
-      });
-    });
+      })
+    })
 
     return {
       runId: run.id,
@@ -193,78 +192,78 @@ export class IterativeDebugger {
       successRate,
       commonFailurePatterns: issues,
       recommendations: this.generateRecommendations(issues)
-    };
+    }
   }
 
   /**
    * Categorize issues based on step and job names
    */
   private categorizeIssue(stepName: string, jobName: string): string {
-    const step = stepName.toLowerCase();
-    const job = jobName.toLowerCase();
-    
+    const step = stepName.toLowerCase()
+    const job = jobName.toLowerCase()
+
     if (step.includes('test') || job.includes('test')) {
-      return 'Test Failures';
+      return 'Test Failures'
     }
     if (step.includes('build') || job.includes('build')) {
-      return 'Build Failures';
+      return 'Build Failures'
     }
     if (step.includes('lint') || job.includes('lint')) {
-      return 'Linting Issues';
+      return 'Linting Issues'
     }
     if (step.includes('deploy') || job.includes('deploy')) {
-      return 'Deployment Issues';
+      return 'Deployment Issues'
     }
     if (step.includes('install') || step.includes('dependencies')) {
-      return 'Dependency Issues';
+      return 'Dependency Issues'
     }
     if (step.includes('docker') || job.includes('docker')) {
-      return 'Docker Issues';
+      return 'Docker Issues'
     }
     if (step.includes('security') || job.includes('security')) {
-      return 'Security Issues';
+      return 'Security Issues'
     }
-    
-    return 'Unknown Issues';
+
+    return 'Unknown Issues'
   }
 
   /**
    * Generate specific recommendations based on issues
    */
   private generateRecommendations(issues: string[]): string[] {
-    const recommendations: string[] = [];
-    
+    const recommendations: string[] = []
+
     if (issues.includes('Test Failures')) {
-      recommendations.push('Run tests locally to reproduce failures');
-      recommendations.push('Check for flaky tests and add retry mechanisms');
-      recommendations.push('Update test dependencies and configurations');
+      recommendations.push('Run tests locally to reproduce failures')
+      recommendations.push('Check for flaky tests and add retry mechanisms')
+      recommendations.push('Update test dependencies and configurations')
     }
-    
+
     if (issues.includes('Build Failures')) {
-      recommendations.push('Verify build environment and dependencies');
-      recommendations.push('Check for breaking changes in dependencies');
-      recommendations.push('Review build configuration files');
+      recommendations.push('Verify build environment and dependencies')
+      recommendations.push('Check for breaking changes in dependencies')
+      recommendations.push('Review build configuration files')
     }
-    
+
     if (issues.includes('Linting Issues')) {
-      recommendations.push('Run linting locally and fix issues');
-      recommendations.push('Configure pre-commit hooks for automatic linting');
-      recommendations.push('Update linting rules and configurations');
+      recommendations.push('Run linting locally and fix issues')
+      recommendations.push('Configure pre-commit hooks for automatic linting')
+      recommendations.push('Update linting rules and configurations')
     }
-    
+
     if (issues.includes('Dependency Issues')) {
-      recommendations.push('Update package-lock.json or yarn.lock');
-      recommendations.push('Check for version conflicts in dependencies');
-      recommendations.push('Clear node_modules and reinstall dependencies');
+      recommendations.push('Update package-lock.json or yarn.lock')
+      recommendations.push('Check for version conflicts in dependencies')
+      recommendations.push('Clear node_modules and reinstall dependencies')
     }
-    
+
     if (issues.includes('Docker Issues')) {
-      recommendations.push('Test Docker build locally');
-      recommendations.push('Check Dockerfile syntax and base images');
-      recommendations.push('Verify resource constraints in CI environment');
+      recommendations.push('Test Docker build locally')
+      recommendations.push('Check Dockerfile syntax and base images')
+      recommendations.push('Verify resource constraints in CI environment')
     }
-    
-    return recommendations;
+
+    return recommendations
   }
 
   /**
@@ -272,25 +271,20 @@ export class IterativeDebugger {
    */
   private updateSessionWithAnalysis(analysis: DebugAnalysis): void {
     // Track new issues
-    const newIssues = analysis.commonFailurePatterns.filter(issue => 
-      !this.session.remainingIssues.includes(issue)
-    );
-    
-    this.session.remainingIssues = [
-      ...this.session.remainingIssues,
-      ...newIssues
-    ];
+    const newIssues = analysis.commonFailurePatterns.filter(
+      issue => !this.session.remainingIssues.includes(issue)
+    )
+
+    this.session.remainingIssues = [...this.session.remainingIssues, ...newIssues]
 
     // Remove fixed issues (issues that are no longer present)
-    const currentIssues = analysis.commonFailurePatterns;
-    const fixedIssues = this.session.remainingIssues.filter(issue => 
-      !currentIssues.includes(issue)
-    );
-    
-    this.session.fixedIssues = [...this.session.fixedIssues, ...fixedIssues];
-    this.session.remainingIssues = this.session.remainingIssues.filter(issue => 
+    const currentIssues = analysis.commonFailurePatterns
+    const fixedIssues = this.session.remainingIssues.filter(issue => !currentIssues.includes(issue))
+
+    this.session.fixedIssues = [...this.session.fixedIssues, ...fixedIssues]
+    this.session.remainingIssues = this.session.remainingIssues.filter(issue =>
       currentIssues.includes(issue)
-    );
+    )
 
     // Add to history
     this.session.history.push({
@@ -298,42 +292,42 @@ export class IterativeDebugger {
       runId: analysis.runId,
       issues: analysis.commonFailurePatterns,
       actions: [],
-      outcome: analysis.successRate > 80 ? 'success' : 
-               analysis.successRate > 50 ? 'partial' : 'failure'
-    });
+      outcome:
+        analysis.successRate > 80 ? 'success' : analysis.successRate > 50 ? 'partial' : 'failure'
+    })
   }
 
   /**
    * Generate next steps based on current state
    */
   private generateNextSteps(analysis: DebugAnalysis): void {
-    const nextSteps: string[] = [];
-    
+    const nextSteps: string[] = []
+
     if (analysis.successRate === 100) {
-      nextSteps.push('🎉 All issues resolved! Workflow is now passing.');
-      nextSteps.push('Consider adding monitoring to prevent regressions.');
+      nextSteps.push('🎉 All issues resolved! Workflow is now passing.')
+      nextSteps.push('Consider adding monitoring to prevent regressions.')
     } else if (analysis.successRate > 80) {
-      nextSteps.push('✅ Significant progress made! Focus on remaining issues.');
-      nextSteps.push('Review the remaining failed jobs and their logs.');
+      nextSteps.push('✅ Significant progress made! Focus on remaining issues.')
+      nextSteps.push('Review the remaining failed jobs and their logs.')
     } else {
-      nextSteps.push('🔧 Focus on the most critical issues first.');
-      nextSteps.push('Consider breaking down large jobs into smaller ones.');
+      nextSteps.push('🔧 Focus on the most critical issues first.')
+      nextSteps.push('Consider breaking down large jobs into smaller ones.')
     }
 
     // Add specific recommendations
     analysis.recommendations.forEach(rec => {
-      nextSteps.push(`💡 ${rec}`);
-    });
+      nextSteps.push(`💡 ${rec}`)
+    })
 
-    this.session.nextSteps = nextSteps;
+    this.session.nextSteps = nextSteps
   }
 
   /**
    * Generate iteration report
    */
   private async generateIterationReport(analysis: DebugAnalysis): Promise<void> {
-    const reportPath = join(this.outputDir, `iteration-${this.session.totalRuns}.md`);
-    
+    const reportPath = join(this.outputDir, `iteration-${this.session.totalRuns}.md`)
+
     const report = `# Debug Iteration ${this.session.totalRuns}
 
 **Session ID**: ${this.session.sessionId}
@@ -373,63 +367,67 @@ ${this.session.nextSteps.map(step => `- ${step}`).join('\n')}
 
 ## History
 
-${this.session.history.map(entry => `
+${this.session.history
+  .map(
+    entry => `
 ### ${entry.timestamp}
 - **Run ID**: ${entry.runId}
 - **Outcome**: ${entry.outcome}
 - **Issues**: ${entry.issues.join(', ')}
-`).join('\n')}
+`
+  )
+  .join('\n')}
 
 ---
 *Generated by Pipecraft Iterative Debugger*
-`;
+`
 
-    writeFileSync(reportPath, report);
-    console.log(`📄 Iteration report saved: ${reportPath}`);
+    writeFileSync(reportPath, report)
+    console.log(`📄 Iteration report saved: ${reportPath}`)
   }
 
   /**
    * Get current session status
    */
   getSessionStatus(): DebugSession {
-    return { ...this.session };
+    return { ...this.session }
   }
 
   /**
    * Get debugging plan with priorities
    */
   getDebuggingPlan(): DebuggingPlan[] {
-    const plans: DebuggingPlan[] = [];
-    
+    const plans: DebuggingPlan[] = []
+
     this.session.remainingIssues.forEach(issue => {
-      const priority = this.determinePriority(issue);
-      const actions = this.getActionsForIssue(issue);
-      
+      const priority = this.determinePriority(issue)
+      const actions = this.getActionsForIssue(issue)
+
       plans.push({
         priority,
         issue,
         suggestedActions: actions,
         estimatedTime: this.estimateTime(issue),
         dependencies: this.getDependencies(issue)
-      });
-    });
+      })
+    })
 
     return plans.sort((a, b) => {
-      const priorityOrder = { high: 3, medium: 2, low: 1 };
-      return priorityOrder[b.priority] - priorityOrder[a.priority];
-    });
+      const priorityOrder = { high: 3, medium: 2, low: 1 }
+      return priorityOrder[b.priority] - priorityOrder[a.priority]
+    })
   }
 
   /**
    * Determine priority for an issue
    */
   private determinePriority(issue: string): 'high' | 'medium' | 'low' {
-    const highPriorityIssues = ['Build Failures', 'Dependency Issues'];
-    const mediumPriorityIssues = ['Test Failures', 'Linting Issues'];
-    
-    if (highPriorityIssues.includes(issue)) return 'high';
-    if (mediumPriorityIssues.includes(issue)) return 'medium';
-    return 'low';
+    const highPriorityIssues = ['Build Failures', 'Dependency Issues']
+    const mediumPriorityIssues = ['Test Failures', 'Linting Issues']
+
+    if (highPriorityIssues.includes(issue)) return 'high'
+    if (mediumPriorityIssues.includes(issue)) return 'medium'
+    return 'low'
   }
 
   /**
@@ -467,9 +465,9 @@ ${this.session.history.map(entry => `
         'Verify base image versions',
         'Check resource constraints'
       ]
-    };
+    }
 
-    return actionMap[issue] || ['Investigate the issue further'];
+    return actionMap[issue] || ['Investigate the issue further']
   }
 
   /**
@@ -482,9 +480,9 @@ ${this.session.history.map(entry => `
       'Linting Issues': '10-30 minutes',
       'Dependency Issues': '20-40 minutes',
       'Docker Issues': '30-60 minutes'
-    };
+    }
 
-    return timeMap[issue] || 'Unknown';
+    return timeMap[issue] || 'Unknown'
   }
 
   /**
@@ -497,9 +495,9 @@ ${this.session.history.map(entry => `
       'Linting Issues': [],
       'Dependency Issues': [],
       'Docker Issues': ['Build Failures']
-    };
+    }
 
-    return dependencyMap[issue] || [];
+    return dependencyMap[issue] || []
   }
 
   /**
@@ -507,11 +505,15 @@ ${this.session.history.map(entry => `
    */
   async runHealthCheck(): Promise<boolean> {
     try {
-      const runs = await this.iterativeDebugger.getWorkflowRuns(this.session.workflowName, this.session.branch, 1);
-      return runs.length > 0;
+      const runs = await this.iterativeDebugger.getWorkflowRuns(
+        this.session.workflowName,
+        this.session.branch,
+        1
+      )
+      return runs.length > 0
     } catch (error) {
-      console.error(`❌ Health check failed: ${error}`);
-      return false;
+      console.error(`❌ Health check failed: ${error}`)
+      return false
     }
   }
 
@@ -520,7 +522,7 @@ ${this.session.history.map(entry => `
    */
   static cleanupOldSessions(outputDir: string, maxAge: number = 7 * 24 * 60 * 60 * 1000): void {
     // Implementation for cleaning up old session files
-    console.log(`🧹 Cleaning up sessions older than ${maxAge}ms`);
+    console.log(`🧹 Cleaning up sessions older than ${maxAge}ms`)
   }
 }
 
@@ -528,69 +530,70 @@ ${this.session.history.map(entry => `
  * CLI interface for iterative debugging
  */
 export class IterativeDebugCLI {
-  private iterativeDebugger: IterativeDebugger;
+  private iterativeDebugger: IterativeDebugger
 
   constructor(iterativeDebugger: IterativeDebugger) {
-    this.iterativeDebugger = iterativeDebugger;
+    this.iterativeDebugger = iterativeDebugger
   }
 
   /**
    * Run interactive debugging session
    */
   async runInteractiveSession(): Promise<void> {
-    console.log('🚀 Starting interactive debugging session');
-    console.log(`📋 Session ID: ${this.iterativeDebugger.getSessionStatus().sessionId}`);
-    
-    let continueDebugging = true;
-    let iteration = 0;
+    console.log('🚀 Starting interactive debugging session')
+    console.log(`📋 Session ID: ${this.iterativeDebugger.getSessionStatus().sessionId}`)
 
-    while (continueDebugging && iteration < 10) { // Limit to 10 iterations
-      iteration++;
-      
-      console.log(`\n🔄 Iteration ${iteration}`);
-      console.log('=' * 50);
-      
+    let continueDebugging = true
+    let iteration = 0
+
+    while (continueDebugging && iteration < 10) {
+      // Limit to 10 iterations
+      iteration++
+
+      console.log(`\n🔄 Iteration ${iteration}`)
+      console.log('=' * 50)
+
       // Run debug iteration
-      const analysis = await this.iterativeDebugger.runDebugIteration();
-      
+      const analysis = await this.iterativeDebugger.runDebugIteration()
+
       if (!analysis) {
-        console.log('❌ No analysis available, stopping');
-        break;
+        console.log('❌ No analysis available, stopping')
+        break
       }
 
       // Show current status
-      this.showCurrentStatus();
-      
+      this.showCurrentStatus()
+
       // Show debugging plan
-      this.showDebuggingPlan();
-      
+      this.showDebuggingPlan()
+
       // Ask user if they want to continue
-      console.log('\n❓ Continue debugging? (y/n)');
+      console.log('\n❓ Continue debugging? (y/n)')
       // In a real implementation, you'd read from stdin
       // For now, we'll just continue automatically
-      continueDebugging = iteration < 3; // Auto-stop after 3 iterations for demo
+      continueDebugging = iteration < 3 // Auto-stop after 3 iterations for demo
     }
 
-    console.log('\n🏁 Debugging session complete');
-    this.showFinalSummary();
+    console.log('\n🏁 Debugging session complete')
+    this.showFinalSummary()
   }
 
   /**
    * Show current debugging status
    */
   private showCurrentStatus(): void {
-    const status = this.iterativeDebugger.getSessionStatus();
-    
-    console.log('\n📊 Current Status:');
-    console.log(`  Total Iterations: ${status.totalRuns}`);
-    console.log(`  Issues Fixed: ${status.fixedIssues.length}`);
-    console.log(`  Remaining Issues: ${status.remainingIssues.length}`);
-    
+    const status = this.iterativeDebugger.getSessionStatus()
+
+    console.log('\n📊 Current Status:')
+    console.log(`  Total Iterations: ${status.totalRuns}`)
+    console.log(`  Issues Fixed: ${status.fixedIssues.length}`)
+    console.log(`  Remaining Issues: ${status.remainingIssues.length}`)
+
     if (status.remainingIssues.length > 0) {
-      console.log('\n🔧 Remaining Issues:');
+      console.log('\n🔧 Remaining Issues:')
       status.remainingIssues.forEach(issue => {
-        console.log(`  - ${issue}`);
-      });
+        console.log(`  - ${issue}`)
+      })
     }
   }
 
@@ -598,41 +601,41 @@ export class IterativeDebugCLI {
    * Show debugging plan
    */
   private showDebuggingPlan(): void {
-    const plans = this.iterativeDebugger.getDebuggingPlan();
-    
+    const plans = this.iterativeDebugger.getDebuggingPlan()
+
     if (plans.length === 0) {
-      console.log('\n🎉 No remaining issues to fix!');
-      return;
+      console.log('\n🎉 No remaining issues to fix!')
+      return
     }
 
-    console.log('\n📋 Debugging Plan:');
+    console.log('\n📋 Debugging Plan:')
     plans.forEach((plan, index) => {
-      console.log(`\n${index + 1}. ${plan.issue} (${plan.priority} priority)`);
-      console.log(`   Estimated Time: ${plan.estimatedTime}`);
-      console.log(`   Actions:`);
+      console.log(`\n${index + 1}. ${plan.issue} (${plan.priority} priority)`)
+      console.log(`   Estimated Time: ${plan.estimatedTime}`)
+      console.log(`   Actions:`)
       plan.suggestedActions.forEach(action => {
-        console.log(`     - ${action}`);
-      });
-    });
+        console.log(`     - ${action}`)
+      })
+    })
   }
 
   /**
    * Show final summary
    */
   private showFinalSummary(): void {
-    const status = this.iterativeDebugger.getSessionStatus();
-    
-    console.log('\n📈 Final Summary:');
-    console.log(`  Session Duration: ${this.calculateSessionDuration()}`);
-    console.log(`  Total Iterations: ${status.totalRuns}`);
-    console.log(`  Issues Fixed: ${status.fixedIssues.length}`);
-    console.log(`  Remaining Issues: ${status.remainingIssues.length}`);
-    
+    const status = this.iterativeDebugger.getSessionStatus()
+
+    console.log('\n📈 Final Summary:')
+    console.log(`  Session Duration: ${this.calculateSessionDuration()}`)
+    console.log(`  Total Iterations: ${status.totalRuns}`)
+    console.log(`  Issues Fixed: ${status.fixedIssues.length}`)
+    console.log(`  Remaining Issues: ${status.remainingIssues.length}`)
+
     if (status.fixedIssues.length > 0) {
-      console.log('\n✅ Fixed Issues:');
+      console.log('\n✅ Fixed Issues:')
       status.fixedIssues.forEach(issue => {
-        console.log(`  - ${issue}`);
-      });
+        console.log(`  - ${issue}`)
+      })
     }
   }
 
@@ -640,13 +643,13 @@ export class IterativeDebugCLI {
    * Calculate session duration
    */
   private calculateSessionDuration(): string {
-    const status = this.iterativeDebugger.getSessionStatus();
-    const startTime = new Date(status.startTime);
-    const duration = Date.now() - startTime.getTime();
-    
-    const minutes = Math.floor(duration / 60000);
-    const seconds = Math.floor((duration % 60000) / 1000);
-    
-    return `${minutes}m ${seconds}s`;
+    const status = this.iterativeDebugger.getSessionStatus()
+    const startTime = new Date(status.startTime)
+    const duration = Date.now() - startTime.getTime()
+
+    const minutes = Math.floor(duration / 60000)
+    const seconds = Math.floor((duration % 60000) / 1000)
+
+    return `${minutes}m ${seconds}s`
   }
 }

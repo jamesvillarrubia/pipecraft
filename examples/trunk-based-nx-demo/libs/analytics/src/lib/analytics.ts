@@ -1,2 +1,4 @@
-import { loggingFunction } from '@demo/logging';
-export function analyticsFunction() { return 'analytics works!'; }
+import { loggingFunction } from '@demo/logging'
+export function analyticsFunction() {
+  return 'analytics works!'
+}

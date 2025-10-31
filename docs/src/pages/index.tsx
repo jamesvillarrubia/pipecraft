@@ -9,7 +9,7 @@ import styles from './index.module.css'
 function HomepageHeader() {
   return (
     <header className={clsx('hero', styles.heroBanner)}>
-      <div className='container'>
+      <div className="container">
         <div
           style={{
             maxWidth: '800px',
@@ -22,8 +22,8 @@ function HomepageHeader() {
           }}
         >
           <img
-            src='/img/logo_banner_trans.png'
-            alt='PipeCraft'
+            src="/img/logo_banner_trans.png"
+            alt="PipeCraft"
             style={{
               width: '100%',
               transform: 'scale(1.3)',
@@ -32,7 +32,7 @@ function HomepageHeader() {
           />
         </div>
         <div className={styles.buttons}>
-          <Link className='button button--secondary button--lg' to='/docs'>
+          <Link className="button button--secondary button--lg" to="/docs">
             Get Started - 5min ⏱️
           </Link>
         </div>
@@ -55,7 +55,7 @@ export default function Home(): JSX.Element {
   return (
     <Layout
       title={`${siteConfig.title} - Battle-Tested CI/CD Templates`}
-      description='Skip the debugging cycles. Generate battle-tested CI/CD workflows into your repository with best practices built in. Fully customizable, completely yours.'
+      description="Skip the debugging cycles. Generate battle-tested CI/CD workflows into your repository with best practices built in. Fully customizable, completely yours."
     >
       <HomepageHeader />
       <main>

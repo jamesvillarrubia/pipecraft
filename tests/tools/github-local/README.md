@@ -5,6 +5,7 @@ This directory contains tests for running GitHub Actions workflows locally using
 ## 🎯 Purpose
 
 Local GitHub Actions testing allows us to:
+
 - Test workflows locally without pushing to GitHub
 - Debug workflow issues in a controlled environment
 - Validate workflow syntax and logic before deployment
@@ -31,6 +32,7 @@ tests/github-local/
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 ```bash
 # Install Act
 curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
@@ -41,6 +43,7 @@ choco install act # Windows
 ```
 
 ### Running Tests
+
 ```bash
 # Run all local tests
 ./tests/github-local/run-local-tests.sh
@@ -58,7 +61,9 @@ choco install act # Windows
 ## 🔧 Configuration
 
 ### Act Configuration
+
 Create `.actrc` file in project root:
+
 ```yaml
 # Act configuration
 -P ubuntu-latest=catthehacker/ubuntu:act-latest
@@ -67,6 +72,7 @@ Create `.actrc` file in project root:
 ```
 
 ### Test Environment
+
 ```bash
 # Set up test environment
 ./tests/github-local/setup-test-env.sh
@@ -81,6 +87,7 @@ Create `.actrc` file in project root:
 ## 📋 Test Workflows
 
 ### Supported Workflows
+
 - **pipeline.yml**: Main workflow orchestration
 - **job.changes.yml**: Change detection workflow
 - **job.version.yml**: Version management workflow
@@ -90,6 +97,7 @@ Create `.actrc` file in project root:
 - **job.apps.yml**: Application-specific workflows
 
 ### Test Scenarios
+
 1. **Basic Execution**: Test workflow runs without errors
 2. **Environment Variables**: Test with different env vars
 3. **Conditional Logic**: Test workflow conditions and branches
@@ -100,6 +108,7 @@ Create `.actrc` file in project root:
 ## 🧪 Test Examples
 
 ### Basic Workflow Test
+
 ```bash
 # Test main pipeline
 act -W .github/workflows/pipeline.yml --dry-run
@@ -112,6 +121,7 @@ act -W .github/workflows/pipeline.yml --env GITHUB_REF=refs/heads/main --dry-run
 ```
 
 ### Advanced Testing
+
 ```bash
 # Test with secrets
 act -W .github/workflows/pipeline.yml --secret GITHUB_TOKEN=your_token
@@ -126,12 +136,14 @@ act -W .github/workflows/pipeline.yml --matrix os:ubuntu-latest --matrix node:18
 ## 🔍 Debugging
 
 ### Common Issues
+
 1. **Docker not running**: Ensure Docker is running
 2. **Permission issues**: Check file permissions
 3. **Environment variables**: Verify all required env vars are set
 4. **Workflow syntax**: Check YAML syntax and GitHub Actions syntax
 
 ### Debug Commands
+
 ```bash
 # List available workflows
 act --list
@@ -149,6 +161,7 @@ act -W .github/workflows/pipeline.yml --debug
 ## 📊 Test Results
 
 ### Output Format
+
 ```
 ✅ Workflow: pipeline.yml
   ✅ Job: changes (2.3s)
@@ -162,6 +175,7 @@ act -W .github/workflows/pipeline.yml --debug
 ```
 
 ### Performance Metrics
+
 - **Execution Time**: Track workflow execution time
 - **Resource Usage**: Monitor CPU and memory usage
 - **Job Dependencies**: Validate dependency chains
@@ -170,6 +184,7 @@ act -W .github/workflows/pipeline.yml --debug
 ## 🔄 Continuous Integration
 
 ### GitHub Actions Integration
+
 ```yaml
 name: Local Act Tests
 on: [push, pull_request]
@@ -185,6 +200,7 @@ jobs:
 ```
 
 ### Local Development
+
 ```bash
 # Watch mode for development
 ./tests/github-local/run-local-tests.sh --watch
@@ -199,18 +215,21 @@ jobs:
 ## 📚 Best Practices
 
 ### Test Organization
+
 1. **Group related tests**: Organize tests by workflow type
 2. **Use fixtures**: Create reusable test data
 3. **Mock external services**: Avoid external dependencies
 4. **Test edge cases**: Include error scenarios and edge cases
 
 ### Performance
+
 1. **Parallel execution**: Run independent tests in parallel
 2. **Resource management**: Monitor Docker resource usage
 3. **Cleanup**: Clean up test artifacts after runs
 4. **Caching**: Use Docker layer caching for faster builds
 
 ### Maintenance
+
 1. **Regular updates**: Keep Act and test dependencies updated
 2. **Documentation**: Document test scenarios and expected outcomes
 3. **Monitoring**: Track test performance and reliability
@@ -219,6 +238,7 @@ jobs:
 ## 🆘 Troubleshooting
 
 ### Common Problems
+
 ```bash
 # Act not found
 export PATH=$PATH:/usr/local/bin
@@ -234,6 +254,7 @@ act -W .github/workflows/pipeline.yml --env-file .env
 ```
 
 ### Getting Help
+
 - [Act Documentation](https://github.com/nektos/act)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [Docker Documentation](https://docs.docker.com/)

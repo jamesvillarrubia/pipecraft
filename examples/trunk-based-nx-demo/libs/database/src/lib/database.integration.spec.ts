@@ -1,4 +1,6 @@
-import { databaseFunction } from './database';
+import { databaseFunction } from './database'
 describe('database integration', () => {
-  it('should integrate', () => { expect(databaseFunction()).toBeDefined(); });
-});
+  it('should integrate', () => {
+    expect(databaseFunction()).toBeDefined()
+  })
+})

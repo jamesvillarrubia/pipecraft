@@ -381,7 +381,7 @@ describe('Init Generator', () => {
         // YAML should have proper formatting
         expect(content).toContain('  ') // Indentation
         expect(content).toContain('\n') // Line breaks
-        
+
         // Should be valid YAML
         const parsed = parseYAML(content)
         expect(parsed).toBeDefined()

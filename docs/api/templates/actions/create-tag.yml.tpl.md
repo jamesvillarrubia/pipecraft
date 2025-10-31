@@ -1,6 +1,6 @@
 [**pipecraft v0.0.0-releaseit**](../../README.md)
 
-***
+---
 
 [pipecraft](../../README.md) / templates/actions/create-tag.yml.tpl
 

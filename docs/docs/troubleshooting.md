@@ -33,6 +33,7 @@ Third, make sure GitHub Actions is enabled for your repository. Go to your repos
 PipeCraft calculates versions based on your commit messages. If you're not seeing version bumps, it's likely because your commits don't follow the conventional commit format.
 
 Commits that bump versions:
+
 ```bash
 git commit -m "feat: add new feature"    # Bumps minor version
 git commit -m "fix: fix bug"             # Bumps patch version
@@ -40,6 +41,7 @@ git commit -m "feat!: breaking change"   # Bumps major version
 ```
 
 Commits that don't bump versions:
+
 ```bash
 git commit -m "chore: update docs"       # No version bump
 git commit -m "test: add tests"          # No version bump
@@ -99,6 +101,7 @@ gh run view <run-id> --log      # View logs for a specific run
 ## Still need help?
 
 If you can't resolve the issue, open an issue on GitHub with:
+
 - Your PipeCraft version (`pipecraft version`)
 - Your `.pipecraftrc.json` (remove any secrets)
 - The full error message

@@ -136,10 +136,10 @@ export function formatStatusTable(items: StatusItem[], context: MessageContext):
         item.status === 'correct'
           ? '✅'
           : item.status === 'needs-change'
-            ? '⚠️'
-            : item.status === 'missing'
-              ? '❌'
-              : '🔴'
+          ? '⚠️'
+          : item.status === 'missing'
+          ? '❌'
+          : '🔴'
 
       if (context.persona === 'platform-engineer') {
         // Concise format for platform engineers

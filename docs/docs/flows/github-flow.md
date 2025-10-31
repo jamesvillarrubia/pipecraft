@@ -25,6 +25,7 @@ Instead of the current develop → staging → main progression, you'd have feat
 ## When to use GitHub Flow
 
 This pattern is ideal when:
+
 - You deploy multiple times per day
 - Rolling back is fast and easy
 - Your application can tolerate brief outages
@@ -34,6 +35,7 @@ This pattern is ideal when:
 ## When to stick with trunk flow
 
 The current trunk-based flow is better when:
+
 - You need a staging environment for integration testing
 - Multiple teams need to coordinate releases
 - You have scheduled release windows

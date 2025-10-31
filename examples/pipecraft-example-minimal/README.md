@@ -8,6 +8,7 @@ The simplest possible PipeCraft configuration - perfect for getting started in u
 ## Purpose
 
 This example demonstrates:
+
 - ✅ **Minimal configuration** - Just one domain, simplest setup
 - ✅ **2-branch workflow** - develop → main (no staging)
 - ✅ **Bootstrap behavior** - No initial tag; PipeCraft creates v0.1.0 automatically
@@ -58,6 +59,7 @@ pipecraft-example-minimal/
 ## Workflow
 
 ### 1. Development
+
 ```bash
 git checkout develop
 git pull origin develop
@@ -117,6 +119,7 @@ This repository intentionally has **NO initial tag** to demonstrate PipeCraft's 
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+ installed
 - Git configured
 - GitHub account
@@ -166,11 +169,13 @@ npm start
 PipeCraft requires [conventional commits](https://www.conventionalcommits.org/):
 
 ### Version Bumps
+
 - `feat: add new feature` → **Minor** version bump (0.1.0 → 0.2.0)
 - `fix: resolve bug` → **Patch** version bump (0.1.0 → 0.1.1)
 - `feat!: breaking change` → **Major** version bump (0.1.0 → 1.0.0)
 
 ### No Version Bump
+
 - `chore: update docs`
 - `test: add tests`
 - `refactor: clean code`
@@ -196,6 +201,7 @@ Edit `.pipecraftrc.json`:
 ```
 
 Then regenerate:
+
 ```bash
 npx pipecraft generate
 ```

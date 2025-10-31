@@ -1,6 +1,6 @@
 [**pipecraft v0.0.0-releaseit**](README.md)
 
-***
+---
 
 [pipecraft](README.md) / types
 
@@ -84,7 +84,7 @@ If true, generates test jobs for this domain.
 false
 ```
 
-***
+---
 
 ### PipecraftConfig
 
@@ -154,6 +154,7 @@ Common actions: runTests, calculateVersion, createOrFastForwardToMain
 Defined in: [types/index.ts:135](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L135)
 
 Auto-merge configuration for branch promotions.
+
 - boolean: Enable/disable auto-merge for all branches
 - Record: Per-branch auto-merge settings (e.g., { staging: true, main: false })
 
@@ -177,7 +178,7 @@ Must start with initialBranch and end with finalBranch.
 ###### Example
 
 ```ts
-['develop', 'staging', 'main']
+;['develop', 'staging', 'main']
 ```
 
 ##### ciProvider
@@ -224,6 +225,7 @@ All feature branches merge into this branch.
 Defined in: [types/index.ts:147](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L147)
 
 Git merge method for auto-merge operations.
+
 - 'auto': Use fast-forward when possible, merge otherwise
 - 'merge': Always create merge commit
 - 'squash': Squash all commits into one
@@ -244,6 +246,7 @@ Can be set globally or per-branch.
 Defined in: [types/index.ts:98](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L98)
 
 Git merge strategy for branch promotions.
+
 - 'fast-forward': Requires linear history, fails if branches diverged
 - 'merge': Creates merge commits
 

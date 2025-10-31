@@ -1,2 +1,3 @@
-
-export function authFunction() { return 'auth works!'; }
+export function authFunction() {
+  return 'auth works!'
+}

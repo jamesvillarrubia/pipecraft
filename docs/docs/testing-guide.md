@@ -70,7 +70,7 @@ describe('My Test', () => {
   let cleanup: () => void
 
   beforeEach(() => {
-    [workspace, cleanup] = createWorkspaceWithCleanup('my-test')
+    ;[workspace, cleanup] = createWorkspaceWithCleanup('my-test')
   })
 
   afterEach(() => {
@@ -107,7 +107,7 @@ it('should validate config', () => {
     initialBranch: 'develop',
     finalBranch: 'production'
   })
-  
+
   expect(() => validateConfig(config)).not.toThrow()
 })
 ```
@@ -157,11 +157,7 @@ expect(logger.info).toHaveBeenCalledWith('test')
 Readable, reusable assertions:
 
 ```typescript
-import { 
-  assertFileExists,
-  assertValidYAML,
-  assertWorkflowHasJobs 
-} from '../helpers/assertions'
+import { assertFileExists, assertValidYAML, assertWorkflowHasJobs } from '../helpers/assertions'
 
 it('should generate workflow', () => {
   assertFileExists('workflow.yml', 'Pipeline workflow should exist')
@@ -196,7 +192,7 @@ describe('myFunction', () => {
   let cleanup: () => void
 
   beforeEach(() => {
-    [workspace, cleanup] = createWorkspaceWithCleanup('my-function')
+    ;[workspace, cleanup] = createWorkspaceWithCleanup('my-function')
   })
 
   afterEach(() => {
@@ -206,7 +202,7 @@ describe('myFunction', () => {
   it('should do something', () => {
     const config = createMinimalConfig()
     const result = myFunction(config)
-    
+
     expect(result).toBeDefined()
     expect(result.status).toBe('success')
   })
@@ -224,12 +220,12 @@ import { assertFileExists, assertValidJSON } from '../helpers/assertions.js'
 describe('Init Generator', () => {
   it('should generate complete config', async () => {
     const workspace = createPipecraftWorkspace('init-test')
-    
+
     await generate({
-      cwd: workspace,
+      cwd: workspace
       // ... generator context
     })
-    
+
     assertFileExists('.pipecraftrc.json')
     const config = assertValidJSON('.pipecraftrc.json')
     expect(config.ciProvider).toBe('github')
@@ -257,9 +253,9 @@ const mockExecSync = execSync as unknown as ReturnType<typeof vi.fn>
 describe('Git Commands', () => {
   it('should call git', () => {
     mockExecSync.mockReturnValue('main')
-    
+
     const branch = getCurrentBranch()
-    
+
     expect(mockExecSync).toHaveBeenCalledWith('git branch --show-current', expect.any(Object))
     expect(branch).toBe('main')
   })
@@ -308,16 +304,16 @@ npm test -- --reporter=verbose
 
 ### Current Coverage by Module
 
-| Module | Coverage | Tests |
-|--------|----------|-------|
-| Logger | 95%+ | 44 |
-| Preflight | 95%+ | 31 |
-| GitHub Setup | 85%+ | 33 |
-| Versioning | 85%+ | 35 |
-| Generators | 80%+ | 18 |
-| Config | 75%+ | 25 |
-| Pipeline | 70%+ | 21 |
-| Idempotency | 65%+ | 18 |
+| Module       | Coverage | Tests |
+| ------------ | -------- | ----- |
+| Logger       | 95%+     | 44    |
+| Preflight    | 95%+     | 31    |
+| GitHub Setup | 85%+     | 33    |
+| Versioning   | 85%+     | 35    |
+| Generators   | 80%+     | 18    |
+| Config       | 75%+     | 25    |
+| Pipeline     | 70%+     | 21    |
+| Idempotency  | 65%+     | 18    |
 
 ### Coverage Goals
 
@@ -335,7 +331,7 @@ npm test -- --reporter=verbose
 
 ```typescript
 beforeEach(() => {
-  [workspace, cleanup] = createWorkspaceWithCleanup('my-test')
+  ;[workspace, cleanup] = createWorkspaceWithCleanup('my-test')
 })
 ```
 
@@ -350,15 +346,15 @@ const TEST_DIR = './test-temp' // Causes race conditions!
 ✅ **DO:** Describe behavior and expected outcome
 
 ```typescript
-it('should validate config with all required fields', () => { })
-it('should throw when config is missing ciProvider', () => { })
+it('should validate config with all required fields', () => {})
+it('should throw when config is missing ciProvider', () => {})
 ```
 
 ❌ **DON'T:** Use vague names
 
 ```typescript
-it('works', () => { })
-it('test 1', () => { })
+it('works', () => {})
+it('test 1', () => {})
 ```
 
 ### 3. Use Helpers
@@ -375,7 +371,7 @@ assertFileExists('.pipecraftrc.json')
 ```typescript
 const config = {
   ciProvider: 'github',
-  mergeStrategy: 'fast-forward',
+  mergeStrategy: 'fast-forward'
   // ... 50 more lines
 }
 ```
@@ -420,7 +416,7 @@ expect(config.domains).toBeDefined()
 
 ```typescript
 afterEach(() => {
-  cleanup()  // Remove test workspace
+  cleanup() // Remove test workspace
   vi.restoreAllMocks()
 })
 ```
@@ -472,7 +468,7 @@ it('should throw for invalid config', () => {
 ```typescript
 it('should create workflow file', async () => {
   await generateWorkflows(config)
-  
+
   assertFileExists('.github/workflows/pipeline.yml')
   const workflow = assertValidYAML('.github/workflows/pipeline.yml')
   expect(workflow.jobs.test).toBeDefined()
@@ -506,10 +502,10 @@ scenarios.forEach(scenario => {
 
 ```typescript
 // Before: shared TEST_DIR
-const TEST_DIR = './test-temp'
-
-// After: unique workspace per test
-[workspace, cleanup] = createWorkspaceWithCleanup('my-test')
+const TEST_DIR = ('./test-temp'[
+  // After: unique workspace per test
+  (workspace, cleanup)
+] = createWorkspaceWithCleanup('my-test'))
 ```
 
 ### Mock Not Working
@@ -570,4 +566,3 @@ If you have questions about testing:
 ---
 
 **Happy Testing! 🧪**
-

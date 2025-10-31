@@ -8,7 +8,7 @@ Defined in: [utils/ast-path-operations.ts:127](https://github.com/jamesvillarrub
 
 Configuration for a single path operation
 
- PathOperationConfig
+PathOperationConfig
 
 #### Example
 
@@ -46,7 +46,7 @@ Defined in: [utils/ast-path-operations.ts:132](https://github.com/jamesvillarrub
 ##### operation
 
 ```ts
-operation: PathOperation;
+operation: PathOperation
 ```
 
 Defined in: [utils/ast-path-operations.ts:129](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/ast-path-operations.ts#L129)
@@ -56,7 +56,7 @@ Type of operation to perform
 ##### path
 
 ```ts
-path: string;
+path: string
 ```
 
 Defined in: [utils/ast-path-operations.ts:128](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/ast-path-operations.ts#L128)
@@ -100,7 +100,7 @@ Defined in: [utils/ast-path-operations.ts:136](https://github.com/jamesvillarrub
 ##### value
 
 ```ts
-value: PathValue;
+value: PathValue
 ```
 
 Defined in: [utils/ast-path-operations.ts:130](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/ast-path-operations.ts#L130)
@@ -112,19 +112,19 @@ Value to set/merge/overwrite
 ### PathOperation
 
 ```ts
-type PathOperation = "set" | "merge" | "overwrite" | "preserve";
+type PathOperation = 'set' | 'merge' | 'overwrite' | 'preserve'
 ```
 
 Defined in: [utils/ast-path-operations.ts:93](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/ast-path-operations.ts#L93)
 
 Available operation types for path-based AST manipulation
 
-***
+---
 
 ### PathValue
 
 ```ts
-type PathValue = Node | object | string | number | boolean | any[];
+type PathValue = Node | object | string | number | boolean | any[]
 ```
 
 Defined in: [utils/ast-path-operations.ts:102](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/ast-path-operations.ts#L102)
@@ -136,10 +136,7 @@ Supported value types for path operations
 ### applyPathOperations()
 
 ```ts
-function applyPathOperations(
-   doc, 
-   operations, 
-   document?): void;
+function applyPathOperations(doc, operations, document?): void
 ```
 
 Defined in: [utils/ast-path-operations.ts:485](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/ast-path-operations.ts#L485)
@@ -194,12 +191,12 @@ const operations: PathOperationConfig[] = [
 applyPathOperations(doc, operations)
 ```
 
-***
+---
 
 ### createValueFromArray()
 
 ```ts
-function createValueFromArray(arr): Node;
+function createValueFromArray(arr): Node
 ```
 
 Defined in: [utils/ast-path-operations.ts:588](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/ast-path-operations.ts#L588)
@@ -228,12 +225,12 @@ The converted YAML sequence node
 const node = createValueFromArray(['develop', 'staging', 'main'])
 ```
 
-***
+---
 
 ### createValueFromObject()
 
 ```ts
-function createValueFromObject(obj, doc?): Node;
+function createValueFromObject(obj, doc?): Node
 ```
 
 Defined in: [utils/ast-path-operations.ts:568](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/ast-path-operations.ts#L568)
@@ -270,15 +267,12 @@ const node = createValueFromObject({
 })
 ```
 
-***
+---
 
 ### createValueFromString()
 
 ```ts
-function createValueFromString(
-   yamlString, 
-   context?, 
-   document?): Node;
+function createValueFromString(yamlString, context?, document?): Node
 ```
 
 Defined in: [utils/ast-path-operations.ts:523](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/ast-path-operations.ts#L523)
@@ -323,15 +317,12 @@ const node = createValueFromString(`
 `)
 ```
 
-***
+---
 
 ### ensurePathAndApply()
 
 ```ts
-function ensurePathAndApply(
-   doc, 
-   config, 
-   document?): void;
+function ensurePathAndApply(doc, config, document?): void
 ```
 
 Defined in: [utils/ast-path-operations.ts:287](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/ast-path-operations.ts#L287)
@@ -377,12 +368,12 @@ const config: PathOperationConfig = {
 ensurePathAndApply(doc, config)
 ```
 
-***
+---
 
 ### getPathValue()
 
 ```ts
-function getPathValue(doc, path): Node | null;
+function getPathValue(doc, path): Node | null
 ```
 
 Defined in: [utils/ast-path-operations.ts:249](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/ast-path-operations.ts#L249)
@@ -420,18 +411,12 @@ const value = getPathValue(doc.contents, 'jobs.changes.runs-on')
 console.log(value) // Scalar('ubuntu-latest')
 ```
 
-***
+---
 
 ### setPathValue()
 
 ```ts
-function setPathValue(
-   doc, 
-   path, 
-   value, 
-   document?, 
-   commentBefore?, 
-   spaceBeforeComment?): void;
+function setPathValue(doc, path, value, document?, commentBefore?, spaceBeforeComment?): void
 ```
 
 Defined in: [utils/ast-path-operations.ts:158](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/ast-path-operations.ts#L158)

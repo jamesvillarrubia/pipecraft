@@ -50,7 +50,7 @@ false
 ##### description
 
 ```ts
-description: string;
+description: string
 ```
 
 Defined in: [types/index.ts:38](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/types/index.ts#L38)
@@ -86,7 +86,7 @@ If true, generates test jobs for this domain.
 false
 ```
 
-***
+---
 
 ### PipecraftConfig
 
@@ -130,6 +130,7 @@ optional autoMerge: boolean | Record<string, boolean>;
 Defined in: [types/index.ts:135](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/types/index.ts#L135)
 
 Auto-merge configuration for branch promotions.
+
 - boolean: Enable/disable auto-merge for all branches
 - Record: Per-branch auto-merge settings (e.g., `{ staging: true, main: false }`)
 
@@ -155,13 +156,13 @@ Must start with initialBranch and end with finalBranch.
 ###### Example
 
 ```ts
-['develop', 'staging', 'main']
+;['develop', 'staging', 'main']
 ```
 
 ##### ciProvider
 
 ```ts
-ciProvider: "github" | "gitlab";
+ciProvider: 'github' | 'gitlab'
 ```
 
 Defined in: [types/index.ts:91](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/types/index.ts#L91)
@@ -172,7 +173,7 @@ Currently 'github' is fully supported, 'gitlab' support is planned.
 ##### domains
 
 ```ts
-domains: Record<string, DomainConfig>;
+domains: Record<string, DomainConfig>
 ```
 
 Defined in: [types/index.ts:195](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/types/index.ts#L195)
@@ -184,7 +185,7 @@ test and deployment requirements.
 ##### finalBranch
 
 ```ts
-finalBranch: string;
+finalBranch: string
 ```
 
 Defined in: [types/index.ts:117](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/types/index.ts#L117)
@@ -195,7 +196,7 @@ This is the last branch in the promotion flow.
 ##### initialBranch
 
 ```ts
-initialBranch: string;
+initialBranch: string
 ```
 
 Defined in: [types/index.ts:111](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/types/index.ts#L111)
@@ -206,7 +207,7 @@ All feature branches merge into this branch.
 ##### mergeMethod?
 
 ```ts
-optional mergeMethod: 
+optional mergeMethod:
   | "merge"
   | "auto"
   | "squash"
@@ -217,6 +218,7 @@ optional mergeMethod:
 Defined in: [types/index.ts:147](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/types/index.ts#L147)
 
 Git merge method for auto-merge operations.
+
 - 'auto': Use fast-forward when possible, merge otherwise
 - 'merge': Always create merge commit
 - 'squash': Squash all commits into one
@@ -233,12 +235,13 @@ Can be set globally or per-branch.
 ##### mergeStrategy
 
 ```ts
-mergeStrategy: "fast-forward" | "merge";
+mergeStrategy: 'fast-forward' | 'merge'
 ```
 
 Defined in: [types/index.ts:98](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/types/index.ts#L98)
 
 Git merge strategy for branch promotions.
+
 - 'fast-forward': Requires linear history, fails if branches diverged
 - 'merge': Creates merge commits
 
@@ -256,7 +259,7 @@ Controls when workflows should be regenerated based on config/template changes.
 ###### cacheFile
 
 ```ts
-cacheFile: string;
+cacheFile: string
 ```
 
 Path to cache file storing previous config hash.
@@ -264,7 +267,7 @@ Path to cache file storing previous config hash.
 ###### enabled
 
 ```ts
-enabled: boolean;
+enabled: boolean
 ```
 
 Whether idempotency checking is enabled.
@@ -273,7 +276,7 @@ If true, workflows are only regenerated when config or templates change.
 ###### forceRegenerate
 
 ```ts
-forceRegenerate: boolean;
+forceRegenerate: boolean
 ```
 
 Force regeneration even if hash matches.
@@ -282,7 +285,7 @@ Useful for debugging or manual overrides.
 ###### hashAlgorithm
 
 ```ts
-hashAlgorithm: "md5" | "sha1" | "sha256";
+hashAlgorithm: 'md5' | 'sha1' | 'sha256'
 ```
 
 Hashing algorithm for detecting config changes.
@@ -298,7 +301,7 @@ Patterns to ignore when calculating config hash.
 ###### skipIfUnchanged
 
 ```ts
-skipIfUnchanged: boolean;
+skipIfUnchanged: boolean
 ```
 
 Skip regeneration if config hash hasn't changed.
@@ -306,7 +309,7 @@ Skip regeneration if config hash hasn't changed.
 ###### watchMode
 
 ```ts
-watchMode: boolean;
+watchMode: boolean
 ```
 
 Enable watch mode for automatic regeneration on config changes.
@@ -314,7 +317,7 @@ Enable watch mode for automatic regeneration on config changes.
 ##### requireConventionalCommits
 
 ```ts
-requireConventionalCommits: boolean;
+requireConventionalCommits: boolean
 ```
 
 Defined in: [types/index.ts:105](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/types/index.ts#L105)
@@ -329,7 +332,7 @@ https://www.conventionalcommits.org/
 ##### semver
 
 ```ts
-semver: object;
+semver: object
 ```
 
 Defined in: [types/index.ts:164](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/types/index.ts#L164)
@@ -340,7 +343,7 @@ Maps conventional commit types to version bump levels.
 ###### bumpRules
 
 ```ts
-bumpRules: Record<string, string>;
+bumpRules: Record<string, string>
 ```
 
 Mapping of commit types to semver bump levels (major, minor, patch).
@@ -371,7 +374,7 @@ Enables automatic version bumping, tagging, and changelog generation.
 ###### autoPush
 
 ```ts
-autoPush: boolean;
+autoPush: boolean
 ```
 
 Automatically push tags to remote after creation.
@@ -379,7 +382,7 @@ Automatically push tags to remote after creation.
 ###### autoTag
 
 ```ts
-autoTag: boolean;
+autoTag: boolean
 ```
 
 Automatically create git tags for new versions.
@@ -387,7 +390,7 @@ Automatically create git tags for new versions.
 ###### bumpRules
 
 ```ts
-bumpRules: Record<string, string>;
+bumpRules: Record<string, string>
 ```
 
 Mapping of commit types to version bump levels.
@@ -395,7 +398,7 @@ Mapping of commit types to version bump levels.
 ###### changelog
 
 ```ts
-changelog: boolean;
+changelog: boolean
 ```
 
 Generate CHANGELOG.md from conventional commits.
@@ -403,7 +406,7 @@ Generate CHANGELOG.md from conventional commits.
 ###### conventionalCommits
 
 ```ts
-conventionalCommits: boolean;
+conventionalCommits: boolean
 ```
 
 Use conventional commits for version calculation.
@@ -411,7 +414,7 @@ Use conventional commits for version calculation.
 ###### enabled
 
 ```ts
-enabled: boolean;
+enabled: boolean
 ```
 
 Whether version management is enabled.
@@ -419,7 +422,7 @@ Whether version management is enabled.
 ###### releaseItConfig
 
 ```ts
-releaseItConfig: string;
+releaseItConfig: string
 ```
 
 Path to release-it configuration file.

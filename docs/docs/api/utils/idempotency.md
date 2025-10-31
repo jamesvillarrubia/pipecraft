@@ -4,6 +4,7 @@ Idempotency and Caching Utilities
 
 This module implements intelligent caching to avoid unnecessary workflow regeneration.
 It tracks file hashes and modification times for:
+
 - Configuration files (.pipecraftrc.json)
 - Template source files (src/templates/)
 - Generator code (src/generators/)
@@ -126,11 +127,13 @@ Defined in: [utils/idempotency.ts:239](https://github.com/jamesvillarrubia/pipec
 Check if any tracked files have changed since last generation.
 
 Compares current file hashes against cached values to detect changes in:
+
 - Configuration file (.pipecraftrc.json)
 - Template source files (src/templates/)
 - Generator code (src/generators/)
 
 Returns true if:
+
 - Rebuild is disabled (always regenerate)
 - Force regenerate flag is set
 - No cache exists
@@ -269,7 +272,7 @@ Metadata and hash information for a tracked file.
 ##### hash
 
 ```ts
-hash: string;
+hash: string
 ```
 
 Defined in: [utils/idempotency.ts:32](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/idempotency.ts#L32)
@@ -279,7 +282,7 @@ Cryptographic hash of file content and metadata
 ##### mtime
 
 ```ts
-mtime: number;
+mtime: number
 ```
 
 Defined in: [utils/idempotency.ts:35](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/idempotency.ts#L35)
@@ -289,7 +292,7 @@ Last modification time (Unix timestamp in milliseconds)
 ##### path
 
 ```ts
-path: string;
+path: string
 ```
 
 Defined in: [utils/idempotency.ts:29](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/idempotency.ts#L29)
@@ -299,14 +302,14 @@ Relative path to the file
 ##### size
 
 ```ts
-size: number;
+size: number
 ```
 
 Defined in: [utils/idempotency.ts:38](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/idempotency.ts#L38)
 
 File size in bytes
 
-***
+---
 
 ### RebuildCache
 
@@ -322,7 +325,7 @@ configuration or template files change.
 ##### configHash
 
 ```ts
-configHash: string;
+configHash: string
 ```
 
 Defined in: [utils/idempotency.ts:52](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/idempotency.ts#L52)
@@ -332,7 +335,7 @@ Hash of the configuration file (.pipecraftrc.json)
 ##### files
 
 ```ts
-files: Record<string, FileHash>;
+files: Record<string, FileHash>
 ```
 
 Defined in: [utils/idempotency.ts:49](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/idempotency.ts#L49)
@@ -342,7 +345,7 @@ Map of file paths to their hash metadata
 ##### lastGenerated
 
 ```ts
-lastGenerated: number;
+lastGenerated: number
 ```
 
 Defined in: [utils/idempotency.ts:55](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/idempotency.ts#L55)
@@ -352,7 +355,7 @@ Timestamp when workflows were last generated
 ##### version
 
 ```ts
-version: string;
+version: string
 ```
 
 Defined in: [utils/idempotency.ts:58](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/idempotency.ts#L58)

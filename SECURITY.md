@@ -55,18 +55,21 @@ When you report a vulnerability, you can expect:
 ### GitHub Actions Workflows
 
 1. **Secrets Management**
+
    - Never commit secrets to your repository
    - Use GitHub Secrets for sensitive values
    - Rotate secrets regularly
    - Limit secret access to necessary workflows only
 
 2. **Workflow Permissions**
+
    - Follow the principle of least privilege
    - Review and understand the permissions PipeCraft workflows require
    - Use `permissions:` blocks to explicitly define access
    - Enable branch protection rules for staging and main branches
 
 3. **Dependency Security**
+
    - Regularly update PipeCraft to the latest version
    - Enable Dependabot alerts for your repository
    - Review security advisories for dependencies
@@ -81,11 +84,13 @@ When you report a vulnerability, you can expect:
 ### Configuration Security
 
 1. **Repository Access**
+
    - Limit who can modify `.pipecraftrc.json`
    - Protect the `.github/workflows/` directory
    - Use CODEOWNERS to require reviews for workflow changes
 
 2. **Branch Protection**
+
    - Enable branch protection for `develop`, `staging`, and `main`
    - Require status checks to pass before merging
    - Require pull request reviews
@@ -158,7 +163,7 @@ We will recognize security researchers who responsibly disclose vulnerabilities:
 
 <!-- Security researchers will be listed here -->
 
-*No vulnerabilities have been reported yet.*
+_No vulnerabilities have been reported yet._
 
 ---
 

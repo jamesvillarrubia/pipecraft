@@ -108,11 +108,13 @@ After running `pipecraft generate`, you'll get:
 ### Example Pipeline Flow
 
 1. **Push to `develop`**:
+
    - Detects changes in domains
    - Runs tests
    - Fast-forwards to `staging` if tests pass
 
 2. **Push to `staging`**:
+
    - Calculates version bump
    - Creates PR to `main` for non-patch releases
    - Auto-fast-forwards to `main` for patch releases
@@ -130,19 +132,11 @@ After running `pipecraft generate`, you'll get:
 {
   "domains": {
     "api": {
-      "paths": [
-        "apps/api/**",
-        "packages/backend/**",
-        "src/api/**"
-      ],
+      "paths": ["apps/api/**", "packages/backend/**", "src/api/**"],
       "description": "API application changes"
     },
     "frontend": {
-      "paths": [
-        "apps/web/**",
-        "packages/frontend/**",
-        "src/components/**"
-      ],
+      "paths": ["apps/web/**", "packages/frontend/**", "src/components/**"],
       "description": "Frontend application changes"
     }
   }
@@ -153,12 +147,7 @@ After running `pipecraft generate`, you'll get:
 
 ```json
 {
-  "branchFlow": [
-    "develop",
-    "test",
-    "staging",
-    "main"
-  ]
+  "branchFlow": ["develop", "test", "staging", "main"]
 }
 ```
 
@@ -184,29 +173,37 @@ After running `pipecraft generate`, you'll get:
 ## CLI Commands
 
 ### `pipecraft init`
+
 Initialize a new Pipecraft configuration.
 
 **Options:**
+
 - `--force`: Overwrite existing configuration
 - `--interactive`: Use interactive setup wizard
 
 ### `pipecraft generate`
+
 Generate CI/CD workflows from configuration.
 
 **Options:**
+
 - `--output <path>`: Output directory for generated workflows
 - `--dry-run`: Show what would be generated without writing files
 
 ### `pipecraft validate`
+
 Validate the configuration file.
 
 ### `pipecraft verify`
+
 Check if Pipecraft is properly set up.
 
 ### `pipecraft promote`
+
 Promote current branch to next environment.
 
 **Options:**
+
 - `--force`: Force promotion even if checks fail
 
 ## Integration Examples
@@ -256,6 +253,7 @@ npx pipecraft generate
 ### Common Issues
 
 1. **Configuration not found**
+
    ```bash
    # Make sure you're in the project root
    # Check if .trunkflowrc.json exists
@@ -263,10 +261,11 @@ npx pipecraft generate
    ```
 
 2. **Workflows not generated**
+
    ```bash
    # Validate configuration first
    npx pipecraft validate
-   
+
    # Then generate workflows
    npx pipecraft generate
    ```

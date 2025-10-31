@@ -10,7 +10,7 @@ GitHub releases. Used after version calculation to tag the codebase with semanti
 ### generate()
 
 ```ts
-function generate(ctx): Promise<any>;
+function generate(ctx): Promise<any>
 ```
 
 Defined in: [templates/actions/create-tag.yml.tpl.ts:124](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/templates/actions/create-tag.yml.tpl.ts#L124)

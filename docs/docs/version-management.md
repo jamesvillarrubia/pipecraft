@@ -29,6 +29,7 @@ feat: add user authentication with OAuth
 The prefix before the colon indicates the type of change. Common types include:
 
 **feat**: A new feature (triggers minor version bump)
+
 ```
 feat: add dark mode toggle
 feat: implement PDF export
@@ -36,6 +37,7 @@ feat: support multiple currencies
 ```
 
 **fix**: A bug fix (triggers patch version bump)
+
 ```
 fix: resolve memory leak in cache
 fix: correct timezone calculation
@@ -43,6 +45,7 @@ fix: prevent duplicate submissions
 ```
 
 **breaking**: A breaking change (triggers major version bump)
+
 ```
 feat!: redesign API endpoints
 fix!: change default sort order
@@ -58,6 +61,7 @@ Existing preference data will need to be migrated.
 ```
 
 **Other types** (no version bump): Changes that don't affect functionality
+
 ```
 docs: update installation instructions
 chore: upgrade dependencies
@@ -97,24 +101,25 @@ module.exports = {
   git: {
     requireBranch: 'main',
     commitMessage: 'chore: release v${version}',
-    tagName: 'v${version}',
+    tagName: 'v${version}'
   },
   github: {
-    release: true,
+    release: true
   },
   npm: {
-    publish: false,  // Set to true if you're publishing to npm
+    publish: false // Set to true if you're publishing to npm
   },
   plugins: {
     '@release-it/conventional-changelog': {
       preset: 'angular',
-      infile: 'CHANGELOG.md',
-    },
-  },
-};
+      infile: 'CHANGELOG.md'
+    }
+  }
+}
 ```
 
 This configuration tells release-it to:
+
 - Create version commits and tags on the main branch
 - Use conventional changelog format
 - Create GitHub releases
@@ -129,6 +134,7 @@ pipecraft version --check
 ```
 
 This analyzes your commit history since the last version tag and shows:
+
 - Your current version (from package.json)
 - What the next version would be
 - Which commits would be included
@@ -159,6 +165,7 @@ pipecraft version --bump
 ```
 
 This command:
+
 1. Analyzes your commit history since the last version tag
 2. Determines the appropriate version number based on your bump rules
 3. Updates the version field in package.json
@@ -177,6 +184,7 @@ pipecraft version --release
 ```
 
 This runs the full release-it flow, which includes everything that `--bump` does plus:
+
 - Generates or updates your CHANGELOG.md file
 - Creates a GitHub release with release notes
 - Runs any hooks defined in your release-it config
@@ -188,10 +196,12 @@ The changelog generation groups commits by type:
 ## [1.5.0] - 2024-01-15
 
 ### Features
+
 - add search filters
 - implement pagination
 
 ### Bug Fixes
+
 - resolve sort order bug
 ```
 

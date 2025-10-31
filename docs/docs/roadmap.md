@@ -37,5 +37,6 @@ Contribute code if you're comfortable with TypeScript and GitHub Actions. The pr
 Join discussions on GitHub Discussions to share ideas and debate approaches. Many features start as discussion threads before becoming formal proposals.
 
 Links:
+
 - [GitHub Issues](https://github.com/jamesvillarrubia/pipecraft/issues) for bugs and feature requests
 - [GitHub Discussions](https://github.com/jamesvillarrubia/pipecraft/discussions) for open-ended questions and ideas

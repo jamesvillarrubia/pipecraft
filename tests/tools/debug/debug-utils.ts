@@ -106,7 +106,9 @@ export class GitHubWorkflowDebugger {
     branch?: string,
     limit: number = 10
   ): Promise<WorkflowRun[]> {
-    const endpoint = `/actions/workflows/${workflowName}/runs?per_page=${limit}${branch ? `&branch=${branch}` : ''}`
+    const endpoint = `/actions/workflows/${workflowName}/runs?per_page=${limit}${
+      branch ? `&branch=${branch}` : ''
+    }`
     const response = await this.apiRequest(endpoint)
     return response.workflow_runs
   }

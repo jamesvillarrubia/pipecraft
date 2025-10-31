@@ -28,6 +28,7 @@ tests/
 ## 🧪 Test Categories
 
 ### Unit Tests (`tests/unit/`)
+
 - **Purpose**: Test individual functions, classes, and modules in isolation
 - **Scope**: Single components with mocked dependencies
 - **Speed**: Fast (< 1 second per test)
@@ -47,6 +48,7 @@ tests/
   - `versioning.test.ts` - Basic versioning
 
 ### Integration Tests (`tests/integration/`)
+
 - **Purpose**: Test interactions between multiple components
 - **Scope**: Component integration with real dependencies
 - **Speed**: Medium (1-10 seconds per test)
@@ -58,6 +60,7 @@ tests/
   - `simple-path-based.test.ts` - Simple path-based workflow
 
 ### End-to-End Tests (`tests/e2e/`)
+
 - **Purpose**: Test complete user workflows from start to finish
 - **Scope**: Full application flow with real file system
 - **Speed**: Slow (10+ seconds per test)
@@ -66,6 +69,7 @@ tests/
 - **Status**: Coming soon (Phase 4)
 
 ### Test Helpers (`tests/helpers/`)
+
 - **Purpose**: Reusable utilities for writing tests
 - **Scope**: Workspace management, fixtures, mocks, custom assertions
 - **Status**: To be created (Phase 2)
@@ -78,6 +82,7 @@ tests/
 ### Development Tools (`tests/tools/`)
 
 #### Debugging Tools (`tests/tools/debug/`)
+
 - **Purpose**: Debug and analyze GitHub Actions failures
 - **Scope**: Workflow analysis, log parsing, failure diagnosis
 - **Files**:
@@ -89,6 +94,7 @@ tests/
   - `run-debug-tests.sh` - Debug test runner
 
 #### Validation Tools (`tests/tools/validation/`)
+
 - **Purpose**: Validate generated workflows and configurations
 - **Files**:
   - `validate-pipeline.cjs` - Pipeline YAML validation
@@ -96,18 +102,21 @@ tests/
   - `verify-job-order.sh` - Job order validation script
 
 #### Act Testing (`tests/tools/act/`)
+
 - **Purpose**: Test GitHub Actions workflows locally using Act
 - **Scope**: Local simulation of GitHub Actions environment
 - **Speed**: Medium (5-30 seconds per test)
 - **Requirements**: Docker, Act (nektos/act)
 
 #### GitHub Live Testing (`tests/tools/github-live/`)
+
 - **Purpose**: Test workflows on actual GitHub Actions
 - **Scope**: Real GitHub environment with live workflows
 - **Speed**: Slow (1-10 minutes per test)
 - **Requirements**: GitHub token, live repository
 
 #### GitHub Local Testing (`tests/tools/github-local/`)
+
 - **Purpose**: Local GitHub workflow simulation without Act
 - **Scope**: Local testing without Docker
 - **Speed**: Fast (1-5 seconds per test)
@@ -115,6 +124,7 @@ tests/
 ## 🚀 Running Tests
 
 ### All Tests
+
 ```bash
 # Run all test suites
 pnpm test
@@ -130,6 +140,7 @@ pnpm test:watch
 ```
 
 ### Specific Test Types
+
 ```bash
 # Unit tests only
 pnpm test tests/unit/
@@ -145,6 +156,7 @@ pnpm test tests/unit/config.test.ts
 ```
 
 ### Development Tools
+
 ```bash
 # Validate generated pipeline
 node tests/tools/validation/validate-pipeline.cjs .github/workflows/pipeline.yml
@@ -168,6 +180,7 @@ node tests/tools/validation/test-job-order.cjs
 ## 📋 Test Requirements
 
 ### Prerequisites
+
 - Node.js (v18+)
 - pnpm
 - Git
@@ -175,6 +188,7 @@ node tests/tools/validation/test-job-order.cjs
 - Act + Docker (for local GitHub Actions testing)
 
 ### Environment Variables
+
 ```bash
 # For GitHub live testing
 export GITHUB_TOKEN="your_github_token"
@@ -189,7 +203,9 @@ export GITHUB_REPOSITORY="repo"
 ## 🔧 Test Configuration
 
 ### Vitest Configuration (`vitest.config.ts`)
+
 Tests use Vitest with the following configuration:
+
 - TypeScript support with path aliases
 - ES modules
 - Coverage reporting (v8)
@@ -198,6 +214,7 @@ Tests use Vitest with the following configuration:
 - Isolated test environments
 
 ### Test Data
+
 - **Fixtures** (`tests/fixtures/`) - Static test data and configurations
   - `basic-config.json` - Basic valid configuration
   - `invalid-config.json` - Invalid configuration for error testing
@@ -207,6 +224,7 @@ Tests use Vitest with the following configuration:
 - **Temporary files** - Created in unique temp directories, cleaned up automatically
 
 ### Test Setup (`tests/setup.ts`)
+
 - Defines `TEST_DIR` and `FIXTURES_DIR` constants
 - Sets up global test environment
 - **Note**: TEST_DIR is shared and causes race conditions - will be refactored in Phase 2
@@ -214,6 +232,7 @@ Tests use Vitest with the following configuration:
 ## 📊 Test Coverage
 
 ### Current Coverage (as of latest run)
+
 - **Overall**: 48%
 - **CLI**: 0% ⚠️ (needs tests)
 - **Preflight**: 0% ⚠️ (needs tests)
@@ -227,6 +246,7 @@ Tests use Vitest with the following configuration:
 - **Workflow Template**: 87% ✅
 
 ### Coverage Targets (Phase 3)
+
 - **Unit tests**: 90%+ coverage
 - **Integration tests**: 80%+ coverage
 - **E2E tests**: Critical paths covered
@@ -237,15 +257,18 @@ Tests use Vitest with the following configuration:
 ### Common Issues
 
 1. **Race Conditions**
+
    - **Symptom**: Intermittent test failures, `ENOENT` errors
    - **Cause**: Shared `TEST_DIR`, parallel test execution
    - **Solution**: Use unique temp directories per test (Phase 2 fix)
 
 2. **Permission Errors**
+
    - **Symptom**: `EACCES` errors
    - **Solution**: Ensure test files/directories have proper permissions
 
 3. **Environment Issues**
+
    - **Symptom**: Missing git repository, config not found
    - **Solution**: Check required environment variables and test setup
 
@@ -255,6 +278,7 @@ Tests use Vitest with the following configuration:
    - **Solution**: Will be fixed in Phase 2 (test isolation)
 
 ### Debug Commands
+
 ```bash
 # Debug specific test with verbose output
 pnpm test tests/unit/config.test.ts --reporter=verbose
@@ -275,6 +299,7 @@ pnpm test --run --pool=forks --poolOptions.forks.singleFork=true
 ## 📝 Writing Tests
 
 ### Unit Test Example
+
 ```typescript
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { parseConfig } from '../../src/utils/config'
@@ -284,7 +309,7 @@ describe('Config Parser', () => {
     const config = parseConfig('{"ciProvider": "github"}')
     expect(config.ciProvider).toBe('github')
   })
-  
+
   it('should throw on invalid configuration', () => {
     expect(() => parseConfig('invalid')).toThrow()
   })
@@ -292,6 +317,7 @@ describe('Config Parser', () => {
 ```
 
 ### Integration Test Example
+
 ```typescript
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdirSync, rmSync } from 'fs'
@@ -300,20 +326,20 @@ import { tmpdir } from 'os'
 
 describe('CLI Integration', () => {
   let testDir: string
-  
+
   beforeEach(() => {
     // Create unique temp directory for this test
     testDir = join(tmpdir(), `test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
     mkdirSync(testDir, { recursive: true })
   })
-  
+
   afterEach(() => {
     // Cleanup
     if (existsSync(testDir)) {
       rmSync(testDir, { recursive: true, force: true })
     }
   })
-  
+
   it('should generate workflows', async () => {
     // Test implementation
   })
@@ -323,41 +349,46 @@ describe('CLI Integration', () => {
 ### Test Best Practices
 
 1. **Isolation**: Each test should be independent
+
    - Use unique temp directories
    - Clean up after yourself
    - Don't rely on test execution order
 
 2. **Clear Assertions**: Be specific about what you're testing
+
    ```typescript
    // ❌ Bad: Vague assertion
    expect(result).toBeDefined()
-   
+
    // ✅ Good: Specific assertion with message
    expect(config.branchFlow, 'Branch flow should match config').toEqual(['develop', 'main'])
    ```
 
 3. **Test Behavior, Not Implementation**
+
    ```typescript
    // ❌ Bad: Testing internal state
    expect(manager.cache).toHaveProperty('files')
-   
+
    // ✅ Good: Testing observable behavior
    expect(await manager.hasChanges()).toBe(false)
    ```
 
 4. **Use Descriptive Names**
+
    ```typescript
    // ❌ Bad: Unclear what's being tested
    it('works', () => { ... })
-   
+
    // ✅ Good: Clear test purpose
    it('should preserve user comments when regenerating pipeline', () => { ... })
    ```
 
 5. **Mock External Dependencies**
+
    ```typescript
    import { vi } from 'vitest'
-   
+
    vi.mock('child_process', () => ({
      execSync: vi.fn(() => 'mocked output')
    }))
@@ -366,12 +397,15 @@ describe('CLI Integration', () => {
 ## 🔄 Continuous Integration
 
 ### GitHub Actions
+
 Tests run automatically on:
+
 - Pull requests (all branches)
 - Pushes to main/develop/staging branches
 - Manual workflow dispatch
 
 ### Test Execution
+
 - Node.js version: 22
 - Operating system: Ubuntu latest
 - Test types: Unit, Integration
@@ -390,41 +424,47 @@ Tests run automatically on:
 When adding new tests:
 
 1. **Choose the Right Category**
+
    - Unit tests for isolated logic
    - Integration tests for component interactions
    - E2E tests for complete workflows
 
 2. **Follow Naming Conventions**
+
    - File: `feature-name.test.ts`
    - Describe block: `Feature Name` or `ClassName`
    - Test: `should do something specific`
 
 3. **Ensure Test Isolation**
+
    - Use unique temp directories
    - Clean up all created files
    - Don't modify global state
    - Don't depend on test execution order
 
 4. **Write Clear Tests**
+
    - One assertion per test (when possible)
    - Descriptive test names
    - Comments for complex test setup
    - Assertion messages for clarity
 
 5. **Update Documentation**
+
    - Add new test files to this README
    - Update coverage targets
    - Document any new test patterns
    - Create examples for complex scenarios
 
 6. **Run Tests Before Committing**
+
    ```bash
    # Run all tests
    pnpm test --run
-   
+
    # Check coverage
    pnpm test:coverage --run
-   
+
    # Verify no skipped tests (unless documented)
    grep -r "it.skip\|describe.skip" tests/
    ```
@@ -432,6 +472,7 @@ When adding new tests:
 ## 🚧 Known Issues & Roadmap
 
 ### Current Issues
+
 - ❌ 15 tests skipped due to race conditions (shared TEST_DIR)
 - ❌ CLI has 0% coverage (no tests)
 - ❌ Preflight has 0% coverage (no tests)
@@ -439,6 +480,7 @@ When adding new tests:
 - ❌ Tests modify process.cwd() globally
 
 ### Planned Improvements (see Phase 2-5)
+
 - ✅ Create `tests/helpers/` utilities
 - ✅ Fix test isolation (unique temp dirs)
 - ✅ Unskip all 15 tests

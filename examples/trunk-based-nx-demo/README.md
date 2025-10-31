@@ -87,6 +87,7 @@ These are configured in each library's `project.json` via the `dependsOn` proper
 ### Infrastructure (infra/)
 
 - **infra/pulumi/**: Pulumi TypeScript infrastructure
+
   - Tasks: preview, up
   - Detected via path pattern: `infra/pulumi/**`
 

@@ -42,6 +42,7 @@ The `pipecraft setup` command configures branch protection rules automatically. 
 This protection is important because it ensures your CI/CD pipeline runs before code reaches production. Without it, someone could bypass testing by pushing directly to the main branch.
 
 If you prefer to configure branch protection manually, the key settings are:
+
 - Require status checks to pass before merging
 - Require pull request reviews before merging
 - Restrict who can push to protected branches

@@ -306,10 +306,10 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         ctx.mergeStatus === 'merged'
           ? '🔄 Merged with existing'
           : ctx.mergeStatus === 'updated'
-            ? '🔄 Updated existing'
-            : ctx.mergeStatus === 'rebuilt'
-              ? '🔄 Rebuilt from scratch'
-              : '📝 Created new'
+          ? '🔄 Updated existing'
+          : ctx.mergeStatus === 'rebuilt'
+          ? '🔄 Rebuilt from scratch'
+          : '📝 Created new'
       logger.verbose(`${status} ${outputPath}`)
       return ctx
     })

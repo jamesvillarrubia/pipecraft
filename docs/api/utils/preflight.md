@@ -1,6 +1,6 @@
 [**pipecraft v0.0.0-releaseit**](../README.md)
 
-***
+---
 
 [pipecraft](../README.md) / utils/preflight
 
@@ -10,6 +10,7 @@ Pre-Flight Validation Checks
 
 This module implements comprehensive environment validation before workflow generation.
 Pre-flight checks prevent common failures by validating:
+
 - PipeCraft configuration exists and is valid
 - Git repository is properly initialized
 - Git remote is configured
@@ -73,7 +74,7 @@ Defined in: [utils/preflight.ts:55](https://github.com/jamesvillarrubia/pipecraf
 
 Current directory is a git repository
 
-***
+---
 
 ### PreflightResult
 
@@ -121,10 +122,12 @@ Defined in: [utils/preflight.ts:310](https://github.com/jamesvillarrubia/pipecra
 Check if .github/workflows directory exists and is writable.
 
 Workflows are written to .github/workflows/, so this directory must:
+
 - Exist or be creatable
 - Be writable by the current user
 
 This check attempts to:
+
 1. Create .github/workflows/ if it doesn't exist
 2. Write a test file to verify write permissions
 3. Clean up the test file
@@ -147,7 +150,7 @@ if (!result.passed) {
 }
 ```
 
-***
+---
 
 ### checkConfigExists()
 
@@ -158,6 +161,7 @@ Defined in: [utils/preflight.ts:86](https://github.com/jamesvillarrubia/pipecraf
 Check if PipeCraft configuration file exists.
 
 Uses cosmiconfig to search for configuration files in standard locations:
+
 - .pipecraftrc.json
 - .pipecraftrc (JSON or YAML)
 - pipecraft.config.js
@@ -181,7 +185,7 @@ if (!result.passed) {
 }
 ```
 
-***
+---
 
 ### checkConfigValid()
 
@@ -192,6 +196,7 @@ Defined in: [utils/preflight.ts:126](https://github.com/jamesvillarrubia/pipecra
 Check if configuration file is valid and contains required fields.
 
 Validates:
+
 - File can be parsed (valid JSON/YAML)
 - Required fields are present (ciProvider, branchFlow, domains)
 - At least one domain is configured
@@ -215,7 +220,7 @@ if (!result.passed) {
 }
 ```
 
-***
+---
 
 ### checkHasGitRemote()
 
@@ -226,6 +231,7 @@ Defined in: [utils/preflight.ts:251](https://github.com/jamesvillarrubia/pipecra
 Check if git remote named 'origin' is configured.
 
 A git remote is required for:
+
 - Pushing generated workflows to GitHub
 - Repository information extraction
 - GitHub API integration
@@ -253,7 +259,7 @@ if (!result.passed) {
 }
 ```
 
-***
+---
 
 ### checkInGitRepo()
 
@@ -264,6 +270,7 @@ Defined in: [utils/preflight.ts:205](https://github.com/jamesvillarrubia/pipecra
 Check if current directory is inside a git repository.
 
 PipeCraft requires a git repository to:
+
 - Generate GitHub Actions workflows
 - Track version history
 - Enable version management features
@@ -287,7 +294,7 @@ if (!result.passed) {
 }
 ```
 
-***
+---
 
 ### checkNodeVersion()
 
@@ -298,6 +305,7 @@ Defined in: [utils/preflight.ts:377](https://github.com/jamesvillarrubia/pipecra
 Check if Node.js version meets minimum requirement.
 
 PipeCraft requires Node.js 18.0.0 or higher because it uses:
+
 - Modern ES modules
 - Latest TypeScript features
 - Current GitHub Actions syntax
@@ -330,7 +338,7 @@ if (!result.passed) {
 }
 ```
 
-***
+---
 
 ### formatPreflightResults()
 
@@ -341,6 +349,7 @@ Defined in: [utils/preflight.ts:470](https://github.com/jamesvillarrubia/pipecra
 Format pre-flight check results for human-readable display.
 
 Converts structured check results into formatted output with:
+
 - ✅/❌ icons for visual scanning
 - Error messages and suggestions
 - Next steps if all checks passed
@@ -390,7 +399,7 @@ if (allPassed && nextSteps) {
 }
 ```
 
-***
+---
 
 ### runPreflightChecks()
 
@@ -405,6 +414,7 @@ are met before attempting to generate workflows. This prevents partial
 failures and provides clear error messages upfront.
 
 Checks performed:
+
 - Configuration file exists
 - Configuration is valid
 - Inside git repository

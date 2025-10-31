@@ -59,12 +59,12 @@ PipeCraft enforces strict TypeScript typing. Never use `any` types - always prov
 ```typescript
 // ✅ Good - proper typing
 function generate(config: PipecraftConfig): string {
-  return generateWorkflow(config);
+  return generateWorkflow(config)
 }
 
 // ❌ Bad - using any
 function generate(config: any): any {
-  return generateWorkflow(config);
+  return generateWorkflow(config)
 }
 ```
 

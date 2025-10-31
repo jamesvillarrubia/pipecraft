@@ -93,28 +93,34 @@ Generates comprehensive test reports:
 Main test script with 7 phases:
 
 **Phase 0: Pre-flight Checks**
+
 - Validate git repository
 - Check Nx setup (nx.json, libs/, apps/)
 - Check act installation
 
 **Phase 1: Git State Setup**
+
 - Create baseline tag: `pipecraft-test-baseline`
 - Create test branch: `pipecraft-test-run-<timestamp>`
 
 **Phase 2: Initial Generation**
+
 - Run `pipecraft init` (creates config)
 - Run `pipecraft generate`
 - Capture generated workflows
 
 **Phase 3: Inject Custom Jobs**
+
 - Inject 3 custom jobs into pipeline.yml
 - Commit changes
 
 **Phase 4: Regenerate (Idempotency Test)**
+
 - Run `pipecraft generate` again
 - Verify custom jobs preserved
 
 **Phase 5: Act Testing**
+
 - Load scenarios from config
 - Run each scenario:
   - Modify files
@@ -124,10 +130,12 @@ Main test script with 7 phases:
   - Run expected jobs
 
 **Phase 6: Generate Report**
+
 - Create TEST-REPORT.md
 - Display summary
 
 **Phase 7: Cleanup**
+
 - Switch back to develop branch
 - Delete test branches
 - (Skipped with --keep-artifacts)
@@ -195,6 +203,7 @@ All scenarios are defined in `test-pipecraft-config.json`:
 After running, you'll find:
 
 - **TEST-REPORT.md**: Comprehensive markdown report with:
+
   - Pre-flight check results
   - Generation/regeneration results
   - Custom job preservation results
@@ -233,6 +242,7 @@ After running, you'll find:
 **Symptom**: All act scenarios fail immediately
 
 **Possible Causes**:
+
 1. act not installed: `brew install act`
 2. Docker not running: Start Docker Desktop
 3. GitHub Actions syntax error: Check generated workflows
@@ -280,6 +290,7 @@ Use `--verbose` flag for detailed output:
 ```
 
 Then inspect:
+
 - `.github/workflows/pipeline.yml`
 - `.pipecraftrc.json`
 - TEST-REPORT.md

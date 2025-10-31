@@ -1,2 +1,3 @@
-
-export function loggingFunction() { return 'logging works!'; }
+export function loggingFunction() {
+  return 'logging works!'
+}

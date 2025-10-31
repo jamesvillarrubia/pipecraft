@@ -11,6 +11,7 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
 ## 🚀 Getting Started
 
 ### For New Users
+
 1. **[Main README](https://github.com/jamesvillarrubia/pipecraft#readme)** - Start here! Installation, quick start, and basic usage
 2. **[Current Trunk Flow](./flows/trunk-flow)** - Understand how the trunk-based workflow works
 3. **[Examples](https://github.com/jamesvillarrubia/pipecraft/tree/main/examples)** - Example configurations for different use cases
@@ -19,6 +20,7 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
    - `usage.md` - Detailed usage examples
 
 ### Quick Links
+
 - 📦 [Installation](https://github.com/jamesvillarrubia/pipecraft#installation)
 - ⚡ [Quick Start](https://github.com/jamesvillarrubia/pipecraft#quick-start)
 - ⚙️ [Configuration Options](https://github.com/jamesvillarrubia/pipecraft#configuration-options)
@@ -29,7 +31,9 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
 ## 📖 User Documentation
 
 ### Core Concepts
+
 - **[Current Trunk Flow](./flows/trunk-flow)** - The ONE currently implemented workflow pattern
+
   - How promotions work (develop → staging → main)
   - Auto-merge configuration
   - Domain-based testing
@@ -42,7 +46,9 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
   - Extension points
 
 ### Guides & References
+
 - **[Error Handling](./error-handling.md)** - Complete error types, causes, and solutions
+
   - Configuration errors
   - Pre-flight check failures
   - Git operation errors
@@ -60,19 +66,23 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
 ## 🛠️ Contributor Documentation
 
 ### Getting Started with Contributing
+
 - **[Repository Cleanup Plan](https://github.com/jamesvillarrubia/pipecraft/blob/main/docs/REPO_CLEANUP_PLAN.md)** - Understanding the repo structure
   - Directory organization
   - Where to add new code/tests/docs
   - File categorization
 
 ### Development Guides
+
 - **[Architecture](./architecture.md)** - Required reading for contributors
+
   - System components in detail
   - How everything fits together
   - Performance considerations
   - Security considerations
 
 - **[Test Documentation](https://github.com/jamesvillarrubia/pipecraft/blob/main/tests/README.md)** - How to run and write tests
+
   - Test structure and categories
   - Running tests locally
   - Writing good tests
@@ -84,6 +94,7 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
   - Path operation implementation
 
 ### Contributing Workflow
+
 1. Read [Architecture](./architecture.md) to understand the system
 2. Read [Test Documentation](https://github.com/jamesvillarrubia/pipecraft/blob/main/tests/README.md) to understand testing
 3. Pick an issue or feature to work on
@@ -97,6 +108,7 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
 ## 🗺️ Planning & Roadmap
 
 ### Future Plans
+
 - **[Roadmap](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md)** - Future features and enhancements
   - ⚠️ **Note**: This describes FUTURE plans, not current implementation
   - Temporary branches (planned)
@@ -105,6 +117,7 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
   - Environment deployments (planned)
 
 ### Historical/Planning Documents
+
 - **[User Journey Errors Planning](https://github.com/jamesvillarrubia/pipecraft/blob/main/docs/USER_JOURNEY_ERRORS_PLANNING.md)** - Comprehensive error scenario planning
   - This is a planning/design document
   - Maps every possible error scenario
@@ -115,25 +128,28 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
 ## 📋 Document Categories
 
 ### Production Documentation (User-Facing)
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| [Main README](https://github.com/jamesvillarrubia/pipecraft#readme) | Installation, quick start, usage | All users |
-| [Current Trunk Flow](./flows/trunk-flow) | Current implementation details | Users, contributors |
-| [Error Handling](./error-handling.md) | Troubleshooting guide | Users |
-| [Examples](https://github.com/jamesvillarrubia/pipecraft/tree/main/examples) | Configuration examples | Users |
+
+| Document                                                                     | Purpose                          | Audience            |
+| ---------------------------------------------------------------------------- | -------------------------------- | ------------------- |
+| [Main README](https://github.com/jamesvillarrubia/pipecraft#readme)          | Installation, quick start, usage | All users           |
+| [Current Trunk Flow](./flows/trunk-flow)                                     | Current implementation details   | Users, contributors |
+| [Error Handling](./error-handling.md)                                        | Troubleshooting guide            | Users               |
+| [Examples](https://github.com/jamesvillarrubia/pipecraft/tree/main/examples) | Configuration examples           | Users               |
 
 ### Technical Documentation (Contributor-Facing)
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| [Architecture](./architecture.md) | System design | Contributors |
-| [AST Operations](https://github.com/jamesvillarrubia/pipecraft/blob/main/docs/AST_OPERATIONS.md) | YAML manipulation internals | Advanced contributors |
-| [Test Documentation](https://github.com/jamesvillarrubia/pipecraft/blob/main/tests/README.md) | Testing guide | Contributors |
-| [Repository Cleanup Plan](https://github.com/jamesvillarrubia/pipecraft/blob/main/docs/REPO_CLEANUP_PLAN.md) | Repo organization | Contributors |
+
+| Document                                                                                                     | Purpose                     | Audience              |
+| ------------------------------------------------------------------------------------------------------------ | --------------------------- | --------------------- |
+| [Architecture](./architecture.md)                                                                            | System design               | Contributors          |
+| [AST Operations](https://github.com/jamesvillarrubia/pipecraft/blob/main/docs/AST_OPERATIONS.md)             | YAML manipulation internals | Advanced contributors |
+| [Test Documentation](https://github.com/jamesvillarrubia/pipecraft/blob/main/tests/README.md)                | Testing guide               | Contributors          |
+| [Repository Cleanup Plan](https://github.com/jamesvillarrubia/pipecraft/blob/main/docs/REPO_CLEANUP_PLAN.md) | Repo organization           | Contributors          |
 
 ### Planning Documentation (Reference)
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| [Roadmap](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md) | Future features | Product planning |
+
+| Document                                                                                                                     | Purpose                 | Audience             |
+| ---------------------------------------------------------------------------------------------------------------------------- | ----------------------- | -------------------- |
+| [Roadmap](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md)                                        | Future features         | Product planning     |
 | [User Journey Errors Planning](https://github.com/jamesvillarrubia/pipecraft/blob/main/docs/USER_JOURNEY_ERRORS_PLANNING.md) | Error scenario planning | Development planning |
 
 ---
@@ -180,6 +196,7 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
 ## 📊 Documentation Status
 
 ### ✅ Complete & Up-to-Date
+
 - Main README
 - Architecture
 - Current Trunk Flow
@@ -189,12 +206,14 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
 - Repository Cleanup Plan
 
 ### 🚧 Needs Creation/Update
+
 - CHANGELOG.md (create)
 - CONTRIBUTING.md (create)
 - tests/CONTRIBUTING_TESTS.md (create)
 - Main README (update to remove unimplemented features)
 
 ### 📋 Planning Documents
+
 - Roadmap (marked as future)
 - User Journey Errors Planning (reference)
 
@@ -211,6 +230,7 @@ Documentation is code! When contributing:
 5. **Update This Index**: When adding new docs, add them here
 
 ### Documentation Guidelines
+
 - Use clear, simple language
 - Include code examples
 - Add diagrams where helpful
@@ -219,6 +239,7 @@ Documentation is code! When contributing:
 - Keep file sizes reasonable (< 500 lines per doc)
 
 ### Where to Put New Documentation
+
 - **User guides**: `/docs/` directory
 - **API docs**: JSDoc comments in code
 - **Test docs**: `/tests/` directory
@@ -257,4 +278,3 @@ All documentation is licensed under the same license as PipeCraft (see [LICENSE]
 ---
 
 **Happy building! 🚀**
-

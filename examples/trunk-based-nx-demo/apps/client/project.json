@@ -1,8 +1,21 @@
 {
   "name": "client",
   "targets": {
-    "build": {"executor": "@nx/js:tsc", "options": {"outputPath": "dist/apps/client", "main": "apps/client/src/main.ts", "tsConfig": "apps/client/tsconfig.json"}},
-    "test": {"executor": "@nx/jest:jest", "options": {"jestConfig": "apps/client/jest.config.ts"}},
-    "e2e": {"executor": "@nx/jest:jest", "options": {"jestConfig": "apps/client/jest.config.ts", "testPathPattern": "e2e"}}
+    "build": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "outputPath": "dist/apps/client",
+        "main": "apps/client/src/main.ts",
+        "tsConfig": "apps/client/tsconfig.json"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": { "jestConfig": "apps/client/jest.config.ts" }
+    },
+    "e2e": {
+      "executor": "@nx/jest:jest",
+      "options": { "jestConfig": "apps/client/jest.config.ts", "testPathPattern": "e2e" }
+    }
   }
 }

@@ -8,7 +8,13 @@
     "build": "node build.js",
     "start": "node src/index.js"
   },
-  "keywords": ["pipecraft", "example", "minimal", "quickstart", "ci-cd"],
+  "keywords": [
+    "pipecraft",
+    "example",
+    "minimal",
+    "quickstart",
+    "ci-cd"
+  ],
   "author": "PipeCraft Team",
   "license": "MIT",
   "repository": {

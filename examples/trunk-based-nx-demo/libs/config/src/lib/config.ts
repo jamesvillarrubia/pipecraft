@@ -1,2 +1,3 @@
-
-export function configFunction() { return 'config works!'; }
+export function configFunction() {
+  return 'config works!'
+}

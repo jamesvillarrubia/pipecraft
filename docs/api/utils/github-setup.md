@@ -1,6 +1,6 @@
 [**pipecraft v0.0.0-releaseit**](../README.md)
 
-***
+---
 
 [pipecraft](../README.md) / utils/github-setup
 
@@ -10,6 +10,7 @@ GitHub Repository Setup and Configuration
 
 This module provides utilities for setting up and configuring GitHub repositories
 for use with PipeCraft workflows. It handles:
+
 - Repository information extraction from git remotes
 - GitHub authentication token management
 - Workflow permissions configuration
@@ -18,6 +19,7 @@ for use with PipeCraft workflows. It handles:
 
 These setup utilities ensure that GitHub repositories have the correct permissions
 and settings for PipeCraft workflows to function properly, including:
+
 - Workflows can create pull requests
 - Auto-merge is enabled for automated promotions
 - Branch protection is configured appropriately
@@ -51,7 +53,7 @@ Configure branch protection for branches that need auto-merge
 
 `Promise`\<`void`\>
 
-***
+---
 
 ### enableAutoMerge()
 
@@ -79,7 +81,7 @@ Enable auto-merge feature for the repository
 
 `Promise`\<`boolean`\>
 
-***
+---
 
 ### getBranchProtection()
 
@@ -111,7 +113,7 @@ Get branch protection rules
 
 `Promise`\<`BranchProtectionRules` \| `null`\>
 
-***
+---
 
 ### getGitHubToken()
 
@@ -123,6 +125,7 @@ Get GitHub authentication token from environment or GitHub CLI.
 
 Attempts to retrieve a GitHub personal access token from multiple sources
 in this order:
+
 1. GITHUB_TOKEN environment variable
 2. GH_TOKEN environment variable
 3. GitHub CLI (`gh auth token`) if authenticated
@@ -152,7 +155,7 @@ const token = getGitHubToken()
 const token = getGitHubToken() // Uses gh CLI token
 ```
 
-***
+---
 
 ### getRepositoryInfo()
 
@@ -164,6 +167,7 @@ Extract GitHub repository information from git remote configuration.
 
 Parses the git remote URL for the 'origin' remote to extract owner and
 repository name. Supports both HTTPS and SSH GitHub URLs:
+
 - HTTPS: https://github.com/owner/repo.git
 - SSH: git@github.com:owner/repo.git
 
@@ -192,7 +196,7 @@ console.log(`Owner: ${info.owner}, Repo: ${info.repo}`)
 // Owner: jamesvillarrubia, Repo: pipecraft
 ```
 
-***
+---
 
 ### getRequiredPermissionChanges()
 
@@ -213,7 +217,7 @@ Returns: changes object if changes needed, null if already correct
 
 `Partial`\<`WorkflowPermissions`\> \| `null`
 
-***
+---
 
 ### getWorkflowPermissions()
 
@@ -241,7 +245,7 @@ Get current workflow permissions
 
 `Promise`\<`WorkflowPermissions`\>
 
-***
+---
 
 ### promptPermissionChanges()
 
@@ -262,7 +266,7 @@ Returns: changes object if user accepted changes, 'declined' if user declined, n
 
 `Promise`\<`Partial`\<`WorkflowPermissions`\> \| `"declined"` \| `null`\>
 
-***
+---
 
 ### setupGitHubPermissions()
 
@@ -282,7 +286,7 @@ Main setup function
 
 `Promise`\<`void`\>
 
-***
+---
 
 ### updateBranchProtection()
 
@@ -314,7 +318,7 @@ Update branch protection rules to enable auto-merge
 
 `Promise`\<`void`\>
 
-***
+---
 
 ### updateWorkflowPermissions()
 

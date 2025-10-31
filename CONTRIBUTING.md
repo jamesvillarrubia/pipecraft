@@ -3,6 +3,7 @@
 Thank you for your interest in contributing to PipeCraft! This guide will help you get started with contributing to the project.
 
 We welcome all types of contributions:
+
 - 🐛 Bug fixes
 - ✨ New features
 - 📝 Documentation improvements
@@ -91,6 +92,7 @@ pipecraft/
 ### Development Workflow
 
 1. **Create a feature branch**
+
    ```bash
    git checkout develop
    git pull upstream develop
@@ -98,11 +100,13 @@ pipecraft/
    ```
 
 2. **Make your changes**
+
    - Edit source files in `src/`
    - Write tests in `tests/`
    - Update documentation in `docs/`
 
 3. **Build and test locally**
+
    ```bash
    pnpm run build
    pnpm test
@@ -110,6 +114,7 @@ pipecraft/
    ```
 
 4. **Test your changes manually**
+
    ```bash
    # Test CLI locally
    pnpm run pipecraft init
@@ -121,17 +126,17 @@ pipecraft/
 
 ### Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `pnpm run build` | Compile TypeScript to JavaScript |
-| `pnpm test` | Run test suite |
-| `pnpm test:watch` | Run tests in watch mode |
-| `pnpm test:coverage` | Generate coverage report |
-| `pnpm run lint` | Check code style |
-| `pnpm run lint:fix` | Fix auto-fixable style issues |
-| `pnpm run format` | Format code with Prettier |
-| `pnpm run docs:dev` | Start documentation dev server |
-| `pnpm run pipecraft` | Run CLI locally |
+| Script               | Description                      |
+| -------------------- | -------------------------------- |
+| `pnpm run build`     | Compile TypeScript to JavaScript |
+| `pnpm test`          | Run test suite                   |
+| `pnpm test:watch`    | Run tests in watch mode          |
+| `pnpm test:coverage` | Generate coverage report         |
+| `pnpm run lint`      | Check code style                 |
+| `pnpm run lint:fix`  | Fix auto-fixable style issues    |
+| `pnpm run format`    | Format code with Prettier        |
+| `pnpm run docs:dev`  | Start documentation dev server   |
+| `pnpm run pipecraft` | Run CLI locally                  |
 
 ---
 
@@ -140,22 +145,26 @@ pipecraft/
 ### Core Modules
 
 #### CLI Layer (`src/cli/`)
+
 - **Purpose**: Command-line interface and user interaction
 - **Key files**: `index.ts` (entry point)
 - **Commands**: init, generate, verify, validate, setup-github
 
 #### Generators (`src/generators/`)
+
 - **Purpose**: Pinion-based file generation
 - **Key files**: `init.tpl.ts`, `workflows.tpl.ts`
 - **Uses**: Template engine for idempotent generation
 
 #### Templates (`src/templates/`)
+
 - **Purpose**: GitHub Actions workflow and action templates
 - **Workflows**: `pipeline.yml.tpl.ts`, `pipeline-nx.yml.tpl.ts`
 - **Actions**: Composite actions for reusable logic
 - **Shared**: Common operations and helpers
 
 #### Utilities (`src/utils/`)
+
 - **Purpose**: Core business logic
 - **Key modules**:
   - `config.ts` - Configuration loading and validation
@@ -166,6 +175,7 @@ pipecraft/
   - `logger.ts` - Logging utilities
 
 #### Types (`src/types/`)
+
 - **Purpose**: TypeScript type definitions
 - **Key file**: `index.ts` - Centralized type exports
 - **Contains**: Configuration types, workflow types, domain types
@@ -199,6 +209,7 @@ pipecraft/
 5. Submit a PR referencing the issue
 
 **Example:**
+
 ```typescript
 // tests/unit/config.test.ts
 it('should handle missing domain paths gracefully', () => {
@@ -217,6 +228,7 @@ it('should handle missing domain paths gracefully', () => {
 6. Submit a PR
 
 **Feature checklist:**
+
 - [ ] Tests written (unit, integration, E2E if applicable)
 - [ ] Documentation updated
 - [ ] TypeScript types added/updated
@@ -231,6 +243,7 @@ Documentation lives in two places:
 2. **Documentation site**: Markdown files in `docs/docs/`
 
 For documentation changes:
+
 - Run `pnpm run docs:dev` to preview locally
 - Ensure proper formatting and links work
 - Include code examples where helpful
@@ -252,6 +265,7 @@ tests/
 ### Writing Tests
 
 **Unit Tests** - Test isolated functions:
+
 ```typescript
 import { describe, it, expect } from 'vitest'
 import { calculateVersion } from '../src/utils/versioning'
@@ -266,6 +280,7 @@ describe('calculateVersion', () => {
 ```
 
 **Integration Tests** - Test components together:
+
 ```typescript
 it('should generate workflow with correct domains', async () => {
   const config = createTrunkFlowConfig()
@@ -277,6 +292,7 @@ it('should generate workflow with correct domains', async () => {
 ```
 
 **E2E Tests** - Test complete scenarios:
+
 ```typescript
 it('should complete trunk flow from develop to main', async () => {
   // Setup repository
@@ -298,11 +314,7 @@ it('should complete trunk flow from develop to main', async () => {
 Use provided test helpers from `tests/helpers/`:
 
 ```typescript
-import {
-  createTestWorkspace,
-  assertFileExists,
-  assertValidYAML
-} from '../helpers'
+import { createTestWorkspace, assertFileExists, assertValidYAML } from '../helpers'
 
 const workspace = await createTestWorkspace('test-project')
 // ... do work ...
@@ -354,19 +366,19 @@ PipeCraft uses [Conventional Commits](https://www.conventionalcommits.org/) for 
 
 ### Types
 
-| Type | Description | Version Bump |
-|------|-------------|--------------|
-| `feat` | New feature | Minor (0.x.0) |
-| `fix` | Bug fix | Patch (0.0.x) |
-| `docs` | Documentation only | None |
-| `style` | Code style changes | None |
-| `refactor` | Code refactoring | None |
-| `perf` | Performance improvement | Patch |
-| `test` | Test changes | None |
-| `chore` | Maintenance tasks | None |
-| `ci` | CI/CD changes | None |
-| `build` | Build system changes | None |
-| `revert` | Revert previous commit | Depends |
+| Type       | Description             | Version Bump  |
+| ---------- | ----------------------- | ------------- |
+| `feat`     | New feature             | Minor (0.x.0) |
+| `fix`      | Bug fix                 | Patch (0.0.x) |
+| `docs`     | Documentation only      | None          |
+| `style`    | Code style changes      | None          |
+| `refactor` | Code refactoring        | None          |
+| `perf`     | Performance improvement | Patch         |
+| `test`     | Test changes            | None          |
+| `chore`    | Maintenance tasks       | None          |
+| `ci`       | CI/CD changes           | None          |
+| `build`    | Build system changes    | None          |
+| `revert`   | Revert previous commit  | Depends       |
 
 ### Breaking Changes
 
@@ -382,6 +394,7 @@ git commit -m "feat: change API" -m "BREAKING CHANGE: API signature changed"
 ### Examples
 
 **Good commits:**
+
 ```bash
 feat: add GitLab CI support
 fix: correct version calculation for pre-release tags
@@ -392,6 +405,7 @@ chore: update dependencies
 ```
 
 **Bad commits:**
+
 ```bash
 update stuff
 fixed bug
@@ -437,23 +451,29 @@ docs: improve getting started guide
 
 ```markdown
 ## Description
+
 Brief description of what this PR does.
 
 ## Motivation
+
 Why is this change needed? What problem does it solve?
 
 ## Changes
+
 - Change 1
 - Change 2
 - Change 3
 
 ## Testing
+
 How was this tested? Include steps to reproduce.
 
 ## Screenshots (if applicable)
+
 Add screenshots for UI changes.
 
 ## Checklist
+
 - [ ] Tests added/updated
 - [ ] Documentation updated
 - [ ] No breaking changes (or documented)
@@ -481,6 +501,7 @@ Add screenshots for UI changes.
 ### TypeScript
 
 **Use strict typing - avoid `any`:**
+
 ```typescript
 // ❌ Bad
 function process(data: any): any {
@@ -494,9 +515,10 @@ function process(data: ConfigData): string {
 ```
 
 **Define interfaces for complex types:**
+
 ```typescript
 // ❌ Bad - inline type
-function createJob(config: { name: string, steps: string[] }) { }
+function createJob(config: { name: string; steps: string[] }) {}
 
 // ✅ Good - defined interface
 interface JobConfig {
@@ -504,10 +526,11 @@ interface JobConfig {
   steps: string[]
 }
 
-function createJob(config: JobConfig) { }
+function createJob(config: JobConfig) {}
 ```
 
 **Use type guards for narrowing:**
+
 ```typescript
 function isNxConfig(config: Config): config is NxConfig {
   return 'nx' in config && config.nx?.enabled === true
@@ -518,7 +541,7 @@ function isNxConfig(config: Config): config is NxConfig {
 
 All public functions must have JSDoc:
 
-```typescript
+````typescript
 /**
  * Calculates the next semantic version based on commits.
  *
@@ -534,13 +557,10 @@ All public functions must have JSDoc:
  * // Returns: '1.1.0'
  * ```
  */
-export function calculateVersion(
-  currentVersion: string,
-  commits: Commit[]
-): string {
+export function calculateVersion(currentVersion: string, commits: Commit[]): string {
   // Implementation
 }
-```
+````
 
 ### File Organization
 
@@ -558,13 +578,15 @@ interface LocalType {
 }
 
 // 3. Constants
-const DEFAULT_CONFIG = { /* ... */ }
+const DEFAULT_CONFIG = {
+  /* ... */
+}
 
 // 4. Helper functions (non-exported)
-function helper() { }
+function helper() {}
 
 // 5. Main exports
-export function mainFunction() { }
+export function mainFunction() {}
 ```
 
 ### Error Handling
@@ -574,16 +596,13 @@ export function mainFunction() { }
 if (!config.domains || Object.keys(config.domains).length === 0) {
   throw new Error(
     'Configuration must include at least one domain. ' +
-    'See: https://pipecraft.thecraftlab.dev/docs/configuration-reference'
+      'See: https://pipecraft.thecraftlab.dev/docs/configuration-reference'
   )
 }
 
 // ✅ Good - typed errors
 class ConfigValidationError extends Error {
-  constructor(
-    message: string,
-    public field: string
-  ) {
+  constructor(message: string, public field: string) {
     super(message)
     this.name = 'ConfigValidationError'
   }
@@ -600,11 +619,11 @@ class ConfigValidationError extends Error {
 ```typescript
 // Variables and functions
 const configPath = './config'
-function generateWorkflow() { }
+function generateWorkflow() {}
 
 // Types and interfaces
-interface PipecraftConfig { }
-type WorkflowResult = { }
+interface PipecraftConfig {}
+type WorkflowResult = {}
 
 // Constants
 const DEFAULT_BRANCH = 'main'
@@ -642,6 +661,7 @@ Documentation uses [Docusaurus](https://docusaurus.io/):
 - **Sidebar**: `docs/sidebars.ts`
 
 **Adding a new doc page:**
+
 1. Create `docs/docs/your-page.md`
 2. Add to `docs/sidebars.ts`
 3. Preview with `pnpm run docs:dev`
@@ -694,6 +714,7 @@ By contributing to PipeCraft, you agree that your contributions will be licensed
 ## Recognition
 
 Contributors are recognized in:
+
 - Release notes and changelog
 - GitHub contributors page
 - Project README (for significant contributions)

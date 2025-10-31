@@ -407,7 +407,9 @@ export async function promptPermissionChanges(
   console.log('\n📋 Current GitHub Actions Workflow Permissions:')
   console.log(`   Default permissions: ${currentPermissions.default_workflow_permissions}`)
   console.log(
-    `   Can create/approve PRs: ${currentPermissions.can_approve_pull_request_reviews ? 'Yes' : 'No'}`
+    `   Can create/approve PRs: ${
+      currentPermissions.can_approve_pull_request_reviews ? 'Yes' : 'No'
+    }`
   )
 
   // Check if permissions are already correct
@@ -1212,7 +1214,9 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
       console.log('\n📋 Current GitHub Actions Workflow Permissions:')
       console.log(`   Default permissions: ${currentPermissions.default_workflow_permissions}`)
       console.log(
-        `   Can create/approve PRs: ${currentPermissions.can_approve_pull_request_reviews ? 'Yes' : 'No'}`
+        `   Can create/approve PRs: ${
+          currentPermissions.can_approve_pull_request_reviews ? 'Yes' : 'No'
+        }`
       )
       console.log('\n🔧 Applying required changes:')
       if (changes.default_workflow_permissions) {

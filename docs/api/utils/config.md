@@ -1,6 +1,6 @@
 [**pipecraft v0.0.0-releaseit**](../README.md)
 
-***
+---
 
 [pipecraft](../README.md) / utils/config
 
@@ -10,6 +10,7 @@ Configuration Loading and Validation Utilities
 
 This module provides functions to load and validate PipeCraft configuration files.
 It uses cosmiconfig to search for configuration in multiple locations:
+
 - .pipecraftrc.json
 - .pipecraftrc (JSON or YAML)
 - pipecraft.config.js
@@ -31,6 +32,7 @@ Load PipeCraft configuration from filesystem.
 Uses cosmiconfig to search for configuration files in standard locations.
 If no path is provided, searches the current directory and ancestors for
 configuration files in this order:
+
 1. .pipecraftrc.json
 2. .pipecraftrc
 3. pipecraft.config.js
@@ -64,7 +66,7 @@ const config = loadConfig()
 const config = loadConfig('./my-config.json')
 ```
 
-***
+---
 
 ### validateConfig()
 
@@ -75,12 +77,14 @@ Defined in: [utils/config.ts:79](https://github.com/jamesvillarrubia/pipecraft/b
 Validate PipeCraft configuration structure and values.
 
 Performs comprehensive validation including:
+
 - Presence of all required fields
 - Valid enum values (ciProvider, mergeStrategy)
 - Branch flow structure (minimum 2 branches)
 - Domain configuration (paths, testable, deployable)
 
 Also sets default values for optional domain properties:
+
 - testable defaults to true
 - deployable defaults to true
 

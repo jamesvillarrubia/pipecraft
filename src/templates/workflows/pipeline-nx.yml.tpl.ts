@@ -96,7 +96,9 @@ function createTestNxJobOperation(ctx: NxPipelineContext): PathOperationConfig {
       target => `
       - name: Run nx affected --target=${target}
         run: |
-          npx nx affected --target=${target} --base=\${{ inputs.baseRef || '${nxConfig.baseRef || 'origin/main'}' }} || echo "No affected projects"`
+          npx nx affected --target=${target} --base=\${{ inputs.baseRef || '${
+        nxConfig.baseRef || 'origin/main'
+      }' }} || echo "No affected projects"`
     )
     .join('')
 
@@ -132,10 +134,10 @@ function createTestNxJobOperation(ctx: NxPipelineContext): PathOperationConfig {
       - name: Install dependencies
         run: pnpm install --frozen-lockfile`
           : packageManager === 'yarn'
-            ? `
+          ? `
       - name: Install dependencies
         run: yarn install --frozen-lockfile`
-            : `
+          : `
       - name: Install dependencies
         run: npm ci`
       }
@@ -447,10 +449,10 @@ export const generate = (ctx: NxPipelineContext) =>
         ctx.mergeStatus === 'merged'
           ? '🔄 Merged with existing'
           : ctx.mergeStatus === 'updated'
-            ? '🔄 Updated existing'
-            : ctx.mergeStatus === 'rebuilt'
-              ? '🔄 Rebuilt from scratch'
-              : '📝 Created new'
+          ? '🔄 Updated existing'
+          : ctx.mergeStatus === 'rebuilt'
+          ? '🔄 Rebuilt from scratch'
+          : '📝 Created new'
       logger.verbose(`${status} ${outputPath}`)
       return ctx
     })

@@ -12,7 +12,14 @@
     "build": "node build.js",
     "lint": "node lint.js"
   },
-  "keywords": ["pipecraft", "gated", "enterprise", "example", "ci-cd", "manual-approval"],
+  "keywords": [
+    "pipecraft",
+    "gated",
+    "enterprise",
+    "example",
+    "ci-cd",
+    "manual-approval"
+  ],
   "author": "PipeCraft Team",
   "license": "MIT",
   "repository": {

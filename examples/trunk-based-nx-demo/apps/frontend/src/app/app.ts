@@ -1,1 +1,3 @@
-export function frontendApp() { return 'frontend application'; }
+export function frontendApp() {
+  return 'frontend application'
+}

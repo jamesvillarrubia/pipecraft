@@ -16,6 +16,7 @@
 PipeCraft is a powerful CLI tool for automating trunk-based development workflows with GitHub Actions. It generates intelligent CI/CD pipelines that adapt to your codebase structure, support multiple domains (monorepos), handle semantic versioning, and manage branch flows with fast-forward merging strategies.
 
 ## Table of Contents
+
 - [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
@@ -61,11 +62,13 @@ PipeCraft is a powerful CLI tool for automating trunk-based development workflow
 ## Quick Start
 
 1. Initialize PipeCraft in your project:
+
    ```bash
    npx pipecraft init
    ```
 
 2. Generate your CI/CD workflows:
+
    ```bash
    npx pipecraft generate
    ```
@@ -122,11 +125,13 @@ PipeCraft provides several commands to manage your trunk-based development workf
 #### 1. Initialize Configuration
 
 Create a basic configuration with default settings:
+
 ```bash
 pipecraft init
 ```
 
 Force overwrite existing configuration:
+
 ```bash
 pipecraft init --force
 ```
@@ -136,11 +141,13 @@ pipecraft init --force
 #### 2. Generate Workflows
 
 Generate CI/CD workflows based on your configuration:
+
 ```bash
 pipecraft generate
 ```
 
 The generate command automatically runs pre-flight checks to validate:
+
 - Configuration file exists and is valid
 - Required fields are present (ciProvider, branchFlow, domains)
 - Current directory is a git repository
@@ -148,6 +155,7 @@ The generate command automatically runs pre-flight checks to validate:
 - .github/workflows directory is writable
 
 If any check fails, you'll see helpful error messages with suggestions. Example output:
+
 ```
 🔍 Running pre-flight checks...
 
@@ -160,41 +168,51 @@ If any check fails, you'll see helpful error messages with suggestions. Example 
 **Output verbosity levels:**
 
 Normal mode (default) - Clean, actionable output:
+
 ```bash
 pipecraft generate
 ```
+
 Shows only essential information: pre-flight checks and completion status.
 
 Verbose mode - Shows file operations:
+
 ```bash
 pipecraft generate --verbose
 ```
+
 Includes file merge status, config paths, and workflow generation details.
 
 Debug mode - Full internal details:
+
 ```bash
 pipecraft generate --debug
 ```
+
 Includes everything from verbose mode plus internal debugging information like branch flow context, job ordering, and template operations.
 
 **Other options:**
 
 Skip pre-flight checks (not recommended):
+
 ```bash
 pipecraft generate --skip-checks
 ```
 
 Force regeneration (bypass cache):
+
 ```bash
 pipecraft generate --force
 ```
 
 Preview what would be generated (dry run):
+
 ```bash
 pipecraft generate --dry-run
 ```
 
 Use custom config and output paths:
+
 ```bash
 pipecraft generate --config custom-config.json --output-pipeline .github/workflows/custom.yml
 ```
@@ -202,11 +220,13 @@ pipecraft generate --config custom-config.json --output-pipeline .github/workflo
 #### 3. Validate Configuration
 
 Check if your configuration is valid:
+
 ```bash
 pipecraft validate
 ```
 
 Validate a custom config file:
+
 ```bash
 pipecraft validate --config custom-config.json
 ```
@@ -214,11 +234,13 @@ pipecraft validate --config custom-config.json
 #### 4. Verify Setup
 
 Verify that PipeCraft is properly configured:
+
 ```bash
 pipecraft verify
 ```
 
 This checks:
+
 - Configuration file exists and is valid
 - GitHub Actions workflows exist (for GitHub projects)
 - Repository structure is correct
@@ -226,16 +248,19 @@ This checks:
 #### 5. Version Management
 
 Check current and next version:
+
 ```bash
 pipecraft version --check
 ```
 
 Bump version based on conventional commits:
+
 ```bash
 pipecraft version --bump
 ```
 
 Create a release:
+
 ```bash
 pipecraft version --release
 ```
@@ -243,6 +268,7 @@ pipecraft version --release
 #### 6. Branch Setup
 
 Create all branches defined in your branch flow:
+
 ```bash
 pipecraft setup
 ```
@@ -293,15 +319,15 @@ Example `.pipecraftrc.json`:
 
 PipeCraft provides the following commands:
 
-| Command | Description | Key Options |
-|---------|-------------|-------------|
-| `init` | Initialize PipeCraft configuration | `--force` |
-| `generate` | Generate CI/CD workflows with pre-flight checks | `--skip-checks`, `--force`, `--dry-run`, `--config`, `--output-pipeline`, `--verbose`, `--debug` |
-| `validate` | Validate configuration file | `--config` |
-| `setup-github` | Configure GitHub Actions workflow permissions | `--apply`, `--force` |
-| `verify` | Verify PipeCraft setup | None |
-| `version` | Version management commands | `--check`, `--bump`, `--release` |
-| `setup` | Create branches from branch flow | `--force` |
+| Command        | Description                                     | Key Options                                                                                      |
+| -------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `init`         | Initialize PipeCraft configuration              | `--force`                                                                                        |
+| `generate`     | Generate CI/CD workflows with pre-flight checks | `--skip-checks`, `--force`, `--dry-run`, `--config`, `--output-pipeline`, `--verbose`, `--debug` |
+| `validate`     | Validate configuration file                     | `--config`                                                                                       |
+| `setup-github` | Configure GitHub Actions workflow permissions   | `--apply`, `--force`                                                                             |
+| `verify`       | Verify PipeCraft setup                          | None                                                                                             |
+| `version`      | Version management commands                     | `--check`, `--bump`, `--release`                                                                 |
+| `setup`        | Create branches from branch flow                | `--force`                                                                                        |
 
 > **Note**: All commands support global options like `--verbose` and `--debug` for detailed output.
 
@@ -363,12 +389,14 @@ PipeCraft includes comprehensive pre-flight validation to catch common errors be
 When you run `pipecraft generate`, the following checks are automatically performed:
 
 1. **Configuration File Discovery**
+
    - Searches for config using [cosmiconfig](https://github.com/davidtheclark/cosmiconfig)
    - Looks in: `.pipecraftrc.json`, `.pipecraftrc`, `package.json` (pipecraft key)
    - Searches parent directories recursively
    - Shows the exact path where config was found
 
 2. **Configuration Validation**
+
    - Verifies JSON syntax is valid
    - Checks all required fields are present:
      - `ciProvider` (github or gitlab)
@@ -377,10 +405,12 @@ When you run `pipecraft generate`, the following checks are automatically perfor
    - Validates domain configuration has paths defined
 
 3. **Git Repository Check**
+
    - Verifies current directory is a git repository
    - Suggests running `git init` if not
 
 4. **Git Remote Check**
+
    - Verifies git remote is configured
    - Shows the remote URL
    - Suggests adding a remote if missing
@@ -392,6 +422,7 @@ When you run `pipecraft generate`, the following checks are automatically perfor
 ### Example Pre-Flight Output
 
 **All checks passing:**
+
 ```
 🔍 Running pre-flight checks...
 
@@ -405,6 +436,7 @@ When you run `pipecraft generate`, the following checks are automatically perfor
 ```
 
 **Checks failing with helpful suggestions:**
+
 ```
 🔍 Running pre-flight checks...
 
@@ -430,11 +462,13 @@ pipecraft generate --skip-checks
 ```
 
 **When you might skip checks:**
+
 - CI/CD environment with non-standard setup
 - Using PipeCraft in a script/automation
 - Advanced users who know the risks
 
 **Why you shouldn't skip:**
+
 - Prevents cryptic errors during generation
 - Saves time by catching issues early
 - Provides actionable error messages
@@ -449,10 +483,12 @@ PipeCraft requires specific GitHub Actions permissions and repository settings t
 The `setup-github` command configures:
 
 1. **Workflow Permissions**
+
    - Default workflow permissions: **write** (for creating tags and pushing changes)
    - Can create/approve pull requests: **Yes** (for automated PR creation)
 
 2. **Repository Auto-Merge**
+
    - Enables auto-merge feature at repository level
    - Required for automatic promotion between branches
 
@@ -473,6 +509,7 @@ pipecraft setup-github
 ```
 
 The command will:
+
 1. Check your current repository permissions
 2. Enable repository-level auto-merge if needed
 3. Configure branch protection for branches with `autoMerge: true` in config
@@ -490,6 +527,7 @@ pipecraft setup-github --force
 ```
 
 This mode is useful for:
+
 - CI/CD pipeline setup scripts
 - Automated repository initialization
 - Batch configuration of multiple repositories
@@ -497,6 +535,7 @@ This mode is useful for:
 ### Example Output
 
 **Interactive mode:**
+
 ```
 🔍 Checking GitHub repository configuration...
 
@@ -525,6 +564,7 @@ This mode is useful for:
 ```
 
 **Auto-apply mode:**
+
 ```
 🔍 Checking GitHub repository configuration...
 
@@ -555,11 +595,13 @@ The command requires a GitHub token with admin access to your repository. It wil
 3. GitHub CLI (`gh`) authentication
 
 To authenticate with GitHub CLI:
+
 ```bash
 gh auth login
 ```
 
 Or set an environment variable:
+
 ```bash
 export GITHUB_TOKEN=ghp_your_token_here
 ```
@@ -569,6 +611,7 @@ export GITHUB_TOKEN=ghp_your_token_here
 You can also configure these settings manually:
 
 **Workflow Permissions:**
+
 1. Go to your repository on GitHub
 2. Navigate to **Settings** → **Actions** → **General**
 3. Under "Workflow permissions":
@@ -577,12 +620,14 @@ You can also configure these settings manually:
 4. Click **Save**
 
 **Repository Auto-Merge:**
+
 1. Navigate to **Settings** → **General**
 2. Scroll to "Pull Requests"
 3. Check **Allow auto-merge**
 4. Click **Save**
 
 **Branch Protection (for branches with auto-merge):**
+
 1. Navigate to **Settings** → **Branches**
 2. Click **Add branch protection rule** or edit existing rule
 3. In "Branch name pattern", enter the branch name (e.g., `staging`)
@@ -599,21 +644,21 @@ Note: Branch protection rules are required for auto-merge to work in GitHub.
 
 ### Core Configuration
 
-| Option | Type | Required | Default | Description |
-|--------|------|----------|---------|-------------|
-| `ciProvider` | `'github' \| 'gitlab'` | Yes | `'github'` | CI/CD provider |
-| `mergeStrategy` | `'fast-forward' \| 'merge'` | Yes | `'fast-forward'` | Branch merge strategy |
-| `requireConventionalCommits` | `boolean` | No | `true` | Enforce conventional commits |
-| `initialBranch` | `string` | Yes | `'develop'` | First branch in flow |
-| `finalBranch` | `string` | Yes | `'main'` | Final production branch |
-| `branchFlow` | `string[]` | Yes | - | Ordered list of branches |
+| Option                       | Type                        | Required | Default          | Description                  |
+| ---------------------------- | --------------------------- | -------- | ---------------- | ---------------------------- |
+| `ciProvider`                 | `'github' \| 'gitlab'`      | Yes      | `'github'`       | CI/CD provider               |
+| `mergeStrategy`              | `'fast-forward' \| 'merge'` | Yes      | `'fast-forward'` | Branch merge strategy        |
+| `requireConventionalCommits` | `boolean`                   | No       | `true`           | Enforce conventional commits |
+| `initialBranch`              | `string`                    | Yes      | `'develop'`      | First branch in flow         |
+| `finalBranch`                | `string`                    | Yes      | `'main'`         | Final production branch      |
+| `branchFlow`                 | `string[]`                  | Yes      | -                | Ordered list of branches     |
 
 ### Semantic Versioning
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `semver.bumpRules.feat` | `'major' \| 'minor' \| 'patch'` | Version bump for features |
-| `semver.bumpRules.fix` | `'major' \| 'minor' \| 'patch'` | Version bump for fixes |
+| Option                      | Type                            | Description                       |
+| --------------------------- | ------------------------------- | --------------------------------- |
+| `semver.bumpRules.feat`     | `'major' \| 'minor' \| 'patch'` | Version bump for features         |
+| `semver.bumpRules.fix`      | `'major' \| 'minor' \| 'patch'` | Version bump for fixes            |
 | `semver.bumpRules.breaking` | `'major' \| 'minor' \| 'patch'` | Version bump for breaking changes |
 
 ### Domains (Monorepo Support)
@@ -640,6 +685,7 @@ Define multiple domains for path-based change detection:
 ```
 
 Each domain can have:
+
 - `paths` (required): Array of glob patterns for file matching
 - `description` (optional): Human-readable description
 
@@ -751,6 +797,7 @@ pipecraft init --with-versioning
 ```
 
 This creates:
+
 - `.release-it.cjs` - Release-it configuration
 - `commitlint.config.js` - Commit message linting
 - `.husky/commit-msg` - Git hook for commit validation
@@ -758,11 +805,13 @@ This creates:
 ### Version Commands
 
 Check what the next version would be:
+
 ```bash
 pipecraft version --check
 ```
 
 Output:
+
 ```
 📦 Current version: 1.2.3
 📦 Next version: 1.3.0 (minor)
@@ -770,11 +819,13 @@ Output:
 ```
 
 Bump version based on commits:
+
 ```bash
 pipecraft version --bump
 ```
 
 Create a full release:
+
 ```bash
 pipecraft version --release
 ```
@@ -789,6 +840,7 @@ PipeCraft works best with conventional commits:
 - `chore:`, `docs:`, `style:`, `refactor:`, `test:` - No version bump
 
 Example:
+
 ```bash
 git commit -m "feat: add user authentication"  # Bumps to 1.3.0
 git commit -m "fix: resolve login bug"         # Bumps to 1.3.1
@@ -925,7 +977,7 @@ PipeCraft provides comprehensive documentation for different aspects of the proj
 
 ### Planning Documents
 
-- **[Trunk Flow Roadmap](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md)** - Future roadmap for trunk flow variations *(future plans, not current implementation)*
+- **[Trunk Flow Roadmap](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md)** - Future roadmap for trunk flow variations _(future plans, not current implementation)_
 
 ### Quick Links
 
@@ -947,7 +999,7 @@ This release focuses on a **solid, working trunk-based development workflow** fo
 ✅ **Semantic versioning** with conventional commits  
 ✅ **User job preservation** during regeneration  
 ✅ **Pre-flight checks** for smooth setup  
-✅ **Comprehensive documentation** and testing  
+✅ **Comprehensive documentation** and testing
 
 See [Current Trunk Flow](./flows/trunk-flow) for details on what's implemented.
 
@@ -956,17 +1008,20 @@ See [Current Trunk Flow](./flows/trunk-flow) for details on what's implemented.
 The roadmap is documented in [TRUNK_FLOW_PLAN.md](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md). Key planned features include:
 
 #### Short Term (v2.x)
+
 - **Enhanced GitLab Support** - Full GitLab CI/CD pipeline generation
 - **Interactive Configuration** - Interactive `init` command with prompts
 - **Additional Flow Variations** - Gitflow, release branches, hotfix workflows
 - **CLI Improvements** - Better error messages, configuration migration tools
 
 #### Medium Term (v3.x)
+
 - **Extended CI/CD Providers** - Azure DevOps, Jenkins, CircleCI, Bitbucket
 - **Advanced Branch Management** - Conflict resolution, PR templates
 - **Visual Workflow Editor** - Web-based workflow configuration tool
 
 #### Long Term (v4.x+)
+
 - **Enterprise Features** - Team templates, policy enforcement, audit logging
 - **Plugin System** - Custom workflow patterns and extensions
 - **Multi-Repository** Support - Manage pipelines across multiple repos
@@ -991,6 +1046,7 @@ Have a feature request? We'd love to hear from you!
 **Problem**: Running `pipecraft generate` doesn't create files.
 
 **Solutions**:
+
 - PipeCraft now runs automatic pre-flight checks that will catch most issues
 - Review the pre-flight check output for specific problems
 - Check if configuration is valid: `pipecraft validate`
@@ -1004,6 +1060,7 @@ Have a feature request? We'd love to hear from you!
 **Problem**: Getting validation errors when running commands.
 
 **Solutions**:
+
 - Ensure all required fields are present (ciProvider, branchFlow, domains)
 - Check that `initialBranch` and `finalBranch` are in `branchFlow`
 - Verify domain paths are valid glob patterns
@@ -1014,6 +1071,7 @@ Have a feature request? We'd love to hear from you!
 **Problem**: Branches aren't being created or fast-forwarded.
 
 **Solutions**:
+
 - Run `pipecraft setup` to create missing branches
 - Verify GitHub token has push permissions
 - Check that branch protection rules allow fast-forward merges
@@ -1024,6 +1082,7 @@ Have a feature request? We'd love to hear from you!
 **Problem**: Version bumps aren't happening automatically.
 
 **Solutions**:
+
 - Initialize version management: `pipecraft init --with-versioning`
 - Ensure commits follow conventional format
 - Check that `package.json` exists with version field
@@ -1034,6 +1093,7 @@ Have a feature request? We'd love to hear from you!
 **Problem**: Changes not being detected after config update.
 
 **Solutions**:
+
 - Force regeneration: `pipecraft generate --force`
 - Delete cache file: `rm .pipecraft-cache.json`
 - Check cache file permissions

@@ -1,6 +1,6 @@
 [**pipecraft v0.0.0-releaseit**](../README.md)
 
-***
+---
 
 [pipecraft](../README.md) / utils/versioning
 
@@ -10,6 +10,7 @@ Version Management and Semantic Versioning Utilities
 
 This module provides comprehensive version management using release-it and
 conventional commits. It handles:
+
 - Automatic version calculation based on commit history
 - Generation of release-it, commitlint, and husky configurations
 - Git tag creation and management
@@ -119,6 +120,7 @@ conventional commit message format. This ensures all commits follow
 a consistent structure that can be parsed for automatic versioning.
 
 Enforced rules include:
+
 - Valid commit types (feat, fix, docs, etc.)
 - Lowercase types
 - Non-empty subjects
@@ -158,6 +160,7 @@ Defined in: [utils/versioning.ts:79](https://github.com/jamesvillarrubia/pipecra
 Generate release-it configuration file content.
 
 Creates a CommonJS module exporting release-it configuration that:
+
 - Disables npm publishing (for monorepos/private packages)
 - Configures git tagging with conventional versioning
 - Sets up conventional-changelog plugin for automatic version bumping
@@ -188,7 +191,7 @@ Defined in: [utils/versioning.ts:356](https://github.com/jamesvillarrubia/pipecr
 
 Get the current version from git tags.
 
-Finds the most recent git tag matching semantic versioning format (v*.*.*)
+Finds the most recent git tag matching semantic versioning format (v*.*.\*)
 and returns it as a version string. Strips the leading 'v' if present.
 
 ###### Returns
@@ -214,6 +217,7 @@ Setup version management infrastructure.
 
 Creates all necessary configuration files and hooks for automated
 version management:
+
 - .release-it.cjs (release-it configuration)
 - commitlint.config.js (commit message linting)
 - .husky/commit-msg (git hook for commit validation)

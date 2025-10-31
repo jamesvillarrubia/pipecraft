@@ -1,1 +1,8 @@
-export default {displayName: 'client', preset: '../../jest.preset.js', testEnvironment: 'node', transform: {'^.+\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json' }]}, moduleFileExtensions: ['ts', 'js'], coverageDirectory: '../../coverage/apps/client'};
+export default {
+  displayName: 'client',
+  preset: '../../jest.preset.js',
+  testEnvironment: 'node',
+  transform: { '^.+.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json' }] },
+  moduleFileExtensions: ['ts', 'js'],
+  coverageDirectory: '../../coverage/apps/client'
+}

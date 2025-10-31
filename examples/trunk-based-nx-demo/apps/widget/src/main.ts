@@ -1,1 +1,1 @@
-console.log('widget app started!');
+console.log('widget app started!')

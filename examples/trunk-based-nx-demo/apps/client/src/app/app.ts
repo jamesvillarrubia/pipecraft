@@ -1,1 +1,3 @@
-export function clientApp() { return 'client application'; }
+export function clientApp() {
+  return 'client application'
+}

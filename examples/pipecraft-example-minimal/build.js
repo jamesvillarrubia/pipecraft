@@ -7,7 +7,7 @@
  * In a real application, this might compile TypeScript, bundle assets, etc.
  */
 
-console.log('🔨 Building application...\n');
+console.log('🔨 Building application...\n')
 
 // Simulate build steps
 const steps = [
@@ -15,13 +15,13 @@ const steps = [
   'Validating configuration',
   'Processing assets',
   'Generating output'
-];
+]
 
 for (const step of steps) {
-  console.log(`  ✓ ${step}`);
+  console.log(`  ✓ ${step}`)
 }
 
-console.log('\n✅ Build completed successfully!\n');
+console.log('\n✅ Build completed successfully!\n')
 
 // Exit with success code
-process.exit(0);
+process.exit(0)

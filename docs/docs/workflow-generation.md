@@ -38,6 +38,7 @@ Your configuration directly controls what workflows get generated. Let's walk th
 ```
 
 From this configuration, PipeCraft generates:
+
 - A `test-api` job that runs when files in `packages/api/**` change
 - A `deploy-api` job that deploys your API after tests pass
 - A `test-web` job that runs when files in `packages/web/**` change
@@ -115,16 +116,10 @@ The solution is to include shared paths in multiple domains:
 {
   "domains": {
     "api": {
-      "paths": [
-        "packages/api/**",
-        "libs/shared/**"
-      ]
+      "paths": ["packages/api/**", "libs/shared/**"]
     },
     "web": {
-      "paths": [
-        "packages/web/**",
-        "libs/shared/**"
-      ]
+      "paths": ["packages/web/**", "libs/shared/**"]
     }
   }
 }

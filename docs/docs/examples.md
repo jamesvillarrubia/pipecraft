@@ -88,27 +88,15 @@ You're running a product with distinct frontend and backend services, plus some 
 
   "domains": {
     "api": {
-      "paths": [
-        "apps/api/**",
-        "libs/api-core/**",
-        "libs/shared/**"
-      ],
+      "paths": ["apps/api/**", "libs/api-core/**", "libs/shared/**"],
       "description": "Backend API service and core business logic"
     },
     "web": {
-      "paths": [
-        "apps/web/**",
-        "libs/ui-components/**",
-        "libs/shared/**"
-      ],
+      "paths": ["apps/web/**", "libs/ui-components/**", "libs/shared/**"],
       "description": "Frontend web application and UI library"
     },
     "infrastructure": {
-      "paths": [
-        "infrastructure/**",
-        "docker/**",
-        ".github/workflows/**"
-      ],
+      "paths": ["infrastructure/**", "docker/**", ".github/workflows/**"],
       "description": "Infrastructure as code and deployment configs"
     }
   },
@@ -166,35 +154,19 @@ You're working at a company with compliance requirements and a formal release pr
 
   "domains": {
     "api-users": {
-      "paths": [
-        "services/api-users/**",
-        "libs/auth/**",
-        "libs/shared/**"
-      ],
+      "paths": ["services/api-users/**", "libs/auth/**", "libs/shared/**"],
       "description": "User management API and authentication libraries"
     },
     "api-orders": {
-      "paths": [
-        "services/api-orders/**",
-        "libs/payments/**",
-        "libs/shared/**"
-      ],
+      "paths": ["services/api-orders/**", "libs/payments/**", "libs/shared/**"],
       "description": "Order processing API and payment integration"
     },
     "api-catalog": {
-      "paths": [
-        "services/api-catalog/**",
-        "libs/search/**",
-        "libs/shared/**"
-      ],
+      "paths": ["services/api-catalog/**", "libs/search/**", "libs/shared/**"],
       "description": "Product catalog API and search functionality"
     },
     "web-customer": {
-      "paths": [
-        "apps/web-customer/**",
-        "libs/ui-components/**",
-        "libs/shared/**"
-      ],
+      "paths": ["apps/web-customer/**", "libs/ui-components/**", "libs/shared/**"],
       "description": "Customer-facing web application"
     },
     "web-admin": {
@@ -207,19 +179,11 @@ You're working at a company with compliance requirements and a formal release pr
       "description": "Internal administration portal"
     },
     "mobile": {
-      "paths": [
-        "apps/mobile/**",
-        "libs/mobile-shared/**",
-        "libs/shared/**"
-      ],
+      "paths": ["apps/mobile/**", "libs/mobile-shared/**", "libs/shared/**"],
       "description": "Mobile application for iOS and Android"
     },
     "platform": {
-      "paths": [
-        "infrastructure/**",
-        "k8s/**",
-        "terraform/**"
-      ],
+      "paths": ["infrastructure/**", "k8s/**", "terraform/**"],
       "description": "Platform infrastructure and Kubernetes configurations"
     }
   },
@@ -328,43 +292,23 @@ You have five microservices that share common libraries but deploy on different 
 
   "domains": {
     "auth-service": {
-      "paths": [
-        "services/auth/**",
-        "libs/auth-utils/**",
-        "libs/common/**"
-      ],
+      "paths": ["services/auth/**", "libs/auth-utils/**", "libs/common/**"],
       "description": "Authentication and authorization service"
     },
     "user-service": {
-      "paths": [
-        "services/user/**",
-        "libs/user-utils/**",
-        "libs/common/**"
-      ],
+      "paths": ["services/user/**", "libs/user-utils/**", "libs/common/**"],
       "description": "User profile and preferences service"
     },
     "notification-service": {
-      "paths": [
-        "services/notification/**",
-        "libs/email-templates/**",
-        "libs/common/**"
-      ],
+      "paths": ["services/notification/**", "libs/email-templates/**", "libs/common/**"],
       "description": "Email and push notification service"
     },
     "analytics-service": {
-      "paths": [
-        "services/analytics/**",
-        "libs/data-processing/**",
-        "libs/common/**"
-      ],
+      "paths": ["services/analytics/**", "libs/data-processing/**", "libs/common/**"],
       "description": "Event tracking and analytics processing"
     },
     "reporting-service": {
-      "paths": [
-        "services/reporting/**",
-        "libs/report-generation/**",
-        "libs/common/**"
-      ],
+      "paths": ["services/reporting/**", "libs/report-generation/**", "libs/common/**"],
       "description": "Report generation and data export service"
     },
     "shared-libs": {

@@ -1,4 +1,6 @@
-import { loggingFunction } from './logging';
+import { loggingFunction } from './logging'
 describe('logging integration', () => {
-  it('should integrate', () => { expect(loggingFunction()).toBeDefined(); });
-});
+  it('should integrate', () => {
+    expect(loggingFunction()).toBeDefined()
+  })
+})

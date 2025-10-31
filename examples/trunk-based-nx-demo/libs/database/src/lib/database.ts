@@ -1,2 +1,3 @@
-
-export function databaseFunction() { return 'database works!'; }
+export function databaseFunction() {
+  return 'database works!'
+}

@@ -101,10 +101,10 @@
 }
 
 /* Hide light banner in dark mode, show dark banner */
-[data-theme="dark"] .lightBanner {
+[data-theme='dark'] .lightBanner {
   display: none;
 }
 
-[data-theme="dark"] .darkBanner {
+[data-theme='dark'] .darkBanner {
   display: flex;
 }

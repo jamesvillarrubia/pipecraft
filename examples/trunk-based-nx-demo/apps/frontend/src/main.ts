@@ -1,1 +1,1 @@
-console.log('frontend app started!');
+console.log('frontend app started!')

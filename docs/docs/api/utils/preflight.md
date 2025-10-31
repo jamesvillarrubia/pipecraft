@@ -4,6 +4,7 @@ Pre-Flight Validation Checks
 
 This module implements comprehensive environment validation before workflow generation.
 Pre-flight checks prevent common failures by validating:
+
 - PipeCraft configuration exists and is valid
 - Git repository is properly initialized
 - Git remote is configured
@@ -30,7 +31,7 @@ before workflows can be generated.
 ##### canWriteGithubDir
 
 ```ts
-canWriteGithubDir: PreflightResult;
+canWriteGithubDir: PreflightResult
 ```
 
 Defined in: [utils/preflight.ts:61](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L61)
@@ -40,7 +41,7 @@ Defined in: [utils/preflight.ts:61](https://github.com/jamesvillarrubia/pipecraf
 ##### configExists
 
 ```ts
-configExists: PreflightResult;
+configExists: PreflightResult
 ```
 
 Defined in: [utils/preflight.ts:49](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L49)
@@ -50,7 +51,7 @@ Configuration file exists and is discoverable
 ##### configValid
 
 ```ts
-configValid: PreflightResult;
+configValid: PreflightResult
 ```
 
 Defined in: [utils/preflight.ts:52](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L52)
@@ -60,7 +61,7 @@ Configuration file is valid and has required fields
 ##### hasGitRemote
 
 ```ts
-hasGitRemote: PreflightResult;
+hasGitRemote: PreflightResult
 ```
 
 Defined in: [utils/preflight.ts:58](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L58)
@@ -70,14 +71,14 @@ Git remote (origin) is configured
 ##### inGitRepo
 
 ```ts
-inGitRepo: PreflightResult;
+inGitRepo: PreflightResult
 ```
 
 Defined in: [utils/preflight.ts:55](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L55)
 
 Current directory is a git repository
 
-***
+---
 
 ### PreflightResult
 
@@ -93,7 +94,7 @@ for resolving failures.
 ##### message
 
 ```ts
-message: string;
+message: string
 ```
 
 Defined in: [utils/preflight.ts:35](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L35)
@@ -103,7 +104,7 @@ Human-readable description of the check result
 ##### passed
 
 ```ts
-passed: boolean;
+passed: boolean
 ```
 
 Defined in: [utils/preflight.ts:32](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L32)
@@ -125,7 +126,7 @@ Optional suggestion for resolving failures
 ### checkCanWriteGithubDir()
 
 ```ts
-function checkCanWriteGithubDir(): PreflightResult;
+function checkCanWriteGithubDir(): PreflightResult
 ```
 
 Defined in: [utils/preflight.ts:310](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L310)
@@ -133,10 +134,12 @@ Defined in: [utils/preflight.ts:310](https://github.com/jamesvillarrubia/pipecra
 Check if .github/workflows directory exists and is writable.
 
 Workflows are written to .github/workflows/, so this directory must:
+
 - Exist or be creatable
 - Be writable by the current user
 
 This check attempts to:
+
 1. Create .github/workflows/ if it doesn't exist
 2. Write a test file to verify write permissions
 3. Clean up the test file
@@ -159,12 +162,12 @@ if (!result.passed) {
 }
 ```
 
-***
+---
 
 ### checkConfigExists()
 
 ```ts
-function checkConfigExists(): PreflightResult;
+function checkConfigExists(): PreflightResult
 ```
 
 Defined in: [utils/preflight.ts:86](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L86)
@@ -172,6 +175,7 @@ Defined in: [utils/preflight.ts:86](https://github.com/jamesvillarrubia/pipecraf
 Check if PipeCraft configuration file exists.
 
 Uses cosmiconfig to search for configuration files in standard locations:
+
 - .pipecraftrc.json
 - .pipecraftrc (JSON or YAML)
 - pipecraft.config.js
@@ -195,12 +199,12 @@ if (!result.passed) {
 }
 ```
 
-***
+---
 
 ### checkConfigValid()
 
 ```ts
-function checkConfigValid(): PreflightResult;
+function checkConfigValid(): PreflightResult
 ```
 
 Defined in: [utils/preflight.ts:126](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L126)
@@ -208,6 +212,7 @@ Defined in: [utils/preflight.ts:126](https://github.com/jamesvillarrubia/pipecra
 Check if configuration file is valid and contains required fields.
 
 Validates:
+
 - File can be parsed (valid JSON/YAML)
 - Required fields are present (ciProvider, branchFlow, domains)
 - At least one domain is configured
@@ -231,12 +236,12 @@ if (!result.passed) {
 }
 ```
 
-***
+---
 
 ### checkHasGitRemote()
 
 ```ts
-function checkHasGitRemote(): PreflightResult;
+function checkHasGitRemote(): PreflightResult
 ```
 
 Defined in: [utils/preflight.ts:251](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L251)
@@ -244,6 +249,7 @@ Defined in: [utils/preflight.ts:251](https://github.com/jamesvillarrubia/pipecra
 Check if git remote named 'origin' is configured.
 
 A git remote is required for:
+
 - Pushing generated workflows to GitHub
 - Repository information extraction
 - GitHub API integration
@@ -271,12 +277,12 @@ if (!result.passed) {
 }
 ```
 
-***
+---
 
 ### checkInGitRepo()
 
 ```ts
-function checkInGitRepo(): PreflightResult;
+function checkInGitRepo(): PreflightResult
 ```
 
 Defined in: [utils/preflight.ts:205](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L205)
@@ -284,6 +290,7 @@ Defined in: [utils/preflight.ts:205](https://github.com/jamesvillarrubia/pipecra
 Check if current directory is inside a git repository.
 
 PipeCraft requires a git repository to:
+
 - Generate GitHub Actions workflows
 - Track version history
 - Enable version management features
@@ -307,12 +314,12 @@ if (!result.passed) {
 }
 ```
 
-***
+---
 
 ### checkNodeVersion()
 
 ```ts
-function checkNodeVersion(minVersion): PreflightResult;
+function checkNodeVersion(minVersion): PreflightResult
 ```
 
 Defined in: [utils/preflight.ts:377](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L377)
@@ -320,6 +327,7 @@ Defined in: [utils/preflight.ts:377](https://github.com/jamesvillarrubia/pipecra
 Check if Node.js version meets minimum requirement.
 
 PipeCraft requires Node.js 18.0.0 or higher because it uses:
+
 - Modern ES modules
 - Latest TypeScript features
 - Current GitHub Actions syntax
@@ -352,12 +360,12 @@ if (!result.passed) {
 }
 ```
 
-***
+---
 
 ### formatPreflightResults()
 
 ```ts
-function formatPreflightResults(checks): object;
+function formatPreflightResults(checks): object
 ```
 
 Defined in: [utils/preflight.ts:470](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L470)
@@ -365,6 +373,7 @@ Defined in: [utils/preflight.ts:470](https://github.com/jamesvillarrubia/pipecra
 Format pre-flight check results for human-readable display.
 
 Converts structured check results into formatted output with:
+
 - ✅/❌ icons for visual scanning
 - Error messages and suggestions
 - Next steps if all checks passed
@@ -389,7 +398,7 @@ Formatted output object with overall status and display string
 ##### allPassed
 
 ```ts
-allPassed: boolean;
+allPassed: boolean
 ```
 
 ##### nextSteps?
@@ -401,7 +410,7 @@ optional nextSteps: string[];
 ##### output
 
 ```ts
-output: string;
+output: string
 ```
 
 #### Example
@@ -420,12 +429,12 @@ if (allPassed && nextSteps) {
 }
 ```
 
-***
+---
 
 ### runPreflightChecks()
 
 ```ts
-function runPreflightChecks(): PreflightChecks;
+function runPreflightChecks(): PreflightChecks
 ```
 
 Defined in: [utils/preflight.ts:431](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/preflight.ts#L431)
@@ -437,6 +446,7 @@ are met before attempting to generate workflows. This prevents partial
 failures and provides clear error messages upfront.
 
 Checks performed:
+
 - Configuration file exists
 - Configuration is valid
 - Inside git repository

@@ -5,6 +5,7 @@ This directory contains tests for running GitHub Actions workflows on actual Git
 ## 🎯 Purpose
 
 Live GitHub Actions testing allows us to:
+
 - Test workflows in the real GitHub environment
 - Validate workflow behavior with actual GitHub APIs
 - Test performance under real conditions
@@ -31,6 +32,7 @@ tests/github-live/
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 ```bash
 # Install GitHub CLI
 brew install gh  # macOS
@@ -44,6 +46,7 @@ export GITHUB_TOKEN="your_github_token"
 ```
 
 ### Running Tests
+
 ```bash
 # Run all live tests
 ./tests/github-live/run-live-tests.sh
@@ -61,6 +64,7 @@ export GITHUB_TOKEN="your_github_token"
 ## 🔧 Configuration
 
 ### GitHub Authentication
+
 ```bash
 # Set up GitHub token
 export GITHUB_TOKEN="your_github_token"
@@ -70,6 +74,7 @@ gh auth token
 ```
 
 ### Test Environment
+
 ```bash
 # Set up test environment
 ./tests/github-live/setup-test-env.sh
@@ -84,6 +89,7 @@ gh auth token
 ## 📋 Test Workflows
 
 ### Supported Workflows
+
 - **pipeline.yml**: Main workflow orchestration
 - **job.changes.yml**: Change detection workflow
 - **job.version.yml**: Version management workflow
@@ -93,6 +99,7 @@ gh auth token
 - **job.apps.yml**: Application-specific workflows
 
 ### Test Scenarios
+
 1. **Basic Execution**: Test workflow runs without errors
 2. **Environment Variables**: Test with different env vars
 3. **Conditional Logic**: Test workflow conditions and branches
@@ -105,6 +112,7 @@ gh auth token
 ## 🧪 Test Examples
 
 ### Basic Workflow Test
+
 ```bash
 # Test main pipeline
 ./tests/github-live/test-workflows.sh --workflow pipeline.yml
@@ -117,6 +125,7 @@ gh auth token
 ```
 
 ### Advanced Testing
+
 ```bash
 # Test with secrets
 ./tests/github-live/test-workflows.sh --workflow pipeline.yml --secrets GITHUB_TOKEN=your_token
@@ -131,6 +140,7 @@ gh auth token
 ## 🔍 Debugging
 
 ### Common Issues
+
 1. **Authentication**: Verify GitHub token permissions
 2. **Rate limits**: Check GitHub API rate limits
 3. **Workflow syntax**: Check YAML syntax and GitHub Actions syntax
@@ -138,6 +148,7 @@ gh auth token
 5. **Secrets**: Ensure all required secrets are available
 
 ### Debug Commands
+
 ```bash
 # List available workflows
 gh workflow list
@@ -158,6 +169,7 @@ gh run view <run-id>
 ## 📊 Test Results
 
 ### Output Format
+
 ```
 ✅ Workflow: pipeline.yml
   ✅ Job: changes (2.3s)
@@ -171,6 +183,7 @@ gh run view <run-id>
 ```
 
 ### Performance Metrics
+
 - **Execution Time**: Track workflow execution time
 - **Resource Usage**: Monitor CPU and memory usage
 - **Job Dependencies**: Validate dependency chains
@@ -180,6 +193,7 @@ gh run view <run-id>
 ## 🔄 Continuous Integration
 
 ### GitHub Actions Integration
+
 ```yaml
 name: Live Tests
 on: [push, pull_request]
@@ -195,6 +209,7 @@ jobs:
 ```
 
 ### Local Development
+
 ```bash
 # Watch mode for development
 ./tests/github-live/run-live-tests.sh --watch
@@ -209,18 +224,21 @@ jobs:
 ## 📚 Best Practices
 
 ### Test Organization
+
 1. **Group related tests**: Organize tests by workflow type
 2. **Use fixtures**: Create reusable test data
 3. **Mock external services**: Avoid external dependencies where possible
 4. **Test edge cases**: Include error scenarios and edge cases
 
 ### Performance
+
 1. **Parallel execution**: Run independent tests in parallel
 2. **Resource management**: Monitor GitHub Actions resource usage
 3. **Cleanup**: Clean up test artifacts after runs
 4. **Rate limiting**: Respect GitHub API rate limits
 
 ### Maintenance
+
 1. **Regular updates**: Keep test dependencies updated
 2. **Documentation**: Document test scenarios and expected outcomes
 3. **Monitoring**: Track test performance and reliability
@@ -229,6 +247,7 @@ jobs:
 ## 🆘 Troubleshooting
 
 ### Common Problems
+
 ```bash
 # GitHub token issues
 gh auth status
@@ -244,6 +263,7 @@ gh api rate_limit
 ```
 
 ### Getting Help
+
 - [GitHub CLI Documentation](https://cli.github.com/)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [GitHub API Documentation](https://docs.github.com/en/rest)

@@ -12,7 +12,13 @@
     "build": "node build.js",
     "lint": "node lint.js"
   },
-  "keywords": ["pipecraft", "trunk-based", "multi-domain", "example", "ci-cd"],
+  "keywords": [
+    "pipecraft",
+    "trunk-based",
+    "multi-domain",
+    "example",
+    "ci-cd"
+  ],
   "author": "PipeCraft Team",
   "license": "MIT",
   "repository": {

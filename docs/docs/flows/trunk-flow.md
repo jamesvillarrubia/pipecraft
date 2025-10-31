@@ -20,17 +20,20 @@ feature → develop → staging → main
 ### How It Works
 
 1. **Feature Development**
+
    - Developers create feature branches from `develop`
    - Feature branches merge into `develop` via pull request
    - Merge triggers workflow on `develop`
 
 2. **Develop Branch**
+
    - On merge to `develop`:
      - Run tests for all affected domains
      - If tests pass, create PR to promote to `staging`
    - Promotion happens via PR (not direct push)
 
 3. **Staging Branch**
+
    - On merge to `staging`:
      - Run tests for all affected domains
      - Calculate next semantic version (optional)
@@ -61,21 +64,21 @@ feature → develop → staging → main
 ```json
 {
   "autoMerge": {
-    "staging": true,  // Auto-merge develop → staging PRs
-    "main": false     // Manual approval for staging → main
+    "staging": true, // Auto-merge develop → staging PRs
+    "main": false // Manual approval for staging → main
   },
   "mergeMethod": {
-    "staging": "squash",  // Squash commits when promoting to staging
-    "main": "merge"       // Create merge commit when promoting to main
+    "staging": "squash", // Squash commits when promoting to staging
+    "main": "merge" // Create merge commit when promoting to main
   }
 }
 ```
 
 **Auto-Merge Behavior**:
+
 - When `autoMerge` is `true` for a branch, PRs targeting that branch are automatically merged after checks pass
 - When `false`, PRs require manual approval
 - Typically used for automated promote-to-staging, manual promote-to-production
-
 
 ### Domain-Based Testing
 
@@ -101,6 +104,7 @@ PipeCraft implements path-based change detection for monorepo support:
 ```
 
 **How It Works**:
+
 1. Workflow runs `detect-changes` action
 2. Compares current commit with base branch
 3. Matches changed files against domain path patterns
@@ -118,8 +122,8 @@ PipeCraft generates a single comprehensive workflow file that handles all stages
 name: Pipeline
 
 on:
-  workflow_dispatch:  # Manual trigger
-  workflow_call:      # Called by other workflows
+  workflow_dispatch: # Manual trigger
+  workflow_call: # Called by other workflows
   push:
     branches: [develop, staging, main]
   pull_request:
@@ -503,12 +507,14 @@ The following GitHub settings must be configured (can use `pipecraft setup`):
 **Symptom**: Merge to develop/staging doesn't trigger workflow
 
 **Causes**:
+
 1. Workflow file not in `.github/workflows/`
 2. Branch name mismatch in configuration
 3. GitHub Actions disabled for repository
 4. Workflow file has syntax errors
 
 **Solutions**:
+
 ```bash
 # Verify workflow exists
 ls -la .github/workflows/
@@ -526,12 +532,14 @@ git branch --show-current
 **Symptom**: PRs created but not automatically merged
 
 **Causes**:
+
 1. Auto-merge not enabled in repo settings
 2. Branch protection rules blocking
 3. Required checks not passing
 4. Insufficient permissions
 
 **Solutions**:
+
 ```bash
 # Setup GitHub permissions
 pipecraft setup
@@ -548,12 +556,14 @@ gh pr merge --auto --squash
 **Symptom**: Version stays same after staging merge
 
 **Causes**:
+
 1. No conventional commits since last tag
 2. All commits are `chore:` or `docs:` (ignored types)
 3. Versioning not enabled in config
 4. release-it not configured
 
 **Solutions**:
+
 ```bash
 # Check commit history
 git log $(git describe --tags --abbrev=0)..HEAD --oneline
@@ -578,10 +588,10 @@ Now that you understand the current implementation:
 ## Future Enhancements
 
 See [TRUNK_FLOW_PLAN.md](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md) for planned improvements:
+
 - Multiple flow patterns
 - GitLab support
 - Manual approval gates
 - Matrix builds
 - Custom action hooks
 - Deployment environments
-

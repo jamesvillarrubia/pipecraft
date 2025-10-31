@@ -10,7 +10,7 @@
  * @returns {string} Greeting message
  */
 export function greet(name) {
-  return `Hello, ${name}!`;
+  return `Hello, ${name}!`
 }
 
 /**
@@ -20,7 +20,7 @@ export function greet(name) {
  * @returns {number} Sum of a and b
  */
 export function add(a, b) {
-  return a + b;
+  return a + b
 }
 
 /**
@@ -30,5 +30,5 @@ export function add(a, b) {
  * @returns {number} Product of a and b
  */
 export function multiply(a, b) {
-  return a * b;
+  return a * b
 }

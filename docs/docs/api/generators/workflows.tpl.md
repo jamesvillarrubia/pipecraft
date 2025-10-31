@@ -4,6 +4,7 @@ Workflows Template Generator
 
 Main orchestrator for generating complete GitHub Actions CI/CD pipeline.
 This generator creates all necessary workflow files including:
+
 - Main pipeline workflow (path-based change detection)
 - Reusable composite actions (tag creation, versioning, branch management, etc.)
 
@@ -43,7 +44,7 @@ await generate({
 ### generate()
 
 ```ts
-function generate(ctx): Promise<any>;
+function generate(ctx): Promise<any>
 ```
 
 Defined in: [generators/workflows.tpl.ts:136](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/generators/workflows.tpl.ts#L136)
@@ -51,6 +52,7 @@ Defined in: [generators/workflows.tpl.ts:136](https://github.com/jamesvillarrubi
 Workflows generator main entry point.
 
 Orchestrates the complete workflow generation process:
+
 1. Loads existing pipeline (if specified) for merging
 2. Merges configuration with defaults
 3. Generates all composite actions in parallel
@@ -102,6 +104,7 @@ await generate({
 #### Note
 
 The generator creates 7 files:
+
 - 1 main workflow (pipeline.yml)
 - 6 composite actions (in .github/actions/)
 

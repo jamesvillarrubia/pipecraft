@@ -9,6 +9,7 @@ the appropriate version bump (major, minor, or patch).
 ## Purpose
 
 Automates semantic versioning in the CI/CD pipeline by:
+
 - Analyzing conventional commit messages since the last tag
 - Determining the appropriate version bump (feat→minor, fix→patch, BREAKING→major)
 - Installing and running release-it for version calculation
@@ -43,7 +44,7 @@ jobs:
 ### generate()
 
 ```ts
-function generate(ctx): Promise<any>;
+function generate(ctx): Promise<any>
 ```
 
 Defined in: [templates/actions/calculate-version.yml.tpl.ts:168](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/templates/actions/calculate-version.yml.tpl.ts#L168)

@@ -125,7 +125,9 @@ const generateYamlConfig = (config: any): string => {
 
   // Merge Strategy
   lines.push('# Merge strategy for automatic promotions')
-  lines.push("# Options: 'fast-forward' (clean linear history, recommended) | 'merge' (creates merge commits)")
+  lines.push(
+    "# Options: 'fast-forward' (clean linear history, recommended) | 'merge' (creates merge commits)"
+  )
   lines.push(`mergeStrategy: ${config.mergeStrategy}`)
   lines.push('')
 
@@ -177,11 +179,14 @@ const generateYamlConfig = (config: any): string => {
   lines.push('# Prefixes are used to determine the type of change and the version bump level')
   lines.push('semver:')
   lines.push('  bumpRules:')
-  
+
   const bumpRules = config.semver.bumpRules
   const ruleGroups = [
     { title: '# Ignored types (no version bump)', keys: ['test', 'build'] },
-    { title: '# Patch-level changes (0.0.x)', keys: ['ci', 'docs', 'style', 'fix', 'perf', 'refactor', 'chore', 'patch'] },
+    {
+      title: '# Patch-level changes (0.0.x)',
+      keys: ['ci', 'docs', 'style', 'fix', 'perf', 'refactor', 'chore', 'patch']
+    },
     { title: '# Minor-level changes (0.x.0)', keys: ['feat', 'minor'] },
     { title: '# Major-level changes (x.0.0)', keys: ['major', 'breaking'] }
   ]
@@ -199,12 +204,14 @@ const generateYamlConfig = (config: any): string => {
 
   // Domains
   lines.push('# Domain definitions - what parts of your codebase trigger which jobs')
-  lines.push('# Will create placeholder jobs for each domain if no jobs are defined in the pipeline.yml')
+  lines.push(
+    '# Will create placeholder jobs for each domain if no jobs are defined in the pipeline.yml'
+  )
   lines.push('domains:')
-  
+
   Object.entries(config.domains).forEach(([domainName, domainConfig]: [string, any]) => {
     lines.push(`  ${domainName}:`)
-    
+
     // Paths
     if (domainConfig.paths) {
       if (domainConfig.description && domainName !== 'cicd') {
@@ -217,17 +224,17 @@ const generateYamlConfig = (config: any): string => {
         lines.push(`      - ${path}`)
       })
     }
-    
+
     // Prefixes (if present)
     if (domainConfig.prefixes) {
       lines.push(`    prefixes: [${domainConfig.prefixes.map((p: string) => `'${p}'`).join(', ')}]`)
     }
-    
+
     // Description (standalone if no paths)
     if (!domainConfig.paths && domainConfig.description) {
       lines.push(`    description: ${domainConfig.description}`)
     }
-    
+
     lines.push('')
   })
 
@@ -260,13 +267,19 @@ const generateYamlConfig = (config: any): string => {
       lines.push(`  releaseItConfig: ${config.versioning.releaseItConfig}`)
     }
     if (config.versioning.conventionalCommits !== undefined) {
-      lines.push(`  conventionalCommits: ${config.versioning.conventionalCommits}  # Use conventional commits for version bumps`)
+      lines.push(
+        `  conventionalCommits: ${config.versioning.conventionalCommits}  # Use conventional commits for version bumps`
+      )
     }
     if (config.versioning.autoTag !== undefined) {
-      lines.push(`  autoTag: ${config.versioning.autoTag}              # Automatically create git tags`)
+      lines.push(
+        `  autoTag: ${config.versioning.autoTag}              # Automatically create git tags`
+      )
     }
     if (config.versioning.autoPush !== undefined) {
-      lines.push(`  autoPush: ${config.versioning.autoPush}            # Manual control over git push`)
+      lines.push(
+        `  autoPush: ${config.versioning.autoPush}            # Manual control over git push`
+      )
     }
     if (config.versioning.changelog !== undefined) {
       lines.push(`  changelog: ${config.versioning.changelog}            # Generate CHANGELOG.md`)
@@ -286,10 +299,14 @@ const generateYamlConfig = (config: any): string => {
     lines.push('rebuild:')
     lines.push(`  enabled: ${config.rebuild.enabled}           # Enable smart rebuild detection`)
     if (config.rebuild.skipIfUnchanged !== undefined) {
-      lines.push(`  skipIfUnchanged: ${config.rebuild.skipIfUnchanged}   # Skip regeneration if config hasn't changed`)
+      lines.push(
+        `  skipIfUnchanged: ${config.rebuild.skipIfUnchanged}   # Skip regeneration if config hasn't changed`
+      )
     }
     if (config.rebuild.forceRegenerate !== undefined) {
-      lines.push(`  forceRegenerate: ${config.rebuild.forceRegenerate}  # Force regenerate even if unchanged`)
+      lines.push(
+        `  forceRegenerate: ${config.rebuild.forceRegenerate}  # Force regenerate even if unchanged`
+      )
     }
     if (config.rebuild.cacheFile) {
       lines.push(`  cacheFile: ${config.rebuild.cacheFile}`)
@@ -301,7 +318,7 @@ const generateYamlConfig = (config: any): string => {
   while (lines[lines.length - 1] === '') {
     lines.pop()
   }
-  
+
   lines.push('') // Single trailing newline
 
   return lines.join('\n')
@@ -354,7 +371,7 @@ export const generate = async (ctx: PinionContext) => {
   // Check if .pipecraftrc already exists (YAML format)
   const configPath = `${cwd}/.pipecraftrc`
   const legacyConfigPath = `${cwd}/.pipecraftrc.json`
-  
+
   if (existsSync(configPath) || existsSync(legacyConfigPath)) {
     const existingPath = existsSync(configPath) ? '.pipecraftrc' : '.pipecraftrc.json'
     const overwriteAnswer = await inquirer.prompt([
@@ -579,7 +596,9 @@ export const generate = async (ctx: PinionContext) => {
   const mergedCtx = { ...ctx, ...defaultConfig, ...answers } as any
 
   // Configure Nx based on detection and user confirmation
-  let nxConfig: { enabled: boolean; tasks: string[]; baseRef: string; enableCache: boolean } | undefined
+  let nxConfig:
+    | { enabled: boolean; tasks: string[]; baseRef: string; enableCache: boolean }
+    | undefined
   if (nxDetected && answers.enableNx) {
     console.log('\n✅ Nx integration enabled!')
     console.log(`   Tasks to run: ${detectedNxTasks.join(', ')}\n`)

@@ -1,6 +1,6 @@
 [**pipecraft v0.0.0-releaseit**](../../README.md)
 
-***
+---
 
 [pipecraft](../../README.md) / templates/actions/calculate-version.yml.tpl
 
@@ -15,6 +15,7 @@ the appropriate version bump (major, minor, or patch).
 ## Purpose
 
 Automates semantic versioning in the CI/CD pipeline by:
+
 - Analyzing conventional commit messages since the last tag
 - Determining the appropriate version bump (feat→minor, fix→patch, BREAKING→major)
 - Installing and running release-it for version calculation

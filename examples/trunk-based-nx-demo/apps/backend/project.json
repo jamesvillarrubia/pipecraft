@@ -1,8 +1,21 @@
 {
   "name": "backend",
   "targets": {
-    "build": {"executor": "@nx/js:tsc", "options": {"outputPath": "dist/apps/backend", "main": "apps/backend/src/main.ts", "tsConfig": "apps/backend/tsconfig.json"}},
-    "test": {"executor": "@nx/jest:jest", "options": {"jestConfig": "apps/backend/jest.config.ts"}},
-    "e2e": {"executor": "@nx/jest:jest", "options": {"jestConfig": "apps/backend/jest.config.ts", "testPathPattern": "e2e"}}
+    "build": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "outputPath": "dist/apps/backend",
+        "main": "apps/backend/src/main.ts",
+        "tsConfig": "apps/backend/tsconfig.json"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": { "jestConfig": "apps/backend/jest.config.ts" }
+    },
+    "e2e": {
+      "executor": "@nx/jest:jest",
+      "options": { "jestConfig": "apps/backend/jest.config.ts", "testPathPattern": "e2e" }
+    }
   }
 }

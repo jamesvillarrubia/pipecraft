@@ -15,6 +15,7 @@ Common questions and answers about PipeCraft.
 PipeCraft is a CLI tool that generates GitHub Actions CI/CD workflows for your repository. Instead of writing workflows from scratch, you define your project structure in a configuration file (`.pipecraftrc.json`), and PipeCraft generates complete, production-ready workflows.
 
 The generated workflows include:
+
 - Domain-based change detection (only test what changed)
 - Semantic versioning automation
 - Branch promotion flows (develop → staging → main)
@@ -26,6 +27,7 @@ You own the generated files completely—they live in your `.github/` directory 
 ### How does PipeCraft compare to manually writing GitHub Actions workflows?
 
 **Manual Workflows:**
+
 - Write hundreds of lines of YAML
 - Debug through trial and error (push, wait, fix, repeat)
 - Copy/paste workflows between projects
@@ -33,6 +35,7 @@ You own the generated files completely—they live in your `.github/` directory 
 - Easy to make mistakes in conditional logic
 
 **PipeCraft:**
+
 - Generate workflows from configuration
 - Start with proven, tested patterns
 - Regenerate consistently across projects
@@ -56,6 +59,7 @@ Even a simple project benefits from having a production-ready workflow with vers
 Yes! PipeCraft has two modes:
 
 1. **Path-based detection** (default): Uses glob patterns to detect changes
+
    - Works with any project structure
    - No additional dependencies
    - Configure domains with path patterns
@@ -76,18 +80,21 @@ You choose which mode fits your project. Most users start with path-based detect
 Three options:
 
 **Option 1: npx (recommended for trying it out)**
+
 ```bash
 npx pipecraft init
 npx pipecraft generate
 ```
 
 **Option 2: Global installation**
+
 ```bash
 npm install -g pipecraft
 pipecraft init
 ```
 
 **Option 3: Local project installation**
+
 ```bash
 npm install --save-dev pipecraft
 npx pipecraft init
@@ -130,6 +137,7 @@ A **domain** is a logical part of your codebase with its own testing and deploym
 - `shared` domain: Shared libraries
 
 Each domain has:
+
 - **Path patterns**: Which files belong to this domain
 - **Test configuration**: Whether it needs testing
 - **Deployment configuration**: Whether it's deployable
@@ -200,9 +208,11 @@ Configure your flow in `.pipecraftrc.json`:
 PipeCraft generates:
 
 **Main workflow:**
+
 - `.github/workflows/pipeline.yml` - Your complete CI/CD pipeline
 
 **Composite actions:**
+
 - `.github/actions/detect-changes/action.yml` - Change detection
 - `.github/actions/calculate-version/action.yml` - Version calculation
 - `.github/actions/create-tag/action.yml` - Git tagging
@@ -211,6 +221,7 @@ PipeCraft generates:
 - (and others)
 
 **Configuration:**
+
 - `.pipecraftrc.json` - Your PipeCraft configuration
 
 All files are yours—commit them and customize as needed.
@@ -219,13 +230,15 @@ All files are yours—commit them and customize as needed.
 
 Absolutely! Generated workflows have two types of sections:
 
-**⚠️  Managed by PipeCraft (do not modify):**
+**⚠️ Managed by PipeCraft (do not modify):**
+
 - Workflow triggers and structure
 - Change detection logic
 - Version calculation
 - Branch promotion logic
 
 **✅ Customizable (modify freely):**
+
 - Test commands in test jobs
 - Deployment steps in deploy jobs
 - Custom jobs you add
@@ -233,6 +246,7 @@ Absolutely! Generated workflows have two types of sections:
 - Secrets usage
 
 PipeCraft's AST-based regeneration preserves your customizations. When you regenerate:
+
 - Managed sections are updated
 - Your customizations are preserved
 - Custom jobs remain untouched
@@ -289,11 +303,13 @@ This ensures accurate version bumps and better changelogs.
 Yes! Two approaches:
 
 **Option 1: Use conventional commit scopes**
+
 ```bash
 git commit -m "feat(major): breaking API change"
 ```
 
 **Option 2: Workflow dispatch with version input**
+
 - Trigger workflow manually
 - Specify version as input parameter
 - Version gets used instead of auto-calculation
@@ -307,10 +323,12 @@ git commit -m "feat(major): breaking API change"
 Common causes:
 
 1. **Wrong path patterns**: Check your domain `paths` in `.pipecraftrc.json`
+
    - Use `**` for recursive matching: `apps/api/**`
    - Patterns are relative to repo root
 
 2. **Git issues**: Change detection uses `git diff`
+
    - Ensure files are committed
    - Check git history exists
 
@@ -319,6 +337,7 @@ Common causes:
    - Configure with `baseRef` in Nx mode
 
 **Debug with:**
+
 ```bash
 npx pipecraft verify  # Validates configuration
 git diff origin/main --name-only  # See what git sees
@@ -333,6 +352,7 @@ npx pipecraft verify
 ```
 
 This validates:
+
 - Configuration syntax
 - Git repository setup
 - Domain configuration
@@ -381,6 +401,7 @@ Yes! Generated workflows use `runs-on: ubuntu-latest` by default, but you can ch
 3. This customization survives regeneration
 
 Example:
+
 ```yaml
 runs-on: [self-hosted, linux, x64]
 ```
@@ -433,11 +454,13 @@ If found, it offers Nx integration during `pipecraft init`.
 ### What's the difference between path-based and Nx-based detection?
 
 **Path-based detection:**
+
 - Uses glob patterns to match files
 - Simple and works everywhere
 - Doesn't understand dependencies
 
 **Nx-based detection:**
+
 - Uses Nx dependency graph
 - Automatically detects affected projects
 - Smarter about shared libraries
@@ -463,6 +486,7 @@ Configure Nx Cloud separately and PipeCraft workflows will use it automatically.
 PipeCraft is **free and open-source** (MIT license).
 
 You pay only for:
+
 - GitHub Actions minutes (2,000 free per month for public repos)
 - Storage for artifacts and caches
 
@@ -473,6 +497,7 @@ Domain-based testing reduces costs by running only necessary jobs.
 Yes! By testing only changed domains:
 
 **Before (test everything):**
+
 - Change 1 line in API
 - Run API tests (5 min)
 - Run Web tests (10 min)
@@ -480,6 +505,7 @@ Yes! By testing only changed domains:
 - **Total: 30 minutes**
 
 **With PipeCraft (test what changed):**
+
 - Change 1 line in API
 - Run API tests (5 min)
 - Skip web and mobile
@@ -513,16 +539,19 @@ This adds up quickly in active repositories.
 ### How do I upgrade PipeCraft versions?
 
 For global installs:
+
 ```bash
 npm update -g pipecraft
 ```
 
 For project installs:
+
 ```bash
 npm update pipecraft
 ```
 
 Then regenerate workflows to get latest features:
+
 ```bash
 npx pipecraft generate
 ```
@@ -561,6 +590,7 @@ We welcome contributions! See the [Contributing guide](./contributing.md) for:
 - Pull request process
 
 Quick start:
+
 ```bash
 git clone https://github.com/jamesvillarrubia/pipecraft.git
 cd pipecraft

@@ -160,8 +160,8 @@ describe('Domain Job Preservation', () => {
               jobType === 'test'
                 ? 'changes'
                 : jobType === 'deploy'
-                  ? ['version', 'changes']
-                  : ['deploy-api', 'changes'],
+                ? ['version', 'changes']
+                : ['deploy-api', 'changes'],
             runs_on: 'ubuntu-latest',
             ...(jobType === 'deploy' && { environment: 'production' }),
             steps: [

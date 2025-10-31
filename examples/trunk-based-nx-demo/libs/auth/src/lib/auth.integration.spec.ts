@@ -1,4 +1,6 @@
-import { authFunction } from './auth';
+import { authFunction } from './auth'
 describe('auth integration', () => {
-  it('should integrate', () => { expect(authFunction()).toBeDefined(); });
-});
+  it('should integrate', () => {
+    expect(authFunction()).toBeDefined()
+  })
+})

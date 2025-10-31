@@ -22,12 +22,14 @@ pipecraft init
 ```
 
 This launches an interactive setup that asks you about your project structure. It will ask questions like:
+
 - Which branches you want to use (develop, staging, main)
 - Which package manager you use (npm, yarn, or pnpm) - auto-detected from lockfiles
 - What domains exist in your codebase (api, web, etc.)
 - Which paths belong to each domain
 
 The init command automatically detects your package manager by checking for lockfiles:
+
 - `pnpm-lock.yaml` → pnpm
 - `yarn.lock` → yarn
 - `package-lock.json` → npm
@@ -217,6 +219,7 @@ pipecraft setup
 ## Configuration file
 
 PipeCraft looks for configuration in several places, in this order:
+
 1. `.pipecraftrc.json` (recommended)
 2. `.pipecraftrc`
 3. `pipecraft.config.js`
@@ -241,6 +244,7 @@ Most projects use `.pipecraftrc.json` because it's simple and explicit. Here's a
 ```
 
 This configuration tells PipeCraft to:
+
 - Generate GitHub Actions workflows
 - Use a develop → staging → main branch flow
 - Track one domain called "app" that includes all files in `src/**`

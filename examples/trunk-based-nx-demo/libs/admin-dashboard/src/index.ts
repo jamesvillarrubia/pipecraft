@@ -1,1 +1,1 @@
-export * from './lib/admin-dashboard';
+export * from './lib/admin-dashboard'

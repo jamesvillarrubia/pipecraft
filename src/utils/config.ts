@@ -46,7 +46,9 @@ export const loadConfig = (configPath?: string) => {
   const result = configPath ? explorer.load(configPath) : explorer.search()
 
   if (!result) {
-    throw new Error(`No configuration file found. Expected: ${configPath || '.pipecraftrc or .pipecraftrc.json'}`)
+    throw new Error(
+      `No configuration file found. Expected: ${configPath || '.pipecraftrc or .pipecraftrc.json'}`
+    )
   }
 
   return result.config

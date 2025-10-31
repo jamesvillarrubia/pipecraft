@@ -5,7 +5,7 @@
  * Used to test PipeCraft's domain detection and testing workflows.
  */
 
-console.log('Frontend domain loaded');
+console.log('Frontend domain loaded')
 
 // UI Component rendering
 function renderComponent(name, props) {
@@ -13,18 +13,18 @@ function renderComponent(name, props) {
     type: name,
     props: props || {},
     render: () => `<${name} />`
-  };
+  }
 }
 
 // State management
 function createStore(initialState) {
-  let state = { ...initialState };
+  let state = { ...initialState }
   return {
     getState: () => state,
-    setState: (newState) => {
-      state = { ...state, ...newState };
+    setState: newState => {
+      state = { ...state, ...newState }
     }
-  };
+  }
 }
 
-export { renderComponent, createStore };
+export { renderComponent, createStore }

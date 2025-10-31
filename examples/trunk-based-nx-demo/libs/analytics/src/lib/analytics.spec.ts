@@ -1,4 +1,6 @@
-import { analyticsFunction } from './analytics';
+import { analyticsFunction } from './analytics'
 describe('analytics', () => {
-  it('should work', () => { expect(analyticsFunction()).toBe('analytics works!'); });
-});
+  it('should work', () => {
+    expect(analyticsFunction()).toBe('analytics works!')
+  })
+})

@@ -1,6 +1,6 @@
 [**pipecraft v0.0.0-releaseit**](../README.md)
 
-***
+---
 
 [pipecraft](../README.md) / utils/idempotency
 
@@ -10,6 +10,7 @@ Idempotency and Caching Utilities
 
 This module implements intelligent caching to avoid unnecessary workflow regeneration.
 It tracks file hashes and modification times for:
+
 - Configuration files (.pipecraftrc.json)
 - Template source files (src/templates/)
 - Generator code (src/generators/)
@@ -126,11 +127,13 @@ Defined in: [utils/idempotency.ts:239](https://github.com/jamesvillarrubia/pipec
 Check if any tracked files have changed since last generation.
 
 Compares current file hashes against cached values to detect changes in:
+
 - Configuration file (.pipecraftrc.json)
 - Template source files (src/templates/)
 - Generator code (src/generators/)
 
 Returns true if:
+
 - Rebuild is disabled (always regenerate)
 - Force regenerate flag is set
 - No cache exists
@@ -290,7 +293,7 @@ Defined in: [utils/idempotency.ts:38](https://github.com/jamesvillarrubia/pipecr
 
 File size in bytes
 
-***
+---
 
 ### RebuildCache
 

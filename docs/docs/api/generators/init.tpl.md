@@ -34,7 +34,7 @@ respect user input and allow customization.
 ### generate()
 
 ```ts
-function generate(ctx): Promise<PinionContext>;
+function generate(ctx): Promise<PinionContext>
 ```
 
 Defined in: [generators/init.tpl.ts:162](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/generators/init.tpl.ts#L162)
@@ -42,6 +42,7 @@ Defined in: [generators/init.tpl.ts:162](https://github.com/jamesvillarrubia/pip
 Init generator main entry point.
 
 Orchestrates the initialization process by:
+
 1. Prompting user for project preferences (currently unused - see note)
 2. Merging user input with default configuration
 3. Generating and writing .pipecraftrc.json file
@@ -90,6 +91,7 @@ respect user choices and allow customization of branch names, merge strategies,
 and domain configurations.
 
 Prompts Presented (currently unused):
+
 - Project name
 - CI provider (GitHub/GitLab)
 - Merge strategy (fast-forward/merge)

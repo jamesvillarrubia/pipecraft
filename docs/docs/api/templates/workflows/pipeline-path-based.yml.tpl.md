@@ -18,10 +18,12 @@ GitHub Actions workflow that orchestrates the entire trunk-based development flo
 ## Intelligent Merging
 
 The generator distinguishes between:
+
 - **Pipecraft-owned jobs**: `changes`, `version`, `tag`, `promote`, `release`, `test-*`, `deploy-*`
 - **User jobs**: Any jobs not owned by Pipecraft
 
 During regeneration:
+
 - Pipecraft jobs are completely replaced with template versions
 - User jobs are preserved exactly as-is
 - User comments are maintained
@@ -30,6 +32,7 @@ During regeneration:
 ## Architecture
 
 Uses AST-based path operations for surgical YAML manipulation:
+
 - Parse existing workflow into AST
 - Apply precise path-based operations
 - Preserve formatting and comments
@@ -69,7 +72,7 @@ module:utils/ast-path-operations for YAML manipulation details
 ### createPathBasedPipeline()
 
 ```ts
-function createPathBasedPipeline(ctx): object;
+function createPathBasedPipeline(ctx): object
 ```
 
 Defined in: [templates/workflows/pipeline-path-based.yml.tpl.ts:123](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/templates/workflows/pipeline-path-based.yml.tpl.ts#L123)
@@ -89,21 +92,21 @@ Create path-based pipeline content
 ##### mergeStatus
 
 ```ts
-mergeStatus: string;
+mergeStatus: string
 ```
 
 ##### yamlContent
 
 ```ts
-yamlContent: string = finalContent;
+yamlContent: string = finalContent
 ```
 
-***
+---
 
 ### generate()
 
 ```ts
-function generate(ctx): Promise<any>;
+function generate(ctx): Promise<any>
 ```
 
 Defined in: [templates/workflows/pipeline-path-based.yml.tpl.ts:1064](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/templates/workflows/pipeline-path-based.yml.tpl.ts#L1064)
@@ -161,11 +164,13 @@ await generate({
 #### Note
 
 The generator performs these steps:
+
 1. Calls `createPathBasedPipeline()` to build the workflow
 2. Logs merge status (new vs. merged)
 3. Writes the final YAML to the output path
 
 The heavy lifting is done by `createPathBasedPipeline()` which handles:
+
 - Job generation based on domains and branch flow
 - User job preservation and merging
 - Comment preservation from existing pipeline

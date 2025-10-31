@@ -7,12 +7,14 @@ This document maps out every failure point a new user might encounter and the er
 ### Scenario A: User tries `npm install -g pipecraft`
 
 **Prerequisites Check:**
+
 - [ ] Node.js installed (>=18.0.0)
 - [ ] npm installed
 - [ ] Proper permissions (or using sudo)
 - [ ] Package published to npm
 
 **Possible Errors:**
+
 ```bash
 # Error: Node not installed
 bash: npm: command not found
@@ -34,11 +36,13 @@ EACCES: permission denied
 ### Scenario B: User tries `npx pipecraft`
 
 **Prerequisites Check:**
+
 - [ ] Node.js installed
 - [ ] npm installed
 - [ ] In a directory (any directory)
 
 **Possible Errors:**
+
 ```bash
 # Same Node/npm errors as above
 ```
@@ -50,27 +54,34 @@ EACCES: permission denied
 **Where might users run this?**
 
 1. **❌ Not in git repo yet**
+
 ```bash
 cd ~/projects/my-new-project
 pipecraft init
 ```
+
 → Should work! (git not required for init)
 
 2. **❌ In git repo but no remote**
+
 ```bash
 git init
 pipecraft init
 ```
+
 → Should work! (remote not required for init)
 
 3. **✅ In git repo with remote**
+
 ```bash
 git clone <repo>
 pipecraft init
 ```
+
 → Should work!
 
 **Current Issues:**
+
 - ❌ No check for existing config file
 - ❌ No warning about overwriting
 - ❌ Unclear prompts for new users
@@ -79,34 +90,44 @@ pipecraft init
 ### Init Process Errors
 
 **Error 1: Config Already Exists**
+
 ```bash
 pipecraft init
 # .pipecraftrc.json already exists
 ```
+
 → Need: "Config already exists. Use --force to overwrite or edit manually"
 
 **Error 2: Invalid Branch Names**
+
 ```bash
 # User enters: "my branch" (with space)
 ```
+
 → Need: Validate branch names (no spaces, valid git ref)
 
 **Error 3: Duplicate Branch Names**
+
 ```bash
 # User enters same branch for develop and main
 ```
+
 → Need: "Branch names must be unique"
 
 **Error 4: Invalid Domain Paths**
+
 ```bash
 # User enters: "../../../etc/passwd"
 ```
+
 → Need: Validate paths are within project
 
 **Error 5: No Domains Configured**
+
 ```bash
 # User skips all domain configuration
 ```
+
 → Need: "At least one domain is required"
 
 ## Phase 3: `pipecraft generate`
@@ -114,6 +135,7 @@ pipecraft init
 ### Prerequisites Check
 
 **Must Have:**
+
 - [ ] Config file exists (.pipecraftrc.json)
 - [ ] Config is valid JSON
 - [ ] Config has required fields
@@ -124,52 +146,66 @@ pipecraft init
 ### Error Scenarios
 
 **Error 1: No Config File**
+
 ```bash
 pipecraft generate
 # Error: Config file not found
 ```
+
 → Current: Generic error
 → Need: "No configuration found. Run 'pipecraft init' first"
 
 **Error 2: Invalid Config**
+
 ```bash
 # .pipecraftrc.json has syntax error
 {
   "ciProvider": "github",
   missing closing brace
 ```
+
 → Need: "Invalid JSON in .pipecraftrc.json: <specific error>"
 
 **Error 3: Missing Required Fields**
+
 ```bash
 # Config missing 'domains' field
 ```
+
 → Need: "Config validation failed: Missing required field 'domains'"
 
 **Error 4: Not in Git Repo**
+
 ```bash
 cd ~/not-a-git-repo
 pipecraft generate
 ```
+
 → Need: "Must be in a git repository. Run 'git init' first"
 
 **Error 5: No Git Remote**
+
 ```bash
 git init  # But no remote added
 pipecraft generate
 ```
+
 → Need: "No git remote found. Add remote: git remote add origin <url>"
 
 **Error 6: Can't Write to .github Directory**
+
 ```bash
 # Permission denied
 ```
+
 → Need: "Permission denied writing to .github/workflows. Check permissions"
 
 **Error 7: Branches Don't Exist**
+
 ```bash
 # Config specifies 'staging' but doesn't exist
 ```
+
 → Need: "Branch 'staging' not found. Run 'pipecraft setup' to create branches"
 
 ## Phase 4: `pipecraft setup-github`
@@ -177,6 +213,7 @@ pipecraft generate
 ### Prerequisites Check
 
 **Must Have:**
+
 - [ ] In git repository
 - [ ] Git remote is GitHub (not GitLab/Bitbucket)
 - [ ] GitHub token available
@@ -185,37 +222,47 @@ pipecraft generate
 ### Error Scenarios
 
 **Error 1: No Token**
+
 ```bash
 pipecraft setup-github
 ```
+
 → Current: Good error message ✅
 → Shows: How to set GITHUB_TOKEN or use gh CLI
 
 **Error 2: Invalid Token**
+
 ```bash
 export GITHUB_TOKEN=invalid_token_123
 pipecraft setup-github
 ```
+
 → Need: "GitHub API returned 401 Unauthorized. Check your token"
 
 **Error 3: Token Missing Permissions**
+
 ```bash
 # Token has read-only access
 ```
+
 → Need: "Token needs 'admin:org' or 'repo' scope. Create new token at: <url>"
 
 **Error 4: Not a GitHub Repo**
+
 ```bash
 git remote add origin git@gitlab.com:user/repo.git
 pipecraft setup-github
 ```
+
 → Current: Good error ✅
 → Shows: "Could not parse GitHub repository URL"
 
 **Error 5: Private Repo, Wrong Token**
+
 ```bash
 # Using personal token on org repo
 ```
+
 → Need: "403 Forbidden. You may need organization admin access"
 
 ## Phase 5: First Workflow Run
@@ -223,6 +270,7 @@ pipecraft setup-github
 ### Prerequisites Check
 
 **Must Have:**
+
 - [ ] GitHub Actions enabled on repo
 - [ ] Workflow file exists (.github/workflows/pipeline.yml)
 - [ ] Branches exist (develop, staging, main)
@@ -232,21 +280,27 @@ pipecraft setup-github
 ### Error Scenarios
 
 **Error 1: Actions Disabled**
+
 ```bash
 # User pushes, nothing happens
 ```
+
 → Need: Documentation/CLI check: "Verify Actions enabled at: <repo>/settings/actions"
 
 **Error 2: Missing Branches**
+
 ```bash
 # Workflow references 'staging' but doesn't exist
 ```
+
 → Need: "Run 'pipecraft setup' to create all branches"
 
 **Error 3: Permissions Not Set**
+
 ```bash
 # Workflow fails: "Resource not accessible by integration"
 ```
+
 → Current: Good error from setup-github ✅
 → But: Could add to generate command validation
 

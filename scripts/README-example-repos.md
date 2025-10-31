@@ -11,16 +11,19 @@ The example repositories in `examples/pipecraft-example-*` are tracked as regula
 ## Scripts
 
 ### `npm run examples:store-git`
+
 Stores current `.git` directories as `.git.stored` so they can be committed to the parent repo.
 
 **Run this** after making changes to example repos before committing to parent repo.
 
 ### `npm run examples:activate`
+
 Activates git repos by renaming `.git.stored` → `.git`. Repos become functional git repositories.
 
 Automatically called by test setup (`tests/setup.ts` beforeAll).
 
 ### `npm run examples:deactivate`
+
 Deactivates git repos by renaming `.git` → `.git.stored` and resetting working trees.
 
 Automatically called by test cleanup (`tests/setup.ts` afterAll).
@@ -50,6 +53,7 @@ git commit -m "chore: update example repos"
 ### During Tests
 
 The test setup automatically:
+
 - Activates repos before all tests (`beforeAll` hook)
 - Deactivates repos after all tests (`afterAll` hook)
 
@@ -69,4 +73,3 @@ So tests can use the repos as functional git repositories, but they remain track
 - `.git` directories are ignored when present (to avoid conflicts)
 - Repos automatically reset to clean state when deactivated
 - Remote URLs are set to test defaults during activation
-

@@ -74,6 +74,7 @@ pipecraft check-sync --nx
 ```
 
 Output example:
+
 ```
 🔍 Checking Nx project mappings...
 
@@ -119,6 +120,7 @@ PipeCraft automatically extracts keywords from your domain `paths` and matches t
 ```
 
 **How it works:**
+
 - Extracts keywords: `api`, `libs`
 - Creates word-boundary pattern: `(^|[-_])api([-_]|$)`
 - Matches: `api`, `api-gateway`, `mobile-api`
@@ -134,10 +136,10 @@ For precise control, use the `nxProjects` field with glob-like patterns:
     "api": {
       "paths": ["apps/api/**"],
       "nxProjects": [
-        "api",           // Exact match
-        "api-*",         // Prefix: api-gateway, api-auth
-        "*-api",         // Suffix: mobile-api, admin-api
-        "api-*-service"  // Pattern: api-user-service, api-order-service
+        "api", // Exact match
+        "api-*", // Prefix: api-gateway, api-auth
+        "*-api", // Suffix: mobile-api, admin-api
+        "api-*-service" // Pattern: api-user-service, api-order-service
       ],
       "testable": true
     }
@@ -170,12 +172,12 @@ Combine automatic inference with explicit overrides:
 
 ### Matching Rules
 
-| Pattern | Matches | Does NOT Match |
-|---------|---------|----------------|
-| `api` | `api` only | `api-gateway`, `my-api` |
-| `api-*` | `api-gateway`, `api-auth` | `api`, `my-api` |
-| `*-api` | `mobile-api`, `admin-api` | `api`, `api-gateway` |
-| `*api*` | `api`, `my-api`, `graphapi` | `my-service` |
+| Pattern | Matches                     | Does NOT Match          |
+| ------- | --------------------------- | ----------------------- |
+| `api`   | `api` only                  | `api-gateway`, `my-api` |
+| `api-*` | `api-gateway`, `api-auth`   | `api`, `my-api`         |
+| `*-api` | `mobile-api`, `admin-api`   | `api`, `api-gateway`    |
+| `*api*` | `api`, `my-api`, `graphapi` | `my-service`            |
 
 ### Common Patterns
 
@@ -251,6 +253,7 @@ pipecraft generate
 ### Tracked Nx Files
 
 PipeCraft's idempotency system automatically tracks:
+
 - `nx.json` - Workspace configuration
 - `**/project.json` - Individual project configurations
 
@@ -292,6 +295,7 @@ When these change, workflows are regenerated and you're prompted to verify mappi
 ### Runtime Behavior
 
 **With Nx:**
+
 ```bash
 # PR changes apps/api/src/user.ts
 nx show projects --affected
@@ -306,6 +310,7 @@ nx show projects --affected
 ```
 
 **Without Nx:**
+
 ```bash
 # Falls back to path-based detection
 # apps/api/src/user.ts changed → "api" domain affected
@@ -319,7 +324,7 @@ nx show projects --affected
 {
   "domains": {
     "api": {
-      "paths": ["apps/api/**", "apps/*-api/**", "libs/api-*/**"],
+      "paths": ["apps/api/**", "apps/*-api/**", "libs/api-*/**"]
       // Automatically handles: api, mobile-api, api-client, etc.
     }
   }
@@ -385,11 +390,13 @@ pipecraft generate --force
 ### Problem: Project not being detected
 
 **Check pattern matching:**
+
 ```bash
 pipecraft check-sync --nx --suggest
 ```
 
 **Solution:** Add explicit `nxProjects` mapping:
+
 ```json
 {
   "domains": {
@@ -404,15 +411,16 @@ pipecraft check-sync --nx --suggest
 ### Problem: Too many projects mapped to one domain
 
 **Solution:** Create more specific domains or use exact matching:
+
 ```json
 {
   "domains": {
     "api-core": {
-      "nxProjects": ["api"],  // Exact match only
+      "nxProjects": ["api"], // Exact match only
       "description": "Core API"
     },
     "api-services": {
-      "nxProjects": ["api-*"],  // Services only
+      "nxProjects": ["api-*"], // Services only
       "description": "API microservices"
     }
   }
@@ -422,6 +430,7 @@ pipecraft check-sync --nx --suggest
 ### Problem: Nx not being detected in CI
 
 **Check GitHub Actions workflow:**
+
 ```yaml
 - name: Setup Node
   uses: actions/setup-node@v4
@@ -430,7 +439,7 @@ pipecraft check-sync --nx --suggest
     cache: 'npm'
 
 - name: Install Dependencies
-  run: npm ci  # Installs Nx
+  run: npm ci # Installs Nx
 
 - name: Detect Changes
   uses: ./.github/actions/detect-changes
@@ -467,6 +476,7 @@ If you need custom Nx affected logic, you can override the generated action or c
 ## Example: Full Nx Monorepo Setup
 
 See the [pipecraft-example-nx](https://github.com/jamesvillarrubia/pipecraft-example-nx) repository for a complete working example including:
+
 - Multi-app Nx workspace
 - PipeCraft configuration
 - Generated workflows

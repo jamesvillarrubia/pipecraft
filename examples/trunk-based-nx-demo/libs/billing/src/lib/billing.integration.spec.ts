@@ -1,4 +1,6 @@
-import { billingFunction } from './billing';
+import { billingFunction } from './billing'
 describe('billing integration', () => {
-  it('should integrate', () => { expect(billingFunction()).toBeDefined(); });
-});
+  it('should integrate', () => {
+    expect(billingFunction()).toBeDefined()
+  })
+})

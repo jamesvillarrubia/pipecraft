@@ -15,28 +15,36 @@ trunk-based development workflows. This CLI provides commands for:
 ## Command Overview
 
 ### init
+
 Creates .pipecraftrc.json configuration file with project settings.
 Can run interactively or accept flags for automation.
 
 ### generate
+
 Generates GitHub Actions workflows based on configuration:
+
 - Main pipeline workflow (.github/workflows/pipeline.yml)
-- Reusable actions (.github/actions/*)
+- Reusable actions (.github/actions/\*)
 - Idempotent regeneration (only when config/templates change)
 
 ### validate
+
 Validates workflow YAML syntax and structure, checks for common issues.
 
 ### verify
+
 Verifies pipeline job order and dependencies are correct.
 
 ### setup
+
 Configures GitHub repository:
+
 - Workflow permissions (read/write)
 - Branch protection rules
 - Auto-merge settings
 
 ## Global Options
+
 - `-c, --config <path>`: Path to config file (default: .pipecraftrc.json)
 - `-v, --verbose`: Verbose output
 - `--debug`: Debug output (maximum detail)

@@ -79,7 +79,7 @@
 }
 
 /* Dark theme - Adjusted for readability */
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* Override base colors with brighter versions for better contrast on dark backgrounds */
   --color-primary-base: #c97bf0; /* Brighter purple */
   --color-secondary-base: #5ed181; /* Brighter green */
@@ -155,10 +155,10 @@
   padding-right: 10px;
   padding-left: 10px;
 }
-[data-theme="dark"] .navbar__logo img {
+[data-theme='dark'] .navbar__logo img {
   filter: brightness(1.5);
 }
-[data-theme="dark"] .hero img {
+[data-theme='dark'] .hero img {
   filter: brightness(1.5);
 }
 
@@ -241,10 +241,10 @@
 }
 
 /* Ensure proper contrast for headings in dark mode */
-[data-theme="dark"] .hero__title {
+[data-theme='dark'] .hero__title {
   color: var(--ifm-color-primary) !important;
 }
 
-[data-theme="dark"] .hero__subtitle {
+[data-theme='dark'] .hero__subtitle {
   color: var(--ifm-font-color-secondary) !important;
 }

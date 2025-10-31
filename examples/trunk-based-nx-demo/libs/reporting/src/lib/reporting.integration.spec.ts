@@ -1,4 +1,6 @@
-import { reportingFunction } from './reporting';
+import { reportingFunction } from './reporting'
 describe('reporting integration', () => {
-  it('should integrate', () => { expect(reportingFunction()).toBeDefined(); });
-});
+  it('should integrate', () => {
+    expect(reportingFunction()).toBeDefined()
+  })
+})

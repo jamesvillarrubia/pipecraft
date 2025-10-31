@@ -4,11 +4,7 @@
   "requireConventionalCommits": true,
   "initialBranch": "develop",
   "finalBranch": "main",
-  "branchFlow": [
-    "develop",
-    "staging",
-    "main"
-  ],
+  "branchFlow": ["develop", "staging", "main"],
   "semver": {
     "bumpRules": {
       "feat": "minor",

@@ -132,22 +132,24 @@ For each affected Nx project:
 Example:
 
 **Workspace Default (nx.json):**
+
 ```json
 {
   "targetDefaults": {
     "test": {
-      "dependsOn": []  // test WITHOUT build by default
+      "dependsOn": [] // test WITHOUT build by default
     }
   }
 }
 ```
 
 **Project Override (libs/database/project.json):**
+
 ```json
 {
   "targets": {
     "test": {
-      "dependsOn": ["build"]  // Override: test WITH build
+      "dependsOn": ["build"] // Override: test WITH build
     }
   }
 }
@@ -162,7 +164,7 @@ test-database:
   runs-on: ubuntu-latest
   needs:
     - detect-changes
-    - build-database  # Added because project.json has dependsOn: ["build"]
+    - build-database # Added because project.json has dependsOn: ["build"]
   if: contains(needs.detect-changes.outputs.affected, 'database')
   steps:
     - uses: actions/checkout@v4
@@ -219,6 +221,7 @@ Most TypeScript libraries don't need build before test:
 ```
 
 Projects using this:
+
 - auth
 - logging
 - config
@@ -243,6 +246,7 @@ Some libraries need build artifacts:
 ```
 
 Projects using this:
+
 - database (compiled DB drivers)
 - analytics (event tracking modules)
 - billing (payment processing)
@@ -373,6 +377,7 @@ PipeCraft successfully handles this demo if:
 **Status**: Path-based detection working, Nx strategy NOT implemented
 
 **Blockers**:
+
 - Nx detection logic not implemented
 - Task dependency analysis not implemented
 - Job generation doesn't respect Nx graph
@@ -380,6 +385,7 @@ PipeCraft successfully handles this demo if:
 **Workaround**: Use path-based detection with coarse-grained patterns
 
 **Next Steps**:
+
 1. Implement Nx workspace detection in `pipecraft init`
 2. Add `nx show projects --affected` to detect-changes action
 3. Parse `project.json` for task dependencies

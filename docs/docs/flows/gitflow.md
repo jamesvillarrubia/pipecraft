@@ -30,6 +30,7 @@ PipeCraft would generate workflows that handle the complex merging and tagging r
 ## When to use GitFlow
 
 This pattern makes sense when:
+
 - You ship versioned releases on a schedule
 - Multiple releases might be in development simultaneously
 - You need to support older versions with hotfixes
@@ -39,6 +40,7 @@ This pattern makes sense when:
 ## When to stick with trunk flow
 
 The current trunk-based flow is simpler and more suitable when:
+
 - You deploy continuously rather than in batches
 - You only maintain one version in production
 - Your team is small and features integrate quickly

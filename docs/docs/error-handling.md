@@ -19,6 +19,7 @@ Error: No configuration file found. Expected: .pipecraftrc.json
 **Cause**: No configuration file in current directory or ancestors
 
 **Recovery**:
+
 ```bash
 # Create initial configuration
 pipecraft init --interactive
@@ -36,6 +37,7 @@ Error: Missing required field: branchFlow
 **Cause**: Configuration missing required fields
 
 **Required Fields**:
+
 - `ciProvider`
 - `mergeStrategy`
 - `requireConventionalCommits`
@@ -45,6 +47,7 @@ Error: Missing required field: branchFlow
 - `domains`
 
 **Recovery**:
+
 ```bash
 # Re-run init to create valid config
 pipecraft init --interactive
@@ -61,10 +64,11 @@ Error: ciProvider must be either "github" or "gitlab"
 **Cause**: Invalid enum value in configuration
 
 **Recovery**:
+
 ```json
 {
-  "ciProvider": "github",  // Must be "github" or "gitlab"
-  "mergeStrategy": "fast-forward"  // Must be "fast-forward" or "merge"
+  "ciProvider": "github", // Must be "github" or "gitlab"
+  "mergeStrategy": "fast-forward" // Must be "fast-forward" or "merge"
 }
 ```
 
@@ -77,11 +81,12 @@ Error: Domain "api" must have at least one path pattern
 **Cause**: Domain configured with empty paths array
 
 **Recovery**:
+
 ```json
 {
   "domains": {
     "api": {
-      "paths": ["packages/api/**"],  // Must have at least one path
+      "paths": ["packages/api/**"], // Must have at least one path
       "description": "API services"
     }
   }
@@ -101,6 +106,7 @@ Error: Node.js version 16.0.0 is too old. Required: >=18.0.0
 **Cause**: Node.js version below minimum requirement
 
 **Recovery**:
+
 ```bash
 # Install Node 18+ using nvm
 nvm install 18
@@ -122,6 +128,7 @@ Error: Current directory is not a git repository
 **Cause**: Running PipeCraft outside a git repository
 
 **Recovery**:
+
 ```bash
 # Initialize git repository
 git init
@@ -139,6 +146,7 @@ Error: No git remote configured
 **Cause**: Git repository has no remote URL
 
 **Recovery**:
+
 ```bash
 # Add GitHub remote
 git remote add origin https://github.com/user/repo.git
@@ -156,6 +164,7 @@ Error: Cannot write to .github/workflows/ directory
 **Cause**: Insufficient permissions for workflows directory
 
 **Recovery**:
+
 ```bash
 # Fix permissions
 chmod +w .github/workflows/
@@ -173,11 +182,12 @@ Error: initialBranch must be first in branchFlow
 **Cause**: branchFlow doesn't start with initialBranch or end with finalBranch
 
 **Recovery**:
+
 ```json
 {
   "initialBranch": "develop",
   "finalBranch": "main",
-  "branchFlow": ["develop", "staging", "main"]  // Must match
+  "branchFlow": ["develop", "staging", "main"] // Must match
 }
 ```
 
@@ -206,6 +216,7 @@ Error: No git tags found. Cannot determine current version.
 **Cause**: Repository has no version tags
 
 **Recovery**:
+
 ```bash
 # Create initial version tag
 git tag v0.1.0
@@ -224,6 +235,7 @@ Warning: Some commits do not follow conventional format
 **Cause**: Recent commits don't match `type(scope?): subject` format
 
 **Recovery**:
+
 ```bash
 # Setup commit message validation
 pipecraft init --with-versioning
@@ -248,6 +260,7 @@ Error: GITHUB_TOKEN not found in environment
 **Cause**: No GitHub token provided for API operations
 
 **Recovery**:
+
 ```bash
 # Create personal access token at github.com/settings/tokens
 # Required scopes: repo, workflow
@@ -268,6 +281,7 @@ Error: Token does not have required permissions: repo, workflow
 **Cause**: GitHub token missing required scopes
 
 **Recovery**:
+
 1. Go to https://github.com/settings/tokens
 2. Select your token
 3. Enable scopes: `repo`, `workflow`
@@ -283,6 +297,7 @@ Error: GitHub API rate limit exceeded. Resets at 2024-01-01T12:00:00Z
 **Cause**: Made too many API requests (5000/hour for authenticated)
 
 **Recovery**:
+
 ```bash
 # Wait for rate limit reset (shown in error message)
 
@@ -303,6 +318,7 @@ Error: Repository not found: user/repo
 **Cause**: Repository doesn't exist or token lacks access
 
 **Recovery**:
+
 ```bash
 # Verify repository exists
 gh repo view user/repo
@@ -326,6 +342,7 @@ Error: EACCES: permission denied, open '.pipecraftrc.json'
 **Cause**: Insufficient permissions to read/write files
 
 **Recovery**:
+
 ```bash
 # Fix file permissions
 chmod 644 .pipecraftrc.json
@@ -343,6 +360,7 @@ Error: .pipecraftrc.json already exists. Use --force to overwrite.
 **Cause**: Trying to initialize when config already exists
 
 **Recovery**:
+
 ```bash
 # Overwrite existing config
 pipecraft init --force
@@ -360,6 +378,7 @@ Error: ENOSPC: no space left on device
 **Cause**: Insufficient disk space
 
 **Recovery**:
+
 ```bash
 # Free up disk space
 # Check disk usage
@@ -384,6 +403,7 @@ Error: Invalid YAML in .github/workflows/pipeline.yml
 **Cause**: Malformed YAML in existing workflow file
 
 **Recovery**:
+
 ```bash
 # Validate YAML syntax
 pipecraft validate
@@ -404,6 +424,7 @@ Warning: Could not preserve comments in existing workflow
 **Why**: PipeCraft can only preserve comments OUTSIDE managed blocks
 
 **Recovery**:
+
 1. Move user comments outside `# PIPECRAFT-MANAGED` blocks
 2. Regenerate workflow
 3. Comments should now be preserved
@@ -421,6 +442,7 @@ Error: npx release-it: command not found
 **Cause**: release-it not installed (when versioning is enabled)
 
 **Recovery**:
+
 ```bash
 # Install release-it
 npm install --save-dev release-it @release-it/conventional-changelog
@@ -438,6 +460,7 @@ Error: commitlint: command not found
 **Cause**: commitlint not installed (when conventional commits required)
 
 **Recovery**:
+
 ```bash
 # Install commitlint
 npm install --save-dev @commitlint/cli @commitlint/config-conventional
@@ -455,6 +478,7 @@ Error: husky: command not found
 **Cause**: husky not installed (when setting up version management)
 
 **Recovery**:
+
 ```bash
 # Install husky
 npm install --save-dev husky
@@ -544,15 +568,16 @@ describe('Config Error Handling', () => {
     vi.mock('fs', () => ({
       existsSync: () => false
     }))
-    
+
     expect(() => loadConfig()).toThrow('No configuration file found')
   })
-  
+
   it('throws validation error for invalid ciProvider', () => {
     const invalidConfig = { ciProvider: 'invalid' }
-    
-    expect(() => validateConfig(invalidConfig))
-      .toThrow('ciProvider must be either "github" or "gitlab"')
+
+    expect(() => validateConfig(invalidConfig)).toThrow(
+      'ciProvider must be either "github" or "gitlab"'
+    )
   })
 })
 ```
@@ -566,7 +591,7 @@ describe('Git Error Handling', () => {
   it('handles missing git repository gracefully', async () => {
     const tempDir = await createTempDir() // No git init
     process.chdir(tempDir)
-    
+
     const version = versionManager.getCurrentVersion()
     expect(version).toBe('0.0.0') // Fallback value
   })
@@ -580,17 +605,20 @@ When adding new error handling:
 ### Good Error Messages
 
 ✅ **Specific**:
+
 ```
 Error: Domain "api" must have at least one path pattern
 ```
 
 ✅ **Actionable**:
+
 ```
 Error: Node.js version 16.0.0 is too old. Required: >=18.0.0
 Suggestion: Run 'nvm install 18 && nvm use 18'
 ```
 
 ✅ **Context-Rich**:
+
 ```
 Error: Invalid YAML in .github/workflows/pipeline.yml
   Line 42: Unexpected token ':'
@@ -600,16 +628,19 @@ Error: Invalid YAML in .github/workflows/pipeline.yml
 ### Bad Error Messages
 
 ❌ **Vague**:
+
 ```
 Error: Invalid configuration
 ```
 
 ❌ **Non-Actionable**:
+
 ```
 Error: Something went wrong
 ```
 
 ❌ **No Context**:
+
 ```
 Error: Syntax error
 ```
@@ -652,7 +683,7 @@ try {
 } catch (error) {
   // ❌ Bad: Generic error
   throw new Error('Failed to write file')
-  
+
   // ✅ Good: Specific error with context
   throw new Error(`Failed to write ${path}: ${error.message}`)
 }
@@ -754,4 +785,3 @@ If you encounter an error not covered in this guide:
 - [Current Trunk Flow](./flows/trunk-flow) - Implementation details
 - [Getting Started](./intro) - User guide and examples
 - [Testing Guide](./testing-guide) - Testing guidelines
-

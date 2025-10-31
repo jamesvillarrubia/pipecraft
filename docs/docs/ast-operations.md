@@ -54,6 +54,7 @@ applyPathOperations(doc.contents, operations)
 ## 🔧 Operation Types
 
 ### `set`
+
 Set a value at the specified path (creates if doesn't exist)
 
 ```typescript
@@ -65,6 +66,7 @@ Set a value at the specified path (creates if doesn't exist)
 ```
 
 ### `merge`
+
 Merge with existing value (for objects/arrays)
 
 ```typescript
@@ -76,6 +78,7 @@ Merge with existing value (for objects/arrays)
 ```
 
 ### `overwrite`
+
 Replace existing value completely
 
 ```typescript
@@ -91,6 +94,7 @@ Replace existing value completely
 ```
 
 ### `preserve`
+
 Keep existing value, ignore template value
 
 ```typescript
@@ -104,6 +108,7 @@ Keep existing value, ignore template value
 ## 📦 Value Types
 
 ### Objects
+
 Simple key-value pairs for configuration
 
 ```typescript
@@ -119,6 +124,7 @@ Simple key-value pairs for configuration
 ```
 
 ### Arrays
+
 Simple arrays for lists
 
 ```typescript
@@ -130,6 +136,7 @@ Simple arrays for lists
 ```
 
 ### YAML Strings
+
 Multi-line YAML with proper formatting
 
 ```typescript
@@ -147,6 +154,7 @@ Multi-line YAML with proper formatting
 ```
 
 ### Parsed Documents
+
 Pre-parsed YAML nodes
 
 ```typescript
@@ -169,24 +177,30 @@ const parsedJob = parseDocument(`
 ### Core Functions
 
 #### `applyPathOperations(doc, operations)`
+
 Apply multiple path operations to a document
 
 **Parameters:**
+
 - `doc: YAMLMap` - The YAML document to modify
 - `operations: PathOperationConfig[]` - Array of operations to apply
 
 #### `setPathValue(doc, path, value)`
+
 Set a value at a specific path in the YAML AST
 
 **Parameters:**
+
 - `doc: YAMLMap` - The YAML document to modify
 - `path: string` - Dot-notation path (e.g., 'jobs.changes.steps')
 - `value: PathValue` - Value to set at the path
 
 #### `getPathValue(doc, path)`
+
 Get a value at a specific path in the YAML AST
 
 **Parameters:**
+
 - `doc: YAMLMap` - The YAML document to read from
 - `path: string` - Dot-notation path (e.g., 'jobs.changes.steps')
 - **Returns:** `Node | null` - The node at the path, or null if not found
@@ -194,12 +208,15 @@ Get a value at a specific path in the YAML AST
 ### Helper Functions
 
 #### `createValueFromString(yamlString)`
+
 Create a YAML node from a YAML string
 
 #### `createValueFromObject(obj)`
+
 Create a YAML node from a JavaScript object
 
 #### `createValueFromArray(arr)`
+
 Create a YAML node from a JavaScript array
 
 ## 💡 Examples
@@ -223,14 +240,14 @@ const operations = [
       type: 'string'
     }
   },
-  
+
   // Merge branch list
   {
     path: 'on.pull_request.branches',
     operation: 'merge',
     value: ['develop', 'staging', 'main']
   },
-  
+
   // Overwrite job definition
   {
     path: 'jobs.changes',
@@ -284,7 +301,7 @@ const operations = [
     operation: 'overwrite',
     value: createValueFromString(`...`) // Latest template
   },
-  
+
   // User-managed (preserved)
   {
     path: 'jobs.user-tests',
@@ -299,6 +316,7 @@ const operations = [
 ### 1. Use Appropriate Value Types
 
 **✅ Good:**
+
 ```typescript
 // Simple objects for configuration
 { path: 'on.workflow_call.inputs.version', value: { description: '...', type: 'string' } }
@@ -308,6 +326,7 @@ const operations = [
 ```
 
 **❌ Avoid:**
+
 ```typescript
 // Don't use YAML strings for simple values
 { path: 'jobs.changes.runs-on', value: createValueFromString('ubuntu-latest') }
@@ -326,13 +345,13 @@ const operations = [
 const operations = [
   // 1. Ensure required inputs exist
   { path: 'on.workflow_call.inputs.version', operation: 'set', value: {...} },
-  
+
   // 2. Merge configuration
   { path: 'on.pull_request.branches', operation: 'merge', value: [...] },
-  
+
   // 3. Overwrite template-managed jobs
   { path: 'jobs.changes', operation: 'overwrite', value: createValueFromString(...) },
-  
+
   // 4. Preserve user sections
   { path: 'jobs.user-tests', operation: 'preserve', value: null }
 ]
@@ -359,14 +378,17 @@ const operations = [
 ### Common Issues
 
 **Path not found errors:**
+
 - Ensure the path exists or use `required: false`
 - Check for typos in dot notation paths
 
 **Type errors:**
+
 - Use proper TypeScript types for Node values
 - Cast parsed documents correctly
 
 **Merge conflicts:**
+
 - Use `overwrite` for template-managed sections
 - Use `preserve` for user-managed sections
 

@@ -54,12 +54,7 @@
       "name": "analytics-library-change",
       "description": "Change analytics library - test should depend on build",
       "changes": ["libs/analytics/src/lib/analytics.ts"],
-      "expectedAffected": [
-        "analytics",
-        "reporting",
-        "admin-dashboard",
-        "backend"
-      ],
+      "expectedAffected": ["analytics", "reporting", "admin-dashboard", "backend"],
       "expectedJobs": ["build-analytics", "test-analytics"],
       "verifyTaskDependencies": true
     },
@@ -67,12 +62,7 @@
       "name": "notifications-library-change",
       "description": "Change notifications library (no build required for test)",
       "changes": ["libs/notifications/src/lib/notifications.ts"],
-      "expectedAffected": [
-        "notifications",
-        "user-management",
-        "billing",
-        "backend"
-      ],
+      "expectedAffected": ["notifications", "user-management", "billing", "backend"],
       "expectedJobs": ["test-notifications"],
       "verifyTaskDependencies": false
     },
@@ -134,12 +124,7 @@
         "infra-pulumi",
         "migrations"
       ],
-      "expectedJobs": [
-        "build-auth",
-        "test-auth",
-        "preview-infra-pulumi",
-        "migrate-migrations"
-      ],
+      "expectedJobs": ["build-auth", "test-auth", "preview-infra-pulumi", "migrate-migrations"],
       "verifyTaskDependencies": false
     }
   ]

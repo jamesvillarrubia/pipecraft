@@ -98,12 +98,14 @@ Specifies which package manager to use for dependency installation in generated 
 ```
 
 **Auto-detection during init:**
+
 - Checks for `pnpm-lock.yaml` → selects `pnpm`
 - Checks for `yarn.lock` → selects `yarn`
 - Checks for `package-lock.json` → selects `npm`
 - Defaults to `npm` if no lockfile found
 
 **Impact on generated workflows:**
+
 - **Nx workflows**: Uses the configured package manager for dependency installation
 - **Install commands** with automatic fallback:
   - `npm`: `npm ci || npm install`
@@ -113,6 +115,7 @@ Specifies which package manager to use for dependency installation in generated 
 **When to set explicitly:**
 
 Use explicit configuration when:
+
 - You use a package manager but haven't committed the lockfile yet
 - You want to enforce a specific package manager across your team
 - You're migrating between package managers
@@ -177,6 +180,7 @@ Your `initialBranch` and `finalBranch` must be present in this array. The order 
 Common patterns include:
 
 **Three-stage flow** (recommended starting point):
+
 ```json
 {
   "branchFlow": ["develop", "staging", "main"]
@@ -184,6 +188,7 @@ Common patterns include:
 ```
 
 **Simple two-stage flow**:
+
 ```json
 {
   "branchFlow": ["develop", "main"]
@@ -191,6 +196,7 @@ Common patterns include:
 ```
 
 **Enterprise four-stage flow**:
+
 ```json
 {
   "branchFlow": ["develop", "staging", "uat", "production"]
@@ -222,6 +228,7 @@ Controls how different types of conventional commits affect version numbers. The
 ```
 
 The three bump types are:
+
 - **patch**: Increment the patch version (1.0.0 → 1.0.1)
 - **minor**: Increment the minor version and reset patch (1.0.0 → 1.1.0)
 - **major**: Increment the major version and reset minor and patch (1.0.0 → 2.0.0)
@@ -297,9 +304,9 @@ An array of glob patterns matching files that belong to this domain. These patte
 ```json
 {
   "paths": [
-    "apps/api/**",           // Everything in apps/api
-    "libs/api-core/**",      // Core API library
-    "!**/*.test.ts"          // Exclude test files
+    "apps/api/**", // Everything in apps/api
+    "libs/api-core/**", // Core API library
+    "!**/*.test.ts" // Exclude test files
   ]
 }
 ```
@@ -326,6 +333,7 @@ Good descriptions explain the purpose or responsibility of the domain, not just 
 **Default**: `true`
 
 When `testable: true` (the default), PipeCraft generates a `test-{domain}` job that:
+
 - Only runs when the domain has changes
 - Runs in parallel with other domain tests
 - Must pass before versioning and promotion
@@ -338,7 +346,7 @@ Set `testable: false` for domains that don't need testing (e.g., documentation, 
     "docs": {
       "paths": ["docs/**"],
       "description": "Documentation",
-      "testable": false  // No tests needed
+      "testable": false // No tests needed
     }
   }
 }
@@ -350,6 +358,7 @@ Set `testable: false` for domains that don't need testing (e.g., documentation, 
 **Default**: `false`
 
 When `deployable: true`, PipeCraft generates a `deploy-{domain}` job that:
+
 - Only runs after tests pass and version is calculated
 - Runs in parallel with other deployments
 - Must succeed (or be skipped) for tagging to occur
@@ -363,7 +372,7 @@ Use this for domains that need deployment (APIs, web apps, services):
       "paths": ["apps/api/**"],
       "description": "API service",
       "testable": true,
-      "deployable": true  // Deploy after tests pass
+      "deployable": true // Deploy after tests pass
     }
   }
 }
@@ -375,6 +384,7 @@ Use this for domains that need deployment (APIs, web apps, services):
 **Default**: `false`
 
 When `remoteTestable: true`, PipeCraft generates a `remote-test-{domain}` job that:
+
 - Runs after `deploy-{domain}` succeeds
 - Tests the deployed service in its live environment
 - Must pass for tagging and promotion
@@ -389,7 +399,7 @@ Use this for integration tests, smoke tests, or health checks against deployed s
       "description": "Web application",
       "testable": true,
       "deployable": true,
-      "remoteTestable": true  // Test deployed app
+      "remoteTestable": true // Test deployed app
     }
   }
 }
@@ -400,6 +410,7 @@ Use this for integration tests, smoke tests, or health checks against deployed s
 Domains with different capabilities flow through phases differently:
 
 **Domain with all capabilities enabled**:
+
 1. **Change Detection** → Determines if domain changed
 2. **Test** (`test-{domain}`) → Runs if changed
 3. **Version** → Calculates next version (after all tests)
@@ -410,9 +421,11 @@ Domains with different capabilities flow through phases differently:
 8. **Release** → Creates GitHub release (on final branch only)
 
 **Domain with only testable**:
+
 1. Change Detection → Test → Version → Tag → Promote → Release
 
 **Domain with testable and deployable**:
+
 1. Change Detection → Test → Version → Deploy → Tag → Promote → Release
 
 ## Complete Example Configuration
@@ -439,44 +452,28 @@ Here's a comprehensive example showing all major configuration options working t
 
   "domains": {
     "api": {
-      "paths": [
-        "apps/api/**",
-        "libs/api-core/**",
-        "libs/shared/**"
-      ],
+      "paths": ["apps/api/**", "libs/api-core/**", "libs/shared/**"],
       "description": "API services and shared business logic",
       "testable": true,
       "deployable": true,
       "remoteTestable": true
     },
     "web": {
-      "paths": [
-        "apps/web/**",
-        "libs/ui-components/**",
-        "libs/shared/**"
-      ],
+      "paths": ["apps/web/**", "libs/ui-components/**", "libs/shared/**"],
       "description": "Web application and reusable UI components",
       "testable": true,
       "deployable": true,
       "remoteTestable": true
     },
     "mobile": {
-      "paths": [
-        "apps/mobile/**",
-        "libs/mobile-components/**",
-        "libs/shared/**"
-      ],
+      "paths": ["apps/mobile/**", "libs/mobile-components/**", "libs/shared/**"],
       "description": "Mobile application for iOS and Android",
       "testable": true,
       "deployable": false,
       "remoteTestable": false
     },
     "infrastructure": {
-      "paths": [
-        "infrastructure/**",
-        "docker/**",
-        ".github/workflows/**"
-      ],
+      "paths": ["infrastructure/**", "docker/**", ".github/workflows/**"],
       "description": "Infrastructure as code and deployment configurations",
       "testable": false,
       "deployable": false,

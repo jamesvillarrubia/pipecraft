@@ -5,24 +5,24 @@
  */
 
 export function formatDate(date) {
-  return new Date(date).toISOString();
+  return new Date(date).toISOString()
 }
 
 export function generateId() {
-  return `id-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `id-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
 export function validateEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
 }
 
 export function hashPassword(password) {
   // Placeholder - real implementation would use bcrypt
-  console.log('Hashing password...');
-  return `hashed-${password}`;
+  console.log('Hashing password...')
+  return `hashed-${password}`
 }
 
 export function logger(level, message) {
-  console.log(`[${level.toUpperCase()}] ${message}`);
+  console.log(`[${level.toUpperCase()}] ${message}`)
 }

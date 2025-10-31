@@ -4,6 +4,7 @@ Logging Utility with Configurable Verbosity
 
 This module provides a singleton logger instance with multiple verbosity levels
 to control console output. The logger supports four levels:
+
 - silent: No output (useful for programmatic usage or CI environments)
 - normal: Standard output (info, success, warn, error)
 - verbose: Normal + verbose messages (detailed operation info)
@@ -17,12 +18,13 @@ passed to the CLI commands.
 ### LogLevel
 
 ```ts
-type LogLevel = "silent" | "normal" | "verbose" | "debug";
+type LogLevel = 'silent' | 'normal' | 'verbose' | 'debug'
 ```
 
 Defined in: [utils/logger.ts:24](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/logger.ts#L24)
 
 Available log verbosity levels in ascending order of detail.
+
 - silent: No console output
 - normal: Standard operational messages
 - verbose: Detailed operational messages
@@ -33,7 +35,7 @@ Available log verbosity levels in ascending order of detail.
 ### logger
 
 ```ts
-const logger: Logger;
+const logger: Logger
 ```
 
 Defined in: [utils/logger.ts:169](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/logger.ts#L169)

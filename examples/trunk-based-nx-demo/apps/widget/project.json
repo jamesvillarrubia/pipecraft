@@ -1,8 +1,21 @@
 {
   "name": "widget",
   "targets": {
-    "build": {"executor": "@nx/js:tsc", "options": {"outputPath": "dist/apps/widget", "main": "apps/widget/src/main.ts", "tsConfig": "apps/widget/tsconfig.json"}},
-    "test": {"executor": "@nx/jest:jest", "options": {"jestConfig": "apps/widget/jest.config.ts"}},
-    "e2e": {"executor": "@nx/jest:jest", "options": {"jestConfig": "apps/widget/jest.config.ts", "testPathPattern": "e2e"}}
+    "build": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "outputPath": "dist/apps/widget",
+        "main": "apps/widget/src/main.ts",
+        "tsConfig": "apps/widget/tsconfig.json"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": { "jestConfig": "apps/widget/jest.config.ts" }
+    },
+    "e2e": {
+      "executor": "@nx/jest:jest",
+      "options": { "jestConfig": "apps/widget/jest.config.ts", "testPathPattern": "e2e" }
+    }
   }
 }

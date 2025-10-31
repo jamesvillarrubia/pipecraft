@@ -45,6 +45,7 @@ PipeCraft promotes code through branches (develop → staging → main) based on
 This ensures that housekeeping commits (tests, documentation, refactoring) stay on the development branch while meaningful changes (features and fixes) automatically flow through to production. It creates a clean history where every promotion represents a versioned release.
 
 The version calculation is based on conventional commits:
+
 - `feat:` commits bump the minor version (1.0.0 → 1.1.0)
 - `fix:` commits bump the patch version (1.0.0 → 1.0.1)
 - Breaking changes bump the major version (1.0.0 → 2.0.0)
