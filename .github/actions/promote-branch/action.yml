@@ -69,8 +69,15 @@ runs:
           exit 1
         fi
 
-        # Read branchFlow array from config
-        BRANCH_FLOW=$(cat "$CONFIG_PATH" | jq -r '.branchFlow | join(" ")')
+        # Install yq if not available (GitHub runners have it pre-installed on ubuntu-latest)
+        if ! command -v yq &> /dev/null; then
+          echo "📦 Installing yq..."
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+        fi
+
+        # Read branchFlow array from YAML config
+        BRANCH_FLOW=$(yq eval '.branchFlow | join(" ")' "$CONFIG_PATH")
         echo "🔍 Branch flow: $BRANCH_FLOW"
 
         # Convert to array
@@ -98,8 +105,8 @@ runs:
         echo "✅ Target branch: $TARGET"
         echo "targetBranch=$TARGET" >> $GITHUB_OUTPUT
 
-        # Determine autoMerge setting for target branch
-        AUTO_MERGE=$(cat "$CONFIG_PATH" | jq -r ".autoMerge.\"$TARGET\" // false")
+        # Determine autoMerge setting for target branch using YAML parser
+        AUTO_MERGE=$(yq eval ".autoMerge.\"$TARGET\" // false" "$CONFIG_PATH")
         echo "🔍 Auto-merge for $TARGET: $AUTO_MERGE"
         echo "autoMerge=$AUTO_MERGE" >> $GITHUB_OUTPUT
 
