@@ -113,11 +113,9 @@ runs:
         echo "domains=$DOMAIN_NAMES" >> $GITHUB_OUTPUT
         echo "📋 Configured domains: $DOMAIN_NAMES"
         
-        # Create filters file for paths-filter action
-        echo "filters:" > /tmp/path-filters.yml
-        cat /tmp/domains-config.yml >> /tmp/path-filters.yml
-        
-        cat /tmp/path-filters.yml
+        # Display the domain configuration
+        echo "Domain configuration:"
+        cat /tmp/domains-config.yml
         echo ""
 
     - name: Check for Nx
@@ -240,8 +238,7 @@ runs:
       if: steps.nx-check.outputs.available != 'true' || inputs.useNx != 'true'
       with:
         base: \${{ steps.set-base.outputs.base_branch }}
-        filters: |
-          config: /tmp/path-filters.yml
+        filters: \${{ inputs.domains-config }}
 
     - name: Generate Outputs
       id: output
