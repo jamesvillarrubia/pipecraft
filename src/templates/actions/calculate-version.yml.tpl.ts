@@ -1,24 +1,24 @@
 /**
  * Calculate Version Action Template
- * 
+ *
  * Generates a composite action that calculates the next semantic version based on
  * conventional commits. Uses `release-it` to analyze commit history and determine
  * the appropriate version bump (major, minor, or patch).
- * 
+ *
  * ## Purpose
- * 
+ *
  * Automates semantic versioning in the CI/CD pipeline by:
  * - Analyzing conventional commit messages since the last tag
  * - Determining the appropriate version bump (feat→minor, fix→patch, BREAKING→major)
  * - Installing and running release-it for version calculation
  * - Outputting the calculated version for use in subsequent jobs
- * 
+ *
  * ## Generated Action Location
- * 
+ *
  * `.github/actions/calculate-version/action.yml`
- * 
+ *
  * ## Usage in Workflows
- * 
+ *
  * ```yaml
  * jobs:
  *   version:
@@ -30,23 +30,23 @@
  *         id: calc
  *         with:
  *           baseRef: main
- * 
+ *
  *   tag:
  *     needs: version
  *     steps:
  *       - run: echo "Next version: ${{ needs.version.outputs.version }}"
  * ```
- * 
+ *
  * @module templates/actions/calculate-version.yml.tpl
  */
 
-import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import fs from 'fs'
 import { logger } from '../../utils/logger.js'
 
 /**
  * Generates the calculate-version composite action YAML content.
- * 
+ *
  * @param {any} ctx - Context (not currently used, included for consistency)
  * @returns {string} YAML content for the composite action
  */
@@ -181,13 +181,13 @@ runs:
 
 /**
  * Generator entry point for calculate-version composite action.
- * 
+ *
  * @param {PinionContext} ctx - Pinion generator context
  * @returns {Promise<PinionContext>} Updated context after file generation
  */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
-    .then((ctx) => {
+    .then(ctx => {
       // Check if file exists to determine merge status
       const filePath = '.github/actions/calculate-version/action.yml'
       const exists = fs.existsSync(filePath)
@@ -195,4 +195,6 @@ export const generate = (ctx: PinionContext) =>
       logger.verbose(`${status} ${filePath}`)
       return ctx
     })
-    .then(renderTemplate(versionActionTemplate, toFile('.github/actions/calculate-version/action.yml')))
+    .then(
+      renderTemplate(versionActionTemplate, toFile('.github/actions/calculate-version/action.yml'))
+    )

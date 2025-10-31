@@ -1,15 +1,16 @@
 #!/usr/bin/env node
+
 /**
  * Deactivate example git repos after testing
- * 
+ *
  * Renames .git directories back to .git.stored and resets working trees
  * to return repos to their clean tracked state.
  */
 
-import { readdir, rename, access } from 'fs/promises'
-import { join } from 'path'
 import { execSync } from 'child_process'
 import { rmSync } from 'fs'
+import { access, readdir, rename } from 'fs/promises'
+import { join } from 'path'
 
 const EXAMPLES_DIR = 'examples'
 const REPOS = ['pipecraft-example-basic', 'pipecraft-example-gated', 'pipecraft-example-minimal']
@@ -51,15 +52,14 @@ async function deactivateRepo(repoName, resetWorkingTree = true) {
 
 async function main() {
   const resetWorkingTree = !process.argv.includes('--keep-changes')
-  
+
   console.log('Deactivating example git repos...\n')
-  
+
   for (const repo of REPOS) {
     await deactivateRepo(repo, resetWorkingTree)
   }
-  
+
   console.log('\n✓ All example repos deactivated and stored')
 }
 
 main().catch(console.error)
-

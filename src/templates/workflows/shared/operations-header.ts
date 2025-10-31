@@ -5,8 +5,8 @@
  * common to both Nx and path-based pipeline templates.
  */
 
-import { PathOperationConfig } from '../../../utils/ast-path-operations.js'
 import { Scalar } from 'yaml'
+import type { PathOperationConfig } from '../../../utils/ast-path-operations.js'
 
 export interface HeaderContext {
   branchFlow: string[]
@@ -18,7 +18,8 @@ export interface HeaderContext {
 export function createHeaderOperations(ctx: HeaderContext): PathOperationConfig[] {
   const { branchFlow } = ctx
   // Provide sensible defaults if branchFlow is invalid
-  const validBranchFlow = (branchFlow && Array.isArray(branchFlow) && branchFlow.length > 0) ? branchFlow : ['main']
+  const validBranchFlow =
+    branchFlow && Array.isArray(branchFlow) && branchFlow.length > 0 ? branchFlow : ['main']
   const branchList = validBranchFlow.join(',')
 
   return [
@@ -85,13 +86,13 @@ Runtime versions
     {
       path: 'env.NODE_VERSION',
       operation: 'preserve',
-      value: new Scalar('20'),
+      value: new Scalar('24'),
       required: true
     },
     {
       path: 'env.PNPM_VERSION',
       operation: 'preserve',
-      value: new Scalar('9'),
+      value: new Scalar('10'),
       required: true
     },
 

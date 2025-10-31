@@ -4,7 +4,10 @@
  * Generates the version calculation job that determines the next semantic version.
  */
 
-import { PathOperationConfig, createValueFromString } from '../../../utils/ast-path-operations.js'
+import {
+  createValueFromString,
+  type PathOperationConfig
+} from '../../../utils/ast-path-operations.js'
 
 export interface VersionContext {
   testJobNames: string[]
@@ -23,20 +26,23 @@ export function createVersionJobOperation(ctx: VersionContext): PathOperationCon
   const needsArray = ['changes', nxJobName, ...testJobNames].filter(Boolean)
 
   // Build the conditional logic
-  const nxCondition = nxEnabled ? 'needs.test-nx.result == \'success\'' : ''
-  const testConditions = testJobNames.length > 0
-    ? [
-        `(${testJobNames.map(job => `needs.${job}.result == 'success'`).join(' || ')})`,
-        testJobNames.map(job => `needs.${job}.result != 'failure'`).join(' && ')
-      ]
-    : []
+  const nxCondition = nxEnabled ? "needs.test-nx.result == 'success'" : ''
+  const testConditions =
+    testJobNames.length > 0
+      ? [
+          `(${testJobNames.map(job => `needs.${job}.result == 'success'`).join(' || ')})`,
+          testJobNames.map(job => `needs.${job}.result != 'failure'`).join(' && ')
+        ]
+      : []
 
   const allConditions = [
     'always()',
-    'github.event_name != \'pull_request\'',
+    "github.event_name != 'pull_request'",
     nxCondition,
     ...testConditions
-  ].filter(Boolean).join(' && ')
+  ]
+    .filter(Boolean)
+    .join(' && ')
 
   return {
     path: 'jobs.version',

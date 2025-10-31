@@ -8,7 +8,7 @@
  * @module tests/helpers/fixtures
  */
 
-import { PipecraftConfig } from '../../src/types/index.js'
+import type { PipecraftConfig } from '../../src/types/index.js'
 
 /**
  * Create a minimal valid PipeCraft configuration.
@@ -177,7 +177,12 @@ export function createMonorepoConfig(
  * ```
  */
 export function createInvalidConfig(
-  invalidationType: 'missing-fields' | 'invalid-provider' | 'invalid-strategy' | 'empty-domains' | 'no-branches'
+  invalidationType:
+    | 'missing-fields'
+    | 'invalid-provider'
+    | 'invalid-strategy'
+    | 'empty-domains'
+    | 'no-branches'
 ): any {
   const base = createMinimalConfig()
 
@@ -185,7 +190,7 @@ export function createInvalidConfig(
     case 'missing-fields':
       // Missing required fields
       return {
-        ciProvider: 'github',
+        ciProvider: 'github'
         // Missing everything else
       }
 
@@ -267,23 +272,21 @@ jobs:
  * })
  * ```
  */
-export function createPipelineWorkflowYAML(options: {
-  name?: string
-  branches?: string[]
-  jobs?: string[]
-} = {}): string {
-  const {
-    name = 'Pipeline',
-    branches = ['develop', 'staging', 'main'],
-    jobs = ['test']
-  } = options
+export function createPipelineWorkflowYAML(
+  options: { name?: string; branches?: string[]; jobs?: string[] } = {}
+): string {
+  const { name = 'Pipeline', branches = ['develop', 'staging', 'main'], jobs = ['test'] } = options
 
-  const jobsYaml = jobs.map(jobName => `  ${jobName}:
+  const jobsYaml = jobs
+    .map(
+      jobName => `  ${jobName}:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Run ${jobName}
-        run: echo "Running ${jobName}"`).join('\n\n')
+        run: echo "Running ${jobName}"`
+    )
+    .join('\n\n')
 
   return `name: ${name}
 
@@ -326,4 +329,3 @@ export function createPackageJSON(overrides: Record<string, any> = {}): Record<s
     ...overrides
   }
 }
-

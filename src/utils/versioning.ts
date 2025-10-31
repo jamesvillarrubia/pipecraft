@@ -18,7 +18,7 @@
 import { execSync } from 'child_process'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import { PipecraftConfig } from '../types/index.js'
+import type { PipecraftConfig } from '../types/index.js'
 
 /**
  * Manager for semantic versioning and release automation.
@@ -81,8 +81,8 @@ export class VersionManager {
       git: {
         requireCleanWorkingDir: false,
         commit: false,
-        pushArgs: ["--tags"],
-        tagMatch: "v[0-9]*.[0-9]*.[0-9]*"
+        pushArgs: ['--tags'],
+        tagMatch: 'v[0-9]*.[0-9]*.[0-9]*'
       },
       github: {
         release: false
@@ -93,10 +93,10 @@ export class VersionManager {
         skipChecks: true
       },
       hooks: {
-        "after:release": "echo ${version} > .release-version"
+        'after:release': 'echo ${version} > .release-version'
       },
       plugins: {
-        "@release-it/conventional-changelog": {
+        '@release-it/conventional-changelog': {
           whatBump: (commits: any[], options: any) => {
             // Import DEFAULT_PREFIXES from the release-it config
             const { DEFAULT_PREFIXES } = require('../../.release-it.cjs')
@@ -104,30 +104,36 @@ export class VersionManager {
 
             // Merge with user-defined bump rules
             const bumpRules = { ...defaults, ...this.config.versioning?.bumpRules }
-            
+
             let breakings = 0
             let features = 0
-            let levelSet = ['major', 'minor', 'patch', 'ignore']
-            
+            const levelSet = ['major', 'minor', 'patch', 'ignore']
+
             // eslint-disable-next-line prefer-spread
-            let level = Math.min.apply(Math, commits.map(commit => {
-              let level = levelSet.indexOf(bumpRules[commit.type as keyof typeof bumpRules] || 'ignore')
-              level = level < 0 ? 3 : level
-              
-              if (commit.notes.length > 0) {
-                breakings += commit.notes.length
-              }
-              if (commit.type === 'feat') {
-                features += 1
-              }
-              return level
-            }))
+            const level = Math.min.apply(
+              Math,
+              commits.map(commit => {
+                let level = levelSet.indexOf(
+                  bumpRules[commit.type as keyof typeof bumpRules] || 'ignore'
+                )
+                level = level < 0 ? 3 : level
+
+                if (commit.notes.length > 0) {
+                  breakings += commit.notes.length
+                }
+                if (commit.type === 'feat') {
+                  features += 1
+                }
+                return level
+              })
+            )
 
             return {
               level: level,
-              reason: breakings === 1
-                ? `There is ${breakings} BREAKING CHANGE and ${features} features`
-                : `There are ${breakings} BREAKING CHANGES and ${features} features`
+              reason:
+                breakings === 1
+                  ? `There is ${breakings} BREAKING CHANGE and ${features} features`
+                  : `There are ${breakings} BREAKING CHANGES and ${features} features`
             }
           }
         }
@@ -245,7 +251,7 @@ npx commitlint --edit $1`
         mkdirSync(huskyDir, { recursive: true })
       }
     }
-    
+
     // Create commit-msg hook script
     const commitMsgHook = this.generateHuskyConfig()
     writeFileSync(join(huskyDir, 'commit-msg'), commitMsgHook)
@@ -276,16 +282,16 @@ npx commitlint --edit $1`
     }
 
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
-    
+
     // Merge with existing scripts, preserving any user-defined ones
     packageJson.scripts = {
       ...packageJson.scripts,
-      'release': 'release-it',
+      release: 'release-it',
       'release:dry': 'release-it --dry-run',
       'version:check': 'release-it --dry-run',
-      'changelog': 'conventional-changelog -p angular -i CHANGELOG.md -s',
-      'commit': 'git add . && git commit',
-      'prepare': 'husky install'
+      changelog: 'conventional-changelog -p angular -i CHANGELOG.md -s',
+      commit: 'git add . && git commit',
+      prepare: 'husky install'
     }
 
     writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
@@ -313,15 +319,16 @@ npx commitlint --edit $1`
    */
   validateConventionalCommits(): boolean {
     try {
-      const result = execSync('git log --oneline -10', { 
+      const result = execSync('git log --oneline -10', {
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'ignore'] // Suppress stderr to avoid "not a git repository" errors in tests
       })
       const commits = result.split('\n').filter(line => line.trim())
-      
+
       // Check if commits follow conventional format: type(scope?): subject
-      const conventionalPattern = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+/
-      
+      const conventionalPattern =
+        /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+/
+
       return commits.every(commit => conventionalPattern.test(commit))
     } catch (error) {
       // Not a git repository or other git error
@@ -345,7 +352,7 @@ npx commitlint --edit $1`
    */
   getCurrentVersion(): string {
     try {
-      const result = execSync('git describe --tags --abbrev=0', { 
+      const result = execSync('git describe --tags --abbrev=0', {
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'ignore'] // Suppress stderr to avoid "not a git repository" errors in tests
       })
@@ -372,18 +379,18 @@ npx commitlint --edit $1`
    * // Output: "Next minor version: 1.3.0"
    * ```
    */
-  calculateNextVersion(): { version: string, type: string } {
+  calculateNextVersion(): { version: string; type: string } {
     try {
       const currentVersion = this.getCurrentVersion()
-      const result = execSync('npx release-it --dry-run --no-git.requireCleanWorkingDir', { 
+      const result = execSync('npx release-it --dry-run --no-git.requireCleanWorkingDir', {
         encoding: 'utf8',
         stdio: 'pipe'
       })
-      
+
       // Parse release-it output to extract version and bump type
       const versionMatch = result.match(/version\s+(\d+\.\d+\.\d+)/)
       const typeMatch = result.match(/bump\s+(\w+)/)
-      
+
       return {
         version: versionMatch ? versionMatch[1] : currentVersion,
         type: typeMatch ? typeMatch[1] : 'patch'

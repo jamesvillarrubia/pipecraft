@@ -5,7 +5,10 @@
  * These jobs are marked as 'preserve' so users can customize them.
  */
 
-import { PathOperationConfig, createValueFromString } from '../../../utils/ast-path-operations.js'
+import {
+  createValueFromString,
+  type PathOperationConfig
+} from '../../../utils/ast-path-operations.js'
 
 export interface DomainJobsContext {
   domains: Record<string, any>
@@ -18,7 +21,9 @@ export function createDomainTestJobOperations(ctx: DomainJobsContext): PathOpera
   const { domains } = ctx
   const operations: PathOperationConfig[] = []
 
-  const testableDomains = Object.keys(domains).sort().filter(d => domains[d].testable !== false)
+  const testableDomains = Object.keys(domains)
+    .sort()
+    .filter(d => domains[d].testable !== false)
 
   testableDomains.forEach((domain, index) => {
     operations.push({
@@ -62,7 +67,9 @@ export function createDomainDeployJobOperations(ctx: DomainJobsContext): PathOpe
   const { domains } = ctx
   const operations: PathOperationConfig[] = []
 
-  const deployableDomains = Object.keys(domains).sort().filter(d => domains[d].deployable === true)
+  const deployableDomains = Object.keys(domains)
+    .sort()
+    .filter(d => domains[d].deployable === true)
 
   deployableDomains.forEach((domain, index) => {
     operations.push({
@@ -106,7 +113,9 @@ export function createDomainRemoteTestJobOperations(ctx: DomainJobsContext): Pat
   const { domains } = ctx
   const operations: PathOperationConfig[] = []
 
-  const remoteTestableDomains = Object.keys(domains).sort().filter(d => domains[d].remoteTestable === true)
+  const remoteTestableDomains = Object.keys(domains)
+    .sort()
+    .filter(d => domains[d].remoteTestable === true)
 
   remoteTestableDomains.forEach((domain, index) => {
     operations.push({
@@ -152,8 +161,17 @@ export function getDomainJobNames(domains: Record<string, any>): {
   remoteTestJobs: string[]
 } {
   return {
-    testJobs: Object.keys(domains).sort().filter(d => domains[d].testable !== false).map(d => `test-${d}`),
-    deployJobs: Object.keys(domains).sort().filter(d => domains[d].deployable === true).map(d => `deploy-${d}`),
-    remoteTestJobs: Object.keys(domains).sort().filter(d => domains[d].remoteTestable === true).map(d => `remote-test-${d}`)
+    testJobs: Object.keys(domains)
+      .sort()
+      .filter(d => domains[d].testable !== false)
+      .map(d => `test-${d}`),
+    deployJobs: Object.keys(domains)
+      .sort()
+      .filter(d => domains[d].deployable === true)
+      .map(d => `deploy-${d}`),
+    remoteTestJobs: Object.keys(domains)
+      .sort()
+      .filter(d => domains[d].remoteTestable === true)
+      .map(d => `remote-test-${d}`)
   }
 }

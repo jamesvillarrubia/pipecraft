@@ -1,22 +1,22 @@
 /**
  * PR Title Check Workflow Template
- * 
+ *
  * Generates a GitHub Actions workflow that validates pull request titles follow
  * the Conventional Commits specification. This ensures consistent commit and
  * PR title formatting across the project.
- * 
+ *
  * The workflow:
  * - Triggers on PR events (opened, edited, synchronize, reopened)
  * - Validates PR titles using conventional commit format
  * - Provides helpful error messages with guidance
  * - Uses sticky comments to show validation results
- * 
+ *
  * @module templates/workflows/pr-title-check.yml.tpl
- * 
+ *
  * @example
  * ```typescript
  * import { generate } from './templates/workflows/pr-title-check.yml.tpl.js'
- * 
+ *
  * await generate({
  *   cwd: '/path/to/project',
  *   config: {
@@ -26,19 +26,19 @@
  * ```
  */
 
-import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 
 /**
  * Generates the pr-title-check.yml workflow file.
- * 
+ *
  * Creates a workflow that validates PR titles follow conventional commit format
  * and provides helpful feedback to contributors.
- * 
+ *
  * @param {PinionContext} ctx - Pinion context with configuration
  * @returns {Promise<PinionContext>} Updated context after file generation
- * 
+ *
  * @throws {Error} If the workflow file cannot be written
- * 
+ *
  * @example
  * ```typescript
  * // Generate with default config
@@ -46,36 +46,35 @@ import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
  *   cwd: '/path/to/project',
  *   config: { requireConventionalCommits: true }
  * })
- * 
+ *
  * // Creates: .github/workflows/pr-title-check.yml
  * ```
  */
 export const generate = (ctx: PinionContext) =>
-  Promise.resolve(ctx)
-    .then((ctx) => {
-      const { requireConventionalCommits = true } = ctx as any
-      
-      // Only generate if conventional commits are required
-      if (!requireConventionalCommits) {
-        return ctx
-      }
-      
-      return renderTemplate(
-        (ctx: any) => {
-          // Get all commit types from bumpRules config
-          const bumpRules = ctx.config?.semver?.bumpRules || ctx.config?.versioning?.bumpRules || {}
-          const allTypes = Object.keys(bumpRules)
+  Promise.resolve(ctx).then(ctx => {
+    const { requireConventionalCommits = true } = ctx as any
 
-          // Get major bump types for breaking change detection
-          const majorTypes = Object.entries(bumpRules)
-            .filter(([_, level]) => level === 'major')
-            .map(([type, _]) => type)
+    // Only generate if conventional commits are required
+    if (!requireConventionalCommits) {
+      return ctx
+    }
 
-          // Build the types list for the PR title validator
-          // Use config types, or fall back to common conventional commit types
-          const typesList = allTypes.length > 0
-            ? allTypes.map(type => `            ${type}`).join('\n')
-            : `            fix
+    return renderTemplate((ctx: any) => {
+      // Get all commit types from bumpRules config
+      const bumpRules = ctx.config?.semver?.bumpRules || ctx.config?.versioning?.bumpRules || {}
+      const allTypes = Object.keys(bumpRules)
+
+      // Get major bump types for breaking change detection
+      const majorTypes = Object.entries(bumpRules)
+        .filter(([_, level]) => level === 'major')
+        .map(([type, _]) => type)
+
+      // Build the types list for the PR title validator
+      // Use config types, or fall back to common conventional commit types
+      const typesList =
+        allTypes.length > 0
+          ? allTypes.map(type => `            ${type}`).join('\n')
+          : `            fix
             feat
             docs
             style
@@ -88,13 +87,11 @@ export const generate = (ctx: PinionContext) =>
             revert
             major`
 
-          // Build regex pattern for detecting major bump types
-          // Format: ^(major|breaking|othermajortype):
-          const majorTypesPattern = majorTypes.length > 0
-            ? `^(${majorTypes.join('|')}):`
-            : '^major:'
+      // Build regex pattern for detecting major bump types
+      // Format: ^(major|breaking|othermajortype):
+      const majorTypesPattern = majorTypes.length > 0 ? `^(${majorTypes.join('|')}):` : '^major:'
 
-          return `name: "PR Title Format Check"
+      return `name: "PR Title Format Check"
 
 on:
   pull_request:
@@ -135,23 +132,25 @@ ${typesList}
 
           # Check if title starts with types that bump major version or contains "!" or "BREAKING"
           # Types that bump major: ${majorTypes.join(', ')}
-          ${majorTypes.length > 0 
-            ? `IS_MAJOR_TYPE=false
+          ${
+            majorTypes.length > 0
+              ? `IS_MAJOR_TYPE=false
           for type in ${majorTypes.map(t => `"${t}"`).join(' ')}; do
-            if [[ "\$PR_TITLE" =~ ^\$type: ]]; then
+            if [[ "$PR_TITLE" =~ ^$type: ]]; then
               IS_MAJOR_TYPE=true
               break
             fi
           done
-          if [ "\$IS_MAJOR_TYPE" = "true" ] || [[ "\$PR_TITLE" =~ ^[a-z]+\!: ]] || [[ "\$PR_TITLE" =~ BREAKING ]] || [[ "\$PR_TITLE" =~ breaking ]]; then`
-            : `if [[ "\$PR_TITLE" =~ ^major: ]] || [[ "\$PR_TITLE" =~ ^[a-z]+\!: ]] || [[ "\$PR_TITLE" =~ BREAKING ]] || [[ "\$PR_TITLE" =~ breaking ]]; then`}
-            echo "is_breaking=true" >> \$GITHUB_OUTPUT
+          if [ "$IS_MAJOR_TYPE" = "true" ] || [[ "$PR_TITLE" =~ ^[a-z]+!: ]] || [[ "$PR_TITLE" =~ BREAKING ]] || [[ "$PR_TITLE" =~ breaking ]]; then`
+              : `if [[ "$PR_TITLE" =~ ^major: ]] || [[ "$PR_TITLE" =~ ^[a-z]+!: ]] || [[ "$PR_TITLE" =~ BREAKING ]] || [[ "$PR_TITLE" =~ breaking ]]; then`
+          }
+            echo "is_breaking=true" >> $GITHUB_OUTPUT
             echo "⚠️  Breaking change detected in PR title"
-          elif [[ "\$PR_BODY" =~ BREAKING[[:space:]]CHANGE ]]; then
-            echo "is_breaking=true" >> \$GITHUB_OUTPUT
+          elif [[ "$PR_BODY" =~ BREAKING[[:space:]]CHANGE ]]; then
+            echo "is_breaking=true" >> $GITHUB_OUTPUT
             echo "⚠️  Breaking change detected in PR body"
           else
-            echo "is_breaking=false" >> \$GITHUB_OUTPUT
+            echo "is_breaking=false" >> $GITHUB_OUTPUT
           fi
 
       - uses: marocchino/sticky-pull-request-comment@v2
@@ -210,7 +209,5 @@ ${typesList}
         with:
           header: breaking-change-warning
           delete: true`
-        },
-        toFile('.github/workflows/pr-title-check.yml')
-      )(ctx)
-    })
+    }, toFile('.github/workflows/pr-title-check.yml'))(ctx)
+  })

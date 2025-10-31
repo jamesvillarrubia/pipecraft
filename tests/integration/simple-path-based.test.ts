@@ -1,10 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { writeFileSync, existsSync, rmSync, readFileSync, mkdirSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { parse, parseDocument, stringify } from 'yaml'
+import {
+  applyPathOperations,
+  createValueFromObject,
+  createValueFromString,
+  type PathOperationConfig
+} from '../../src/utils/ast-path-operations'
 import { TEST_DIR } from '../setup'
-import { parse } from 'yaml'
-import { applyPathOperations, PathOperationConfig, createValueFromString, createValueFromObject } from '../../src/utils/ast-path-operations'
-import { parseDocument, stringify } from 'yaml'
 
 describe('Simple Path-Based Template Tests', () => {
   beforeEach(() => {
@@ -44,7 +48,7 @@ jobs:
         run: echo "test"`
 
       const doc = parseDocument(simpleYaml)
-      
+
       // Apply path operations
       const operations: PathOperationConfig[] = [
         {
@@ -101,7 +105,7 @@ jobs:
         run: echo "test"`
 
       const doc = parseDocument(simpleYaml)
-      
+
       // Apply merge operation for branches
       const operations: PathOperationConfig[] = [
         {
@@ -147,7 +151,7 @@ jobs:
         run: echo "This should be overwritten"`
 
       const doc = parseDocument(simpleYaml)
-      
+
       // Apply overwrite operations for core jobs
       const operations: PathOperationConfig[] = [
         {
@@ -184,22 +188,21 @@ jobs:
       const result = stringify(doc)
       const parsed = parse(result)
 
-
       // Verify core jobs are overwritten
       expect(parsed.jobs.changes).toBeDefined()
       expect(parsed.jobs.version).toBeDefined()
-      
+
       // Check if steps exist and have the expected structure
       if (parsed.jobs.changes.steps && parsed.jobs.changes.steps.length > 0) {
         expect(parsed.jobs.changes.steps[0].uses).toBe('./.github/actions/detect-changes')
         expect(parsed.jobs.changes.steps[0].name).toBeUndefined() // No custom name
       }
-      
+
       if (parsed.jobs.version.steps && parsed.jobs.version.steps.length > 0) {
         expect(parsed.jobs.version.steps[0].uses).toBe('./.github/actions/calculate-version')
         expect(parsed.jobs.version.steps[0].name).toBeUndefined() // No custom name
       }
-      
+
       // Check if the if condition exists
       if (parsed.jobs.version.if) {
         expect(parsed.jobs.version.if).toBe("github.ref_name == 'alpha'")
@@ -229,7 +232,7 @@ jobs:
           run: echo "Deploying API"`
 
       const doc = parseDocument(simpleYaml)
-      
+
       // Apply preserve operations for user-managed sections
       const operations: PathOperationConfig[] = [
         {
@@ -332,7 +335,7 @@ jobs:
     it('should handle custom pipeline file with user customizations', async () => {
       // Create existing pipeline with user customizations
       const existingPipeline = {
-        name: "USER NAME",
+        name: 'USER NAME',
         on: {
           pull_request: {
             paths: ['**/*.yml', '**/*.yaml', '**/*.json', '**/*.ts', '**/*.js', '**/*.tsx'],
@@ -382,7 +385,7 @@ jobs:
               {
                 uses: './.github/actions/detect-changes',
                 with: {
-                  baseRef: '${{ inputs.baseRef || \'main\' }}'
+                  baseRef: "${{ inputs.baseRef || 'main' }}"
                 }
               }
             ]

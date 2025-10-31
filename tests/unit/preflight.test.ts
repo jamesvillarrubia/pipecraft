@@ -8,26 +8,21 @@
  * - Edge cases and error handling
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { writeFileSync } from 'fs'
 import { execSync } from 'child_process'
+import { writeFileSync } from 'fs'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  checkCanWriteGithubDir,
   checkConfigExists,
   checkConfigValid,
-  checkInGitRepo,
   checkHasGitRemote,
-  checkCanWriteGithubDir,
+  checkInGitRepo,
   checkNodeVersion,
-  runPreflightChecks,
-  formatPreflightResults
+  formatPreflightResults,
+  runPreflightChecks
 } from '../../src/utils/preflight.js'
-import {
-  createWorkspaceWithCleanup,
-  inWorkspace
-} from '../helpers/workspace.js'
-import {
-  createMinimalConfig
-} from '../helpers/fixtures.js'
+import { createMinimalConfig } from '../helpers/fixtures.js'
+import { createWorkspaceWithCleanup, inWorkspace } from '../helpers/workspace.js'
 
 // Mock child_process at module level
 vi.mock('child_process', async () => {
@@ -45,8 +40,8 @@ describe('Preflight Checks', () => {
   let cleanup: () => void
 
   beforeEach(() => {
-    [workspace, cleanup] = createWorkspaceWithCleanup('pipecraft-preflight')
-    
+    ;[workspace, cleanup] = createWorkspaceWithCleanup('pipecraft-preflight')
+
     // Reset mock before each test
     mockExecSync.mockReset()
   })
@@ -56,16 +51,16 @@ describe('Preflight Checks', () => {
   })
 
   describe('checkConfigExists()', () => {
-    it('should pass when .pipecraftrc.json exists', async () => {
+    it('should pass when .pipecraftrc exists', async () => {
       const config = createMinimalConfig()
 
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
 
         const result = checkConfigExists()
         expect(result.passed).toBe(true)
         expect(result.message).toContain('Configuration found')
-        expect(result.message).toContain('.pipecraftrc.json')
+        expect(result.message).toContain('.pipecraftrc')
       })
     })
 
@@ -85,10 +80,17 @@ describe('Preflight Checks', () => {
       const config = createMinimalConfig()
 
       await inWorkspace(workspace, () => {
-        writeFileSync('package.json', JSON.stringify({
-          name: 'test',
-          pipecraft: config
-        }, null, 2))
+        writeFileSync(
+          'package.json',
+          JSON.stringify(
+            {
+              name: 'test',
+              pipecraft: config
+            },
+            null,
+            2
+          )
+        )
 
         const result = checkConfigExists()
         expect(result.passed).toBe(true)
@@ -111,7 +113,7 @@ describe('Preflight Checks', () => {
       const config = createMinimalConfig()
 
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
 
         const result = checkConfigValid()
         expect(result.passed).toBe(true)
@@ -133,7 +135,7 @@ describe('Preflight Checks', () => {
       delete (config as any).ciProvider
 
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
 
         const result = checkConfigValid()
         expect(result.passed).toBe(false)
@@ -147,7 +149,7 @@ describe('Preflight Checks', () => {
       delete (config as any).branchFlow
 
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
 
         const result = checkConfigValid()
         expect(result.passed).toBe(false)
@@ -161,7 +163,7 @@ describe('Preflight Checks', () => {
       delete (config as any).domains
 
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
 
         const result = checkConfigValid()
         expect(result.passed).toBe(false)
@@ -177,7 +179,7 @@ describe('Preflight Checks', () => {
       }
 
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
 
         const result = checkConfigValid()
         expect(result.passed).toBe(false)
@@ -188,7 +190,7 @@ describe('Preflight Checks', () => {
 
     it('should handle malformed JSON', async () => {
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', '{ invalid json }')
+        writeFileSync('.pipecraftrc', '{ invalid json }')
 
         // Cosmiconfig throws before we can catch it,
         // so we expect the function to throw
@@ -394,7 +396,7 @@ describe('Preflight Checks', () => {
       })
 
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
 
         const results = runPreflightChecks()
 
@@ -444,7 +446,7 @@ describe('Preflight Checks', () => {
       })
 
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
 
         const checks = runPreflightChecks()
         const { allPassed, output, nextSteps } = formatPreflightResults(checks)
@@ -485,7 +487,7 @@ describe('Preflight Checks', () => {
       })
 
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
 
         const checks = runPreflightChecks()
         const { nextSteps } = formatPreflightResults(checks)
@@ -504,7 +506,7 @@ describe('Preflight Checks', () => {
       })
 
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
 
         const checks = runPreflightChecks()
         const { allPassed, output } = formatPreflightResults(checks)
@@ -519,9 +521,16 @@ describe('Preflight Checks', () => {
   describe('Edge Cases and Error Handling', () => {
     it('should handle config with multiple missing fields', async () => {
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', JSON.stringify({
-          // Missing all required fields
-        }, null, 2))
+        writeFileSync(
+          '.pipecraftrc',
+          JSON.stringify(
+            {
+              // Missing all required fields
+            },
+            null,
+            2
+          )
+        )
 
         const result = checkConfigValid()
         expect(result.passed).toBe(false)
@@ -548,4 +557,3 @@ describe('Preflight Checks', () => {
     })
   })
 })
-

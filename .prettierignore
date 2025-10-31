@@ -1,0 +1,33 @@
+# Build outputs
+dist
+build
+coverage
+.next
+.vercel
+.docusaurus
+
+# Dependencies
+node_modules
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Generated files
+.nx
+.cache
+
+# Examples (if you want to skip formatting them)
+# examples
+
+# Docs build
+docs/build
+docs/node_modules
+
+# Test artifacts
+test-temp
+test-output
+
+# Generated workflow files (optional - uncomment if you don't want to format these)
+# .github/workflows/*.yml
+# .github/actions/**/action.yml
+

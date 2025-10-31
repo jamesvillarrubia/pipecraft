@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config'
 import { resolve } from 'path'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
@@ -20,11 +20,7 @@ export default defineConfig({
       reportsDirectory: './coverage',
       // Include core business logic AND orchestration code (generators, templates, utils)
       // Note: CLI (src/cli/index.ts) is entry point tested via integration tests
-      include: [
-        'src/utils/**/*.ts',
-        'src/templates/workflows/**/*.ts',
-        'src/generators/**/*.ts'
-      ],
+      include: ['src/utils/**/*.ts', 'src/templates/workflows/**/*.ts', 'src/generators/**/*.ts'],
       exclude: [
         'node_modules/',
         'dist/',

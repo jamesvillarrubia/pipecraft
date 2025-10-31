@@ -62,10 +62,10 @@ export interface DomainConfig {
 /**
  * Complete PipeCraft configuration schema.
  *
- * This is the main configuration interface loaded from `.pipecraftrc.json` or
- * the `pipecraft` key in `package.json`. It defines the entire CI/CD pipeline
- * behavior including branch flow, merge strategies, domain configuration,
- * versioning, and automated actions.
+ * This is the main configuration interface loaded from `.pipecraftrc` (YAML or JSON),
+ * `.pipecraftrc.json` (legacy), or the `pipecraft` key in `package.json`.
+ * It defines the entire CI/CD pipeline behavior including branch flow, merge
+ * strategies, domain configuration, versioning, and automated actions.
  *
  * @example
  * ```typescript
@@ -151,7 +151,12 @@ export interface PipecraftConfig {
    * Can be set globally or per-branch.
    * @default 'auto'
    */
-  mergeMethod?: 'auto' | 'merge' | 'squash' | 'rebase' | Record<string, 'auto' | 'merge' | 'squash' | 'rebase'>
+  mergeMethod?:
+    | 'auto'
+    | 'merge'
+    | 'squash'
+    | 'rebase'
+    | Record<string, 'auto' | 'merge' | 'squash' | 'rebase'>
 
   /**
    * Semantic versioning configuration.
@@ -373,7 +378,16 @@ export interface PipecraftContext {
   /**
    * Simplified domain configuration for template rendering.
    */
-  domains: Record<string, { paths: string[], description: string, testable?: boolean, deployable?: boolean, remoteTestable?: boolean }>
+  domains: Record<
+    string,
+    {
+      paths: string[]
+      description: string
+      testable?: boolean
+      deployable?: boolean
+      remoteTestable?: boolean
+    }
+  >
 
   /**
    * Semantic versioning rules.
@@ -381,5 +395,4 @@ export interface PipecraftContext {
   semver: {
     bumpRules: Record<string, string>
   }
-
 }

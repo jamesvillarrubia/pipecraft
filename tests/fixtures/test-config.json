@@ -1,47 +1,33 @@
 {
-    "ciProvider": "github",
-    "mergeStrategy": "fast-forward",
-    "requireConventionalCommits": true,
-    "initialBranch": "alpha",
-    "finalBranch": "epsilon",
-    "branchFlow": [
-      "alpha",
-      "beta",
-      "gamma",
-      "delta",
-      "epsilon"
-    ],
-    "semver": {
-      "bumpRules": {
-        "feat": "minor",
-        "fix": "patch",
-        "breaking": "major"
-      }
+  "ciProvider": "github",
+  "mergeStrategy": "fast-forward",
+  "requireConventionalCommits": true,
+  "initialBranch": "alpha",
+  "finalBranch": "epsilon",
+  "branchFlow": ["alpha", "beta", "gamma", "delta", "epsilon"],
+  "semver": {
+    "bumpRules": {
+      "feat": "minor",
+      "fix": "patch",
+      "breaking": "major"
+    }
+  },
+  "domains": {
+    "fake-domain1": {
+      "paths": ["apps/fake-domain1/**"],
+      "description": "fake-domain1 application changes"
     },
-    "domains": {
-      "fake-domain1": {
-        "paths": [
-          "apps/fake-domain1/**"
-        ],
-        "description": "fake-domain1 application changes"
-      },
-      "fake-domain2": {
-        "paths": [
-          "apps/fake-domain2/**"
-        ],
-        "description": "fake-domain2 application changes"
-      },
-      "fake-domain3": {
-        "paths": [
-          "libs/fake-domain3/**"
-        ],
-        "description": "fake-domain3 application changes"
-      },
-      "fake-domain4": {
-        "paths": [
-          ".github/workflows/fake-domain4/**"
-        ],
-        "description": "fake-domain4 application changes"
-      }
+    "fake-domain2": {
+      "paths": ["apps/fake-domain2/**"],
+      "description": "fake-domain2 application changes"
+    },
+    "fake-domain3": {
+      "paths": ["libs/fake-domain3/**"],
+      "description": "fake-domain3 application changes"
+    },
+    "fake-domain4": {
+      "paths": [".github/workflows/fake-domain4/**"],
+      "description": "fake-domain4 application changes"
     }
   }
+}

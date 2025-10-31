@@ -96,14 +96,16 @@ export function mockLogger() {
  * const mockExec = mockExecSync(gitMock)
  * ```
  */
-export function mockGitRepository(options: {
-  currentBranch?: string
-  hasRemote?: boolean
-  remoteUrl?: string
-  latestTag?: string
-  hasCommits?: boolean
-  commitMessages?: string[]
-} = {}): Record<string, string> {
+export function mockGitRepository(
+  options: {
+    currentBranch?: string
+    hasRemote?: boolean
+    remoteUrl?: string
+    latestTag?: string
+    hasCommits?: boolean
+    commitMessages?: string[]
+  } = {}
+): Record<string, string> {
   const {
     currentBranch = 'main',
     hasRemote = true,
@@ -307,4 +309,3 @@ export function mockEnv(env: Record<string, string>): () => void {
 export function spyOnConsole(method: 'log' | 'error' | 'warn' | 'info' = 'log') {
   return vi.spyOn(console, method).mockImplementation(() => {})
 }
-

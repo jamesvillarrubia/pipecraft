@@ -159,7 +159,7 @@ test-api:
         ref: ${{ inputs.commitSha || github.sha }}
     - uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '24'
     - run: npm install
     - run: npm test -- packages/api  # Your test command here
 ```

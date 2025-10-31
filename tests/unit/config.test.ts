@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { writeFileSync, existsSync, readFileSync, rmSync, mkdirSync } from 'fs'
-import { join } from 'path'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
+import { join } from 'path'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { loadConfig, validateConfig } from '../../src/utils/config'
-import { TEST_DIR, FIXTURES_DIR } from '../setup'
+import { FIXTURES_DIR, TEST_DIR } from '../setup'
 
 describe('Config Utilities', () => {
   beforeEach(() => {
     // Clean up any existing config files
-    const configFiles = ['.pipecraftrc.json', '.pipecraftrc', 'package.json']
+    const configFiles = ['.pipecraftrc', '.pipecraftrc', 'package.json']
     configFiles.forEach(file => {
       if (existsSync(join(TEST_DIR, file))) {
         rmSync(join(TEST_DIR, file))
@@ -17,14 +17,17 @@ describe('Config Utilities', () => {
   })
 
   describe('loadConfig', () => {
-    it('should load valid configuration from .pipecraftrc.json', () => {
+    it('should load valid configuration from .pipecraftrc', () => {
       // Use a unique temp directory to avoid race conditions with parallel tests
-      const uniqueTempDir = join(tmpdir(), `pipecraft-config-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`)
+      const uniqueTempDir = join(
+        tmpdir(),
+        `pipecraft-config-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+      )
       mkdirSync(uniqueTempDir, { recursive: true })
 
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
       const configContent = readFileSync(configPath, 'utf8')
-      const testConfigPath = join(uniqueTempDir, '.pipecraftrc.json')
+      const testConfigPath = join(uniqueTempDir, '.pipecraftrc')
       writeFileSync(testConfigPath, configContent)
 
       // Change to unique temp dir so cosmiconfig can find the config file
@@ -62,7 +65,10 @@ describe('Config Utilities', () => {
 
     it('should load config from custom path', () => {
       // Use a unique temp directory to avoid race conditions with parallel tests
-      const uniqueTempDir = join(tmpdir(), `pipecraft-config-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`)
+      const uniqueTempDir = join(
+        tmpdir(),
+        `pipecraft-config-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+      )
       mkdirSync(uniqueTempDir, { recursive: true })
 
       const configPath = join(FIXTURES_DIR, 'basic-config.json')
@@ -92,7 +98,7 @@ describe('Config Utilities', () => {
 
     it('should throw error for missing required fields', () => {
       const config = { ciProvider: 'github' }
-      
+
       expect(() => validateConfig(config)).toThrow('Missing required field: mergeStrategy')
     })
 
@@ -106,7 +112,7 @@ describe('Config Utilities', () => {
         branchFlow: ['develop', 'main'],
         domains: { api: { paths: ['apps/api/**'], description: 'API' } }
       }
-      
+
       expect(() => validateConfig(config)).toThrow('ciProvider must be either "github" or "gitlab"')
     })
 
@@ -120,8 +126,10 @@ describe('Config Utilities', () => {
         branchFlow: ['develop', 'main'],
         domains: { api: { paths: ['apps/api/**'], description: 'API' } }
       }
-      
-      expect(() => validateConfig(config)).toThrow('mergeStrategy must be either "fast-forward" or "merge"')
+
+      expect(() => validateConfig(config)).toThrow(
+        'mergeStrategy must be either "fast-forward" or "merge"'
+      )
     })
 
     it('should throw error for invalid branchFlow', () => {
@@ -134,8 +142,10 @@ describe('Config Utilities', () => {
         branchFlow: ['develop'], // Only one branch
         domains: { api: { paths: ['apps/api/**'], description: 'API' } }
       }
-      
-      expect(() => validateConfig(config)).toThrow('branchFlow must be an array with at least 2 branches')
+
+      expect(() => validateConfig(config)).toThrow(
+        'branchFlow must be an array with at least 2 branches'
+      )
     })
 
     it('should throw error for invalid domains', () => {
@@ -153,8 +163,10 @@ describe('Config Utilities', () => {
           }
         }
       }
-      
-      expect(() => validateConfig(config)).toThrow('Domain "api" must have at least one path pattern')
+
+      expect(() => validateConfig(config)).toThrow(
+        'Domain "api" must have at least one path pattern'
+      )
     })
   })
 })

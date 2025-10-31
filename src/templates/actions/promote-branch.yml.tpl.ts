@@ -1,20 +1,20 @@
 /**
  * Promote Branch Action Template
- * 
+ *
  * Generates a composite action that promotes code from one branch to another via
  * temporary branch and pull request. Handles auto-merge and cleanup for trunk flow.
- * 
+ *
  * @module templates/actions/promote-branch.yml.tpl
  */
 
-import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
-import fs from 'fs'
+import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import dedent from 'dedent'
+import fs from 'fs'
 import { logger } from '../../utils/logger.js'
 
 /**
  * Generates the promote-branch composite action YAML content.
- * 
+ *
  * @param {any} ctx - Context (not currently used)
  * @returns {string} YAML content for the composite action
  */
@@ -37,9 +37,9 @@ const promoteBranchActionTemplate = (ctx: any) => {
         required: false
         default: ''
       configPath:
-        description: 'Path to .pipecraftrc.json config file'
+        description: 'Path to .pipecraftrc config file'
         required: false
-        default: '.pipecraftrc.json'
+        default: '.pipecraftrc'
       tempBranchPattern:
         description: 'Pattern for temp branch name'
         required: false
@@ -391,13 +391,13 @@ const promoteBranchActionTemplate = (ctx: any) => {
 
 /**
  * Generator entry point for promote-branch composite action.
- * 
+ *
  * @param {PinionContext} ctx - Pinion generator context
  * @returns {Promise<PinionContext>} Updated context after file generation
  */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
-    .then((ctx) => {
+    .then(ctx => {
       // Check if file exists to determine merge status
       const filePath = '.github/actions/promote-branch/action.yml'
       const exists = fs.existsSync(filePath)
@@ -405,4 +405,9 @@ export const generate = (ctx: PinionContext) =>
       logger.verbose(`${status} ${filePath}`)
       return ctx
     })
-    .then(renderTemplate(promoteBranchActionTemplate, toFile('.github/actions/promote-branch/action.yml')))
+    .then(
+      renderTemplate(
+        promoteBranchActionTemplate,
+        toFile('.github/actions/promote-branch/action.yml')
+      )
+    )

@@ -11,18 +11,18 @@
  * - Verify correct function calls and outputs
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { writeFileSync, existsSync, rmSync, mkdirSync } from 'fs'
-import { join } from 'path'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
+import { join } from 'path'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // We'll test by mocking and importing the functions that would be called
 // Note: The CLI uses commander which makes it hard to test directly
 // So we'll test the underlying logic functions instead
 
+import type { PipecraftConfig } from '../../src/types'
 import { loadConfig, validateConfig } from '../../src/utils/config'
 import { VersionManager } from '../../src/utils/versioning'
-import { PipecraftConfig } from '../../src/types'
 
 describe('CLI Logic Tests', () => {
   let testDir: string
@@ -30,7 +30,10 @@ describe('CLI Logic Tests', () => {
 
   beforeEach(() => {
     // Create unique temp directory for this test
-    testDir = join(tmpdir(), `pipecraft-cli-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    testDir = join(
+      tmpdir(),
+      `pipecraft-cli-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    )
     mkdirSync(testDir, { recursive: true })
     originalCwd = process.cwd()
     process.chdir(testDir)
@@ -80,7 +83,7 @@ describe('CLI Logic Tests', () => {
         }
       }
 
-      const configPath = join(testDir, '.pipecraftrc.json')
+      const configPath = join(testDir, '.pipecraftrc')
       writeFileSync(configPath, JSON.stringify(config, null, 2))
 
       const loadedConfig = loadConfig(configPath)
@@ -176,12 +179,12 @@ describe('CLI Logic Tests', () => {
         }
       }
 
-      const configPath = join(testDir, '.pipecraftrc.json')
+      const configPath = join(testDir, '.pipecraftrc')
       writeFileSync(configPath, JSON.stringify(config, null, 2))
     })
 
     it('should load config from file', () => {
-      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc.json'))
+      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc'))
       expect(loadedConfig).toBeDefined()
       expect(loadedConfig.ciProvider).toBe('github')
     })
@@ -232,10 +235,17 @@ describe('CLI Logic Tests', () => {
       }
 
       // Create package.json for version reading
-      writeFileSync(join(testDir, 'package.json'), JSON.stringify({
-        name: 'test-project',
-        version: '1.0.0'
-      }, null, 2))
+      writeFileSync(
+        join(testDir, 'package.json'),
+        JSON.stringify(
+          {
+            name: 'test-project',
+            version: '1.0.0'
+          },
+          null,
+          2
+        )
+      )
     })
 
     it('should create version manager with config', () => {
@@ -275,9 +285,9 @@ describe('CLI Logic Tests', () => {
         }
       } as PipecraftConfig
 
-      writeFileSync(join(testDir, '.pipecraftrc.json'), JSON.stringify(config, null, 2))
+      writeFileSync(join(testDir, '.pipecraftrc'), JSON.stringify(config, null, 2))
 
-      expect(existsSync(join(testDir, '.pipecraftrc.json'))).toBe(true)
+      expect(existsSync(join(testDir, '.pipecraftrc'))).toBe(true)
     })
 
     it('should detect when workflow files exist', () => {
@@ -299,7 +309,7 @@ describe('CLI Logic Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle malformed config file', () => {
-      const configPath = join(testDir, '.pipecraftrc.json')
+      const configPath = join(testDir, '.pipecraftrc')
       writeFileSync(configPath, '{ invalid json }')
 
       expect(() => loadConfig(configPath)).toThrow()
@@ -360,9 +370,9 @@ describe('CLI Logic Tests', () => {
         }
       }
 
-      writeFileSync(join(testDir, '.pipecraftrc.json'), JSON.stringify(config, null, 2))
+      writeFileSync(join(testDir, '.pipecraftrc'), JSON.stringify(config, null, 2))
 
-      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc.json'))
+      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc'))
       expect(loadedConfig.initialBranch).toBe('alpha')
       expect(loadedConfig.finalBranch).toBe('production')
       expect(loadedConfig.branchFlow).toHaveLength(4)
@@ -384,17 +394,17 @@ describe('CLI Logic Tests', () => {
           }
         },
         domains: {
-          'api': { paths: ['apps/api/**'], description: 'API' },
-          'web': { paths: ['apps/web/**'], description: 'Web' },
-          'mobile': { paths: ['apps/mobile/**'], description: 'Mobile' },
-          'admin': { paths: ['apps/admin/**'], description: 'Admin' },
-          'analytics': { paths: ['apps/analytics/**'], description: 'Analytics' }
+          api: { paths: ['apps/api/**'], description: 'API' },
+          web: { paths: ['apps/web/**'], description: 'Web' },
+          mobile: { paths: ['apps/mobile/**'], description: 'Mobile' },
+          admin: { paths: ['apps/admin/**'], description: 'Admin' },
+          analytics: { paths: ['apps/analytics/**'], description: 'Analytics' }
         }
       }
 
-      writeFileSync(join(testDir, '.pipecraftrc.json'), JSON.stringify(config, null, 2))
+      writeFileSync(join(testDir, '.pipecraftrc'), JSON.stringify(config, null, 2))
 
-      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc.json'))
+      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc'))
       expect(Object.keys(loadedConfig.domains)).toHaveLength(5)
     })
 
@@ -418,9 +428,9 @@ describe('CLI Logic Tests', () => {
         }
       }
 
-      writeFileSync(join(testDir, '.pipecraftrc.json'), JSON.stringify(config, null, 2))
+      writeFileSync(join(testDir, '.pipecraftrc'), JSON.stringify(config, null, 2))
 
-      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc.json'))
+      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc'))
       expect(loadedConfig.ciProvider).toBe('gitlab')
     })
 
@@ -444,9 +454,9 @@ describe('CLI Logic Tests', () => {
         }
       }
 
-      writeFileSync(join(testDir, '.pipecraftrc.json'), JSON.stringify(config, null, 2))
+      writeFileSync(join(testDir, '.pipecraftrc'), JSON.stringify(config, null, 2))
 
-      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc.json'))
+      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc'))
       expect(loadedConfig.mergeStrategy).toBe('merge')
     })
   })

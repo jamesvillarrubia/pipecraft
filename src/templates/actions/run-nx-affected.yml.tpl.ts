@@ -20,7 +20,7 @@
  * @module templates/actions/run-nx-affected.yml.tpl
  */
 
-import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import fs from 'fs'
 import { logger } from '../../utils/logger.js'
 
@@ -90,7 +90,7 @@ runs:
       id: pnpm-cache
       shell: bash
       run: |
-        echo "STORE_PATH=\$(pnpm store path --silent)" >> \$GITHUB_OUTPUT
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
 
     - name: Cache Package Manager
       if: inputs.enableCache == 'true'
@@ -144,11 +144,11 @@ runs:
         echo ""
         echo "📌 Base for comparison:"
         BASE_REF="\${{ inputs.baseRef }}"
-        echo "  Base ref: \$BASE_REF"
-        git log -1 --oneline \$BASE_REF || echo "  (base ref details unavailable)"
+        echo "  Base ref: $BASE_REF"
+        git log -1 --oneline $BASE_REF || echo "  (base ref details unavailable)"
         echo ""
         echo "📊 Commits being analyzed:"
-        git log --oneline \$BASE_REF..\${{ inputs.commitSha }} || echo "  (unable to show commit range)"
+        git log --oneline $BASE_REF..\${{ inputs.commitSha }} || echo "  (unable to show commit range)"
         echo ""
         echo "🎯 Targets to run: \${{ inputs.targets }}"
         if [ -n "\${{ inputs.exclude }}" ]; then
@@ -173,8 +173,8 @@ runs:
         # Build exclude flag if provided (strip spaces for comma-separated list)
         EXCLUDE_FLAG=""
         if [ -n "\${{ inputs.exclude }}" ]; then
-          EXCLUDE_LIST=\$(echo "\${{ inputs.exclude }}" | tr -d ' ')
-          EXCLUDE_FLAG="--exclude=\$EXCLUDE_LIST"
+          EXCLUDE_LIST=$(echo "\${{ inputs.exclude }}" | tr -d ' ')
+          EXCLUDE_FLAG="--exclude=$EXCLUDE_LIST"
         fi
 
         # Track overall success
@@ -185,52 +185,52 @@ runs:
         # Run each target
         for target in "\${TARGETS[@]}"; do
           # Trim whitespace
-          target=\$(echo "\$target" | xargs)
+          target=$(echo "$target" | xargs)
 
           echo ""
           echo "=========================================="
-          echo "🎯 Running target: \$target"
+          echo "🎯 Running target: $target"
           echo "=========================================="
 
           # Capture output to a temp file
-          LOG_FILE=\$(mktemp)
+          LOG_FILE=$(mktemp)
 
           # Run the target and capture result
-          if \$NX_CMD affected --target=\$target --base=\${{ inputs.baseRef }} --head=\${{ inputs.commitSha }} \$EXCLUDE_FLAG 2>&1 | tee "\$LOG_FILE"; then
-            echo "✅ \$target passed"
-            RESULTS_JSON+="\"\$target\":\"success\","
+          if $NX_CMD affected --target=$target --base=\${{ inputs.baseRef }} --head=\${{ inputs.commitSha }} $EXCLUDE_FLAG 2>&1 | tee "$LOG_FILE"; then
+            echo "✅ $target passed"
+            RESULTS_JSON+=""$target":"success","
           else
-            echo "❌ \$target failed"
-            RESULTS_JSON+="\"\$target\":\"failure\","
+            echo "❌ $target failed"
+            RESULTS_JSON+=""$target":"failure","
             OVERALL_SUCCESS=false
 
             # Extract and store the failure log (last 100 lines, strip ANSI codes, escape for JSON)
-            FAILURE_LOG=\$(tail -n 100 "\$LOG_FILE" | sed 's/\\x1b\\[[0-9;]*m//g' | sed 's/\\\\/\\\\\\\\/g' | sed 's/"/\\\\"/g' | sed ':a;N;\$!ba;s/\\n/\\\\n/g')
-            FAILED_LOGS_JSON+="\"\$target\":\"\$FAILURE_LOG\","
+            FAILURE_LOG=$(tail -n 100 "$LOG_FILE" | sed 's/\\x1b\\[[0-9;]*m//g' | sed 's/\\\\/\\\\\\\\/g' | sed 's/"/\\\\"/g' | sed ':a;N;$!ba;s/\\n/\\\\n/g')
+            FAILED_LOGS_JSON+=""$target":"$FAILURE_LOG","
           fi
 
-          rm -f "\$LOG_FILE"
+          rm -f "$LOG_FILE"
         done
 
         # Close JSON and save to output
         RESULTS_JSON="\${RESULTS_JSON%,}}"
-        echo "results=\$RESULTS_JSON" >> \$GITHUB_OUTPUT
+        echo "results=$RESULTS_JSON" >> $GITHUB_OUTPUT
 
         FAILED_LOGS_JSON="\${FAILED_LOGS_JSON%,}}"
-        if [ "\$FAILED_LOGS_JSON" != "{" ]; then
-          FAILED_LOGS_JSON+="\}"
+        if [ "$FAILED_LOGS_JSON" != "{" ]; then
+          FAILED_LOGS_JSON+="}"
         fi
         # Use delimiter for multiline output
-        echo "failed_logs<<EOF" >> \$GITHUB_OUTPUT
-        echo "\$FAILED_LOGS_JSON" >> \$GITHUB_OUTPUT
-        echo "EOF" >> \$GITHUB_OUTPUT
+        echo "failed_logs<<EOF" >> $GITHUB_OUTPUT
+        echo "$FAILED_LOGS_JSON" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
 
         # Set overall success
-        if [ "\$OVERALL_SUCCESS" = "false" ]; then
-          echo "overall_success=false" >> \$GITHUB_OUTPUT
+        if [ "$OVERALL_SUCCESS" = "false" ]; then
+          echo "overall_success=false" >> $GITHUB_OUTPUT
           exit 1
         else
-          echo "overall_success=true" >> \$GITHUB_OUTPUT
+          echo "overall_success=true" >> $GITHUB_OUTPUT
         fi
 
     - name: Report Results to PR
@@ -334,11 +334,16 @@ runs:
  */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
-    .then((ctx) => {
+    .then(ctx => {
       const filePath = '.github/actions/run-nx-affected/action.yml'
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
       logger.verbose(`${status} ${filePath}`)
       return ctx
     })
-    .then(renderTemplate(runNxAffectedActionTemplate, toFile('.github/actions/run-nx-affected/action.yml')))
+    .then(
+      renderTemplate(
+        runNxAffectedActionTemplate,
+        toFile('.github/actions/run-nx-affected/action.yml')
+      )
+    )

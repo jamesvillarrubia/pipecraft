@@ -7,6 +7,10 @@ inputs:
     description: 'Base reference for version calculation'
     required: false
     default: 'main'
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '20'
 
 outputs:
   version:
@@ -24,7 +28,7 @@ runs:
     - name: Install Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 22
+        node-version: ${{ inputs.node-version }}
 
     - name: Configure Git
       shell: bash

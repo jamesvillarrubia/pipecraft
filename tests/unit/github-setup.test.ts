@@ -8,29 +8,29 @@
  * - API interactions with GitHub
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { execSync } from 'child_process'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  getRepositoryInfo,
+  displaySettingsComparison,
+  enableAutoMerge,
+  getBranchProtection,
   getGitHubToken,
-  getWorkflowPermissions,
-  updateWorkflowPermissions,
+  getMergeCommitSettings,
+  getRecommendedRepositorySettings,
+  getRepositoryInfo,
+  getRepositorySettings,
+  getRequiredMergeCommitChanges,
   getRequiredPermissionChanges,
+  getSettingsGaps,
+  getWorkflowPermissions,
+  promptApplySettings,
+  promptMergeCommitChanges,
   promptPermissionChanges,
   shouldEnableAutoMerge,
-  getRecommendedRepositorySettings,
-  getRepositorySettings,
-  updateRepositorySettings,
-  getSettingsGaps,
-  getMergeCommitSettings,
-  updateMergeCommitSettings,
-  getRequiredMergeCommitChanges,
-  promptMergeCommitChanges,
-  getBranchProtection,
   updateBranchProtection,
-  enableAutoMerge,
-  displaySettingsComparison,
-  promptApplySettings
+  updateMergeCommitSettings,
+  updateRepositorySettings,
+  updateWorkflowPermissions
 } from '../../src/utils/github-setup.js'
 
 // Mock child_process at module level
@@ -54,6 +54,7 @@ global.fetch = vi.fn()
 
 // Import after mocking
 import { loadConfig } from '../../src/utils/config.js'
+
 const mockLoadConfig = loadConfig as unknown as ReturnType<typeof vi.fn>
 
 describe('GitHub Setup', () => {
@@ -62,7 +63,7 @@ describe('GitHub Setup', () => {
   beforeEach(() => {
     // Save original environment
     originalEnv = { ...process.env }
-    
+
     // Reset mocks
     mockExecSync.mockReset()
     vi.mocked(global.fetch).mockReset()
@@ -213,14 +214,14 @@ describe('GitHub Setup', () => {
       } as Response)
 
       const result = await getWorkflowPermissions('owner', 'repo', 'token123')
-      
+
       expect(result).toEqual(mockPermissions)
       expect(global.fetch).toHaveBeenCalledWith(
         'https://api.github.com/repos/owner/repo/actions/permissions/workflow',
         expect.objectContaining({
           headers: expect.objectContaining({
-            'Authorization': 'Bearer token123',
-            'Accept': 'application/vnd.github+json'
+            Authorization: 'Bearer token123',
+            Accept: 'application/vnd.github+json'
           })
         })
       )
@@ -233,17 +234,17 @@ describe('GitHub Setup', () => {
         text: async () => 'Not Found'
       } as Response)
 
-      await expect(
-        getWorkflowPermissions('owner', 'repo', 'token123')
-      ).rejects.toThrow('Failed to get workflow permissions: 404')
+      await expect(getWorkflowPermissions('owner', 'repo', 'token123')).rejects.toThrow(
+        'Failed to get workflow permissions: 404'
+      )
     })
 
     it('should throw on network error', async () => {
       vi.mocked(global.fetch).mockRejectedValue(new Error('Network error'))
 
-      await expect(
-        getWorkflowPermissions('owner', 'repo', 'token123')
-      ).rejects.toThrow('Network error')
+      await expect(getWorkflowPermissions('owner', 'repo', 'token123')).rejects.toThrow(
+        'Network error'
+      )
     })
   })
 
@@ -259,13 +260,13 @@ describe('GitHub Setup', () => {
       }
 
       await updateWorkflowPermissions('owner', 'repo', 'token123', permissions)
-      
+
       expect(global.fetch).toHaveBeenCalledWith(
         'https://api.github.com/repos/owner/repo/actions/permissions/workflow',
         expect.objectContaining({
           method: 'PUT',
           headers: expect.objectContaining({
-            'Authorization': 'Bearer token123',
+            Authorization: 'Bearer token123',
             'Content-Type': 'application/json'
           }),
           body: JSON.stringify(permissions)
@@ -296,10 +297,10 @@ describe('GitHub Setup', () => {
         default_workflow_permissions: 'write'
         // can_approve_pull_request_reviews not included
       })
-      
+
       const callArgs = vi.mocked(global.fetch).mock.calls[0]
       const body = JSON.parse(callArgs[1]?.body as string)
-      
+
       expect(body).toHaveProperty('default_workflow_permissions', 'write')
       expect(body).not.toHaveProperty('can_approve_pull_request_reviews')
     })
@@ -386,9 +387,7 @@ describe('GitHub Setup', () => {
         text: async () => 'Rate limit exceeded'
       } as Response)
 
-      await expect(
-        getWorkflowPermissions('owner', 'repo', 'token123')
-      ).rejects.toThrow('429')
+      await expect(getWorkflowPermissions('owner', 'repo', 'token123')).rejects.toThrow('429')
     })
 
     it('should handle unauthorized API access', async () => {
@@ -398,9 +397,7 @@ describe('GitHub Setup', () => {
         text: async () => 'Unauthorized'
       } as Response)
 
-      await expect(
-        getWorkflowPermissions('owner', 'repo', 'invalid_token')
-      ).rejects.toThrow('401')
+      await expect(getWorkflowPermissions('owner', 'repo', 'invalid_token')).rejects.toThrow('401')
     })
   })
 
@@ -450,11 +447,7 @@ describe('GitHub Setup', () => {
         })
       } as Response)
 
-      const currentPerms = await getWorkflowPermissions(
-        repoInfo.owner,
-        repoInfo.repo,
-        token
-      )
+      const currentPerms = await getWorkflowPermissions(repoInfo.owner, repoInfo.repo, token)
       expect(currentPerms.default_workflow_permissions).toBe('read')
 
       // 4. Determine needed changes
@@ -466,12 +459,7 @@ describe('GitHub Setup', () => {
         ok: true
       } as Response)
 
-      await updateWorkflowPermissions(
-        repoInfo.owner,
-        repoInfo.repo,
-        token,
-        changes!
-      )
+      await updateWorkflowPermissions(repoInfo.owner, repoInfo.repo, token, changes!)
 
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('test-org/test-repo'),
@@ -599,8 +587,8 @@ describe('GitHub Setup', () => {
           'https://api.github.com/repos/owner/repo',
           expect.objectContaining({
             headers: expect.objectContaining({
-              'Authorization': 'Bearer token123',
-              'Accept': 'application/vnd.github+json'
+              Authorization: 'Bearer token123',
+              Accept: 'application/vnd.github+json'
             })
           })
         )
@@ -613,9 +601,9 @@ describe('GitHub Setup', () => {
           text: async () => 'Not Found'
         } as Response)
 
-        await expect(
-          getRepositorySettings('owner', 'repo', 'token123')
-        ).rejects.toThrow('Failed to get repository settings: 404')
+        await expect(getRepositorySettings('owner', 'repo', 'token123')).rejects.toThrow(
+          'Failed to get repository settings: 404'
+        )
       })
     })
 
@@ -638,7 +626,7 @@ describe('GitHub Setup', () => {
           expect.objectContaining({
             method: 'PATCH',
             headers: expect.objectContaining({
-              'Authorization': 'Bearer token123',
+              Authorization: 'Bearer token123',
               'Content-Type': 'application/json'
             }),
             body: JSON.stringify(settings)
@@ -899,9 +887,9 @@ describe('GitHub Setup', () => {
           text: async () => 'Not Found'
         } as Response)
 
-        await expect(
-          getMergeCommitSettings('owner', 'repo', 'token123')
-        ).rejects.toThrow('Failed to get merge commit settings: 404')
+        await expect(getMergeCommitSettings('owner', 'repo', 'token123')).rejects.toThrow(
+          'Failed to get merge commit settings: 404'
+        )
       })
     })
 
@@ -1012,9 +1000,9 @@ describe('GitHub Setup', () => {
           text: async () => 'Forbidden'
         } as Response)
 
-        await expect(
-          getBranchProtection('owner', 'repo', 'main', 'token123')
-        ).rejects.toThrow('Failed to get branch protection')
+        await expect(getBranchProtection('owner', 'repo', 'main', 'token123')).rejects.toThrow(
+          'Failed to get branch protection'
+        )
       })
     })
 
@@ -1042,9 +1030,9 @@ describe('GitHub Setup', () => {
           text: async () => 'Forbidden'
         } as Response)
 
-        await expect(
-          updateBranchProtection('owner', 'repo', 'main', 'token123')
-        ).rejects.toThrow('Failed to update branch protection')
+        await expect(updateBranchProtection('owner', 'repo', 'main', 'token123')).rejects.toThrow(
+          'Failed to update branch protection'
+        )
       })
     })
 
@@ -1091,9 +1079,9 @@ describe('GitHub Setup', () => {
           text: async () => 'Forbidden'
         } as Response)
 
-        await expect(
-          enableAutoMerge('owner', 'repo', 'token123')
-        ).rejects.toThrow('Failed to enable auto-merge')
+        await expect(enableAutoMerge('owner', 'repo', 'token123')).rejects.toThrow(
+          'Failed to enable auto-merge'
+        )
       })
     })
   })
@@ -1161,4 +1149,3 @@ describe('GitHub Setup', () => {
     })
   })
 })
-

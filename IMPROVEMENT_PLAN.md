@@ -91,8 +91,8 @@ env:
 
   # Runtime versions
   # Update these to match your project's requirements without regenerating workflows
-  NODE_VERSION: '20'
-  PNPM_VERSION: '9'
+  NODE_VERSION: '24'
+  PNPM_VERSION: '10'
 
 on:
   # ... triggers
@@ -852,7 +852,7 @@ describe('Full Pipeline Generation', () => {
    ```yaml
    env:
      FETCH_DEPTH_AFFECTED: '100'  # Adjust for your repo size
-     NODE_VERSION: '20'           # Match your project
+     NODE_VERSION: '24'           # Match your project
    ```
 
 5. **Optional: Add test-gate**

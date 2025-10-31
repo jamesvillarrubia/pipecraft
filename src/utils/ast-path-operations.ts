@@ -1,26 +1,26 @@
-import { parseDocument, stringify, YAMLMap, YAMLSeq, Scalar, Node } from 'yaml'
+import { type Node, parseDocument, Scalar, stringify, YAMLMap, YAMLSeq } from 'yaml'
 
 /**
  * # AST Path Operations for YAML Manipulation
- * 
+ *
  * This module provides a powerful and precise way to manipulate YAML documents using
  * path-based operations. It allows you to target specific locations in the YAML
  * structure and apply different types of operations (set, merge, overwrite, preserve).
- * 
+ *
  * ## Key Features
- * 
+ *
  * - **Path-based targeting**: Use dot notation to target specific YAML paths
  * - **Multiple operation types**: Set, merge, overwrite, or preserve values
  * - **Flexible value types**: Support objects, arrays, strings, YAML nodes, and parsed documents
  * - **Type safety**: Full TypeScript support with proper Node types
  * - **Context injection**: Dynamic values can be injected at build time
- * 
+ *
  * ## Usage Examples
- * 
+ *
  * ### Basic Path Operations
  * ```typescript
  * import { applyPathOperations, createValueFromString } from './ast-path-operations'
- * 
+ *
  * const operations = [
  *   {
  *     path: 'on.workflow_call.inputs.version',
@@ -32,10 +32,10 @@ import { parseDocument, stringify, YAMLMap, YAMLSeq, Scalar, Node } from 'yaml'
  *     }
  *   }
  * ]
- * 
+ *
  * applyPathOperations(doc, operations)
  * ```
- * 
+ *
  * ### Complex Job Definitions
  * ```typescript
  * const jobOperation = {
@@ -50,7 +50,7 @@ import { parseDocument, stringify, YAMLMap, YAMLSeq, Scalar, Node } from 'yaml'
  *   `)
  * }
  * ```
- * 
+ *
  * ### Array Merging
  * ```typescript
  * const branchOperation = {
@@ -59,22 +59,22 @@ import { parseDocument, stringify, YAMLMap, YAMLSeq, Scalar, Node } from 'yaml'
  *   value: ['develop', 'staging', 'main']
  * }
  * ```
- * 
+ *
  * ## Operation Types
- * 
+ *
  * - **`set`**: Set a value at the specified path (creates if doesn't exist)
  * - **`merge`**: Merge with existing value (for objects/arrays)
  * - **`overwrite`**: Replace existing value completely
  * - **`preserve`**: Keep existing value, ignore template value
- * 
+ *
  * ## Value Types Supported
- * 
+ *
  * - **Objects**: `{ key: 'value' }` - Simple key-value pairs
  * - **Arrays**: `['item1', 'item2']` - Simple arrays
  * - **YAML Strings**: Multi-line YAML with proper formatting
  * - **Parsed Documents**: Pre-parsed YAML nodes
  * - **Primitives**: strings, numbers, booleans
- * 
+ *
  * @fileoverview Path-based AST operations for precise YAML manipulation
  * @author Pipecraft Team
  * @version 1.0.0
@@ -82,11 +82,11 @@ import { parseDocument, stringify, YAMLMap, YAMLSeq, Scalar, Node } from 'yaml'
 
 /**
  * Available operation types for path-based AST manipulation
- * 
+ *
  * @typedef {('set' | 'merge' | 'overwrite' | 'preserve')} PathOperation
- * 
+ *
  * - `set`: Set a value at the specified path (creates if doesn't exist)
- * - `merge`: Merge with existing value (for objects/arrays)  
+ * - `merge`: Merge with existing value (for objects/arrays)
  * - `overwrite`: Replace existing value completely
  * - `preserve`: Keep existing value, ignore template value
  */
@@ -94,22 +94,22 @@ export type PathOperation = 'set' | 'merge' | 'overwrite' | 'preserve'
 
 /**
  * Supported value types for path operations
- * 
+ *
  * @typedef {(Node | object | string | number | boolean | any[])} PathValue
- * 
+ *
  * Supports YAML nodes, JavaScript objects, primitives, and arrays
  */
 export type PathValue = Node | object | string | number | boolean | any[]
 
 /**
  * Configuration for a single path operation
- * 
+ *
  * @interface PathOperationConfig
  * @property {string} path - Dot-notation path to target (e.g., 'jobs.changes.steps')
  * @property {PathOperation} operation - Type of operation to perform
  * @property {PathValue} value - Value to set/merge/overwrite
  * @property {boolean} [required=true] - Whether the path must exist
- * 
+ *
  * @example
  * ```typescript
  * const config: PathOperationConfig = {
@@ -138,16 +138,16 @@ export interface PathOperationConfig {
 
 /**
  * Set a value at a specific path in the YAML AST
- * 
+ *
  * Creates intermediate nodes as needed and sets the final value at the specified path.
  * This is the core function for setting values in the YAML structure.
- * 
+ *
  * @param {YAMLMap} doc - The YAML document to modify
  * @param {string} path - Dot-notation path (e.g., 'jobs.changes.steps')
  * @param {PathValue} value - Value to set at the path
- * 
+ *
  * @throws {Error} When path navigation fails or parent is not a map
- * 
+ *
  * @example
  * ```typescript
  * const doc = parseDocument('name: Pipeline')
@@ -155,7 +155,14 @@ export interface PathOperationConfig {
  * // Results in: jobs: { changes: { 'runs-on': 'ubuntu-latest' } }
  * ```
  */
-export function setPathValue(doc: YAMLMap, path: string, value: PathValue, document?: any, commentBefore?: string, spaceBeforeComment?: boolean): void {
+export function setPathValue(
+  doc: YAMLMap,
+  path: string,
+  value: PathValue,
+  document?: any,
+  commentBefore?: string,
+  spaceBeforeComment?: boolean
+): void {
   const pathParts = path.split('.')
   let current: Node = doc
 
@@ -240,14 +247,14 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue, docum
 
 /**
  * Get a value at a specific path in the YAML AST
- * 
+ *
  * Navigates to the specified path and returns the node if found, null otherwise.
  * This is useful for checking if a path exists before applying operations.
- * 
+ *
  * @param {YAMLMap} doc - The YAML document to read from
  * @param {string} path - Dot-notation path (e.g., 'jobs.changes.steps')
  * @returns {Node | null} The node at the path, or null if not found
- * 
+ *
  * @example
  * ```typescript
  * const doc = parseDocument('jobs: { changes: { runs-on: ubuntu-latest } }')
@@ -258,7 +265,7 @@ export function setPathValue(doc: YAMLMap, path: string, value: PathValue, docum
 export function getPathValue(doc: YAMLMap, path: string): Node | null {
   const pathParts = path.split('.')
   let current: Node = doc
-  
+
   for (const part of pathParts) {
     if (current instanceof YAMLMap) {
       current = current.get(part) as Node
@@ -267,20 +274,20 @@ export function getPathValue(doc: YAMLMap, path: string): Node | null {
       return null
     }
   }
-  
+
   return current
 }
 
 /**
  * Ensure a path exists and apply the specified operation
- * 
+ *
  * This is the main orchestration function that handles all path operations.
  * It checks if the path exists, applies the appropriate operation based on
  * the configuration, and handles required vs optional paths.
- * 
+ *
  * @param {YAMLMap} doc - The YAML document to modify
  * @param {PathOperationConfig} config - Operation configuration
- * 
+ *
  * @example
  * ```typescript
  * const config: PathOperationConfig = {
@@ -289,7 +296,7 @@ export function getPathValue(doc: YAMLMap, path: string): Node | null {
  *   value: 'ubuntu-latest',
  *   required: true
  * }
- * 
+ *
  * ensurePathAndApply(doc, config)
  * ```
  */
@@ -336,16 +343,16 @@ export function ensurePathAndApply(
 
 /**
  * Merge a value at a specific path (for objects/arrays)
- * 
+ *
  * Intelligently merges values based on their type:
  * - Objects: Merges key-value pairs, preserving existing keys
  * - Arrays: Adds new items that don't already exist
  * - Other types: Falls back to overwrite behavior
- * 
+ *
  * @param {YAMLMap} doc - The YAML document to modify
  * @param {string} path - Dot-notation path to merge at
  * @param {PathValue} value - Value to merge
- * 
+ *
  * @example
  * ```typescript
  * // Merge object properties
@@ -353,23 +360,25 @@ export function ensurePathAndApply(
  *   version: { description: 'Version to deploy' },
  *   environment: { description: 'Environment to deploy to' }
  * })
- * 
+ *
  * // Merge array items
  * mergePathValue(doc, 'on.pull_request.branches', ['feature-branch'])
  * ```
  */
 function mergePathValue(doc: YAMLMap, path: string, value: PathValue, document?: any): void {
   const existingValue = getPathValue(doc, path)
-  
+
   if (!existingValue) {
     setPathValue(doc, path, value, document)
     return
   }
-  
+
   // Merge logic based on type
   if (existingValue instanceof YAMLMap && typeof value === 'object') {
     // Merge objects
-    const newMap = (document && document.createNode ? document.createNode(value) : createNode(value)) as YAMLMap
+    const newMap = (
+      document && document.createNode ? document.createNode(value) : createNode(value)
+    ) as YAMLMap
     for (const pair of newMap.items) {
       const key = pair.key
       const val = pair.value
@@ -377,11 +386,11 @@ function mergePathValue(doc: YAMLMap, path: string, value: PathValue, document?:
     }
   } else if (existingValue instanceof YAMLSeq && Array.isArray(value)) {
     // Merge arrays - add new items that don't exist
-    const newSeq = (document && document.createNode ? document.createNode(value) : createNode(value)) as YAMLSeq
+    const newSeq = (
+      document && document.createNode ? document.createNode(value) : createNode(value)
+    ) as YAMLSeq
     for (const item of newSeq.items) {
-      if (!existingValue.items.some(existing => 
-        stringify(existing) === stringify(item)
-      )) {
+      if (!existingValue.items.some(existing => stringify(existing) === stringify(item))) {
         existingValue.items.push(item)
       }
     }
@@ -393,24 +402,24 @@ function mergePathValue(doc: YAMLMap, path: string, value: PathValue, document?:
 
 /**
  * Create a YAML node from a JavaScript value, YAML node, or parsed document
- * 
+ *
  * This is the core value conversion function that handles all supported value types.
  * It intelligently converts JavaScript values to appropriate YAML nodes.
- * 
+ *
  * @param {PathValue} value - Value to convert to YAML node
  * @returns {Node} The converted YAML node
- * 
+ *
  * @example
  * ```typescript
  * // Convert object
  * const node = createNode({ key: 'value' })
- * 
+ *
  * // Convert array
  * const node = createNode(['item1', 'item2'])
- * 
+ *
  * // Convert string
  * const node = createNode('simple string')
- * 
+ *
  * // Convert YAML string
  * const node = createNode(createValueFromString(`
  *   runs-on: ubuntu-latest
@@ -425,7 +434,7 @@ function createNode(value: PathValue): Node {
   if (value && typeof value === 'object' && 'type' in value) {
     return value as Node
   }
-  
+
   // If it's a parsed document, extract the contents
   if (value && typeof value === 'object' && 'contents' in value) {
     const contents = (value as any).contents
@@ -435,7 +444,7 @@ function createNode(value: PathValue): Node {
     }
     return contents
   }
-  
+
   // Handle primitive types
   if (typeof value === 'string') {
     return new Scalar(value)
@@ -462,13 +471,13 @@ function createNode(value: PathValue): Node {
 
 /**
  * Apply multiple path operations to a document
- * 
+ *
  * This is the main entry point for applying multiple operations to a YAML document.
  * It processes all operations in order and applies them to the document.
- * 
+ *
  * @param {YAMLMap} doc - The YAML document to modify
  * @param {PathOperationConfig[]} operations - Array of operations to apply
- * 
+ *
  * @example
  * ```typescript
  * const operations: PathOperationConfig[] = [
@@ -487,12 +496,12 @@ function createNode(value: PathValue): Node {
  *     `)
  *   }
  * ]
- * 
+ *
  * applyPathOperations(doc, operations)
  * ```
  */
 export function applyPathOperations(
-  doc: YAMLMap, 
+  doc: YAMLMap,
   operations: PathOperationConfig[],
   document?: any
 ): void {
@@ -503,20 +512,20 @@ export function applyPathOperations(
 
 /**
  * Helper functions for creating values
- * 
+ *
  * These convenience functions make it easier to create YAML nodes from different
  * value types. They handle the parsing and conversion automatically.
  */
 
 /**
  * Create a YAML node from a YAML string
- * 
+ *
  * Parses a YAML string and returns the root node. This is useful for complex
  * multi-line YAML structures like job definitions.
- * 
+ *
  * @param {string} yamlString - YAML string to parse
  * @returns {Node} The parsed YAML node
- * 
+ *
  * @example
  * ```typescript
  * const node = createValueFromString(`
@@ -535,7 +544,7 @@ export function createValueFromString(yamlString: string, context?: any, documen
   let processedString = yamlString
   let match
   const regex = /\$\{([^{}]+)\}/g
-  
+
   while ((match = regex.exec(processedString)) !== null) {
     const [fullMatch, expression] = match
     try {
@@ -551,7 +560,7 @@ export function createValueFromString(yamlString: string, context?: any, documen
       regex.lastIndex = 0
     }
   }
-  
+
   // Parse the YAML string and return the root content as a proper Node
   const doc = parseDocument(processedString)
   const contents = doc.contents as Node
@@ -577,7 +586,12 @@ function setBlockStyle(node: Node): void {
   } else if (node instanceof YAMLSeq) {
     // Check if this is a simple array (only scalar values)
     const isSimpleArray = node.items.every(item => {
-      return item instanceof Scalar || typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
+      return (
+        item instanceof Scalar ||
+        typeof item === 'string' ||
+        typeof item === 'number' ||
+        typeof item === 'boolean'
+      )
     })
 
     // Keep flow style (inline) for simple arrays, use block style for complex arrays
@@ -593,12 +607,12 @@ function setBlockStyle(node: Node): void {
 
 /**
  * Create a YAML node from a JavaScript object
- * 
+ *
  * Converts a plain JavaScript object to a YAML map node.
- * 
+ *
  * @param {object} obj - JavaScript object to convert
  * @returns {Node} The converted YAML map node
- * 
+ *
  * @example
  * ```typescript
  * const node = createValueFromObject({
@@ -617,12 +631,12 @@ export function createValueFromObject(obj: object, doc?: any): Node {
 
 /**
  * Create a YAML node from a JavaScript array
- * 
+ *
  * Converts a JavaScript array to a YAML sequence node.
- * 
+ *
  * @param {any[]} arr - JavaScript array to convert
  * @returns {Node} The converted YAML sequence node
- * 
+ *
  * @example
  * ```typescript
  * const node = createValueFromArray(['develop', 'staging', 'main'])

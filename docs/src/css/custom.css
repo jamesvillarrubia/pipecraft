@@ -10,9 +10,9 @@
    * The lighter/darker variations are automatically generated using color-mix().
    */
 
-  --color-primary-base: #8a2cb9;    /* Eminence Purple */
-  --color-secondary-base: #e3b23c;       /* Xanthous Gold */
-  --color-info-base: #259d4d;  /* Sea Green */
+  --color-primary-base: #8a2cb9; /* Eminence Purple */
+  --color-secondary-base: #e3b23c; /* Xanthous Gold */
+  --color-info-base: #259d4d; /* Sea Green */
 
   /* Eminence Purple - programmatically generated variations */
   --ifm-color-primary: var(--color-primary-base);
@@ -40,7 +40,7 @@
   --ifm-color-info-light: color-mix(in srgb, var(--color-info-base) 85%, white);
   --ifm-color-info-lighter: color-mix(in srgb, var(--color-info-base) 70%, white);
   --ifm-color-info-lightest: color-mix(in srgb, var(--color-info-base) 55%, white);
-  
+
   /* Background colors - Platinum theme */
   --ifm-background-color: #ffffff;
   --ifm-background-surface-color: #e8e8e8;
@@ -55,18 +55,22 @@
   --ifm-code-font-size: 95%;
   --ifm-code-background: #f1f5f9;
   --ifm-code-color: var(--color-primary-base);
-  --docusaurus-highlighted-code-line-bg: color-mix(in srgb, var(--color-primary-base) 10%, transparent);
-  
+  --docusaurus-highlighted-code-line-bg: color-mix(
+    in srgb,
+    var(--color-primary-base) 10%,
+    transparent
+  );
+
   /* Border and shadow colors */
   --ifm-border-color: #e5e7eb;
   --ifm-global-shadow-lw: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --ifm-global-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --ifm-global-shadow-tl: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  
+
   /* Navbar styling */
   --ifm-navbar-background-color: #ffffff;
   --ifm-navbar-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  
+
   /* Footer styling */
   --ifm-footer-background-color: #e8e8e8;
   --ifm-footer-color: #6b7280;
@@ -75,11 +79,11 @@
 }
 
 /* Dark theme - Adjusted for readability */
-[data-theme='dark'] {
+[data-theme="dark"] {
   /* Override base colors with brighter versions for better contrast on dark backgrounds */
-  --color-primary-base: #c97bf0;    /* Brighter purple */
-  --color-secondary-base: #5ed181;  /* Brighter green */
-  --color-info-base: #f2e275;       /* Brighter gold */
+  --color-primary-base: #c97bf0; /* Brighter purple */
+  --color-secondary-base: #5ed181; /* Brighter green */
+  --color-info-base: #f2e275; /* Brighter gold */
 
   /* All variations are automatically recalculated from the brighter base colors above */
   --ifm-color-primary: var(--color-primary-base);
@@ -105,7 +109,7 @@
   --ifm-color-info-light: color-mix(in srgb, var(--color-info-base) 85%, white);
   --ifm-color-info-lighter: color-mix(in srgb, var(--color-info-base) 70%, white);
   --ifm-color-info-lightest: color-mix(in srgb, var(--color-info-base) 55%, white);
-  
+
   /* Background colors for dark mode */
   --ifm-background-color: #0f172a;
   --ifm-background-surface-color: #1e293b;
@@ -119,18 +123,22 @@
   /* Code styling for dark mode */
   --ifm-code-background: #1e293b;
   --ifm-code-color: var(--color-primary-base);
-  --docusaurus-highlighted-code-line-bg: color-mix(in srgb, var(--color-primary-base) 10%, transparent);
-  
+  --docusaurus-highlighted-code-line-bg: color-mix(
+    in srgb,
+    var(--color-primary-base) 10%,
+    transparent
+  );
+
   /* Border and shadow colors for dark mode */
   --ifm-border-color: #334155;
   --ifm-global-shadow-lw: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --ifm-global-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
   --ifm-global-shadow-tl: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-  
+
   /* Navbar styling for dark mode */
   --ifm-navbar-background-color: #1e293b;
   --ifm-navbar-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
-  
+
   /* Footer styling for dark mode */
   --ifm-footer-background-color: #0f172a;
   --ifm-footer-color: #94a3b8;
@@ -146,12 +154,11 @@
   margin: 0px 0px 0px 0px;
   padding-right: 10px;
   padding-left: 10px;
-
 }
-[data-theme='dark'] .navbar__logo img {
+[data-theme="dark"] .navbar__logo img {
   filter: brightness(1.5);
 }
-[data-theme='dark'] .hero img {
+[data-theme="dark"] .hero img {
   filter: brightness(1.5);
 }
 
@@ -234,10 +241,10 @@
 }
 
 /* Ensure proper contrast for headings in dark mode */
-[data-theme='dark'] .hero__title {
+[data-theme="dark"] .hero__title {
   color: var(--ifm-color-primary) !important;
 }
 
-[data-theme='dark'] .hero__subtitle {
+[data-theme="dark"] .hero__subtitle {
   color: var(--ifm-font-color-secondary) !important;
 }

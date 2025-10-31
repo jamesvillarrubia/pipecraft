@@ -2,11 +2,11 @@
  * Tests for Nx Pipeline Template
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { generate } from '../../src/templates/workflows/pipeline-nx.yml.tpl.js'
-import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { parse as parseYAML } from 'yaml'
+import { generate } from '../../src/templates/workflows/pipeline-nx.yml.tpl.js'
 
 describe('Nx Pipeline Template', () => {
   let testDir: string

@@ -4,12 +4,12 @@
  * Additional tests to improve coverage of versioning utility
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { writeFileSync, existsSync, rmSync, mkdirSync, readFileSync } from 'fs'
-import { join } from 'path'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
+import { join } from 'path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import type { PipecraftConfig } from '../../src/types'
 import { VersionManager } from '../../src/utils/versioning'
-import { PipecraftConfig } from '../../src/types'
 
 describe('VersionManager - Extended Coverage', () => {
   let testDir: string
@@ -26,7 +26,10 @@ describe('VersionManager - Extended Coverage', () => {
     }
 
     // Create unique temp directory
-    testDir = join(tmpdir(), `pipecraft-version-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    testDir = join(
+      tmpdir(),
+      `pipecraft-version-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    )
     mkdirSync(testDir, { recursive: true })
 
     // Change to test directory
@@ -127,10 +130,17 @@ describe('VersionManager - Extended Coverage', () => {
     })
 
     it('should read version from package.json when it exists', () => {
-      writeFileSync('package.json', JSON.stringify({
-        name: 'test-project',
-        version: '2.5.8'
-      }, null, 2))
+      writeFileSync(
+        'package.json',
+        JSON.stringify(
+          {
+            name: 'test-project',
+            version: '2.5.8'
+          },
+          null,
+          2
+        )
+      )
 
       const versionManager = new VersionManager(config)
       const currentVersion = versionManager.getCurrentVersion()
@@ -142,9 +152,16 @@ describe('VersionManager - Extended Coverage', () => {
     })
 
     it('should handle package.json without version field', () => {
-      writeFileSync('package.json', JSON.stringify({
-        name: 'test-project'
-      }, null, 2))
+      writeFileSync(
+        'package.json',
+        JSON.stringify(
+          {
+            name: 'test-project'
+          },
+          null,
+          2
+        )
+      )
 
       const versionManager = new VersionManager(config)
       const currentVersion = versionManager.getCurrentVersion()
@@ -165,10 +182,17 @@ describe('VersionManager - Extended Coverage', () => {
   describe('Version Calculation', () => {
     beforeEach(() => {
       // Create package.json with initial version
-      writeFileSync('package.json', JSON.stringify({
-        name: 'test-project',
-        version: '1.0.0'
-      }, null, 2))
+      writeFileSync(
+        'package.json',
+        JSON.stringify(
+          {
+            name: 'test-project',
+            version: '1.0.0'
+          },
+          null,
+          2
+        )
+      )
     })
 
     it('should calculate next version', () => {
@@ -348,13 +372,13 @@ describe('VersionManager - Extended Coverage', () => {
   describe('Setup Version Management', () => {
     it('should create all required configuration files', () => {
       const versionManager = new VersionManager(config)
-      
+
       // This would normally write files, but in test mode we just check it doesn't throw
       expect(() => {
         const releaseIt = versionManager.generateReleaseItConfig()
         const commitlint = versionManager.generateCommitlintConfig()
         const husky = versionManager.generateHuskyConfig()
-        
+
         expect(releaseIt).toBeDefined()
         expect(commitlint).toBeDefined()
         expect(husky).toBeDefined()
@@ -366,7 +390,7 @@ describe('VersionManager - Extended Coverage', () => {
       delete configWithoutVersioning.versioning
 
       const versionManager = new VersionManager(configWithoutVersioning)
-      
+
       // Should not throw even without versioning config
       expect(() => {
         versionManager.generateReleaseItConfig()
@@ -400,7 +424,7 @@ describe('VersionManager - Extended Coverage', () => {
   describe('Version Calculation Edge Cases', () => {
     it('should handle version calculation with no prior version', () => {
       const versionManager = new VersionManager(config)
-      
+
       expect(() => {
         versionManager.getCurrentVersion()
       }).not.toThrow()
@@ -408,7 +432,7 @@ describe('VersionManager - Extended Coverage', () => {
 
     it('should handle version calculation with prereleases', () => {
       const versionManager = new VersionManager(config)
-      
+
       expect(() => {
         versionManager.getCurrentVersion()
       }).not.toThrow()
@@ -416,7 +440,7 @@ describe('VersionManager - Extended Coverage', () => {
 
     it('should handle version calculation with build metadata', () => {
       const versionManager = new VersionManager(config)
-      
+
       expect(() => {
         versionManager.getCurrentVersion()
       }).not.toThrow()
