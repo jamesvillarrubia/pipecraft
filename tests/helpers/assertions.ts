@@ -7,8 +7,8 @@
  * @module tests/helpers/assertions
  */
 
-import { expect } from 'vitest'
 import { existsSync, readFileSync, statSync } from 'fs'
+import { expect } from 'vitest'
 import { parse as parseYAML } from 'yaml'
 
 /**
@@ -21,15 +21,12 @@ import { parse as parseYAML } from 'yaml'
  *
  * @example
  * ```typescript
- * assertFileExists('.pipecraftrc.json')
+ * assertFileExists('.pipecraftrc')
  * assertFileExists('workflow.yml', 'Pipeline workflow should be generated')
  * ```
  */
 export function assertFileExists(filePath: string, message?: string): void {
-  expect(
-    existsSync(filePath),
-    message || `Expected file to exist: ${filePath}`
-  ).toBe(true)
+  expect(existsSync(filePath), message || `Expected file to exist: ${filePath}`).toBe(true)
 }
 
 /**
@@ -44,10 +41,7 @@ export function assertFileExists(filePath: string, message?: string): void {
  * ```
  */
 export function assertFileNotExists(filePath: string, message?: string): void {
-  expect(
-    existsSync(filePath),
-    message || `Expected file not to exist: ${filePath}`
-  ).toBe(false)
+  expect(existsSync(filePath), message || `Expected file not to exist: ${filePath}`).toBe(false)
 }
 
 /**
@@ -90,15 +84,13 @@ export function assertFileContains(
   const content = readFileSync(filePath, 'utf-8')
 
   if (typeof pattern === 'string') {
-    expect(
-      content,
-      message || `Expected file ${filePath} to contain: ${pattern}`
-    ).toContain(pattern)
+    expect(content, message || `Expected file ${filePath} to contain: ${pattern}`).toContain(
+      pattern
+    )
   } else {
-    expect(
-      content,
-      message || `Expected file ${filePath} to match pattern: ${pattern}`
-    ).toMatch(pattern)
+    expect(content, message || `Expected file ${filePath} to match pattern: ${pattern}`).toMatch(
+      pattern
+    )
   }
 }
 
@@ -206,18 +198,14 @@ export function assertWorkflowHasJobs(
 ): void {
   const workflow = assertValidYAML(workflowPath)
 
-  expect(
-    workflow.jobs,
-    message || `Expected workflow to have jobs object`
-  ).toBeDefined()
+  expect(workflow.jobs, message || `Expected workflow to have jobs object`).toBeDefined()
 
   const actualJobs = Object.keys(workflow.jobs || {})
 
   for (const expectedJob of expectedJobs) {
-    expect(
-      actualJobs,
-      message || `Expected workflow to have job: ${expectedJob}`
-    ).toContain(expectedJob)
+    expect(actualJobs, message || `Expected workflow to have job: ${expectedJob}`).toContain(
+      expectedJob
+    )
   }
 }
 
@@ -242,16 +230,10 @@ export function assertWorkflowJobHasSteps(
 ): void {
   const workflow = assertValidYAML(workflowPath)
 
-  expect(
-    workflow.jobs?.[jobName],
-    `Expected workflow to have job: ${jobName}`
-  ).toBeDefined()
+  expect(workflow.jobs?.[jobName], `Expected workflow to have job: ${jobName}`).toBeDefined()
 
   const job = workflow.jobs[jobName]
-  expect(
-    job.steps,
-    `Expected job ${jobName} to have steps array`
-  ).toBeDefined()
+  expect(job.steps, `Expected job ${jobName} to have steps array`).toBeDefined()
 
   const stepNames = job.steps.map((step: any) => step.name || step.uses || '').join('\n')
 
@@ -284,10 +266,7 @@ export function assertJobOrder(
 ): void {
   const workflow = assertValidYAML(workflowPath)
 
-  expect(
-    workflow.jobs,
-    'Expected workflow to have jobs object'
-  ).toBeDefined()
+  expect(workflow.jobs, 'Expected workflow to have jobs object').toBeDefined()
 
   const actualOrder = Object.keys(workflow.jobs || {})
 
@@ -365,23 +344,15 @@ export function assertValidConfig(config: any, message?: string): void {
  * assertArraysEqual(['a', 'b', 'c'], ['c', 'b', 'a'])
  * ```
  */
-export function assertArraysEqual<T>(
-  actual: T[],
-  expected: T[],
-  message?: string
-): void {
-  expect(
-    actual.length,
-    message || `Expected arrays to have same length`
-  ).toBe(expected.length)
+export function assertArraysEqual<T>(actual: T[], expected: T[], message?: string): void {
+  expect(actual.length, message || `Expected arrays to have same length`).toBe(expected.length)
 
   const sortedActual = [...actual].sort()
   const sortedExpected = [...expected].sort()
 
-  expect(
-    sortedActual,
-    message || `Expected arrays to contain same elements`
-  ).toEqual(sortedExpected)
+  expect(sortedActual, message || `Expected arrays to contain same elements`).toEqual(
+    sortedExpected
+  )
 }
 
 /**
@@ -399,10 +370,7 @@ export function assertArraysEqual<T>(
 export function assertValidSemver(version: string, message?: string): void {
   const semverRegex = /^v?\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$/
 
-  expect(
-    version,
-    message || `Expected valid semver version, got: ${version}`
-  ).toMatch(semverRegex)
+  expect(version, message || `Expected valid semver version, got: ${version}`).toMatch(semverRegex)
 }
 
 /**
@@ -421,31 +389,18 @@ export function assertValidSemver(version: string, message?: string): void {
  * }
  * ```
  */
-export function assertErrorMessage(
-  error: any,
-  pattern: string | RegExp,
-  message?: string
-): void {
-  expect(
-    error,
-    'Expected error object to be defined'
-  ).toBeDefined()
+export function assertErrorMessage(error: any, pattern: string | RegExp, message?: string): void {
+  expect(error, 'Expected error object to be defined').toBeDefined()
 
-  expect(
-    error.message,
-    'Expected error to have message property'
-  ).toBeDefined()
+  expect(error.message, 'Expected error to have message property').toBeDefined()
 
   if (typeof pattern === 'string') {
-    expect(
-      error.message,
-      message || `Expected error message to contain: ${pattern}`
-    ).toContain(pattern)
+    expect(error.message, message || `Expected error message to contain: ${pattern}`).toContain(
+      pattern
+    )
   } else {
-    expect(
-      error.message,
-      message || `Expected error message to match pattern: ${pattern}`
-    ).toMatch(pattern)
+    expect(error.message, message || `Expected error message to match pattern: ${pattern}`).toMatch(
+      pattern
+    )
   }
 }
-

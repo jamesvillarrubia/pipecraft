@@ -9,20 +9,15 @@
  * - Edge cases and variations
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import type { PinionContext } from '@featherscloud/pinion'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
-import { join } from 'path'
-import { generate as generateInit } from '../../src/generators/init.tpl.js'
-import { PinionContext } from '@featherscloud/pinion'
-import {
-  createWorkspaceWithCleanup,
-  inWorkspace
-} from '../helpers/workspace.js'
-import {
-  assertFileExists,
-  assertValidJSON
-} from '../helpers/assertions.js'
 import inquirer from 'inquirer'
+import { join } from 'path'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { generate as generateInit } from '../../src/generators/init.tpl.js'
+import { assertFileExists, assertValidYAML } from '../helpers/assertions.js'
+import { createWorkspaceWithCleanup, inWorkspace } from '../helpers/workspace.js'
+import { parse as parseYAML } from 'yaml'
 
 // Mock inquirer to avoid interactive prompts in tests
 vi.mock('inquirer', () => ({
@@ -31,17 +26,10 @@ vi.mock('inquirer', () => ({
   }
 }))
 
-// Helper to parse potentially double-encoded JSON
-function parseConfigJSON(filepath: string): any {
+// Helper to parse YAML config
+function parseConfigYAML(filepath: string): any {
   const content = readFileSync(filepath, 'utf-8')
-  let parsed = JSON.parse(content)
-  
-  // Handle double-encoded JSON (generator quirk)
-  if (typeof parsed === 'string') {
-    parsed = JSON.parse(parsed)
-  }
-  
-  return parsed
+  return parseYAML(content)
 }
 
 describe('Init Generator', () => {
@@ -49,7 +37,7 @@ describe('Init Generator', () => {
   let cleanup: () => void
 
   beforeEach(() => {
-    [workspace, cleanup] = createWorkspaceWithCleanup('pipecraft-init-gen')
+    ;[workspace, cleanup] = createWorkspaceWithCleanup('pipecraft-init-gen')
 
     // Setup default mock responses for inquirer
     vi.mocked(inquirer.prompt).mockResolvedValue({
@@ -73,7 +61,7 @@ describe('Init Generator', () => {
   describe('Default Configuration', () => {
     // Note: The init generator currently uses hardcoded defaults from defaultConfig
     // regardless of prompt responses. This is the current behavior.
-    
+
     it('should generate config with GitHub as CI provider', async () => {
       await inWorkspace(workspace, async () => {
         const ctx: PinionContext = {
@@ -99,8 +87,8 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        assertFileExists('.pipecraftrc.json')
-        const config = parseConfigJSON('.pipecraftrc.json')
+        assertFileExists('.pipecraftrc')
+        const config = parseConfigYAML('.pipecraftrc')
         expect(config.ciProvider).toBe('github')
         expect(config.mergeStrategy).toBe('fast-forward')
         expect(config.initialBranch).toBe('develop')
@@ -127,7 +115,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
         expect(config.mergeStrategy).toBe('fast-forward')
       })
     })
@@ -151,7 +139,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
         expect(config.branchFlow).toEqual(['develop', 'staging', 'main'])
       })
     })
@@ -181,7 +169,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
         expect(config.domains).toBeDefined()
         expect(config.domains.api).toBeDefined()
         expect(config.domains.web).toBeDefined()
@@ -214,7 +202,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
         expect(config.semver).toBeDefined()
         expect(config.semver.bumpRules).toBeDefined()
         expect(config.semver.bumpRules.feat).toBe('minor')
@@ -248,7 +236,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
         expect(config.domains).toBeDefined()
         expect(config.branchFlow).toBeDefined()
       })
@@ -275,7 +263,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
         expect(config.initialBranch).toBe('develop')
       })
     })
@@ -299,7 +287,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
         expect(config.finalBranch).toBe('main')
       })
     })
@@ -323,7 +311,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
         expect(config.branchFlow).toContain('staging')
         expect(config.branchFlow).toHaveLength(3)
       })
@@ -356,11 +344,10 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
         expect(config.requireConventionalCommits).toBe(true)
       })
     })
-
   })
 
   describe('Config File Format', () => {
@@ -389,26 +376,20 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const content = readFileSync('.pipecraftrc.json', 'utf-8')
+        const content = readFileSync('.pipecraftrc', 'utf-8')
+
+        // YAML should have proper formatting
+        expect(content).toContain('  ') // Indentation
+        expect(content).toContain('\n') // Line breaks
         
-        // Generator double-encodes, so the outer layer is a JSON string
-        let parsed = JSON.parse(content)
-        
-        // The actual config is the decoded string
-        if (typeof parsed === 'string') {
-          // This string should have proper formatting
-          expect(parsed).toContain('  ') // Indentation
-          expect(parsed).toContain('\n') // Line breaks
-          parsed = JSON.parse(parsed)
-        }
-        
-        // Should be a valid config object
+        // Should be valid YAML
+        const parsed = parseYAML(content)
         expect(parsed).toBeDefined()
         expect(parsed.ciProvider).toBeDefined()
       })
     })
 
-    it('should use .pipecraftrc.json as filename', async () => {
+    it('should use .pipecraftrc as filename', async () => {
       await inWorkspace(workspace, async () => {
         const ctx: PinionContext = {
           cwd: workspace,
@@ -433,7 +414,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        expect(existsSync('.pipecraftrc.json')).toBe(true)
+        expect(existsSync('.pipecraftrc')).toBe(true)
       })
     })
   })
@@ -464,7 +445,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
         expect(config.domains.api.paths).toContain('api/**')
         expect(config.domains.api.description).toBeDefined()
       })
@@ -495,7 +476,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
         expect(config.domains.web.paths).toContain('web/**')
         expect(config.domains.web.description).toBeDefined()
       })
@@ -526,7 +507,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
         expect(config.domains.cicd.paths).toContain('.github/**')
         expect(config.domains.cicd.description).toBeDefined()
       })
@@ -553,8 +534,8 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
-        
+        const config = parseConfigYAML('.pipecraftrc')
+
         // Verify all required fields are present
         expect(config.ciProvider).toBe('github')
         expect(config.mergeStrategy).toBe('fast-forward')
@@ -586,7 +567,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
 
         // Config should have all required fields for downstream consumers
         expect(config.domains).toHaveProperty('api')
@@ -615,7 +596,7 @@ describe('Init Generator', () => {
         branchFlow: ['develop', 'staging', 'main'],
         packageManager: 'npm',
         domainSelection: 'api-web',
-        enableNx: true  // Enable Nx for these tests
+        enableNx: true // Enable Nx for these tests
       })
     })
 
@@ -624,10 +605,10 @@ describe('Init Generator', () => {
         // Create nx.json
         const nxJson = {
           targetDefaults: {
-            'lint': {},
-            'test': {},
-            'build': {},
-            'e2e': {}
+            lint: {},
+            test: {},
+            build: {},
+            e2e: {}
           }
         }
         writeFileSync('nx.json', JSON.stringify(nxJson, null, 2))
@@ -647,7 +628,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
 
         expect(config.nx).toBeDefined()
         expect(config.nx.enabled).toBe(true)
@@ -664,11 +645,11 @@ describe('Init Generator', () => {
       await inWorkspace(workspace, async () => {
         const nxJson = {
           targetDefaults: {
-            'e2e': {},
-            'build': {},
-            'test': {},
-            'lint': {},
-            'typecheck': {}
+            e2e: {},
+            build: {},
+            test: {},
+            lint: {},
+            typecheck: {}
           }
         }
         writeFileSync('nx.json', JSON.stringify(nxJson, null, 2))
@@ -688,7 +669,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
 
         // Should be sorted: lint, typecheck, test, build, e2e
         expect(config.nx.tasks[0]).toBe('lint')
@@ -719,7 +700,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
 
         // Should still enable Nx with defaults
         expect(config.nx).toBeDefined()
@@ -747,7 +728,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
 
         expect(config.nx).toBeUndefined()
       })
@@ -776,7 +757,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
 
         expect(config.nx).toBeDefined()
         expect(config.nx.enabled).toBe(true)
@@ -789,13 +770,13 @@ describe('Init Generator', () => {
       await inWorkspace(workspace, async () => {
         const nxJson = {
           targetDefaults: {
-            'lint': {},
-            'typecheck': {},
-            'test': {},
+            lint: {},
+            typecheck: {},
+            test: {},
             'unit-test': {},
-            'build': {},
+            build: {},
             'integration-test': {},
-            'e2e': {},
+            e2e: {},
             'e2e-ci': {},
             'custom-task': {} // Should also be included
           }
@@ -817,7 +798,7 @@ describe('Init Generator', () => {
 
         await generateInit(ctx)
 
-        const config = parseConfigJSON('.pipecraftrc.json')
+        const config = parseConfigYAML('.pipecraftrc')
 
         expect(config.nx.tasks).toHaveLength(9)
         expect(config.nx.tasks).toContain('custom-task')
@@ -825,4 +806,3 @@ describe('Init Generator', () => {
     })
   })
 })
-

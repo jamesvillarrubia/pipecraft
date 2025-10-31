@@ -7,18 +7,18 @@
  * Uses shared operations architecture for maintainability and consistency with Nx template.
  */
 
-import { PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
-import { PipecraftConfig } from '../../types/index.js'
-import { parseDocument, stringify, Scalar } from 'yaml'
+import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import fs from 'fs'
+import { parseDocument, Scalar, stringify } from 'yaml'
+import type { PipecraftConfig } from '../../types/index.js'
+import { applyPathOperations, type PathOperationConfig } from '../../utils/ast-path-operations.js'
 import { logger } from '../../utils/logger.js'
-import { PathOperationConfig, applyPathOperations } from '../../utils/ast-path-operations.js'
 import { formatIfConditions } from '../yaml-format-utils.js'
 import {
-  createHeaderOperations,
   createChangesJobOperation,
-  createVersionJobOperation,
-  createTagPromoteReleaseOperations
+  createHeaderOperations,
+  createTagPromoteReleaseOperations,
+  createVersionJobOperation
 } from './shared/index.js'
 
 interface PathBasedPipelineContext extends PinionContext {
@@ -102,17 +102,20 @@ export const generate = (ctx: PathBasedPipelineContext) =>
 
       // Extract user-customized section and custom jobs from existing file if it exists
       let userSection: string | null = null
-      let customJobsFromExisting: any[] = []
+      const customJobsFromExisting: any[] = []
       if (fileExists) {
         const existingContent = fs.readFileSync(filePath, 'utf8')
         userSection = extractUserSection(existingContent)
         if (userSection) {
           logger.verbose('📋 Found user-customized section between markers')
         }
-        
+
         // Also extract custom jobs (for force mode preservation)
         const existingDoc = parseDocument(existingContent)
-        const existingJobs = existingDoc.contents && (existingDoc.contents as any).get ? (existingDoc.contents as any).get('jobs') : null
+        const existingJobs =
+          existingDoc.contents && (existingDoc.contents as any).get
+            ? (existingDoc.contents as any).get('jobs')
+            : null
         const managedJobs = new Set(['changes', 'version', 'tag', 'promote', 'release'])
         if (existingJobs && (existingJobs as any).items) {
           for (const pair of (existingJobs as any).items) {
@@ -163,7 +166,7 @@ export const generate = (ctx: PathBasedPipelineContext) =>
  Running 'pipecraft generate' updates managed sections while preserving
  your customizations in test/deploy/remote-test jobs.
 
- 📖 Learn more: https://docs.pipecraft.dev
+ 📖 Learn more: https://pipecraft.thecraftlab.dev
 =============================================================================`
         doc.commentBefore = headerComment
 
@@ -184,39 +187,54 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         const hasCustomContent = userSection || customJobsFromExisting.length > 0
         if (hasCustomContent) {
           // Find the version job's outputs section
-          const versionOutputsPattern = /^  version:\s*\n(?:.*\n)*?    outputs:\s*\n\s*version:.*$/m
+          const versionOutputsPattern =
+            /^ {2}version:\s*\n(?:.*\n)*? {4}outputs:\s*\n\s*version:.*$/m
           const match = yamlContent.match(versionOutputsPattern)
           if (match) {
             const insertionIndex = match.index! + match[0].length
             let contentToInsert = ''
-            
+
             // Add user section if exists
             if (userSection) {
               contentToInsert = userSection
             } else if (customJobsFromExisting.length > 0) {
               // Add custom jobs if they exist (and weren't in user section)
-              const customJobsYaml = customJobsFromExisting.map(pair => {
-                const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
-                const valueYaml = stringify(pair.value, { indent: 2 })
-                return `${keyStr}:\n${valueYaml.split('\n').map((line: string) => line ? '  ' + line : line).join('\n')}`
-              }).join('\n\n')
+              const customJobsYaml = customJobsFromExisting
+                .map(pair => {
+                  const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
+                  const valueYaml = stringify(pair.value, { indent: 2 })
+                  return `  ${keyStr}:\n${valueYaml
+                    .split('\n')
+                    .map((line: string) => (line ? '  ' + line : line))
+                    .join('\n')}`
+                })
+                .join('\n\n')
               contentToInsert = customJobsYaml
             }
-            
-            const userSectionWithMarkers = `# <--START CUSTOM JOBS-->\n\n  ${contentToInsert}\n\n  # <--END CUSTOM JOBS-->`
-            yamlContent = yamlContent.slice(0, insertionIndex) + '\n\n  ' + userSectionWithMarkers + '\n' + yamlContent.slice(insertionIndex)
+
+            const userSectionWithMarkers = `# <--START CUSTOM JOBS-->\n\n${contentToInsert}\n\n  # <--END CUSTOM JOBS-->`
+            yamlContent =
+              yamlContent.slice(0, insertionIndex) +
+              '\n\n  ' +
+              userSectionWithMarkers +
+              '\n' +
+              yamlContent.slice(insertionIndex)
             logger.verbose('📋 Inserted user-customized section after version job')
           }
         } else if (!fileExists) {
           // For new files, add placeholder markers
-          const versionOutputsPattern = /^(  version:\s*\n(?:.*\n)*?    outputs:\s*\n\s*version:.*)$/m
-          yamlContent = yamlContent.replace(versionOutputsPattern, '$1\n\n  # <--START CUSTOM JOBS-->\n\n  # <--END CUSTOM JOBS-->\n')
+          const versionOutputsPattern =
+            /^( {2}version:\s*\n(?:.*\n)*? {4}outputs:\s*\n\s*version:.*)$/m
+          yamlContent = yamlContent.replace(
+            versionOutputsPattern,
+            '$1\n\n  # <--START CUSTOM JOBS-->\n\n  # <--END CUSTOM JOBS-->\n'
+          )
           logger.verbose('📝 Added placeholder user section markers')
         }
 
-      const formattedContent = formatIfConditions(yamlContent)
-      const status = hasCustomContent ? 'merged' : (fileExists ? 'rebuilt' : 'created')
-      return { ...ctx, yamlContent: formattedContent, mergeStatus: status }
+        const formattedContent = formatIfConditions(yamlContent)
+        const status = hasCustomContent ? 'merged' : fileExists ? 'rebuilt' : 'created'
+        return { ...ctx, yamlContent: formattedContent, mergeStatus: status }
       }
 
       // Parse existing file for merge mode (no force flag)
@@ -239,7 +257,7 @@ export const generate = (ctx: PathBasedPipelineContext) =>
 
       // Insert user section after version job if it exists
       // Find the version job's outputs section
-      const versionOutputsPattern = /^  version:\s*\n(?:.*\n)*?    outputs:\s*\n\s*version:.*$/m
+      const versionOutputsPattern = /^ {2}version:\s*\n(?:.*\n)*? {4}outputs:\s*\n\s*version:.*$/m
       const match = yamlContent.match(versionOutputsPattern)
       if (match) {
         const insertionIndex = match.index! + match[0].length
@@ -270,7 +288,12 @@ export const generate = (ctx: PathBasedPipelineContext) =>
           logger.verbose('📝 Creating default custom section with test-gate example')
         }
 
-        yamlContent = yamlContent.slice(0, insertionIndex) + '\n\n  ' + userSectionWithMarkers + '\n' + yamlContent.slice(insertionIndex)
+        yamlContent =
+          yamlContent.slice(0, insertionIndex) +
+          '\n\n  ' +
+          userSectionWithMarkers +
+          '\n' +
+          yamlContent.slice(insertionIndex)
       }
 
       const formattedContent = formatIfConditions(yamlContent)
@@ -290,4 +313,9 @@ export const generate = (ctx: PathBasedPipelineContext) =>
       logger.verbose(`${status} ${outputPath}`)
       return ctx
     })
-    .then(renderTemplate((ctx: any) => ctx.yamlContent, toFile((ctx: any) => ctx.outputPipelinePath || '.github/workflows/pipeline.yml')))
+    .then(
+      renderTemplate(
+        (ctx: any) => ctx.yamlContent,
+        toFile((ctx: any) => ctx.outputPipelinePath || '.github/workflows/pipeline.yml')
+      )
+    )

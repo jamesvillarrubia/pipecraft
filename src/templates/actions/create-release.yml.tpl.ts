@@ -8,9 +8,9 @@
  * @module templates/actions/create-release.yml.tpl
  */
 
-import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
-import fs from 'fs'
+import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import dedent from 'dedent'
+import fs from 'fs'
 import { logger } from '../../utils/logger.js'
 
 /**
@@ -123,7 +123,7 @@ const releaseActionTemplate = (ctx: any) => {
               echo "ℹ️  No $PUBLISH_WORKFLOW workflow found - skipping publish trigger"
               echo "   This is normal if you don't have a separate publish workflow"
             fi`
-};
+}
 
 /**
  * Generator entry point for create-release composite action.
@@ -133,7 +133,7 @@ const releaseActionTemplate = (ctx: any) => {
  */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
-    .then((ctx) => {
+    .then(ctx => {
       // Check if file exists to determine merge status
       const filePath = '.github/actions/create-release/action.yml'
       const exists = fs.existsSync(filePath)
@@ -141,4 +141,6 @@ export const generate = (ctx: PinionContext) =>
       logger.verbose(`${status} ${filePath}`)
       return ctx
     })
-    .then(renderTemplate(releaseActionTemplate, toFile('.github/actions/create-release/action.yml')))
+    .then(
+      renderTemplate(releaseActionTemplate, toFile('.github/actions/create-release/action.yml'))
+    )

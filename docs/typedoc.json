@@ -7,12 +7,7 @@
   "readme": "none",
   "outputFileStrategy": "modules",
   "membersWithOwnFile": ["Class", "Interface", "Enum"],
-  "exclude": [
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/node_modules/**",
-    "**/dist/**"
-  ],
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/node_modules/**", "**/dist/**"],
   "excludePrivate": true,
   "excludeProtected": false,
   "excludeInternal": true,
@@ -27,4 +22,3 @@
   "expandObjects": false,
   "indexFormat": "table"
 }
-

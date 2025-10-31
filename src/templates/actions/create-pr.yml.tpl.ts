@@ -1,20 +1,20 @@
 /**
  * Create Pull Request Action Template
- * 
+ *
  * Generates a composite action that creates pull requests between branches, used for
  * automating branch promotion in trunk-based development workflows.
- * 
+ *
  * @module templates/actions/create-pr.yml.tpl
  */
 
-import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
-import fs from 'fs'
+import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import dedent from 'dedent'
+import fs from 'fs'
 import { logger } from '../../utils/logger.js'
 
 /**
  * Generates the create-pr composite action YAML content.
- * 
+ *
  * @param {any} ctx - Context (not currently used)
  * @returns {string} YAML content for the composite action
  */
@@ -147,17 +147,17 @@ const createprActionTemplate = (ctx: any) => {
             else
               echo "❌ No PR created or found"
             fi`
-};
+}
 
 /**
  * Generator entry point for create-pr composite action.
- * 
+ *
  * @param {PinionContext} ctx - Pinion generator context
  * @returns {Promise<PinionContext>} Updated context after file generation
  */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
-    .then((ctx) => {
+    .then(ctx => {
       // Check if file exists to determine merge status
       const filePath = '.github/actions/create-pr/action.yml'
       const exists = fs.existsSync(filePath)

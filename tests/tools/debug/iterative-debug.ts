@@ -7,13 +7,13 @@
  */
 
 import { execSync } from 'child_process';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { 
-  WorkflowDebugOrchestrator, 
-  GitHubWorkflowDebugger,
   type DebugAnalysis,
-  type LogAnalysis 
+  GitHubWorkflowDebugger,
+  type LogAnalysis, 
+  WorkflowDebugOrchestrator 
 } from './debug-utils';
 
 export interface DebugSession {
@@ -62,7 +62,7 @@ export class IterativeDebugger {
     branch?: string,
     outputDir: string = './debug-sessions'
   ) {
-    this.debugger = new GitHubWorkflowDebugger(token, owner, repo);
+    this.iterativeDebugger = new GitHubWorkflowDebugger(token, owner, repo);
     this.outputDir = outputDir;
     this.sessionFile = join(outputDir, `session-${workflowName}-${Date.now()}.json`);
     
@@ -116,7 +116,7 @@ export class IterativeDebugger {
     
     try {
       // Get recent workflow runs
-      const runs = await this.debugger.getWorkflowRuns(
+      const runs = await this.iterativeDebugger.getWorkflowRuns(
         this.session.workflowName, 
         this.session.branch, 
         5
@@ -135,7 +135,7 @@ export class IterativeDebugger {
       console.log(`📊 Analyzing run ${latestRun.id} (${latestRun.status})`);
 
       // Get jobs for this run
-      const jobs = await this.debugger.getWorkflowJobs(latestRun.id);
+      const jobs = await this.iterativeDebugger.getWorkflowJobs(latestRun.id);
       
       // Analyze the run
       const analysis = this.analyzeWorkflowRun(latestRun, jobs);
@@ -507,7 +507,7 @@ ${this.session.history.map(entry => `
    */
   async runHealthCheck(): Promise<boolean> {
     try {
-      const runs = await this.debugger.getWorkflowRuns(this.session.workflowName, this.session.branch, 1);
+      const runs = await this.iterativeDebugger.getWorkflowRuns(this.session.workflowName, this.session.branch, 1);
       return runs.length > 0;
     } catch (error) {
       console.error(`❌ Health check failed: ${error}`);
@@ -528,10 +528,10 @@ ${this.session.history.map(entry => `
  * CLI interface for iterative debugging
  */
 export class IterativeDebugCLI {
-  private debugger: IterativeDebugger;
+  private iterativeDebugger: IterativeDebugger;
 
-  constructor(debugger: IterativeDebugger) {
-    this.debugger = debugger;
+  constructor(iterativeDebugger: IterativeDebugger) {
+    this.iterativeDebugger = iterativeDebugger;
   }
 
   /**
@@ -539,7 +539,7 @@ export class IterativeDebugCLI {
    */
   async runInteractiveSession(): Promise<void> {
     console.log('🚀 Starting interactive debugging session');
-    console.log(`📋 Session ID: ${this.debugger.getSessionStatus().sessionId}`);
+    console.log(`📋 Session ID: ${this.iterativeDebugger.getSessionStatus().sessionId}`);
     
     let continueDebugging = true;
     let iteration = 0;
@@ -551,7 +551,7 @@ export class IterativeDebugCLI {
       console.log('=' * 50);
       
       // Run debug iteration
-      const analysis = await this.debugger.runDebugIteration();
+      const analysis = await this.iterativeDebugger.runDebugIteration();
       
       if (!analysis) {
         console.log('❌ No analysis available, stopping');
@@ -579,7 +579,7 @@ export class IterativeDebugCLI {
    * Show current debugging status
    */
   private showCurrentStatus(): void {
-    const status = this.debugger.getSessionStatus();
+    const status = this.iterativeDebugger.getSessionStatus();
     
     console.log('\n📊 Current Status:');
     console.log(`  Total Iterations: ${status.totalRuns}`);
@@ -598,7 +598,7 @@ export class IterativeDebugCLI {
    * Show debugging plan
    */
   private showDebuggingPlan(): void {
-    const plans = this.debugger.getDebuggingPlan();
+    const plans = this.iterativeDebugger.getDebuggingPlan();
     
     if (plans.length === 0) {
       console.log('\n🎉 No remaining issues to fix!');
@@ -620,7 +620,7 @@ export class IterativeDebugCLI {
    * Show final summary
    */
   private showFinalSummary(): void {
-    const status = this.debugger.getSessionStatus();
+    const status = this.iterativeDebugger.getSessionStatus();
     
     console.log('\n📈 Final Summary:');
     console.log(`  Session Duration: ${this.calculateSessionDuration()}`);
@@ -640,7 +640,7 @@ export class IterativeDebugCLI {
    * Calculate session duration
    */
   private calculateSessionDuration(): string {
-    const status = this.debugger.getSessionStatus();
+    const status = this.iterativeDebugger.getSessionStatus();
     const startTime = new Date(status.startTime);
     const duration = Date.now() - startTime.getTime();
     

@@ -23,20 +23,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           # Configure which types are allowed (newline-delimited).
-          # Default: https://github.com/commitizen/conventional-commit-types
+          # Types are derived from pipecraft config bumpRules
           types: |
-            fix
             feat
-            docs
-            style
-            chore
-            refactor
-            perf
-            test
-            ci
-            build
-            revert
-            major
+            fix
+            breaking
           requireScope: false
 
       # Check for breaking changes

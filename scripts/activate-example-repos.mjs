@@ -1,14 +1,15 @@
 #!/usr/bin/env node
+
 /**
  * Activate example git repos for testing
- * 
+ *
  * Renames .git.stored directories back to .git so repos are functional
  * for running tests.
  */
 
-import { readdir, rename, access } from 'fs/promises'
-import { join } from 'path'
 import { execSync } from 'child_process'
+import { access, readdir, rename } from 'fs/promises'
+import { join } from 'path'
 
 const EXAMPLES_DIR = 'examples'
 const REPOS = ['pipecraft-example-basic', 'pipecraft-example-gated', 'pipecraft-example-minimal']
@@ -50,13 +51,12 @@ async function activateRepo(repoName) {
 
 async function main() {
   console.log('Activating example git repos for testing...\n')
-  
+
   for (const repo of REPOS) {
     await activateRepo(repo)
   }
-  
+
   console.log('\n✓ All example repos activated')
 }
 
 main().catch(console.error)
-

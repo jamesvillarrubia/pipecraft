@@ -1,6 +1,6 @@
-import { beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest'
-import { mkdirSync, rmSync, existsSync } from 'fs'
+import { existsSync, mkdirSync, rmSync } from 'fs'
 import { join } from 'path'
+import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest'
 import { activateGitRepo, deactivateGitRepo } from './helpers/workspace.js'
 
 // Test utilities
@@ -11,8 +11,12 @@ export const FIXTURES_DIR = join(__dirname, 'fixtures')
 beforeAll(() => {
   // Activate example git repos for testing
   const examplesRoot = join(process.cwd(), 'examples')
-  const exampleRepos = ['pipecraft-example-basic', 'pipecraft-example-gated', 'pipecraft-example-minimal']
-  
+  const exampleRepos = [
+    'pipecraft-example-basic',
+    'pipecraft-example-gated',
+    'pipecraft-example-minimal'
+  ]
+
   for (const repo of exampleRepos) {
     const repoPath = join(examplesRoot, repo)
     if (existsSync(join(repoPath, '.git.stored'))) {
@@ -41,8 +45,12 @@ beforeAll(() => {
 afterAll(() => {
   // Deactivate example git repos after all tests complete
   const examplesRoot = join(process.cwd(), 'examples')
-  const exampleRepos = ['pipecraft-example-basic', 'pipecraft-example-gated', 'pipecraft-example-minimal']
-  
+  const exampleRepos = [
+    'pipecraft-example-basic',
+    'pipecraft-example-gated',
+    'pipecraft-example-minimal'
+  ]
+
   for (const repo of exampleRepos) {
     const repoPath = join(examplesRoot, repo)
     if (existsSync(join(repoPath, '.git'))) {

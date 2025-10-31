@@ -4,7 +4,10 @@
  * Generates the tag creation, branch promotion, and GitHub release jobs.
  */
 
-import { PathOperationConfig, createValueFromString } from '../../../utils/ast-path-operations.js'
+import {
+  createValueFromString,
+  type PathOperationConfig
+} from '../../../utils/ast-path-operations.js'
 
 export interface TagPromoteContext {
   branchFlow: string[]
@@ -18,22 +21,25 @@ export interface TagPromoteContext {
 export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathOperationConfig[] {
   const { branchFlow, deployJobNames, remoteTestJobNames } = ctx
   // Provide sensible defaults if branchFlow is invalid
-  const validBranchFlow = (branchFlow && Array.isArray(branchFlow) && branchFlow.length > 0) ? branchFlow : ['main']
+  const validBranchFlow =
+    branchFlow && Array.isArray(branchFlow) && branchFlow.length > 0 ? branchFlow : ['main']
   const allDeploymentJobs = [...deployJobNames, ...remoteTestJobNames]
   const initialBranch = validBranchFlow[0]
 
   // Build tag job conditional (should only run on initial branch, not on PRs)
   const tagConditions = [
     'always()',
-    'github.event_name != \'pull_request\'',
+    "github.event_name != 'pull_request'",
     `github.ref_name == '${initialBranch}'`,
-    'needs.version.result == \'success\'',
-    'needs.version.outputs.version != \'\''
+    "needs.version.result == 'success'",
+    "needs.version.outputs.version != ''"
   ]
 
   if (allDeploymentJobs.length > 0) {
     const noFailures = allDeploymentJobs.map(job => `needs.${job}.result != 'failure'`).join(' && ')
-    const atLeastOneSuccess = allDeploymentJobs.map(job => `needs.${job}.result == 'success'`).join(' || ')
+    const atLeastOneSuccess = allDeploymentJobs
+      .map(job => `needs.${job}.result == 'success'`)
+      .join(' || ')
     tagConditions.push(`(${noFailures})`)
     tagConditions.push(`(${atLeastOneSuccess})`)
   }

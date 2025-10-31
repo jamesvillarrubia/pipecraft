@@ -8,9 +8,9 @@
  * @module tests/helpers/workspace
  */
 
-import { mkdirSync, rmSync, existsSync, writeFileSync } from 'fs'
-import { join } from 'path'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
+import { join } from 'path'
 
 /**
  * Create a unique isolated workspace for a test.
@@ -38,7 +38,7 @@ import { tmpdir } from 'os'
  *
  *   it('should do something', () => {
  *     // Use workspace directory
- *     const configPath = join(workspace, '.pipecraftrc.json')
+ *     const configPath = join(workspace, '.pipecraftrc')
  *     writeFileSync(configPath, JSON.stringify(config))
  *   })
  * })
@@ -87,7 +87,7 @@ export function cleanupTestWorkspace(workspacePath: string): void {
  * Creates a workspace with typical directories and files that PipeCraft expects:
  * - .git directory (for git repository detection)
  * - .github/workflows directory (for workflow output)
- * - Optional .pipecraftrc.json if config provided
+ * - Optional .pipecraftrc if config provided
  *
  * @param prefix - Optional prefix for the directory name
  * @param options - Configuration options
@@ -131,7 +131,7 @@ export function createPipecraftWorkspace(
 
   // Write config if provided
   if (config) {
-    const configPath = join(workspace, '.pipecraftrc.json')
+    const configPath = join(workspace, '.pipecraftrc')
     writeFileSync(configPath, JSON.stringify(config, null, 2))
   }
 
@@ -163,10 +163,7 @@ export function createPipecraftWorkspace(
  * }
  * ```
  */
-export async function inWorkspace<T>(
-  workspacePath: string,
-  fn: () => T | Promise<T>
-): Promise<T> {
+export async function inWorkspace<T>(workspacePath: string, fn: () => T | Promise<T>): Promise<T> {
   const originalCwd = process.cwd()
   try {
     process.chdir(workspacePath)
@@ -287,4 +284,3 @@ export function deactivateGitRepo(repoPath: string, resetWorkingTree: boolean = 
   const { renameSync } = require('fs')
   renameSync(activeGitPath, storedGitPath)
 }
-

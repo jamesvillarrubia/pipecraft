@@ -1,25 +1,25 @@
 /**
  * Domain Job Preservation Tests
- * 
+ *
  * Tests the correct behavior for domain jobs (test-*, deploy-*, remote-test-*):
  * - Created if missing
  * - Preserved if customized
  * - Both normal and force generation modes
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { writeFileSync, existsSync, readFileSync, mkdirSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { parse as parseYAML, stringify } from 'yaml'
-import { createWorkspaceWithCleanup } from '../helpers/workspace.js'
 import { createMinimalConfig } from '../helpers/fixtures.js'
+import { createWorkspaceWithCleanup } from '../helpers/workspace.js'
 
 describe('Domain Job Preservation', () => {
   let workspace: string
   let cleanup: () => void
 
   beforeEach(() => {
-    [workspace, cleanup] = createWorkspaceWithCleanup('domain-job-preservation')
+    ;[workspace, cleanup] = createWorkspaceWithCleanup('domain-job-preservation')
   })
 
   afterEach(() => {
@@ -51,7 +51,10 @@ describe('Domain Job Preservation', () => {
       testDomainJobCreation(true, 'remote-test')
     })
 
-    function testDomainJobCreation(force: boolean, jobType: 'test' | 'deploy' | 'remote-test' = 'test') {
+    function testDomainJobCreation(
+      force: boolean,
+      jobType: 'test' | 'deploy' | 'remote-test' = 'test'
+    ) {
       const config = {
         ciProvider: 'github',
         mergeStrategy: 'fast-forward',
@@ -73,9 +76,9 @@ describe('Domain Job Preservation', () => {
         on: { push: { branches: ['develop'] } },
         jobs: {
           changes: { runs_on: 'ubuntu-latest', steps: [] },
-          'test-api': { 
+          'test-api': {
             needs: 'changes',
-            runs_on: 'ubuntu-latest', 
+            runs_on: 'ubuntu-latest',
             steps: [{ name: 'Test API', run: 'echo "API tests"' }]
           },
           version: { runs_on: 'ubuntu-latest', steps: [] }
@@ -135,7 +138,13 @@ describe('Domain Job Preservation', () => {
         branchFlow: ['develop', 'staging', 'main'],
         semver: { bumpRules: { feat: 'minor', fix: 'patch', breaking: 'major' } },
         domains: {
-          api: { paths: ['src/api/**'], description: 'API changes', test: true, deployable: true, remoteTestable: true }
+          api: {
+            paths: ['src/api/**'],
+            description: 'API changes',
+            test: true,
+            deployable: true,
+            remoteTestable: true
+          }
         }
       }
 
@@ -147,7 +156,12 @@ describe('Domain Job Preservation', () => {
           changes: { runs_on: 'ubuntu-latest', steps: [] },
           version: { runs_on: 'ubuntu-latest', steps: [] },
           [`${jobType}-api`]: {
-            needs: jobType === 'test' ? 'changes' : jobType === 'deploy' ? ['version', 'changes'] : ['deploy-api', 'changes'],
+            needs:
+              jobType === 'test'
+                ? 'changes'
+                : jobType === 'deploy'
+                  ? ['version', 'changes']
+                  : ['deploy-api', 'changes'],
             runs_on: 'ubuntu-latest',
             ...(jobType === 'deploy' && { environment: 'production' }),
             steps: [
@@ -166,7 +180,7 @@ describe('Domain Job Preservation', () => {
       expect(parsedYaml.jobs[`${jobType}-api`].steps).toHaveLength(2)
       expect(parsedYaml.jobs[`${jobType}-api`].steps[0].name).toBe(`Custom ${jobType} Setup`)
       expect(parsedYaml.jobs[`${jobType}-api`].steps[1].name).toBe(`Run ${jobType}`)
-      
+
       if (jobType === 'deploy') {
         expect(parsedYaml.jobs[`${jobType}-api`].environment).toBe('production')
       }
@@ -192,7 +206,13 @@ describe('Domain Job Preservation', () => {
         branchFlow: ['develop', 'staging', 'main'],
         semver: { bumpRules: { feat: 'minor', fix: 'patch', breaking: 'major' } },
         domains: {
-          api: { paths: ['src/api/**'], description: 'API changes', test: true, deployable: true, remoteTestable: true }
+          api: {
+            paths: ['src/api/**'],
+            description: 'API changes',
+            test: true,
+            deployable: true,
+            remoteTestable: true
+          }
         }
       }
 
@@ -216,10 +236,10 @@ describe('Domain Job Preservation', () => {
       // Both should create the same domain jobs
       expect(normalParsed.jobs['test-api']).toBeDefined()
       expect(forceParsed.jobs['test-api']).toBeDefined()
-      
+
       expect(normalParsed.jobs['deploy-api']).toBeDefined()
       expect(forceParsed.jobs['deploy-api']).toBeDefined()
-      
+
       expect(normalParsed.jobs['remote-test-api']).toBeDefined()
       expect(forceParsed.jobs['remote-test-api']).toBeDefined()
     }
@@ -234,7 +254,13 @@ describe('Domain Job Preservation', () => {
         branchFlow: ['develop', 'staging', 'main'],
         semver: { bumpRules: { feat: 'minor', fix: 'patch', breaking: 'major' } },
         domains: {
-          api: { paths: ['src/api/**'], description: 'API changes', test: true, deployable: true, remoteTestable: true }
+          api: {
+            paths: ['src/api/**'],
+            description: 'API changes',
+            test: true,
+            deployable: true,
+            remoteTestable: true
+          }
         }
       }
 
@@ -257,16 +283,12 @@ describe('Domain Job Preservation', () => {
             needs: ['version', 'changes'],
             runs_on: 'ubuntu-latest',
             environment: 'production',
-            steps: [
-              { name: 'Custom Deploy', run: 'echo "Custom deploy"' }
-            ]
+            steps: [{ name: 'Custom Deploy', run: 'echo "Custom deploy"' }]
           },
           'remote-test-api': {
             needs: ['deploy-api', 'changes'],
             runs_on: 'ubuntu-latest',
-            steps: [
-              { name: 'Custom Remote Test', run: 'echo "Custom remote test"' }
-            ]
+            steps: [{ name: 'Custom Remote Test', run: 'echo "Custom remote test"' }]
           }
         }
       }
@@ -282,10 +304,10 @@ describe('Domain Job Preservation', () => {
       // Both should preserve customized domain jobs identically
       expect(normalParsed.jobs['test-api'].steps[0].name).toBe('Custom API Setup')
       expect(forceParsed.jobs['test-api'].steps[0].name).toBe('Custom API Setup')
-      
+
       expect(normalParsed.jobs['deploy-api'].environment).toBe('production')
       expect(forceParsed.jobs['deploy-api'].environment).toBe('production')
-      
+
       expect(normalParsed.jobs['remote-test-api'].steps[0].name).toBe('Custom Remote Test')
       expect(forceParsed.jobs['remote-test-api'].steps[0].name).toBe('Custom Remote Test')
     }
@@ -296,9 +318,13 @@ describe('Domain Job Preservation', () => {
  * Mock function to simulate PipeCraft's domain job generation logic
  * This would be replaced with actual PipeCraft generation in real tests
  */
-function generatePipelineWithDomainJobs(config: any, existingPipeline: any, force: boolean = false): string {
+function generatePipelineWithDomainJobs(
+  config: any,
+  existingPipeline: any,
+  force: boolean = false
+): string {
   const jobs = { ...existingPipeline.jobs }
-  
+
   // Simulate domain job creation/preservation logic
   // Key behavior: "Created if missing, preserved if customized" for BOTH normal and force modes
   Object.entries(config.domains || {}).forEach(([domainName, domainConfig]: [string, any]) => {
@@ -309,14 +335,12 @@ function generatePipelineWithDomainJobs(config: any, existingPipeline: any, forc
         jobs[`test-${domainName}`] = {
           needs: 'changes',
           runs_on: 'ubuntu-latest',
-          steps: [
-            { name: `Run ${domainName} tests`, run: `echo "Testing ${domainName}"` }
-          ]
+          steps: [{ name: `Run ${domainName} tests`, run: `echo "Testing ${domainName}"` }]
         }
       }
       // If job exists, preserve it (both normal and force modes)
     }
-    
+
     // Create deploy jobs if missing and deployable: true
     if (domainConfig.deployable) {
       if (!jobs[`deploy-${domainName}`]) {
@@ -324,14 +348,12 @@ function generatePipelineWithDomainJobs(config: any, existingPipeline: any, forc
         jobs[`deploy-${domainName}`] = {
           needs: ['version', 'changes'],
           runs_on: 'ubuntu-latest',
-          steps: [
-            { name: `Deploy ${domainName}`, run: `echo "Deploying ${domainName}"` }
-          ]
+          steps: [{ name: `Deploy ${domainName}`, run: `echo "Deploying ${domainName}"` }]
         }
       }
       // If job exists, preserve it (both normal and force modes)
     }
-    
+
     // Create remote-test jobs if missing and remoteTestable: true
     if (domainConfig.remoteTestable) {
       if (!jobs[`remote-test-${domainName}`]) {
@@ -347,11 +369,11 @@ function generatePipelineWithDomainJobs(config: any, existingPipeline: any, forc
       // If job exists, preserve it (both normal and force modes)
     }
   })
-  
+
   const pipeline = {
     ...existingPipeline,
     jobs
   }
-  
+
   return stringify(pipeline)
 }

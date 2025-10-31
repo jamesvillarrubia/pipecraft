@@ -1,5 +1,5 @@
-import { parse, parseDocument, stringify } from 'yaml'
 import fs from 'fs'
+import { parse, parseDocument, stringify } from 'yaml'
 
 // Parse the pipeline.yml.backup file
 const pipelineContent = fs.readFileSync('.github/workflows/pipeline.yml.backup', 'utf8')

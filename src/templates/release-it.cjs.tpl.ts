@@ -1,27 +1,27 @@
 /**
  * Release-It Configuration Template
- * 
+ *
  * Generates a release-it configuration file (.release-it.cjs) that integrates
  * with PipeCraft's versioning system and conventional commits workflow.
- * 
+ *
  * This template creates a release-it configuration that:
  * - Uses conventional commits for version bumping
  * - Integrates with GitHub releases
  * - Supports custom version bump rules
  * - Works with PipeCraft's trunk-based development flow
- * 
+ *
  * @module templates/release-it.cjs.tpl
  */
 
-import { PinionContext, toFile, renderTemplate } from '@featherscloud/pinion'
+import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import { logger } from '../utils/logger.js'
 
 /**
  * Generate release-it configuration content
- * 
+ *
  * Creates a release-it configuration that integrates with PipeCraft's
  * versioning system and supports the configured semver bump rules.
- * 
+ *
  * @param {any} ctx - Context containing semver configuration
  * @param {any} ctx.semver - Semantic versioning configuration
  * @param {any} ctx.semver.bumpRules - Version bump rules mapping
@@ -40,7 +40,7 @@ const releaseItTemplate = (ctx: any) => {
     perf: 'patch',
     refactor: 'patch',
     feat: 'minor',
-    major: 'major',
+    major: 'major'
   }
 
   // Get user-defined bump rules from config
@@ -119,13 +119,13 @@ module.exports = {
 
 /**
  * Release-It configuration generator
- * 
+ *
  * Generates a release-it configuration file that integrates with PipeCraft's
  * versioning system and conventional commits workflow.
- * 
+ *
  * @param {PinionContext} ctx - Pinion generator context
  * @returns {Promise<PinionContext>} Updated context after file generation
- * 
+ *
  * @example
  * ```typescript
  * // Called by PipeCraft when generating workflows
@@ -143,15 +143,12 @@ module.exports = {
  */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
-    .then((ctx) => {
+    .then(ctx => {
       logger.verbose('📝 Generating release-it configuration...')
       return ctx
     })
-    .then(renderTemplate(
-      (ctx: any) => releaseItTemplate(ctx),
-      toFile('.release-it.cjs')
-    ))
-    .then((ctx) => {
+    .then(renderTemplate((ctx: any) => releaseItTemplate(ctx), toFile('.release-it.cjs')))
+    .then(ctx => {
       logger.verbose('✅ Generated .release-it.cjs')
       return ctx
     })

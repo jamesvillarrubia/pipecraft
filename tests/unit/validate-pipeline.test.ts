@@ -5,11 +5,11 @@
  * for common issues and best practices.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { writeFileSync, mkdirSync, rmSync, existsSync } from 'fs'
-import { join } from 'path'
-import { tmpdir } from 'os'
 import { execSync } from 'child_process'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs'
+import { tmpdir } from 'os'
+import { join } from 'path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 describe('Pipeline Validation Script', () => {
   let testDir: string
@@ -17,7 +17,10 @@ describe('Pipeline Validation Script', () => {
 
   beforeEach(() => {
     // Create unique temp directory for this test
-    testDir = join(tmpdir(), `pipecraft-validate-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+    testDir = join(
+      tmpdir(),
+      `pipecraft-validate-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    )
     mkdirSync(testDir, { recursive: true })
     originalCwd = process.cwd()
     process.chdir(testDir)
@@ -109,10 +112,11 @@ jobs:
       writeFileSync(join(testDir, '.github/workflows/test.yml'), workflow)
 
       try {
-        execSync(
-          `node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`,
-          { encoding: 'utf8', cwd: testDir, stdio: 'pipe' }
-        )
+        execSync(`node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`, {
+          encoding: 'utf8',
+          cwd: testDir,
+          stdio: 'pipe'
+        })
         expect.fail('Should have failed validation')
       } catch (error: any) {
         const output = error.stdout || error.stderr || error.message
@@ -180,10 +184,11 @@ runs:
       writeFileSync(join(testDir, '.github/actions/test-action/action.yml'), action)
 
       try {
-        execSync(
-          `node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`,
-          { encoding: 'utf8', cwd: testDir, stdio: 'pipe' }
-        )
+        execSync(`node ${join(originalCwd, 'tests/tools/validation/validate-pipeline.cjs')}`, {
+          encoding: 'utf8',
+          cwd: testDir,
+          stdio: 'pipe'
+        })
         expect.fail('Should have failed validation')
       } catch (error: any) {
         const output = error.stdout || error.stderr || error.message

@@ -23,7 +23,7 @@
  * - verbose: Detailed operational messages
  * - debug: Maximum detail including internal state
  */
-export type LogLevel = 'silent' | 'normal' | 'verbose' | 'debug';
+export type LogLevel = 'silent' | 'normal' | 'verbose' | 'debug'
 
 /**
  * Logger class providing level-based console output control.
@@ -32,7 +32,7 @@ export type LogLevel = 'silent' | 'normal' | 'verbose' | 'debug';
  * Different methods are shown based on the current log level setting.
  */
 class Logger {
-  private level: LogLevel = 'normal';
+  private level: LogLevel = 'normal'
 
   /**
    * Set the current log level.
@@ -52,7 +52,7 @@ class Logger {
    * ```
    */
   setLevel(level: LogLevel): void {
-    this.level = level;
+    this.level = level
   }
 
   /**
@@ -61,7 +61,7 @@ class Logger {
    * @returns The current log level
    */
   getLevel(): LogLevel {
-    return this.level;
+    return this.level
   }
 
   /**
@@ -74,7 +74,7 @@ class Logger {
    */
   info(...args: any[]): void {
     if (this.level !== 'silent') {
-      console.log(...args);
+      console.log(...args)
     }
   }
 
@@ -88,7 +88,7 @@ class Logger {
    */
   success(...args: any[]): void {
     if (this.level !== 'silent') {
-      console.log(...args);
+      console.log(...args)
     }
   }
 
@@ -103,7 +103,7 @@ class Logger {
    */
   warn(...args: any[]): void {
     if (this.level !== 'silent') {
-      console.warn(...args);
+      console.warn(...args)
     }
   }
 
@@ -118,7 +118,7 @@ class Logger {
    */
   error(...args: any[]): void {
     if (this.level !== 'silent') {
-      console.error(...args);
+      console.error(...args)
     }
   }
 
@@ -133,7 +133,7 @@ class Logger {
    */
   verbose(...args: any[]): void {
     if (this.level === 'verbose' || this.level === 'debug') {
-      console.log(...args);
+      console.log(...args)
     }
   }
 
@@ -148,7 +148,7 @@ class Logger {
    */
   debug(...args: any[]): void {
     if (this.level === 'debug') {
-      console.log(...args);
+      console.log(...args)
     }
   }
 }
@@ -168,4 +168,4 @@ class Logger {
  * logger.error('✗ Validation failed:', error.message)
  * ```
  */
-export const logger = new Logger();
+export const logger = new Logger()

@@ -5,29 +5,26 @@
  * Refactored to use test helpers for better isolation and maintainability.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { writeFileSync } from 'fs'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import type { PipecraftConfig } from '../../src/types/index.js'
 import { loadConfig, validateConfig } from '../../src/utils/config.js'
-import { PipecraftConfig } from '../../src/types/index.js'
+import { assertErrorMessage, assertValidConfig } from '../helpers/assertions.js'
 import {
-  createWorkspaceWithCleanup,
-  inWorkspace
-} from '../helpers/workspace.js'
-import {
-  createMinimalConfig,
-  createTrunkFlowConfig,
-  createMonorepoConfig,
   createInvalidConfig,
-  createPackageJSON
+  createMinimalConfig,
+  createMonorepoConfig,
+  createPackageJSON,
+  createTrunkFlowConfig
 } from '../helpers/fixtures.js'
-import { assertValidConfig, assertErrorMessage } from '../helpers/assertions.js'
+import { createWorkspaceWithCleanup, inWorkspace } from '../helpers/workspace.js'
 
 describe('Config Utilities - Extended Coverage', () => {
   let workspace: string
   let cleanup: () => void
 
   beforeEach(() => {
-    [workspace, cleanup] = createWorkspaceWithCleanup('pipecraft-config-extended')
+    ;[workspace, cleanup] = createWorkspaceWithCleanup('pipecraft-config-extended')
   })
 
   afterEach(() => {
@@ -35,11 +32,11 @@ describe('Config Utilities - Extended Coverage', () => {
   })
 
   describe('Config File Discovery', () => {
-    it('should find .pipecraftrc.json in current directory', async () => {
+    it('should find .pipecraftrc in current directory', async () => {
       const config = createMinimalConfig()
 
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
 
         const loadedConfig = loadConfig()
         expect(loadedConfig).toBeDefined()
@@ -95,7 +92,7 @@ describe('Config Utilities - Extended Coverage', () => {
       // Test currently skipped because validation might not check for empty domains
       // Uncomment when validation is added:
       // expect(() => validateConfig(config)).toThrow()
-      
+
       // For now, just verify the fixture creates the expected structure
       expect(config.domains).toEqual({})
     })
@@ -139,7 +136,7 @@ describe('Config Utilities - Extended Coverage', () => {
       // Test currently skipped because validation might not check branch consistency
       // Uncomment when validation is added:
       // expect(() => validateConfig(config)).toThrow()
-      
+
       // For now, verify the config structure
       expect(config.branchFlow).not.toContain(config.initialBranch)
     })
@@ -155,7 +152,7 @@ describe('Config Utilities - Extended Coverage', () => {
       // Test currently skipped because validation might not check branch consistency
       // Uncomment when validation is added:
       // expect(() => validateConfig(config)).toThrow()
-      
+
       // For now, verify the config structure
       expect(config.branchFlow).not.toContain(config.finalBranch)
     })
@@ -178,11 +175,11 @@ describe('Config Utilities - Extended Coverage', () => {
           }
         },
         domains: {
-          'backend': {
+          backend: {
             paths: ['services/backend/**', 'libs/backend/**'],
             description: 'Backend services and libraries'
           },
-          'frontend': {
+          frontend: {
             paths: ['apps/web/**', 'apps/mobile/**'],
             description: 'Frontend applications'
           }
@@ -228,8 +225,11 @@ describe('Config Utilities - Extended Coverage', () => {
         ...createMinimalConfig(),
         domains: {
           'api-gateway': { paths: ['apps/api-gateway/**'], description: 'API Gateway' },
-          'user_service': { paths: ['services/user_service/**'], description: 'User Service' },
-          'payment.service': { paths: ['services/payment.service/**'], description: 'Payment Service' }
+          user_service: { paths: ['services/user_service/**'], description: 'User Service' },
+          'payment.service': {
+            paths: ['services/payment.service/**'],
+            description: 'Payment Service'
+          }
         }
       }
 
@@ -247,7 +247,7 @@ describe('Config Utilities - Extended Coverage', () => {
 
     it('should throw for malformed JSON', async () => {
       await inWorkspace(workspace, () => {
-        writeFileSync('.pipecraftrc.json', '{ invalid: json }')
+        writeFileSync('.pipecraftrc', '{ invalid: json }')
 
         try {
           loadConfig()
@@ -262,7 +262,7 @@ describe('Config Utilities - Extended Coverage', () => {
     it('should provide helpful error message for validation failure', async () => {
       await inWorkspace(workspace, () => {
         const invalidConfig = createInvalidConfig('invalid-provider')
-        writeFileSync('.pipecraftrc.json', JSON.stringify(invalidConfig, null, 2))
+        writeFileSync('.pipecraftrc', JSON.stringify(invalidConfig, null, 2))
 
         // Note: loadConfig might not validate automatically
         // If it doesn't, test the validateConfig directly

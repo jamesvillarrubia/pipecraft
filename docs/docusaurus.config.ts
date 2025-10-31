@@ -1,16 +1,16 @@
-import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
-import type * as Preset from '@docusaurus/preset-classic';
+import type * as Preset from '@docusaurus/preset-classic'
+import type { Config } from '@docusaurus/types'
+import { themes as prismThemes } from 'prism-react-renderer'
 
 const config: Config = {
   title: 'PipeCraft',
   tagline: 'Automated CI/CD Pipeline Generator for Trunk-Based Development',
   favicon: 'img/favicon.ico',
-  
+
   // Test deployment trigger - small change to docs
 
   future: {
-    v4: true,
+    v4: true
   },
 
   // Documentation site configuration
@@ -26,8 +26,8 @@ const config: Config = {
       attributes: {
         rel: 'apple-touch-icon',
         sizes: '180x180',
-        href: '/img/apple-touch-icon.png',
-      },
+        href: '/img/apple-touch-icon.png'
+      }
     },
     {
       tagName: 'link',
@@ -35,8 +35,8 @@ const config: Config = {
         rel: 'icon',
         type: 'image/png',
         sizes: '32x32',
-        href: '/img/favicon-32x32.png',
-      },
+        href: '/img/favicon-32x32.png'
+      }
     },
     {
       tagName: 'link',
@@ -44,16 +44,16 @@ const config: Config = {
         rel: 'icon',
         type: 'image/png',
         sizes: '16x16',
-        href: '/img/favicon-16x16.png',
-      },
+        href: '/img/favicon-16x16.png'
+      }
     },
     {
       tagName: 'link',
       attributes: {
         rel: 'manifest',
-        href: '/site.webmanifest',
-      },
-    },
+        href: '/site.webmanifest'
+      }
+    }
   ],
 
   onBrokenLinks: 'throw',
@@ -61,7 +61,7 @@ const config: Config = {
 
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en']
   },
 
   plugins: [],
@@ -74,14 +74,14 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/jamesvillarrubia/pipecraft/tree/develop/docs/',
           showLastUpdateTime: true,
-          showLastUpdateAuthor: true,
+          showLastUpdateAuthor: true
         },
         blog: false, // Disable blog for now
         theme: {
-          customCss: './src/css/custom.css',
-        },
-      } satisfies Preset.Options,
-    ],
+          customCss: './src/css/custom.css'
+        }
+      } satisfies Preset.Options
+    ]
   ],
 
   themeConfig: {
@@ -89,32 +89,32 @@ const config: Config = {
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,
-      respectPrefersColorScheme: true,
+      respectPrefersColorScheme: true
     },
     navbar: {
       title: 'PipeCraft',
       logo: {
         alt: 'PipeCraft Logo',
-        src: '/img/logo.png',
+        src: '/img/logo.png'
       },
       items: [
         {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
-          label: 'Documentation',
+          label: 'Documentation'
         },
         {
           href: 'https://github.com/jamesvillarrubia/pipecraft',
           label: 'GitHub',
-          position: 'right',
+          position: 'right'
         },
         {
           type: 'docsVersionDropdown',
           position: 'right',
-          dropdownActiveClassDisabled: true,
-        },
-      ],
+          dropdownActiveClassDisabled: true
+        }
+      ]
     },
     footer: {
       style: 'dark',
@@ -124,60 +124,60 @@ const config: Config = {
           items: [
             {
               label: 'Getting Started',
-              to: '/docs/intro',
+              to: '/docs/intro'
             },
             {
               label: 'CLI Reference',
-              to: '/docs/cli-reference',
+              to: '/docs/cli-reference'
             },
             {
               label: 'Architecture',
-              to: '/docs/architecture',
-            },
-          ],
+              to: '/docs/architecture'
+            }
+          ]
         },
         {
           title: 'Community',
           items: [
             {
               label: 'GitHub Issues',
-              href: 'https://github.com/jamesvillarrubia/pipecraft/issues',
+              href: 'https://github.com/jamesvillarrubia/pipecraft/issues'
             },
             {
               label: 'GitHub Discussions',
-              href: 'https://github.com/jamesvillarrubia/pipecraft/discussions',
-            },
-          ],
+              href: 'https://github.com/jamesvillarrubia/pipecraft/discussions'
+            }
+          ]
         },
         {
           title: 'More',
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/jamesvillarrubia/pipecraft',
+              href: 'https://github.com/jamesvillarrubia/pipecraft'
             },
             {
               label: 'npm',
-              href: 'https://www.npmjs.com/package/pipecraft',
-            },
-          ],
-        },
+              href: 'https://www.npmjs.com/package/pipecraft'
+            }
+          ]
+        }
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} PipeCraft. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} PipeCraft. Built with Docusaurus.`
     },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['bash', 'diff', 'json', 'yaml'],
+      additionalLanguages: ['bash', 'diff', 'json', 'yaml']
     },
     algolia: {
       // You'll need to add Algolia later for search
       appId: 'YOUR_APP_ID',
       apiKey: 'YOUR_SEARCH_API_KEY',
       indexName: 'pipecraft',
-      contextualSearch: true,
-    },
-  } satisfies Preset.ThemeConfig,
-};
+      contextualSearch: true
+    }
+  } satisfies Preset.ThemeConfig
+}
 
-export default config;
+export default config

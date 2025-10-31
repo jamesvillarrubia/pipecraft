@@ -1,27 +1,27 @@
 /**
  * Integration tests for Pipecraft generators (init.tpl.ts and workflows.tpl.ts)
- * 
+ *
  * These tests verify that:
  * 1. Init generator creates proper configuration files
  * 2. Workflows generator orchestrates template generation correctly
  * 3. Generators handle errors gracefully
  * 4. Context is properly passed through the generation pipeline
- * 
+ *
  * Refactored to use isolated workspaces to eliminate race conditions.
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { writeFileSync, existsSync, readFileSync, mkdirSync } from 'fs'
+import type { PinionContext } from '@featherscloud/pinion'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import inquirer from 'inquirer'
 import { join } from 'path'
-import { FIXTURES_DIR } from '../setup.js'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { parse as parseYAML } from 'yaml'
 import { generate as generateInit } from '../../src/generators/init.tpl.js'
 import { generate as generateWorkflows } from '../../src/generators/workflows.tpl.js'
-import { PinionContext } from '@featherscloud/pinion'
-import { PipecraftConfig } from '../../src/types/index.js'
-import { parse as parseYAML } from 'yaml'
-import { createWorkspaceWithCleanup } from '../helpers/workspace.js'
+import type { PipecraftConfig } from '../../src/types/index.js'
 import { createMinimalConfig } from '../helpers/fixtures.js'
-import inquirer from 'inquirer'
+import { createWorkspaceWithCleanup } from '../helpers/workspace.js'
+import { FIXTURES_DIR } from '../setup.js'
 
 // Mock inquirer to avoid interactive prompts in tests
 vi.mock('inquirer', () => ({
@@ -35,7 +35,7 @@ describe('Generator Integration Tests', () => {
   let cleanup: () => void
 
   beforeEach(() => {
-    [workspace, cleanup] = createWorkspaceWithCleanup('pipecraft-generators')
+    ;[workspace, cleanup] = createWorkspaceWithCleanup('pipecraft-generators')
 
     // Setup default mock responses for inquirer
     vi.mocked(inquirer.prompt).mockResolvedValue({
@@ -87,17 +87,17 @@ describe('Generator Integration Tests', () => {
 
       await generateInit(ctx)
 
-      const configPath = join(workspace, '.pipecraftrc.json')
+      const configPath = join(workspace, '.pipecraftrc')
       expect(existsSync(configPath)).toBe(true)
 
       const rawContent = readFileSync(configPath, 'utf8')
       let configContent = JSON.parse(rawContent)
-      
+
       // Handle double-encoded JSON
       if (typeof configContent === 'string') {
         configContent = JSON.parse(configContent)
       }
-      
+
       expect(configContent.ciProvider).toBe('github')
       expect(configContent.branchFlow).toEqual(['develop', 'staging', 'main'])
       expect(configContent.initialBranch).toBe('develop')
@@ -133,15 +133,15 @@ describe('Generator Integration Tests', () => {
 
       await generateInit(ctx)
 
-      const configPath = join(workspace, '.pipecraftrc.json')
+      const configPath = join(workspace, '.pipecraftrc')
       const rawContent = readFileSync(configPath, 'utf8')
       let configContent = JSON.parse(rawContent)
-      
+
       // Handle double-encoded JSON
       if (typeof configContent === 'string') {
         configContent = JSON.parse(configContent)
       }
-      
+
       // Verify required fields exist (actual behavior of init generator)
       expect(configContent.ciProvider).toBeDefined()
       expect(configContent.mergeStrategy).toBeDefined()
@@ -177,9 +177,9 @@ describe('Generator Integration Tests', () => {
 
       await generateInit(ctx)
 
-      const configPath = join(workspace, '.pipecraftrc.json')
+      const configPath = join(workspace, '.pipecraftrc')
       const rawContent = readFileSync(configPath, 'utf8')
-      
+
       // Should be valid JSON (may be double-encoded)
       let parsedContent
       try {
@@ -192,7 +192,7 @@ describe('Generator Integration Tests', () => {
         // If parsing fails, that's a real issue
         throw new Error('Config file is not valid JSON')
       }
-      
+
       // Verify it has the expected structure
       expect(parsedContent.ciProvider).toBe('github')
       expect(parsedContent.branchFlow).toEqual(['develop', 'staging', 'main'])
@@ -236,14 +236,16 @@ describe('Generator Integration Tests', () => {
       mkdirSync(workflowsDir, { recursive: true })
 
       // Verify directory was created
-      expect(existsSync(workflowsDir), 'Workflows directory should exist before generate').toBe(true)
+      expect(existsSync(workflowsDir), 'Workflows directory should exist before generate').toBe(
+        true
+      )
 
       await generateWorkflows(ctx)
 
       // Check that the main pipeline file was created
       const pipelinePath = join(workflowsDir, 'pipeline.yml')
       expect(existsSync(pipelinePath), `Expected pipeline.yml to exist`).toBe(true)
-      
+
       // Action templates are included in the pipeline, not as separate files
       // Verify pipeline has content
       const pipelineContent = readFileSync(pipelinePath, 'utf8')
@@ -275,7 +277,7 @@ describe('Generator Integration Tests', () => {
 
       const pipelinePath = join(workflowsDir, 'pipeline.yml')
       const pipelineContent = readFileSync(pipelinePath, 'utf8')
-      
+
       // Should be valid YAML
       expect(() => parseYAML(pipelineContent)).not.toThrow()
 
@@ -324,7 +326,7 @@ describe('Generator Integration Tests', () => {
       // Create an existing pipeline with custom jobs
       const workflowsDir = join(workspace, '.github', 'workflows')
       mkdirSync(workflowsDir, { recursive: true })
-      
+
       const existingPipelinePath = join(workflowsDir, 'pipeline.yml')
       const existingPipeline = `
 name: Existing Pipeline
@@ -339,7 +341,7 @@ jobs:
 `
       writeFileSync(existingPipelinePath, existingPipeline)
 
-      const ctx: PinionContext & { config?: PipecraftConfig, pipelinePath?: string } = {
+      const ctx: PinionContext & { config?: PipecraftConfig; pipelinePath?: string } = {
         cwd: workspace,
         argv: ['generate'],
         pinion: {
@@ -364,7 +366,7 @@ jobs:
 
       // Should preserve custom job
       expect(pipeline.jobs['custom-job']).toBeDefined()
-      
+
       // Should add Pipecraft jobs
       expect(pipeline.jobs.changes).toBeDefined()
     })
@@ -399,7 +401,7 @@ jobs:
 
       const pipelinePath = join(workflowsDir, 'pipeline.yml')
       const pipelineContent = readFileSync(pipelinePath, 'utf8')
-      
+
       // Should include custom branches in the workflow
       expect(pipelineContent).toContain('alpha')
       expect(pipelineContent).toContain('beta')
@@ -413,7 +415,7 @@ jobs:
 
       // Create minimal config
       const config = createMinimalConfig()
-      writeFileSync(join(workspace, '.pipecraftrc.json'), JSON.stringify(config, null, 2))
+      writeFileSync(join(workspace, '.pipecraftrc'), JSON.stringify(config, null, 2))
 
       const ctx: PinionContext = {
         cwd: workspace,
@@ -446,8 +448,8 @@ jobs:
 
     it('should output to custom pipeline path when specified', async () => {
       const customPipelinePath = join(workspace, 'custom-pipeline.yml')
-      
-      const ctx: PinionContext & { config?: PipecraftConfig, outputPipelinePath?: string } = {
+
+      const ctx: PinionContext & { config?: PipecraftConfig; outputPipelinePath?: string } = {
         cwd: workspace,
         argv: ['generate'],
         pinion: {
@@ -472,7 +474,7 @@ jobs:
 
       // Should write to custom path
       expect(existsSync(customPipelinePath)).toBe(true)
-      
+
       const pipelineContent = readFileSync(customPipelinePath, 'utf8')
       expect(() => parseYAML(pipelineContent)).not.toThrow()
     })
@@ -577,8 +579,8 @@ jobs:
 
     it('should handle missing pipeline file path gracefully', async () => {
       const testConfig = JSON.parse(readFileSync(join(FIXTURES_DIR, 'basic-config.json'), 'utf8'))
-      
-      const ctx: PinionContext & { config?: PipecraftConfig, pipelinePath?: string } = {
+
+      const ctx: PinionContext & { config?: PipecraftConfig; pipelinePath?: string } = {
         cwd: workspace,
         argv: ['generate'],
         pinion: {
@@ -601,9 +603,8 @@ jobs:
 
       // Should not throw, should create new pipeline
       await expect(generateWorkflows(ctx)).resolves.not.toThrow()
-      
+
       expect(existsSync(join(workflowsDir, 'pipeline.yml'))).toBe(true)
     })
   })
 })
-

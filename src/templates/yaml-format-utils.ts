@@ -22,37 +22,34 @@
  *     }}
  */
 export function formatIfConditions(yamlContent: string, minLength: number = 80): string {
-  return yamlContent.replace(
-    /if: \$\{\{([^}]+)\}\}/g,
-    (match, condition) => {
-      // Only format if the condition is long enough to benefit from formatting
-      if (condition.length < minLength) return match
+  return yamlContent.replace(/if: \$\{\{([^}]+)\}\}/g, (match, condition) => {
+    // Only format if the condition is long enough to benefit from formatting
+    if (condition.length < minLength) return match
 
-      let formatted = condition.trim()
+    let formatted = condition.trim()
 
-      // Step 1: Protect function calls like always() by replacing with placeholders
-      const functionCalls: string[] = []
-      formatted = formatted.replace(/(\w+)\(\)/g, (match: string) => {
-        const placeholder = `__FUNC_${functionCalls.length}__`
-        functionCalls.push(match)
-        return placeholder
-      })
+    // Step 1: Protect function calls like always() by replacing with placeholders
+    const functionCalls: string[] = []
+    formatted = formatted.replace(/(\w+)\(\)/g, (match: string) => {
+      const placeholder = `__FUNC_${functionCalls.length}__`
+      functionCalls.push(match)
+      return placeholder
+    })
 
-      // Step 2: Add line breaks for logical operators
-      formatted = formatted.replace(/\s+&&\s+/g, ' &&\n        ')
-      formatted = formatted.replace(/\s+\|\|\s+/g, ' ||\n        ')
+    // Step 2: Add line breaks for logical operators
+    formatted = formatted.replace(/\s+&&\s+/g, ' &&\n        ')
+    formatted = formatted.replace(/\s+\|\|\s+/g, ' ||\n        ')
 
-      // Step 3: Format grouping parentheses (now that function calls are protected)
-      formatted = formatted.replace(/\(\s*/g, '(\n        ')
-      formatted = formatted.replace(/\s*\)\s*(&&|\|\|)/g, '\n      ) $1')
-      formatted = formatted.replace(/\s*\)(\s*)$/g, '\n      )')
+    // Step 3: Format grouping parentheses (now that function calls are protected)
+    formatted = formatted.replace(/\(\s*/g, '(\n        ')
+    formatted = formatted.replace(/\s*\)\s*(&&|\|\|)/g, '\n      ) $1')
+    formatted = formatted.replace(/\s*\)(\s*)$/g, '\n      )')
 
-      // Step 4: Restore function calls
-      functionCalls.forEach((funcCall, index) => {
-        formatted = formatted.replace(`__FUNC_${index}__`, funcCall)
-      })
+    // Step 4: Restore function calls
+    functionCalls.forEach((funcCall, index) => {
+      formatted = formatted.replace(`__FUNC_${index}__`, funcCall)
+    })
 
-      return `if: $\{{\n        ${formatted}\n      }}`
-    }
-  )
+    return `if: $\{{\n        ${formatted}\n      }}`
+  })
 }

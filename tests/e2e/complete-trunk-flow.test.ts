@@ -1,25 +1,19 @@
 /**
  * Complete Trunk Flow End-to-End Tests
- * 
+ *
  * These tests verify the complete workflow from project initialization
  * through workflow generation and execution. They test the system as a
  * whole, simulating real user workflows.
- * 
+ *
  * Note: These tests require Node.js 16+ and git to be installed.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { execSync } from 'child_process'
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import {
-  createWorkspaceWithCleanup,
-  inWorkspace
-} from '../helpers/workspace.js'
-import {
-  assertFileExists,
-  assertFileContains
-} from '../helpers/assertions.js'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { assertFileContains, assertFileExists } from '../helpers/assertions.js'
+import { createWorkspaceWithCleanup, inWorkspace } from '../helpers/workspace.js'
 
 // Get absolute path to CLI
 const projectRoot = join(__dirname, '..', '..')
@@ -30,7 +24,7 @@ describe('Complete Trunk Flow E2E', () => {
   let cleanup: () => void
 
   beforeEach(() => {
-    [workspace, cleanup] = createWorkspaceWithCleanup('e2e-trunk-flow')
+    ;[workspace, cleanup] = createWorkspaceWithCleanup('e2e-trunk-flow')
   })
 
   afterEach(() => {
@@ -44,15 +38,18 @@ describe('Complete Trunk Flow E2E', () => {
         execSync('git init', { cwd: workspace, stdio: 'pipe' })
         execSync('git config user.email "test@test.com"', { cwd: workspace, stdio: 'pipe' })
         execSync('git config user.name "Test User"', { cwd: workspace, stdio: 'pipe' })
-        
+
         // Step 2: Add remote
-        execSync('git remote add origin https://github.com/test/pipecraft-test.git', { cwd: workspace, stdio: 'pipe' })
-        
+        execSync('git remote add origin https://github.com/test/pipecraft-test.git', {
+          cwd: workspace,
+          stdio: 'pipe'
+        })
+
         // Step 3: Create initial commit
         writeFileSync('README.md', '# Test Project')
         execSync('git add .', { cwd: workspace, stdio: 'pipe' })
         execSync('git commit -m "Initial commit"', { cwd: workspace, stdio: 'pipe' })
-        
+
         // Step 4: Initialize PipeCraft config
         const config = {
           ciProvider: 'github',
@@ -72,8 +69,8 @@ describe('Complete Trunk Flow E2E', () => {
             }
           }
         }
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
-        
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+
         // Step 5: Generate workflows
         execSync(`node "${cliPath}" generate --skip-checks`, {
           cwd: workspace,
@@ -81,9 +78,9 @@ describe('Complete Trunk Flow E2E', () => {
           timeout: 15000,
           env: { ...process.env, CI: 'true' }
         })
-        
+
         // Verify complete setup
-        assertFileExists('.pipecraftrc.json')
+        assertFileExists('.pipecraftrc')
         assertFileExists('.github/workflows/pipeline.yml')
         assertFileExists('.github/actions/detect-changes/action.yml')
         assertFileExists('.github/actions/calculate-version/action.yml')
@@ -91,7 +88,7 @@ describe('Complete Trunk Flow E2E', () => {
         assertFileExists('.github/actions/create-pr/action.yml')
         assertFileExists('.github/actions/manage-branch/action.yml')
         assertFileExists('.github/actions/promote-branch/action.yml')
-        
+
         // Verify workflow content
         const pipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
         expect(pipeline).toContain('name:')
@@ -109,8 +106,11 @@ describe('Complete Trunk Flow E2E', () => {
         execSync('git init', { cwd: workspace, stdio: 'pipe' })
         execSync('git config user.email "test@test.com"', { cwd: workspace, stdio: 'pipe' })
         execSync('git config user.name "Test"', { cwd: workspace, stdio: 'pipe' })
-        execSync('git remote add origin https://github.com/test/test.git', { cwd: workspace, stdio: 'pipe' })
-        
+        execSync('git remote add origin https://github.com/test/test.git', {
+          cwd: workspace,
+          stdio: 'pipe'
+        })
+
         const config = {
           ciProvider: 'github',
           mergeStrategy: 'fast-forward',
@@ -121,8 +121,8 @@ describe('Complete Trunk Flow E2E', () => {
             shared: { paths: ['libs/**'] }
           }
         }
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
-        
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+
         // Generate workflows
         execSync(`node "${cliPath}" generate --skip-checks`, {
           cwd: workspace,
@@ -130,13 +130,13 @@ describe('Complete Trunk Flow E2E', () => {
           timeout: 15000,
           env: { ...process.env, CI: 'true' }
         })
-        
+
         // Verify detect-changes action includes all domains
         const detectChanges = readFileSync('.github/actions/detect-changes/action.yml', 'utf-8')
         expect(detectChanges).toContain('api')
         expect(detectChanges).toContain('web')
         expect(detectChanges).toContain('shared')
-        
+
         // Verify paths are correctly configured
         expect(detectChanges).toContain('apps/api/**')
         expect(detectChanges).toContain('apps/web/**')
@@ -151,8 +151,11 @@ describe('Complete Trunk Flow E2E', () => {
         execSync('git init', { cwd: workspace, stdio: 'pipe' })
         execSync('git config user.email "test@test.com"', { cwd: workspace, stdio: 'pipe' })
         execSync('git config user.name "Test"', { cwd: workspace, stdio: 'pipe' })
-        execSync('git remote add origin https://github.com/test/test.git', { cwd: workspace, stdio: 'pipe' })
-        
+        execSync('git remote add origin https://github.com/test/test.git', {
+          cwd: workspace,
+          stdio: 'pipe'
+        })
+
         const config = {
           ciProvider: 'github',
           mergeStrategy: 'fast-forward',
@@ -161,19 +164,19 @@ describe('Complete Trunk Flow E2E', () => {
           finalBranch: 'main',
           domains: { api: { paths: ['src/**'] } }
         }
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
-        
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+
         execSync(`node "${cliPath}" generate --skip-checks`, {
           cwd: workspace,
           stdio: 'pipe',
           timeout: 15000,
           env: { ...process.env, CI: 'true' }
         })
-        
+
         const pipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
         expect(pipeline).toContain('develop')
         expect(pipeline).toContain('main')
-        
+
         // Should have jobs for both branches
         expect(pipeline.match(/develop/g)?.length).toBeGreaterThan(0)
         expect(pipeline.match(/main/g)?.length).toBeGreaterThan(0)
@@ -185,8 +188,11 @@ describe('Complete Trunk Flow E2E', () => {
         execSync('git init', { cwd: workspace, stdio: 'pipe' })
         execSync('git config user.email "test@test.com"', { cwd: workspace, stdio: 'pipe' })
         execSync('git config user.name "Test"', { cwd: workspace, stdio: 'pipe' })
-        execSync('git remote add origin https://github.com/test/test.git', { cwd: workspace, stdio: 'pipe' })
-        
+        execSync('git remote add origin https://github.com/test/test.git', {
+          cwd: workspace,
+          stdio: 'pipe'
+        })
+
         const config = {
           ciProvider: 'github',
           mergeStrategy: 'fast-forward',
@@ -195,15 +201,15 @@ describe('Complete Trunk Flow E2E', () => {
           finalBranch: 'main',
           domains: { api: { paths: ['src/**'] } }
         }
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
-        
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+
         execSync(`node "${cliPath}" generate --skip-checks`, {
           cwd: workspace,
           stdio: 'pipe',
           timeout: 15000,
           env: { ...process.env, CI: 'true' }
         })
-        
+
         const pipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
         expect(pipeline).toContain('develop')
         expect(pipeline).toContain('staging')
@@ -218,16 +224,19 @@ describe('Complete Trunk Flow E2E', () => {
         execSync('git init', { cwd: workspace, stdio: 'pipe' })
         execSync('git config user.email "test@test.com"', { cwd: workspace, stdio: 'pipe' })
         execSync('git config user.name "Test"', { cwd: workspace, stdio: 'pipe' })
-        execSync('git remote add origin https://github.com/test/test.git', { cwd: workspace, stdio: 'pipe' })
-        
+        execSync('git remote add origin https://github.com/test/test.git', {
+          cwd: workspace,
+          stdio: 'pipe'
+        })
+
         const config = {
           ciProvider: 'github',
           mergeStrategy: 'fast-forward',
           branchFlow: ['develop', 'main'],
           domains: { api: { paths: ['src/**'] } }
         }
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
-        
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+
         // First generation
         execSync(`node "${cliPath}" generate --skip-checks --force`, {
           cwd: workspace,
@@ -235,14 +244,17 @@ describe('Complete Trunk Flow E2E', () => {
           timeout: 15000,
           env: { ...process.env, CI: 'true' }
         })
-        
+
         // Add a custom job with a comment (job-level comments should be preserved)
         let pipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
         // Find the custom jobs section and add a job with a comment
         const customJobInsertion = `  # <--START CUSTOM JOBS-->\n\n  # Custom security scan job\n  security-scan:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo "Running security scan"\n\n  # <--END CUSTOM JOBS-->`
-        pipeline = pipeline.replace(/# <--START CUSTOM JOBS-->[\s\S]*?# <--END CUSTOM JOBS-->/, customJobInsertion)
+        pipeline = pipeline.replace(
+          /# <--START CUSTOM JOBS-->[\s\S]*?# <--END CUSTOM JOBS-->/,
+          customJobInsertion
+        )
         writeFileSync('.github/workflows/pipeline.yml', pipeline)
-        
+
         // Regenerate
         execSync(`node "${cliPath}" generate --skip-checks --force`, {
           cwd: workspace,
@@ -250,7 +262,7 @@ describe('Complete Trunk Flow E2E', () => {
           timeout: 15000,
           env: { ...process.env, CI: 'true' }
         })
-        
+
         // Check if job-level comment and custom job are preserved
         const newPipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
         expect(newPipeline).toContain('Custom security scan job')
@@ -267,15 +279,18 @@ describe('Complete Trunk Flow E2E', () => {
         execSync('git init', { cwd: workspace, stdio: 'pipe' })
         execSync('git config user.email "test@test.com"', { cwd: workspace, stdio: 'pipe' })
         execSync('git config user.name "Test"', { cwd: workspace, stdio: 'pipe' })
-        execSync('git remote add origin https://github.com/acme/monorepo.git', { cwd: workspace, stdio: 'pipe' })
-        
+        execSync('git remote add origin https://github.com/acme/monorepo.git', {
+          cwd: workspace,
+          stdio: 'pipe'
+        })
+
         // Create directory structure
         mkdirSync('apps/api', { recursive: true })
         mkdirSync('apps/web', { recursive: true })
         mkdirSync('apps/mobile', { recursive: true })
         mkdirSync('libs/shared', { recursive: true })
         mkdirSync('libs/ui', { recursive: true })
-        
+
         // Create files
         writeFileSync('apps/api/index.ts', 'console.log("api")')
         writeFileSync('apps/web/index.tsx', 'console.log("web")')
@@ -283,11 +298,11 @@ describe('Complete Trunk Flow E2E', () => {
         writeFileSync('libs/shared/utils.ts', 'export const util = () => {}')
         writeFileSync('libs/ui/Button.tsx', 'export const Button = () => null')
         writeFileSync('README.md', '# Monorepo')
-        
+
         // Commit initial state
         execSync('git add .', { cwd: workspace, stdio: 'pipe' })
         execSync('git commit -m "Initial commit"', { cwd: workspace, stdio: 'pipe' })
-        
+
         // Configure PipeCraft
         const config = {
           ciProvider: 'github',
@@ -326,8 +341,8 @@ describe('Complete Trunk Flow E2E', () => {
             }
           }
         }
-        writeFileSync('.pipecraftrc.json', JSON.stringify(config, null, 2))
-        
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+
         // Generate workflows
         execSync(`node "${cliPath}" generate --skip-checks`, {
           cwd: workspace,
@@ -335,7 +350,7 @@ describe('Complete Trunk Flow E2E', () => {
           timeout: 15000,
           env: { ...process.env, CI: 'true' }
         })
-        
+
         // Verify all workflows and actions generated
         assertFileExists('.github/workflows/pipeline.yml')
         assertFileExists('.github/actions/detect-changes/action.yml')
@@ -344,7 +359,7 @@ describe('Complete Trunk Flow E2E', () => {
         assertFileExists('.github/actions/create-pr/action.yml')
         assertFileExists('.github/actions/manage-branch/action.yml')
         assertFileExists('.github/actions/promote-branch/action.yml')
-        
+
         // Verify pipeline contains all domains
         const pipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
         expect(pipeline).toContain('api')
@@ -352,12 +367,12 @@ describe('Complete Trunk Flow E2E', () => {
         expect(pipeline).toContain('mobile')
         expect(pipeline).toContain('shared')
         expect(pipeline).toContain('ui')
-        
+
         // Verify all branches in flow
         expect(pipeline).toContain('develop')
         expect(pipeline).toContain('staging')
         expect(pipeline).toContain('main')
-        
+
         // Verify detect-changes has all paths
         const detectChanges = readFileSync('.github/actions/detect-changes/action.yml', 'utf-8')
         expect(detectChanges).toContain('apps/api/**')
@@ -369,4 +384,3 @@ describe('Complete Trunk Flow E2E', () => {
     }, 30000)
   })
 })
-

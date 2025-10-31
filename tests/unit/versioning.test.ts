@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { writeFileSync, existsSync, rmSync, readFileSync } from 'fs'
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { PipecraftConfig } from '../../src/types'
 import { VersionManager } from '../../src/utils/versioning'
-import { PipecraftConfig } from '../../src/types'
-import { TEST_DIR, FIXTURES_DIR } from '../setup'
+import { FIXTURES_DIR, TEST_DIR } from '../setup'
 
 // Mock execSync
 vi.mock('child_process', () => ({
@@ -28,9 +28,9 @@ describe('VersionManager', () => {
     const configPath = join(FIXTURES_DIR, 'basic-config.json')
     const configContent = readFileSync(configPath, 'utf8')
     config = JSON.parse(configContent)
-    
+
     versionManager = new VersionManager(config)
-    
+
     // Get mock execSync
     const { execSync } = await import('child_process')
     mockExecSync = execSync as any
@@ -40,7 +40,7 @@ describe('VersionManager', () => {
   describe('generateReleaseItConfig', () => {
     it('should generate valid release-it configuration', () => {
       const configString = versionManager.generateReleaseItConfig()
-      
+
       expect(configString).toContain('module.exports =')
       expect(configString).toContain('"git"')
       expect(configString).toContain('"github"')
@@ -62,10 +62,10 @@ describe('VersionManager', () => {
           docs: 'patch'
         }
       }
-      
+
       const manager = new VersionManager(config)
       const configString = manager.generateReleaseItConfig()
-      
+
       // Just verify the config was generated successfully
       expect(configString).toContain('module.exports =')
       expect(configString).toContain('"@release-it/conventional-changelog"')
@@ -75,7 +75,7 @@ describe('VersionManager', () => {
   describe('generateCommitlintConfig', () => {
     it('should generate valid commitlint configuration', () => {
       const configString = versionManager.generateCommitlintConfig()
-      
+
       expect(configString).toContain('module.exports =')
       expect(configString).toContain('extends:')
       expect(configString).toContain('rules:')
@@ -88,7 +88,7 @@ describe('VersionManager', () => {
   describe('generateHuskyConfig', () => {
     it('should generate valid husky configuration', () => {
       const configString = versionManager.generateHuskyConfig()
-      
+
       expect(configString).toContain('#!/usr/bin/env sh')
       expect(configString).toContain('husky.sh')
       expect(configString).toContain('commitlint')
@@ -98,11 +98,11 @@ describe('VersionManager', () => {
   describe('getCurrentVersion', () => {
     it('should return current version from git tags', () => {
       mockExecSync.mockReturnValue('v1.2.3\n')
-      
+
       const version = versionManager.getCurrentVersion()
-      
+
       expect(version).toBe('1.2.3')
-      expect(mockExecSync).toHaveBeenCalledWith('git describe --tags --abbrev=0', { 
+      expect(mockExecSync).toHaveBeenCalledWith('git describe --tags --abbrev=0', {
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'ignore']
       })
@@ -112,9 +112,9 @@ describe('VersionManager', () => {
       mockExecSync.mockImplementation(() => {
         throw new Error('No tags found')
       })
-      
+
       const version = versionManager.getCurrentVersion()
-      
+
       expect(version).toBe('0.0.0')
     })
   })
@@ -133,11 +133,11 @@ describe('VersionManager', () => {
         'ci: update CI configuration',
         'chore: update dependencies'
       ].join('\n')
-      
+
       mockExecSync.mockReturnValue(validCommits)
-      
+
       const isValid = versionManager.validateConventionalCommits()
-      
+
       expect(isValid).toBe(true)
     })
 
@@ -148,11 +148,11 @@ describe('VersionManager', () => {
         'update docs',
         'random commit message'
       ].join('\n')
-      
+
       mockExecSync.mockReturnValue(invalidCommits)
-      
+
       const isValid = versionManager.validateConventionalCommits()
-      
+
       expect(isValid).toBe(false)
     })
 
@@ -160,9 +160,9 @@ describe('VersionManager', () => {
       mockExecSync.mockImplementation(() => {
         throw new Error('Git command failed')
       })
-      
+
       const isValid = versionManager.validateConventionalCommits()
-      
+
       expect(isValid).toBe(false)
     })
   })
@@ -174,11 +174,11 @@ describe('VersionManager', () => {
         bump patch
         There are 0 BREAKING CHANGES and 0 features
       `
-      
+
       mockExecSync.mockReturnValue(releaseItOutput)
-      
+
       const result = versionManager.calculateNextVersion()
-      
+
       expect(result.version).toBe('1.2.4')
       expect(result.type).toBe('patch')
     })
@@ -187,9 +187,9 @@ describe('VersionManager', () => {
       mockExecSync.mockImplementation(() => {
         throw new Error('Release-it failed')
       })
-      
+
       const result = versionManager.calculateNextVersion()
-      
+
       expect(result.version).toBe('0.0.0')
       expect(result.type).toBe('patch')
     })
@@ -207,14 +207,14 @@ describe('VersionManager', () => {
         changelog: true,
         bumpRules: {}
       }
-      
+
       const manager = new VersionManager(config)
-      
+
       // Mock execSync for husky install
       mockExecSync.mockReturnValue('')
-      
+
       manager.setupVersionManagement()
-      
+
       // Check if files were created
       expect(existsSync(join(TEST_DIR, '.release-it.cjs'))).toBe(true)
       expect(existsSync(join(TEST_DIR, 'commitlint.config.js'))).toBe(true)
@@ -231,11 +231,11 @@ describe('VersionManager', () => {
         changelog: true,
         bumpRules: {}
       }
-      
+
       const manager = new VersionManager(config)
-      
+
       manager.setupVersionManagement()
-      
+
       // Check if files were not created
       expect(existsSync(join(TEST_DIR, '.release-it.cjs'))).toBe(false)
       expect(existsSync(join(TEST_DIR, 'commitlint.config.js'))).toBe(false)

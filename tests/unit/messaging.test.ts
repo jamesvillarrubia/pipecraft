@@ -2,15 +2,15 @@
  * Tests for messaging system
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
+  createSetupSummary,
   detectPersona,
   formatMessage,
-  formatStatusTable,
   formatNextSteps,
   formatQuickSuccess,
-  createSetupSummary,
   formatSetupSummary,
+  formatStatusTable,
   type MessageContext,
   type StatusItem
 } from '../../src/utils/messaging.js'
@@ -195,11 +195,7 @@ describe('Messaging System', () => {
 
   describe('formatNextSteps', () => {
     it('should format next steps list', () => {
-      const steps = [
-        'Run git commit',
-        'Push to remote',
-        'Create pull request'
-      ]
+      const steps = ['Run git commit', 'Push to remote', 'Create pull request']
 
       const context: MessageContext = {
         persona: 'startup',
@@ -434,7 +430,13 @@ describe('Messaging System', () => {
         operation: 'setup'
       }
 
-      const summary = createSetupSummary('my-org/my-repo', permissions, settings, autoMerge, context)
+      const summary = createSetupSummary(
+        'my-org/my-repo',
+        permissions,
+        settings,
+        autoMerge,
+        context
+      )
 
       expect(summary.permissions).toHaveLength(1)
       expect(summary.settings).toHaveLength(1)

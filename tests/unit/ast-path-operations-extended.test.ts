@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { parseDocument, stringify, Scalar } from 'yaml'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { parseDocument, Scalar, stringify } from 'yaml'
 import {
-  setPathValue,
-  getPathValue,
-  ensurePathAndApply,
   applyPathOperations,
-  createValueFromString,
-  createValueFromObject,
   createValueFromArray,
-  PathOperationConfig
+  createValueFromObject,
+  createValueFromString,
+  ensurePathAndApply,
+  getPathValue,
+  type PathOperationConfig,
+  setPathValue
 } from '../../src/utils/ast-path-operations'
 
 describe('AST Path Operations - Extended Coverage', () => {
@@ -135,7 +135,7 @@ describe('AST Path Operations - Extended Coverage', () => {
       expect(doc.contents.get('custom')).toBe('user-value')
     })
 
-    it('should skip non-required paths that don\'t exist', () => {
+    it("should skip non-required paths that don't exist", () => {
       const config: PathOperationConfig = {
         path: 'optional.field',
         operation: 'set',
@@ -194,7 +194,7 @@ describe('AST Path Operations - Extended Coverage', () => {
 
     it('should handle context variable replacement', () => {
       const context = { branch: 'develop' }
-      const node = createValueFromString('if: github.ref == \'${branch}\'', context)
+      const node = createValueFromString("if: github.ref == '${branch}'", context)
       const yaml = stringify(node)
       // The function should process the template literal
       expect(yaml).toBeDefined()
@@ -259,10 +259,7 @@ describe('AST Path Operations - Extended Coverage', () => {
     })
 
     it('should handle array of objects', () => {
-      const arr = [
-        { name: 'step1' },
-        { name: 'step2' }
-      ]
+      const arr = [{ name: 'step1' }, { name: 'step2' }]
       const node = createValueFromArray(arr)
       const yaml = stringify(node)
       expect(yaml).toContain('step1')
@@ -311,4 +308,3 @@ describe('AST Path Operations - Extended Coverage', () => {
     })
   })
 })
-
