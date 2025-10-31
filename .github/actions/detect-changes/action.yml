@@ -187,14 +187,39 @@ runs:
         
         cat /tmp/nx-results.json
 
+    - name: Transform Domain Config for Paths Filter
+      id: transform-config
+      if: steps.nx-check.outputs.available != 'true' || inputs.useNx != 'true'
+      shell: bash
+      run: |
+        # Transform domains-config from PipeCraft format to paths-filter format
+        # PipeCraft format: domain: { paths: [...] }
+        # paths-filter format: domain: [...]
+        
+        # Read the domains config
+        cat /tmp/domains-config.yml
+        
+        # Transform: remove 'paths:' lines and unindent the glob patterns
+        sed '/paths:/d' /tmp/domains-config.yml | sed 's/^  -/-/' > /tmp/paths-filter-config.yml
+        
+        echo ""
+        echo "Transformed for paths-filter:"
+        cat /tmp/paths-filter-config.yml
+        
+        # Store as output for use in paths-filter
+        {
+          echo "filters<<EOF"
+          cat /tmp/paths-filter-config.yml
+          echo "EOF"
+        } >> $GITHUB_OUTPUT
+
     - name: Detect Changes with Paths Filter (fallback)
       uses: dorny/paths-filter@v3
       id: filter
       if: steps.nx-check.outputs.available != 'true' || inputs.useNx != 'true'
       with:
         base: ${{ steps.set-base.outputs.base_branch }}
-        filters: |
-          config: /tmp/path-filters.yml
+        filters: ${{ steps.transform-config.outputs.filters }}
 
     - name: Generate Outputs
       id: output
