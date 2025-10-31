@@ -100,30 +100,13 @@ export const generate = (ctx: PathBasedPipelineContext) =>
       // Check if file exists
       const fileExists = fs.existsSync(filePath)
 
-      // Extract user-customized section and custom jobs from existing file if it exists
+      // Extract user-customized section from existing file if it exists
       let userSection: string | null = null
-      let customJobsFromExisting: any[] = []
       if (fileExists) {
         const existingContent = fs.readFileSync(filePath, 'utf8')
         userSection = extractUserSection(existingContent)
         if (userSection) {
           logger.verbose('📋 Found user-customized section between markers')
-        }
-        
-        // Also extract custom jobs (for force mode preservation)
-        const existingDoc = parseDocument(existingContent)
-        const existingJobs = existingDoc.contents && (existingDoc.contents as any).get ? (existingDoc.contents as any).get('jobs') : null
-        const managedJobs = new Set(['changes', 'version', 'tag', 'promote', 'release'])
-        if (existingJobs && (existingJobs as any).items) {
-          for (const pair of (existingJobs as any).items) {
-            const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
-            if (!managedJobs.has(keyStr as string)) {
-              customJobsFromExisting.push(pair)
-            }
-          }
-        }
-        if (customJobsFromExisting.length > 0) {
-          logger.verbose(`📋 Found ${customJobsFromExisting.length} custom job(s) to preserve`)
         }
       }
 
@@ -180,43 +163,45 @@ export const generate = (ctx: PathBasedPipelineContext) =>
           minContentWidth: 0
         })
 
-        // Insert user section and custom jobs after version job if they exist
-        const hasCustomContent = userSection || customJobsFromExisting.length > 0
-        if (hasCustomContent) {
-          // Find the version job's outputs section
-          const versionOutputsPattern = /^  version:\s*\n(?:.*\n)*?    outputs:\s*\n\s*version:.*$/m
-          const match = yamlContent.match(versionOutputsPattern)
-          if (match) {
-            const insertionIndex = match.index! + match[0].length
-            let contentToInsert = ''
-            
-            // Add user section if exists
-            if (userSection) {
-              contentToInsert = userSection
-            } else if (customJobsFromExisting.length > 0) {
-              // Add custom jobs if they exist (and weren't in user section)
-              const customJobsYaml = customJobsFromExisting.map(pair => {
-                const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
-                const valueYaml = stringify(pair.value, { indent: 2 })
-                return `${keyStr}:\n${valueYaml.split('\n').map((line: string) => line ? '  ' + line : line).join('\n')}`
-              }).join('\n\n')
-              contentToInsert = customJobsYaml
-            }
-            
-            const userSectionWithMarkers = `# <--START CUSTOM JOBS-->\n\n  ${contentToInsert}\n\n  # <--END CUSTOM JOBS-->`
-            yamlContent = yamlContent.slice(0, insertionIndex) + '\n\n  ' + userSectionWithMarkers + '\n' + yamlContent.slice(insertionIndex)
-            logger.verbose('📋 Inserted user-customized section after version job')
+        // Insert user section after version job if it exists
+        // Find the version job's outputs section
+        const versionOutputsPattern = /^  version:\s*\n(?:.*\n)*?    outputs:\s*\n\s*version:.*$/m
+        const match = yamlContent.match(versionOutputsPattern)
+        if (match) {
+          const insertionIndex = match.index! + match[0].length
+
+          // If no user section exists, create default with test-gate example
+          const defaultCustomSection = `#=============================================================================
+  # CUSTOM JOBS SECTION (✅ Add your test, deploy, and remote-test jobs here)
+  #=============================================================================
+  # This section is preserved across regenerations. Add your custom jobs between
+  # the START and END markers below.
+  #
+  # Example: test-gate pattern (recommended for production workflows)
+  # Uncomment and customize the example below to prevent deployments when tests fail.
+
+  # test-gate:
+  #   needs: [ ]  # TODO: Add all test job names (e.g., test-api, test-frontend)
+  #   if: always()  # TODO: Add failure checks and success conditions
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: echo "✅ All tests passed"`
+
+          const contentToInsert = userSection || defaultCustomSection
+          const userSectionWithMarkers = `# <--START CUSTOM JOBS-->\n\n${contentToInsert}\n\n  # <--END CUSTOM JOBS-->`
+
+          if (userSection) {
+            logger.verbose('📋 Inserting preserved user section between markers')
+          } else {
+            logger.verbose('📝 Creating default custom section with test-gate example')
           }
-        } else if (!fileExists) {
-          // For new files, add placeholder markers
-          const versionOutputsPattern = /^(  version:\s*\n(?:.*\n)*?    outputs:\s*\n\s*version:.*)$/m
-          yamlContent = yamlContent.replace(versionOutputsPattern, '$1\n\n  # <--START CUSTOM JOBS-->\n\n  # <--END CUSTOM JOBS-->\n')
-          logger.verbose('📝 Added placeholder user section markers')
+
+          yamlContent = yamlContent.slice(0, insertionIndex) + '\n\n  ' + userSectionWithMarkers + '\n' + yamlContent.slice(insertionIndex)
         }
 
-      const formattedContent = formatIfConditions(yamlContent)
-      const status = hasCustomContent ? 'merged' : (fileExists ? 'rebuilt' : 'created')
-      return { ...ctx, yamlContent: formattedContent, mergeStatus: status }
+        const formattedContent = formatIfConditions(yamlContent)
+        const status = userSection ? 'merged' : (fileExists ? 'rebuilt' : 'created')
+        return { ...ctx, yamlContent: formattedContent, mergeStatus: status }
       }
 
       // Parse existing file for merge mode (no force flag)
