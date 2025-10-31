@@ -13,7 +13,7 @@ export interface TagPromoteContext {
   branchFlow: string[]
   deployJobNames: string[]
   remoteTestJobNames: string[]
-  autoMerge?: Record<string, boolean>  // autoMerge settings per branch
+  autoMerge?: Record<string, boolean> // autoMerge settings per branch
 }
 
 /**
@@ -179,5 +179,7 @@ function buildAutoMergeExpression(
   // github.ref_name == 'develop' && 'true' || 'false'
   const stagingTarget = branchFlow[1]
   const mainTarget = branchFlow[branchFlow.length - 1]
-  return `github.ref_name == '${branchFlow[0]}' && '${autoMerge[stagingTarget] ? 'true' : 'false'}' || '${autoMerge[mainTarget] ? 'true' : 'false'}'`
+  return `github.ref_name == '${branchFlow[0]}' && '${
+    autoMerge[stagingTarget] ? 'true' : 'false'
+  }' || '${autoMerge[mainTarget] ? 'true' : 'false'}'`
 }
