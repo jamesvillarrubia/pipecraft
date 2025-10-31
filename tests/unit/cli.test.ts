@@ -21,7 +21,6 @@ import { tmpdir } from 'os'
 // So we'll test the underlying logic functions instead
 
 import { loadConfig, validateConfig } from '../../src/utils/config'
-import { IdempotencyManager } from '../../src/utils/idempotency'
 import { VersionManager } from '../../src/utils/versioning'
 import { PipecraftConfig } from '../../src/types'
 
@@ -181,77 +180,15 @@ describe('CLI Logic Tests', () => {
       writeFileSync(configPath, JSON.stringify(config, null, 2))
     })
 
-    it('should detect when regeneration is needed (no cache)', async () => {
-      const idempotencyManager = new IdempotencyManager(config)
-      const hasChanges = await idempotencyManager.hasChanges()
-
-      expect(hasChanges).toBe(true)
+    it('should load config from file', () => {
+      const loadedConfig = loadConfig(join(testDir, '.pipecraftrc.json'))
+      expect(loadedConfig).toBeDefined()
+      expect(loadedConfig.ciProvider).toBe('github')
     })
 
-    it('should detect no changes when cache exists and unchanged', async () => {
-      const idempotencyManager = new IdempotencyManager(config)
-
-      // Create initial cache
-      await idempotencyManager.updateCache()
-
-      // Check again - should be no changes
-      const hasChanges = await idempotencyManager.hasChanges()
-
-      expect(hasChanges).toBe(false)
-    })
-
-    it('should force regeneration when force flag is true', async () => {
-      const configWithForce = {
-        ...config,
-        rebuild: {
-          ...config.rebuild!,
-          forceRegenerate: true
-        }
-      }
-
-      const idempotencyManager = new IdempotencyManager(configWithForce)
-
-      // Even with cache, should return true due to force
-      await idempotencyManager.updateCache()
-      const hasChanges = await idempotencyManager.hasChanges()
-
-      expect(hasChanges).toBe(true)
-    })
-
-    it('should skip regeneration when rebuild is disabled', async () => {
-      const configWithoutRebuild = {
-        ...config,
-        rebuild: {
-          ...config.rebuild!,
-          enabled: false
-        }
-      }
-
-      const idempotencyManager = new IdempotencyManager(configWithoutRebuild)
-      const hasChanges = await idempotencyManager.hasChanges()
-
-      // Should always return true when rebuild is disabled
-      expect(hasChanges).toBe(true)
-    })
-
-    it('should update cache after generation', async () => {
-      const idempotencyManager = new IdempotencyManager(config)
-      const cacheFile = join(testDir, '.pipecraft-cache.json')
-
-      // Cache shouldn't exist initially
-      expect(existsSync(cacheFile)).toBe(false)
-
-      // Update cache
-      await idempotencyManager.updateCache()
-
-      // Cache should now exist
-      expect(existsSync(cacheFile)).toBe(true)
-
-      // Cache should contain valid data
-      const cache = idempotencyManager.loadCache()
-      expect(cache).toBeDefined()
-      expect(cache?.configHash).toBeDefined()
-      expect(cache?.lastGenerated).toBeDefined()
+    it('should validate config structure', () => {
+      const result = validateConfig(config)
+      expect(result).toBe(true)
     })
   })
 

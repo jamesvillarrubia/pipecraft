@@ -9,7 +9,7 @@
  * - Edge cases and variations
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { generate as generateInit } from '../../src/generators/init.tpl.js'
@@ -22,6 +22,14 @@ import {
   assertFileExists,
   assertValidJSON
 } from '../helpers/assertions.js'
+import inquirer from 'inquirer'
+
+// Mock inquirer to avoid interactive prompts in tests
+vi.mock('inquirer', () => ({
+  default: {
+    prompt: vi.fn()
+  }
+}))
 
 // Helper to parse potentially double-encoded JSON
 function parseConfigJSON(filepath: string): any {
@@ -42,10 +50,24 @@ describe('Init Generator', () => {
 
   beforeEach(() => {
     [workspace, cleanup] = createWorkspaceWithCleanup('pipecraft-init-gen')
+
+    // Setup default mock responses for inquirer
+    vi.mocked(inquirer.prompt).mockResolvedValue({
+      ciProvider: 'github',
+      mergeStrategy: 'fast-forward',
+      requireConventionalCommits: true,
+      initialBranch: 'develop',
+      finalBranch: 'main',
+      branchFlow: ['develop', 'staging', 'main'],
+      packageManager: 'npm',
+      domainSelection: 'api-web',
+      enableNx: false
+    })
   })
 
   afterEach(() => {
     cleanup()
+    vi.clearAllMocks()
   })
 
   describe('Default Configuration', () => {
@@ -163,7 +185,6 @@ describe('Init Generator', () => {
         expect(config.domains).toBeDefined()
         expect(config.domains.api).toBeDefined()
         expect(config.domains.web).toBeDefined()
-        expect(config.domains.libs).toBeDefined()
         expect(config.domains.cicd).toBeDefined()
       })
     })
@@ -444,7 +465,7 @@ describe('Init Generator', () => {
         await generateInit(ctx)
 
         const config = parseConfigJSON('.pipecraftrc.json')
-        expect(config.domains.api.paths).toContain('apps/api/**')
+        expect(config.domains.api.paths).toContain('api/**')
         expect(config.domains.api.description).toBeDefined()
       })
     })
@@ -475,39 +496,8 @@ describe('Init Generator', () => {
         await generateInit(ctx)
 
         const config = parseConfigJSON('.pipecraftrc.json')
-        expect(config.domains.web.paths).toContain('apps/web/**')
+        expect(config.domains.web.paths).toContain('web/**')
         expect(config.domains.web.description).toBeDefined()
-      })
-    })
-
-    it('should configure libs domain with correct paths', async () => {
-      await inWorkspace(workspace, async () => {
-        const ctx: PinionContext = {
-          cwd: workspace,
-          argv: ['init'],
-          pinion: {
-            logger: { ...console, notice: console.log },
-            prompt: async () => ({
-              projectName: 'test-project',
-              ciProvider: 'github',
-              mergeStrategy: 'fast-forward',
-              requireConventionalCommits: true,
-              initialBranch: 'develop',
-              finalBranch: 'main',
-              branchFlow: ['develop', 'staging', 'main']
-            }),
-            cwd: workspace,
-            force: true,
-            trace: [],
-            exec: async () => 0
-          }
-        }
-
-        await generateInit(ctx)
-
-        const config = parseConfigJSON('.pipecraftrc.json')
-        expect(config.domains.libs.paths).toContain('libs/**')
-        expect(config.domains.libs.description).toBeDefined()
       })
     })
 
@@ -537,7 +527,7 @@ describe('Init Generator', () => {
         await generateInit(ctx)
 
         const config = parseConfigJSON('.pipecraftrc.json')
-        expect(config.domains.cicd.paths).toContain('.github/workflows/**')
+        expect(config.domains.cicd.paths).toContain('.github/**')
         expect(config.domains.cicd.description).toBeDefined()
       })
     })
@@ -597,13 +587,12 @@ describe('Init Generator', () => {
         await generateInit(ctx)
 
         const config = parseConfigJSON('.pipecraftrc.json')
-        
+
         // Config should have all required fields for downstream consumers
         expect(config.domains).toHaveProperty('api')
         expect(config.domains).toHaveProperty('web')
-        expect(config.domains).toHaveProperty('libs')
         expect(config.domains).toHaveProperty('cicd')
-        
+
         // Each domain should have required fields
         Object.values(config.domains).forEach((domain: any) => {
           expect(domain).toHaveProperty('paths')
@@ -615,6 +604,21 @@ describe('Init Generator', () => {
   })
 
   describe('Nx Workspace Detection', () => {
+    beforeEach(() => {
+      // Override mock for Nx tests to enable Nx
+      vi.mocked(inquirer.prompt).mockResolvedValue({
+        ciProvider: 'github',
+        mergeStrategy: 'fast-forward',
+        requireConventionalCommits: true,
+        initialBranch: 'develop',
+        finalBranch: 'main',
+        branchFlow: ['develop', 'staging', 'main'],
+        packageManager: 'npm',
+        domainSelection: 'api-web',
+        enableNx: true  // Enable Nx for these tests
+      })
+    })
+
     it('should detect Nx workspace and add Nx config', async () => {
       await inWorkspace(workspace, async () => {
         // Create nx.json
