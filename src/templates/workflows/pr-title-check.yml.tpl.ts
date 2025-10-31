@@ -134,8 +134,16 @@ ${typesList}
 
           # Check if title starts with types that bump major version or contains "!" or "BREAKING"
           # Types that bump major: ${majorTypes.join(', ')}
-          MAJOR_TYPES_PATTERN="^(${majorTypes.length > 0 ? majorTypes.join('|') : 'major'}):"
-          if [[ "\$PR_TITLE" =~ \$MAJOR_TYPES_PATTERN ]] || [[ "\$PR_TITLE" =~ ^[a-z]+\!: ]] || [[ "\$PR_TITLE" =~ BREAKING ]] || [[ "\$PR_TITLE" =~ breaking ]]; then
+          ${majorTypes.length > 0 
+            ? `IS_MAJOR_TYPE=false
+          for type in ${majorTypes.map(t => `"${t}"`).join(' ')}; do
+            if [[ "\$PR_TITLE" =~ ^\$type: ]]; then
+              IS_MAJOR_TYPE=true
+              break
+            fi
+          done
+          if [ "\$IS_MAJOR_TYPE" = "true" ] || [[ "\$PR_TITLE" =~ ^[a-z]+\!: ]] || [[ "\$PR_TITLE" =~ BREAKING ]] || [[ "\$PR_TITLE" =~ breaking ]]; then`
+            : `if [[ "\$PR_TITLE" =~ ^major: ]] || [[ "\$PR_TITLE" =~ ^[a-z]+\!: ]] || [[ "\$PR_TITLE" =~ BREAKING ]] || [[ "\$PR_TITLE" =~ breaking ]]; then`}
             echo "is_breaking=true" >> \$GITHUB_OUTPUT
             echo "⚠️  Breaking change detected in PR title"
           elif [[ "\$PR_BODY" =~ BREAKING[[:space:]]CHANGE ]]; then
