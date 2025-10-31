@@ -47,7 +47,8 @@ const changesNxActionTemplate = (ctx: any) => {
 
   const domainFilters = Object.entries(ctx.domains).map((entry) => {
     const [domainName, domainConfig] = entry as [string, DomainConfig];
-    return `          ${domainName}:\n            - '${domainConfig.paths.join("'\\n            - '")}'`;
+    const pathsList = domainConfig.paths.map(path => `            - '${path}'`).join('\n');
+    return `          ${domainName}:\n${pathsList}`;
   }).join('\n');
 
   // Generate Nx pattern matching logic for each domain
