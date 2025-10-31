@@ -56,9 +56,6 @@ custom-pipeline.yml
 # Backup files
 *.backup
 
-# Cache files
-.pipecraft-cache.json
-
 # Misc
 .lockor
 .actrc

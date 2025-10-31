@@ -21,7 +21,7 @@
 # Running 'pipecraft generate' updates managed sections while preserving
 # your customizations in test/deploy/remote-test jobs.
 
-# 📖 Learn more: https://pipecraft.thecraftlab.dev
+# 📖 Learn more: https://docs.pipecraft.dev
 #=============================================================================
 
 name: Pipeline
@@ -77,18 +77,19 @@ on:
       - reopened
     branches:
       - develop
-
 jobs:
   #=============================================================================
   # CHANGES DETECTION (⚠️  Managed by Pipecraft - do not modify)
   #=============================================================================
   # This job detects which domains have changed and sets outputs for downstream jobs.
+
   changes:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commitSha || github.sha }}
+          fetch-depth: 0
       - uses: ./.github/actions/detect-changes
         id: detect
         with:
@@ -97,75 +98,61 @@ jobs:
       cicd: ${{ steps.detect.outputs.cicd }}
       core: ${{ steps.detect.outputs.core }}
       docs: ${{ steps.detect.outputs.docs }}
+  #=============================================================================
+  # TESTING JOBS (✅ Customize these with your test logic)
+  #=============================================================================
+  # These jobs run tests for each domain when changes are detected.
+  # Replace the TODO comments with your actual test commands.
 
-  #=============================================================================
-  # TESTING JOBS
-  #=============================================================================
   test-cicd:
-    #=============================================================================
-    # TESTING JOBS (✅ Customize these with your test logic)
-    #=============================================================================
-    # These jobs run tests for each domain when changes are detected.
-    # Replace the TODO comments with your actual test commands.
     needs: changes
     if: ${{ needs.changes.outputs.cicd == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commitSha || github.sha }}
       # TODO: Replace with your cicd test logic
       - name: Run cicd tests
         run: |
           echo "Running tests for cicd domain"
           echo "Replace this with your actual test commands"
           # Example: npm test -- --testPathPattern=cicd
-
   test-core:
     needs: changes
     if: ${{ needs.changes.outputs.core == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commitSha || github.sha }}
       # TODO: Replace with your core test logic
       - name: Run core tests
         run: |
           echo "Running tests for core domain"
           echo "Replace this with your actual test commands"
           # Example: npm test -- --testPathPattern=core
-
   test-docs:
     needs: changes
     if: ${{ needs.changes.outputs.docs == 'true' }}
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: docs
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commitSha || github.sha }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build docs
-        run: pnpm run build
-
+      # TODO: Replace with your docs test logic
+      - name: Run docs tests
+        run: |
+          echo "Running tests for docs domain"
+          echo "Replace this with your actual test commands"
+          # Example: npm test -- --testPathPattern=docs
   #=============================================================================
   # VERSIONING (⚠️  Managed by Pipecraft - do not modify)
   #=============================================================================
-  # Calculates the next version based on conventional commits and semver rules.
+  # Calculates the next semantic version based on conventional commits.
   # Only runs on push events (skipped on pull requests).
-  version:
 
+  version:
     if: ${{
         always() &&
         github.event_name != 'pull_request' &&
@@ -178,7 +165,11 @@ jobs:
         needs.test-core.result != 'failure' &&
         needs.test-docs.result != 'failure'
       }}
-    needs: [ changes, test-cicd, test-core, test-docs ]
+    needs:
+      - changes
+      - test-cicd
+      - test-core
+      - test-docs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -191,76 +182,80 @@ jobs:
           commitSha: ${{ inputs.commitSha || github.sha }}
     outputs:
       version: ${{ steps.version.outputs.version }}
+  #=============================================================================
+  # DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
+  #=============================================================================
+  # These jobs deploy each domain when changes are detected and tests pass.
+  # Replace the TODO commands with your actual deployment commands.
 
-  #=============================================================================
-  # DEPLOYMENT JOBS
-  #=============================================================================
-  deploy-docs:
-    needs: [ version, changes ]
-    if: ${{ always() && needs.version.result == 'success' && needs.changes.outputs.docs == 'true' && github.ref_name == 'main' }}
+  deploy-core:
+    needs:
+      - version
+      - changes
+    if: ${{
+        always() &&
+        needs.version.result == 'success' &&
+        needs.changes.outputs.core == 'true'
+      }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commitSha || github.sha }}
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Install dependencies
+      # TODO: Replace with your core deployment logic
+      - name: Deploy core
         run: |
-          pnpm install --frozen-lockfile
-          cd docs && pnpm install --frozen-lockfile
-
-      - name: Build TypeScript
-        run: pnpm run build
-
-      - name: Generate API Documentation
-        run: cd docs && pnpm run typedoc
-
-      - name: Build Docusaurus site
-        run: cd docs && pnpm run build
-        env:
-          NODE_ENV: production
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+          echo "Deploying core with version ${{ needs.version.outputs.version }}"
+          echo "Replace this with your actual deploy commands"
+          # Example: npm run deploy:core
+  deploy-docs:
+    needs:
+      - version
+      - changes
+    if: ${{
+        always() &&
+        needs.version.result == 'success' &&
+        needs.changes.outputs.docs == 'true'
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
         with:
-          path: docs/build
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
+          ref: ${{ inputs.commitSha || github.sha }}
+      # TODO: Replace with your docs deployment logic
+      - name: Deploy docs
+        run: |
+          echo "Deploying docs with version ${{ needs.version.outputs.version }}"
+          echo "Replace this with your actual deploy commands"
+          # Example: npm run deploy:docs
   #=============================================================================
-  # TAG & PROMOTE (⚠️  Managed by Pipecraft - do not modify)
+  # REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
   #=============================================================================
-  # Creates a git tag with the calculated version on the initial branch.
-  # Only runs on push events after successful tests and deployments.
+  # These jobs test deployed services remotely after deployment succeeds.
+  # Replace the TODO comments with your actual remote testing commands.
+
+  remote-test-core:
+    needs:
+      - deploy-core
+      - changes
+    if: ${{ needs.changes.outputs.core == 'true' && needs.deploy-core.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commitSha || github.sha }}
+      # TODO: Replace with your core remote testing logic
+      - name: Test core remotely
+        run: |
+          echo "Testing core remotely"
+          echo "Replace this with your actual remote test commands"
+          # Example: npm run test:remote:core
+  #=============================================================================
+  # TAG (⚠️  Managed by Pipecraft - do not modify)
+  #=============================================================================
+  # Creates git tags and promotes code through branch flow.
+
   tag:
-
-    # Needs all deploy and/or remote test jobs to succeed or be skipped
-    # Needs at least one domain to succeed
-    needs: [ version, deploy-core, deploy-docs, remote-test-core ]
     if: ${{
         always() &&
         github.event_name != 'pull_request' &&
@@ -278,6 +273,11 @@ jobs:
         needs.remote-test-core.result == 'success'
       )
       }}
+    needs:
+      - version
+      - deploy-core
+      - deploy-docs
+      - remote-test-core
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -286,18 +286,13 @@ jobs:
       - uses: ./.github/actions/create-tag
         with:
           version: ${{ needs.version.outputs.version }}
+          commitSha: ${{ inputs.commitSha || github.sha }}
+  #=============================================================================
+  # PROMOTE (⚠️  Managed by Pipecraft - do not modify)
+  #=============================================================================
+  # Promotes code from develop to staging or main via PR.
 
-  #=============================================================================
-  # PROMOTION JOB (⚠️  Managed by Pipecraft - do not modify)
-  #=============================================================================
-  # Triggers the next branch's workflow after successful versioning and tagging.
-  # Passes version and run_number to maintain traceability across branches.
   promote:
-
-    # Only runs on push or manual workflow_dispatch events to branches that can promote
-    # Requires version to succeed (which means tests passed)
-    # Requires a version to have been calculated (skip promotion for non-versioned commits)
-    # Needs all deploy and/or remote test jobs to succeed
     if: ${{
         always() &&
         (
@@ -315,7 +310,9 @@ jobs:
         github.ref_name == 'staging'
       )
       }}
-    needs: [ version, tag ]
+    needs:
+      - version
+      - tag
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -323,34 +320,26 @@ jobs:
           ref: ${{ inputs.commitSha || github.sha }}
       - uses: ./.github/actions/promote-branch
         with:
-          sourceBranch: ${{ github.ref_name }}
           version: ${{ needs.version.outputs.version }}
-          run_number: ${{ inputs.run_number || github.run_number }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          currentBranch: ${{ github.ref_name }}
+          nextBranch: ${{ github.ref_name == 'develop' && 'staging' || 'main' }}
+          runNumber: ${{ github.run_number }}
+  #=============================================================================
+  # RELEASE (⚠️  Managed by Pipecraft - do not modify)
+  #=============================================================================
+  # Creates a release for the version.
 
-  #=============================================================================
-  # RELEASE JOB (⚠️  Managed by Pipecraft - do not modify)
-  #=============================================================================
-  # Creates a GitHub release on the final branch with release notes.
-  # Only runs after successful versioning and tagging on the final branch.
   release:
-
-    # Create GitHub release on main branch after successful tests and versioning
     if: ${{
         always() &&
         github.ref_name == 'main' &&
-        (
-        github.event_name == 'push' ||
-        github.event_name == 'workflow_dispatch'
-      ) &&
         needs.version.result == 'success' &&
         needs.version.outputs.version != '' &&
-        (
-        needs.tag.result == 'success' ||
-        needs.tag.result == 'skipped'
-      )
+        needs.tag.result == 'success'
       }}
-    needs: [ version, tag ]
+    needs:
+      - tag
+      - version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -359,47 +348,4 @@ jobs:
       - uses: ./.github/actions/create-release
         with:
           version: ${{ needs.version.outputs.version }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-  #=============================================================================
-  # DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
-  #=============================================================================
-  # These jobs deploy each domain when changes are detected and tests pass.
-  # Replace the TODO comments with your actual deployment commands.
-  deploy-core:
-
-    #=============================================================================
-    # DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
-    #=============================================================================
-    # These jobs deploy each domain when changes are detected and tests pass.
-    # Replace the TODO comments with your actual deployment commands.
-    needs: [ version, changes ]
-    if: ${{ always() && needs.version.result == 'success' && needs.changes.outputs.core == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy core
-        run: |
-          echo "Deploying core"
-          echo "Replace this with your actual deploy commands"
-          # Example: npm deploy -- --testPathPattern=core
-
-  #=============================================================================
-  # REMOTE TESTING JOBS
-  #=============================================================================
-  remote-test-core:
-
-    #=============================================================================
-    # REMOTE TESTING JOBS (✅ Customize these with your remote test logic)
-    #=============================================================================
-    # These jobs test deployed services remotely after deployment succeeds.
-    # Replace the TODO comments with your actual remote testing commands.
-    needs: [ deploy-core, changes ]
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Test core
-        if: ${{ needs.changes.outputs.core == 'true' && needs.deploy-core.result == 'success' }}
-        run: |
-          echo "Testing core remotely"
-          echo "Replace this with your actual test commands"
-          # Example: npm test -- --testPathPattern=core
+          commitSha: ${{ inputs.commitSha || github.sha }}
