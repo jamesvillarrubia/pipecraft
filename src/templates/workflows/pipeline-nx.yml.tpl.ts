@@ -186,7 +186,8 @@ export const generate = (ctx: NxPipelineContext) =>
         ...createTagPromoteReleaseOperations({
           branchFlow,
           deployJobNames: [], // No deployment dependencies in new model
-          remoteTestJobNames: []
+          remoteTestJobNames: [],
+          autoMerge: typeof config.autoMerge === 'object' ? config.autoMerge : {}
         })
       ]
 

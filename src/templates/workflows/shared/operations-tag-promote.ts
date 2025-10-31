@@ -13,6 +13,7 @@ export interface TagPromoteContext {
   branchFlow: string[]
   deployJobNames: string[]
   remoteTestJobNames: string[]
+  autoMerge?: Record<string, boolean>  // autoMerge settings per branch
 }
 
 /**
@@ -98,9 +99,10 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
       - uses: ./.github/actions/promote-branch
         with:
           version: \${{ needs.version.outputs.version }}
-          currentBranch: \${{ github.ref_name }}
-          nextBranch: \${{ ${buildNextBranchExpression(validBranchFlow)} }}
-          runNumber: \${{ github.run_number }}
+          sourceBranch: \${{ github.ref_name }}
+          targetBranch: \${{ ${buildTargetBranchExpression(validBranchFlow)} }}
+          autoMerge: \${{ ${buildAutoMergeExpression(validBranchFlow, ctx.autoMerge)} }}
+          run_number: \${{ github.run_number }}
   `)
     },
 
@@ -145,14 +147,37 @@ function buildPromotableBranchesCondition(branchFlow: string[]): string {
 }
 
 /**
- * Helper to build the nextBranch expression
+ * Helper to build the targetBranch expression
+ * Maps each source branch to its target branch
  */
-function buildNextBranchExpression(branchFlow: string[]): string {
+function buildTargetBranchExpression(branchFlow: string[]): string {
   if (branchFlow.length === 1) return `''`
   if (branchFlow.length === 2) return `'${branchFlow[1]}'`
 
   // For 3+ branches: develop → staging, staging → main
+  // github.ref_name == 'develop' && 'staging' || 'main'
   return `github.ref_name == '${branchFlow[0]}' && '${branchFlow[1]}' || '${
     branchFlow[branchFlow.length - 1]
   }'`
+}
+
+/**
+ * Helper to build the autoMerge expression
+ * Maps each target branch to its autoMerge setting
+ */
+function buildAutoMergeExpression(
+  branchFlow: string[],
+  autoMerge?: Record<string, boolean>
+): string {
+  if (!autoMerge || branchFlow.length === 1) return `'false'`
+  if (branchFlow.length === 2) {
+    const target = branchFlow[1]
+    return `'${autoMerge[target] ? 'true' : 'false'}'`
+  }
+
+  // For 3+ branches: develop → staging (check staging autoMerge), staging → main (check main autoMerge)
+  // github.ref_name == 'develop' && 'true' || 'false'
+  const stagingTarget = branchFlow[1]
+  const mainTarget = branchFlow[branchFlow.length - 1]
+  return `github.ref_name == '${branchFlow[0]}' && '${autoMerge[stagingTarget] ? 'true' : 'false'}' || '${autoMerge[mainTarget] ? 'true' : 'false'}'`
 }

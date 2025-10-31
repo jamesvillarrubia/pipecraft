@@ -345,9 +345,10 @@ jobs:
       - uses: ./.github/actions/promote-branch
         with:
           version: ${{ needs.version.outputs.version }}
-          currentBranch: ${{ github.ref_name }}
-          nextBranch: ${{ github.ref_name == 'develop' && 'staging' || 'main' }}
-          runNumber: ${{ github.run_number }}
+          sourceBranch: ${{ github.ref_name }}
+          targetBranch: ${{ github.ref_name == 'develop' && 'staging' || 'main' }}
+          autoMerge: ${{ github.ref_name == 'develop' && 'true' || 'true' }}
+          run_number: ${{ github.run_number }}
 
   #=============================================================================
   # RELEASE (⚠️  Managed by Pipecraft - do not modify)
