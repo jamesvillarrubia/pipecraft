@@ -1,0 +1,47 @@
+module.exports = {
+  ciProvider: 'github',
+  mergeStrategy: 'fast-forward',
+  requireConventionalCommits: true,
+  initialBranch: 'develop',
+  finalBranch: 'main',
+  branchFlow: ['develop', 'staging', 'main'],
+  semver: {
+    bumpRules: {
+      feat: 'minor',
+      fix: 'patch',
+      breaking: 'major'
+    }
+  },
+  domains: {
+    api: {
+      paths: ['apps/api/**'],
+      description: 'API application changes'
+    },
+    web: {
+      paths: ['apps/web/**'],
+      description: 'Web application changes'
+    }
+  },
+  rebuild: {
+    enabled: true,
+    skipIfUnchanged: true,
+    forceRegenerate: false,
+    watchMode: false,
+    hashAlgorithm: 'sha256',
+    cacheFile: '.pipecraft-cache.json',
+    ignorePatterns: ['node_modules/**', 'dist/**']
+  },
+  versioning: {
+    enabled: true,
+    releaseItConfig: '.release-it.cjs',
+    conventionalCommits: true,
+    autoTag: true,
+    autoPush: true,
+    changelog: true,
+    bumpRules: {
+      feat: 'minor',
+      fix: 'patch',
+      breaking: 'major'
+    }
+  }
+}

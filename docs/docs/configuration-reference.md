@@ -13,12 +13,25 @@ PipeCraft uses [cosmiconfig](https://github.com/davidtheclark/cosmiconfig) for c
 When you run any PipeCraft command, it searches for configuration in this order:
 
 1. The path specified via `--config` flag (if provided)
-2. A `.pipecraftrc.json` file in the current or parent directories
-3. A `.pipecraftrc` file (JSON format) in the current or parent directories
-4. A `pipecraft` key in your `package.json`
-5. Built-in default values
+2. A `.pipecraftrc` file (YAML or JSON format, recommended)
+3. A `.pipecraftrc.json` file
+4. A `.pipecraftrc.yaml` file
+5. A `.pipecraftrc.yml` file
+6. A `.pipecraftrc.js` file (JavaScript module)
+7. A `pipecraft.config.js` file
+8. A `pipecraft` key in your `package.json`
+9. Built-in default values
 
 The search walks up your directory tree, so you can run PipeCraft commands from subdirectories and it will still find your configuration at the project root. This is particularly useful in monorepo setups where you might be working deep in the directory structure.
+
+### Supported File Formats
+
+PipeCraft supports multiple configuration file formats to match your preferences:
+
+- **JSON** (`.pipecraftrc.json`): Traditional JSON format
+- **YAML** (`.pipecraftrc.yml` or `.pipecraftrc.yaml`): Human-friendly YAML format
+- **JavaScript** (`.pipecraftrc.js` or `pipecraft.config.js`): JavaScript module for dynamic configuration
+- **No extension** (`.pipecraftrc`): Can be either JSON or YAML format
 
 ## Core Configuration
 
