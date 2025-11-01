@@ -1,8 +1,13 @@
 # Decoupling Actions from PipeCraft
 
+> **Last Updated**: 2025-11-01
+> **Status**: In Progress - Baseline established, roadmap defined
+
 ## Overview
 
 This guide explains how to make PipeCraft-generated actions **transferable** and **reusable** by removing hard dependencies on PipeCraft's configuration format.
+
+**Current Progress**: See [Action Status Matrix](#action-status-matrix) below.
 
 ## Current Architecture (Coupled)
 
@@ -46,24 +51,85 @@ This guide explains how to make PipeCraft-generated actions **transferable** and
 - ✅ Works in non-PipeCraft projects
 - ✅ Backward compatible
 
+## Action Status Matrix
+
+> **Updated**: 2025-11-01 (PR #1 - Baseline Audit)
+
+| Action | Status | Config Reading | Marketplace Ready | PR Target | Priority |
+|--------|--------|---------------|-------------------|-----------|----------|
+| [detect-changes](#detect-changes-) | ✅ **DONE** | ✅ Via Input | ✅ Ready | #2 (Publish) | HIGH |
+| [create-tag](#create-tag-) | ✅ **DONE** | ✅ None | ✅ Ready | #3 (Publish) | HIGH |
+| [promote-branch](#promote-branch-) | ❌ **NEEDS WORK** | ❌ Yes (jq) | ❌ Blocked | #4 (Decouple) | **CRITICAL** |
+| [calculate-version](#calculate-version-) | ⚠️ **UNKNOWN** | ⚠️ Unknown | ❌ Needs Review | #6-7 (Audit/Fix) | HIGH |
+| [manage-branch](#other-actions-) | ❓ **UNKNOWN** | ❓ Unknown | ❌ Needs Audit | #6,9 (Audit/Fix) | MEDIUM |
+| [create-pr](#other-actions-) | ❓ **UNKNOWN** | ❓ Unknown | ❌ Needs Audit | #6,10 (Audit/Fix) | MEDIUM |
+| [create-release](#other-actions-) | ❓ **UNKNOWN** | ❓ Unknown | ❌ Needs Audit | #6,11 (Audit/Fix) | MEDIUM |
+| [run-nx-affected](#other-actions-) | ⚠️ **NX-SPECIFIC** | ❓ Unknown | ⚠️ Nx-only OK | #6 (Audit) | LOW |
+
+**Legend**: ✅ Complete | ⚠️ In Progress | ❌ Needs Work | ❓ Unknown
+
+### Status Definitions
+
+- **DONE**: Fully decoupled, marketplace-ready, just needs publishing
+- **NEEDS WORK**: Active coupling, requires refactoring before marketplace
+- **UNKNOWN**: Requires audit to determine coupling status
+- **NX-SPECIFIC**: Specialized action (Nx-only is acceptable for this one)
+
+---
+
 ## Implementation Strategy
 
-### Phase 1: Identify Dependencies
+### Phase 1: Identify Dependencies ✅ COMPLETED (PR #1)
 
-**Actions with PipeCraft coupling:**
+**Comprehensive audit completed. Findings:**
 
-1. **`promote-branch`**
+#### detect-changes ✅
 
-   - Currently reads: `branchFlow` array
-   - Solution: Accept `targetBranch` as input
+- **Status**: ✅ **Already decoupled!**
+- **Config Reading**: Via input (`domains-config`)
+- **Strategy Support**: Multi-strategy (Nx + path-based in single file)
+- **Package Manager**: Auto-detects from lockfiles
+- **Marketplace Ready**: YES
+- **Action**: Publish immediately (PR #2)
 
-2. **`calculate-version`**
+#### create-tag ✅
 
-   - Currently reads: Versioning config
-   - Solution: Accept versioning rules as inputs
+- **Status**: ✅ **Already decoupled!**
+- **Config Reading**: None (all inputs explicit)
+- **Strategy Support**: Agnostic (pure git operations)
+- **Package Manager**: N/A
+- **Marketplace Ready**: YES
+- **Action**: Publish immediately (PR #3)
 
-3. **`detect-changes`** ✅
-   - Already decoupled! Takes `domains-config` as input
+#### promote-branch ❌
+
+- **Status**: ❌ **Actively coupled**
+- **Config Reading**: YES - Uses jq to read `.pipecraftrc`
+- **Reads**: `branchFlow`, `autoMerge`
+- **Format Dependency**: JSON-only (jq parser)
+- **Recent Progress**: Partial cleanup (commit `370c94f`), but still coupled
+- **Blockers**:
+  - Reads config file directly
+  - Uses jq (breaks with YAML config)
+  - Calculates target branch instead of accepting input
+- **Solution**: Accept `targetBranch`, `autoMerge` as inputs
+- **Action**: **CRITICAL** - Decouple in PR #4, then publish in PR #5
+
+#### calculate-version ⚠️
+
+- **Status**: ⚠️ **Unknown coupling level**
+- **Config Reading**: Likely implicit (`.release-it.cjs`?)
+- **Package Manager**: Suspected npm hardcoding
+- **Needs**: Full audit
+- **Action**: Audit in PR #6, fix in PR #7, publish in PR #8
+
+#### Other Actions ❓
+
+- **manage-branch**, **create-pr**, **create-release**: Status unknown
+- **run-nx-affected**: Nx-specific (acceptable), but verify package manager handling
+- **Action**: Audit all in PR #6, fix as needed in PRs #9-11
+
+**Next Step**: Begin Phase 2 (Decoupling work)
 
 ### Phase 2: Refactor Pattern
 
@@ -415,8 +481,72 @@ The actions become building blocks that PipeCraft (or any other tool) can use.
 5. **Publish** stable actions to Marketplace
 6. **Document** usage for non-PipeCraft users
 
+## Modernization Roadmap
+
+### Quick Wins (Weeks 1-2)
+
+- **PR #1** ✅: Audit & Documentation (this document updated!)
+- **PR #2**: Publish `detect-changes` to marketplace (already decoupled)
+- **PR #3**: Publish `create-tag` to marketplace (already decoupled)
+
+### Critical Path (Weeks 3-4)
+
+- **PR #4**: Decouple `promote-branch` (remove config reading)
+- **PR #5**: Publish `promote-branch` to marketplace
+- **PR #6**: Audit remaining 5 actions
+
+### Action Suite Completion (Weeks 5-7)
+
+- **PR #7**: Decouple `calculate-version`
+- **PR #8**: Publish `calculate-version`
+- **PR #9-11**: Decouple & publish remaining actions
+
+### Generator Modernization (Weeks 8-10)
+
+- **PR #12**: Runtime config reading in workflows
+- **PR #13**: Runtime strategy detection (Nx/turbo)
+- **PR #14**: Marketplace action mode (default)
+- **PR #15**: `upgrade-workflows` command
+- **PR #16**: Migration commands
+
+### Breaking Changes & Polish (Weeks 11-14)
+
+- **Weeks 11-12**: Stabilization & beta testing
+- **PR #17**: Make marketplace actions the default
+- **PR #18**: Make runtime config the default
+- **PR #19**: Documentation overhaul
+
+---
+
+## Success Metrics
+
+**Baseline (Current)**:
+- Marketplace-ready actions: **2/8** (detect-changes, create-tag)
+- Config-reading actions: **≥1** (promote-branch confirmed, others unknown)
+- Regeneration triggers: **~10 scenarios**
+
+**Target (After Modernization)**:
+- Marketplace-ready actions: **8/8** (100%)
+- Config-reading actions: **0/8** (fully decoupled)
+- Regeneration triggers: **~2 scenarios** (structural only)
+
+---
+
+## Related Documentation
+
+- [Action Coupling Matrix](./action-coupling-matrix.md) - Detailed analysis of each action
+- [Regeneration Requirements](./regeneration-requirements-current.md) - What triggers regeneration and why
+- [Strategy Agnostic Pattern](./strategy-agnostic-pattern.md) - How to build multi-strategy actions
+- [Incremental PR Plan](../INCREMENTAL_PR_PLAN.md) - Full modernization roadmap
+
+---
+
 ## Resources
 
 - [GitHub Actions Best Practices](https://docs.github.com/en/actions/learn-github-actions/best-practices-for-github-actions)
 - [Creating Composite Actions](https://docs.github.com/en/actions/creating-actions/creating-a-composite-action)
 - [Publishing Actions to Marketplace](https://docs.github.com/en/actions/creating-actions/publishing-actions-in-github-marketplace)
+
+---
+
+**Document Maintenance**: Update this guide after each PR that affects action decoupling status.
