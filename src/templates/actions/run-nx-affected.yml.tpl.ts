@@ -27,6 +27,7 @@ import { logger } from '../../utils/logger.js'
 /**
  * Generates the run-nx-affected composite action YAML content.
  */
+/* eslint-disable no-useless-escape */
 function runNxAffectedActionTemplate(ctx: PinionContext) {
   return `name: 'Run Nx Affected'
 description: 'Runs Nx affected commands with caching and reporting'
@@ -198,15 +199,15 @@ runs:
           # Run the target and capture result
           if $NX_CMD affected --target=$target --base=\${{ inputs.baseRef }} --head=\${{ inputs.commitSha }} $EXCLUDE_FLAG 2>&1 | tee "$LOG_FILE"; then
             echo "✅ $target passed"
-            RESULTS_JSON+=""$target":"success","
+            RESULTS_JSON+="\"$target\":\"success\","
           else
             echo "❌ $target failed"
-            RESULTS_JSON+=""$target":"failure","
+            RESULTS_JSON+="\"$target\":\"failure\","
             OVERALL_SUCCESS=false
 
             # Extract and store the failure log (last 100 lines, strip ANSI codes, escape for JSON)
             FAILURE_LOG=$(tail -n 100 "$LOG_FILE" | sed 's/\\x1b\\[[0-9;]*m//g' | sed 's/\\\\/\\\\\\\\/g' | sed 's/"/\\\\"/g' | sed ':a;N;$!ba;s/\\n/\\\\n/g')
-            FAILED_LOGS_JSON+=""$target":"$FAILURE_LOG","
+            FAILED_LOGS_JSON+="\"$target\":\"$FAILURE_LOG\","
           fi
 
           rm -f "$LOG_FILE"
@@ -325,6 +326,7 @@ runs:
           }
 `
 }
+/* eslint-enable no-useless-escape */
 
 /**
  * Generator entry point for run-nx-affected composite action.
