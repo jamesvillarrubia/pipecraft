@@ -55,16 +55,16 @@ This guide explains how to make PipeCraft-generated actions **transferable** and
 
 > **Updated**: 2025-11-01 (PR #1 - Baseline Audit)
 
-| Action | Status | Config Reading | Marketplace Ready | PR Target | Priority |
-|--------|--------|---------------|-------------------|-----------|----------|
-| [detect-changes](#detect-changes-) | ✅ **DONE** | ✅ Via Input | ✅ Ready | #2 (Publish) | HIGH |
-| [create-tag](#create-tag-) | ✅ **DONE** | ✅ None | ✅ Ready | #3 (Publish) | HIGH |
-| [promote-branch](#promote-branch-) | ❌ **NEEDS WORK** | ❌ Yes (jq) | ❌ Blocked | #4 (Decouple) | **CRITICAL** |
-| [calculate-version](#calculate-version-) | ⚠️ **UNKNOWN** | ⚠️ Unknown | ❌ Needs Review | #6-7 (Audit/Fix) | HIGH |
-| [manage-branch](#other-actions-) | ❓ **UNKNOWN** | ❓ Unknown | ❌ Needs Audit | #6,9 (Audit/Fix) | MEDIUM |
-| [create-pr](#other-actions-) | ❓ **UNKNOWN** | ❓ Unknown | ❌ Needs Audit | #6,10 (Audit/Fix) | MEDIUM |
-| [create-release](#other-actions-) | ❓ **UNKNOWN** | ❓ Unknown | ❌ Needs Audit | #6,11 (Audit/Fix) | MEDIUM |
-| [run-nx-affected](#other-actions-) | ⚠️ **NX-SPECIFIC** | ❓ Unknown | ⚠️ Nx-only OK | #6 (Audit) | LOW |
+| Action                                   | Status             | Config Reading | Marketplace Ready | PR Target         | Priority     |
+| ---------------------------------------- | ------------------ | -------------- | ----------------- | ----------------- | ------------ |
+| [detect-changes](#detect-changes-)       | ✅ **DONE**        | ✅ Via Input   | ✅ Ready          | #2 (Publish)      | HIGH         |
+| [create-tag](#create-tag-)               | ✅ **DONE**        | ✅ None        | ✅ Ready          | #3 (Publish)      | HIGH         |
+| [promote-branch](#promote-branch-)       | ❌ **NEEDS WORK**  | ❌ Yes (jq)    | ❌ Blocked        | #4 (Decouple)     | **CRITICAL** |
+| [calculate-version](#calculate-version-) | ⚠️ **UNKNOWN**     | ⚠️ Unknown     | ❌ Needs Review   | #6-7 (Audit/Fix)  | HIGH         |
+| [manage-branch](#other-actions-)         | ❓ **UNKNOWN**     | ❓ Unknown     | ❌ Needs Audit    | #6,9 (Audit/Fix)  | MEDIUM       |
+| [create-pr](#other-actions-)             | ❓ **UNKNOWN**     | ❓ Unknown     | ❌ Needs Audit    | #6,10 (Audit/Fix) | MEDIUM       |
+| [create-release](#other-actions-)        | ❓ **UNKNOWN**     | ❓ Unknown     | ❌ Needs Audit    | #6,11 (Audit/Fix) | MEDIUM       |
+| [run-nx-affected](#other-actions-)       | ⚠️ **NX-SPECIFIC** | ❓ Unknown     | ⚠️ Nx-only OK     | #6 (Audit)        | LOW          |
 
 **Legend**: ✅ Complete | ⚠️ In Progress | ❌ Needs Work | ❓ Unknown
 
@@ -521,11 +521,13 @@ The actions become building blocks that PipeCraft (or any other tool) can use.
 ## Success Metrics
 
 **Baseline (Current)**:
+
 - Marketplace-ready actions: **2/8** (detect-changes, create-tag)
 - Config-reading actions: **≥1** (promote-branch confirmed, others unknown)
 - Regeneration triggers: **~10 scenarios**
 
 **Target (After Modernization)**:
+
 - Marketplace-ready actions: **8/8** (100%)
 - Config-reading actions: **0/8** (fully decoupled)
 - Regeneration triggers: **~2 scenarios** (structural only)

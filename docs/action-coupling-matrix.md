@@ -9,18 +9,19 @@ This document provides a comprehensive assessment of each GitHub Action generate
 
 ## Summary Dashboard
 
-| Action | Config Reading | Strategy Dependent | Package Manager | Marketplace Ready | Complexity | Priority |
-|--------|---------------|-------------------|-----------------|-------------------|------------|----------|
-| [detect-changes](#detect-changes) | ✅ Via Input | ✅ Multi-Strategy | ✅ Auto-detect | ✅ **READY** | Medium | HIGH |
-| [create-tag](#create-tag) | ❌ None | ✅ Agnostic | ✅ N/A | ✅ **READY** | Low | HIGH |
-| [calculate-version](#calculate-version) | ⚠️ Implicit | ⚠️ Unknown | ⚠️ npm only? | ❌ Needs Review | Medium | HIGH |
-| [promote-branch](#promote-branch) | ❌ Yes (jq) | ✅ Agnostic | ✅ N/A | ❌ Needs Decouple | Medium | **CRITICAL** |
-| [manage-branch](#manage-branch) | ❓ Unknown | ❓ Unknown | ❓ Unknown | ❌ Needs Audit | Low | MEDIUM |
-| [create-pr](#create-pr) | ❓ Unknown | ✅ Likely Agnostic | ✅ N/A | ❌ Needs Audit | Low | MEDIUM |
-| [create-release](#create-release) | ❓ Unknown | ✅ Likely Agnostic | ✅ N/A | ❌ Needs Audit | Low | MEDIUM |
-| [run-nx-affected](#run-nx-affected) | ❌ None | ❌ Nx-specific | ⚠️ Needs Check | ⚠️ Nx-only OK | Medium | LOW |
+| Action                                  | Config Reading | Strategy Dependent | Package Manager | Marketplace Ready | Complexity | Priority     |
+| --------------------------------------- | -------------- | ------------------ | --------------- | ----------------- | ---------- | ------------ |
+| [detect-changes](#detect-changes)       | ✅ Via Input   | ✅ Multi-Strategy  | ✅ Auto-detect  | ✅ **READY**      | Medium     | HIGH         |
+| [create-tag](#create-tag)               | ❌ None        | ✅ Agnostic        | ✅ N/A          | ✅ **READY**      | Low        | HIGH         |
+| [calculate-version](#calculate-version) | ⚠️ Implicit    | ⚠️ Unknown         | ⚠️ npm only?    | ❌ Needs Review   | Medium     | HIGH         |
+| [promote-branch](#promote-branch)       | ❌ Yes (jq)    | ✅ Agnostic        | ✅ N/A          | ❌ Needs Decouple | Medium     | **CRITICAL** |
+| [manage-branch](#manage-branch)         | ❓ Unknown     | ❓ Unknown         | ❓ Unknown      | ❌ Needs Audit    | Low        | MEDIUM       |
+| [create-pr](#create-pr)                 | ❓ Unknown     | ✅ Likely Agnostic | ✅ N/A          | ❌ Needs Audit    | Low        | MEDIUM       |
+| [create-release](#create-release)       | ❓ Unknown     | ✅ Likely Agnostic | ✅ N/A          | ❌ Needs Audit    | Low        | MEDIUM       |
+| [run-nx-affected](#run-nx-affected)     | ❌ None        | ❌ Nx-specific     | ⚠️ Needs Check  | ⚠️ Nx-only OK     | Medium     | LOW          |
 
 **Legend**:
+
 - ✅ = Good state / No issues
 - ⚠️ = Needs improvement
 - ❌ = Blocking issue / Must fix
@@ -39,11 +40,13 @@ This document provides a comprehensive assessment of each GitHub Action generate
 **Template**: [`src/templates/actions/detect-changes.yml.tpl.ts`](../src/templates/actions/detect-changes.yml.tpl.ts)
 
 #### Configuration Dependencies
+
 - ✅ **No direct config file reading**
 - ✅ Accepts `domains-config` as YAML string input
 - ✅ Workflow passes config at runtime
 
 #### Strategy Support
+
 - ✅ **Multi-strategy in single file**:
   - Nx dependency graph analysis (primary)
   - Path-based change detection (fallback)
@@ -52,6 +55,7 @@ This document provides a comprehensive assessment of each GitHub Action generate
 - ✅ Accepts `useNx` input to control strategy
 
 #### Package Manager Handling
+
 - ✅ **Auto-detection from lockfiles**:
   ```bash
   if [ -f "pnpm-lock.yaml" ]; then corepack enable; pnpm install
@@ -64,6 +68,7 @@ This document provides a comprehensive assessment of each GitHub Action generate
 - ✅ Works with npm, yarn, pnpm seamlessly
 
 #### Marketplace Readiness Score: **5/5**
+
 - ✅ Config-agnostic (accepts inputs)
 - ✅ Strategy-agnostic (multi-strategy support)
 - ✅ Package-manager-agnostic (auto-detect)
@@ -71,16 +76,19 @@ This document provides a comprehensive assessment of each GitHub Action generate
 - ✅ Comprehensive outputs
 
 #### Regeneration Triggers
+
 - ❌ **Currently**: Domain changes require regeneration (domains embedded in workflow)
 - ✅ **Future**: With runtime config, NO regeneration needed
 
 #### Key Strengths
+
 - **Template for all other actions** - demonstrates best practices
 - Conditional steps pattern: `if: steps.nx-check.outputs.available == 'true' && inputs.useNx == 'true'`
 - Unified output format regardless of strategy
 - Excellent error handling and logging
 
 #### Recommended Actions
+
 1. Publish to marketplace immediately (PR #2)
 2. Use as reference for refactoring other actions
 
@@ -95,18 +103,22 @@ This document provides a comprehensive assessment of each GitHub Action generate
 **Template**: [`src/templates/actions/create-tag.yml.tpl.ts`](../src/templates/actions/create-tag.yml.tpl.ts)
 
 #### Configuration Dependencies
+
 - ✅ **No config file reading**
 - ✅ All inputs passed explicitly
 - ✅ Pure git operations
 
 #### Strategy Support
+
 - ✅ **Strategy-agnostic** - Git operations only
 - ✅ No dependencies on Nx/turbo/monorepo structure
 
 #### Package Manager Handling
+
 - ✅ **N/A** - No package manager operations
 
 #### Marketplace Readiness Score: **5/5**
+
 - ✅ Zero config dependencies
 - ✅ Simple, focused purpose
 - ✅ Well-defined inputs/outputs
@@ -114,15 +126,18 @@ This document provides a comprehensive assessment of each GitHub Action generate
 - ✅ Easy to test
 
 #### Regeneration Triggers
+
 - ✅ None - This action never needs regeneration
 
 #### Key Strengths
+
 - Simplest action in the suite
 - Clear single responsibility
 - No external dependencies beyond git
 - Perfect candidate for early marketplace publication
 
 #### Recommended Actions
+
 1. Publish to marketplace (PR #3)
 2. Good "quick win" to validate publishing process
 
@@ -137,15 +152,18 @@ This document provides a comprehensive assessment of each GitHub Action generate
 **Template**: [`src/templates/actions/calculate-version.yml.tpl.ts`](../src/templates/actions/calculate-version.yml.tpl.ts)
 
 #### Configuration Dependencies
+
 - ⚠️ **Implicit dependency on `.release-it.cjs`**
 - ❓ Need to verify if reads other config files
 - ⚠️ Creates temporary `package.json` - why?
 
 #### Strategy Support
+
 - ❓ **Unknown** - Need to check if Nx/monorepo aware
 - ❓ Does it handle monorepo versions differently?
 
 #### Package Manager Handling
+
 - ❌ **Hardcoded to npm** (from analysis):
   ```bash
   npm install @release-it/conventional-changelog
@@ -154,6 +172,7 @@ This document provides a comprehensive assessment of each GitHub Action generate
 - ⚠️ Won't work in pnpm/yarn-only environments
 
 #### Marketplace Readiness Score: **2/5**
+
 - ⚠️ Implicit config dependencies
 - ⚠️ Package manager hardcoding
 - ❓ Strategy support unclear
@@ -161,14 +180,17 @@ This document provides a comprehensive assessment of each GitHub Action generate
 - ✅ Clear outputs
 
 #### Regeneration Triggers
+
 - ❓ Unknown - need to verify when regeneration required
 
 #### Identified Issues
+
 1. npm hardcoding (low priority - GitHub runners include npm)
 2. Implicit `.release-it.cjs` dependency
 3. Unclear if strategy-agnostic
 
 #### Recommended Actions
+
 1. **PR #6**: Audit action thoroughly
 2. **PR #7**: Decouple and make strategy-agnostic
 3. Consider: Accept version bump rules as input instead of reading config
@@ -185,19 +207,23 @@ This document provides a comprehensive assessment of each GitHub Action generate
 **Template**: [`src/templates/actions/promote-branch.yml.tpl.ts`](../src/templates/actions/promote-branch.yml.tpl.ts)
 
 #### Configuration Dependencies
+
 - ❌ **Directly reads `.pipecraftrc`**
 - ❌ Uses `jq` to parse `branchFlow`
 - ❌ Reads `autoMerge` setting from config
 - ⚠️ Format-dependent (expects JSON via jq)
 
 #### Strategy Support
+
 - ✅ **Strategy-agnostic** - Git operations only
 - ✅ No dependencies on Nx/turbo
 
 #### Package Manager Handling
+
 - ✅ **N/A** - No package manager operations
 
 #### Marketplace Readiness Score: **2/5**
+
 - ❌ Config file reading (blocking issue)
 - ❌ Format-dependent (jq = JSON only)
 - ✅ Git operations are clean
@@ -205,16 +231,19 @@ This document provides a comprehensive assessment of each GitHub Action generate
 - ⚠️ PipeCraft-specific currently
 
 #### Regeneration Triggers
+
 - ❌ **Branch flow changes** - Action reads branchFlow from config
 - ❌ **autoMerge setting changes** - Read from config
 
 #### Identified Issues
+
 1. **Critical**: Reads `.pipecraftrc` directly
 2. **Critical**: Uses jq (JSON-only), breaks with YAML config
 3. **Medium**: Calculates target branch instead of accepting input
 4. **Recent fix** (commit `370c94f`): Removed some config parsing, but not all
 
 #### Recommended Actions
+
 1. **PR #4 (CRITICAL)**: Complete decoupling
    - Add `targetBranch` input
    - Add `autoMerge` input
@@ -224,7 +253,9 @@ This document provides a comprehensive assessment of each GitHub Action generate
 2. **PR #5**: Publish to marketplace after decoupling
 
 #### Refactoring Plan
+
 **Current**:
+
 ```yaml
 steps:
   - name: Read Config
@@ -234,6 +265,7 @@ steps:
 ```
 
 **Target**:
+
 ```yaml
 inputs:
   targetBranch:
@@ -248,6 +280,7 @@ steps:
 ```
 
 **Workflow responsibility** (generator):
+
 ```yaml
 jobs:
   read-config:
@@ -272,19 +305,24 @@ jobs:
 **Template**: [`src/templates/actions/manage-branch.yml.tpl.ts`](../src/templates/actions/manage-branch.yml.tpl.ts)
 
 #### Configuration Dependencies
+
 - ❓ **Unknown** - Need to review action code
 - ❓ Check for hidden `.pipecraftrc` reading
 
 #### Strategy Support
+
 - ❓ **Unknown** - Likely strategy-agnostic (git ops)
 
 #### Package Manager Handling
+
 - ❓ **Unknown** - Likely N/A
 
 #### Marketplace Readiness Score: **?/5**
+
 - ❓ Need full audit
 
 #### Recommended Actions
+
 1. **PR #6**: Full audit of this action
 2. **PR #9**: Decouple if needed, then publish
 
@@ -299,19 +337,24 @@ jobs:
 **Template**: [`src/templates/actions/create-pr.yml.tpl.ts`](../src/templates/actions/create-pr.yml.tpl.ts)
 
 #### Configuration Dependencies
+
 - ❓ **Unknown** - Need to verify
 - Likely uses GitHub CLI (`gh`) only
 
 #### Strategy Support
+
 - ✅ **Likely strategy-agnostic** - GitHub API operations
 
 #### Package Manager Handling
+
 - ✅ **N/A** - No package operations
 
 #### Marketplace Readiness Score: **?/5**
+
 - Likely **4/5** if no config dependencies
 
 #### Recommended Actions
+
 1. **PR #6**: Audit
 2. **PR #10**: Light touch-up and publish
 
@@ -326,19 +369,24 @@ jobs:
 **Template**: [`src/templates/actions/create-release.yml.tpl.ts`](../src/templates/actions/create-release.yml.tpl.ts)
 
 #### Configuration Dependencies
+
 - ❓ **Unknown** - Need to verify
 - Likely uses GitHub CLI (`gh`) only
 
 #### Strategy Support
+
 - ✅ **Likely strategy-agnostic** - GitHub API operations
 
 #### Package Manager Handling
+
 - ✅ **N/A** - No package operations
 
 #### Marketplace Readiness Score: **?/5**
+
 - Likely **4/5** if no config dependencies
 
 #### Recommended Actions
+
 1. **PR #6**: Audit
 2. **PR #11**: Light touch-up and publish
 
@@ -354,19 +402,23 @@ jobs:
 **Template**: [`src/templates/actions/run-nx-affected.yml.tpl.ts`](../src/templates/actions/run-nx-affected.yml.tpl.ts)
 
 #### Configuration Dependencies
+
 - ❓ **Unknown** - Need to verify
 - Likely minimal (Nx handles config)
 
 #### Strategy Support
+
 - ❌ **Nx-specific by design** - This is intentional
 - ✅ That's okay! - Nx users need this
 - ✅ Marketplace can have specialized actions
 
 #### Package Manager Handling
+
 - ❓ **Unknown** - Need to check if auto-detects
 - ⚠️ Should support npm/yarn/pnpm for Nx
 
 #### Marketplace Readiness Score: **3/5**
+
 - ✅ Clear Nx-specific purpose
 - ✅ Useful for Nx community
 - ⚠️ Need to verify package manager handling
@@ -374,6 +426,7 @@ jobs:
 - ✅ Well-defined scope
 
 #### Recommended Actions
+
 1. **PR #6**: Audit package manager handling
 2. Ensure auto-detects pnpm/yarn/npm
 3. Publish as `@pipecraft/run-nx-affected` (Nx users will find it)
@@ -386,15 +439,18 @@ jobs:
 ### Config File Format Coupling
 
 **Current State**:
+
 - `.pipecraftrc` migrated from JSON → YAML (recent)
 - Some actions still use `jq` (JSON parser)
 - Format coupling causes fragility
 
 **Actions Affected**:
+
 - ❌ `promote-branch` - Uses jq (JSON-only)
 - ❓ Others unknown
 
 **Solution**:
+
 - Actions should NOT read config files
 - Workflow reads config (can handle any format)
 - Actions accept inputs only
@@ -402,10 +458,12 @@ jobs:
 ### Package Manager Detection
 
 **Current State**:
+
 - `detect-changes` demonstrates best practice ✅
 - Other actions may hardcode npm ❌
 
 **Best Practice Pattern** (from detect-changes):
+
 ```bash
 if [ -f "pnpm-lock.yaml" ]; then
   corepack enable && pnpm install
@@ -419,6 +477,7 @@ fi
 ```
 
 **Actions to Review**:
+
 - `calculate-version` - Known npm hardcoding
 - `run-nx-affected` - Unknown
 - Others likely N/A (no package operations)
@@ -426,6 +485,7 @@ fi
 ### Strategy Detection Pattern
 
 **Best Practice** (from detect-changes):
+
 ```yaml
 - name: Check for Nx
   id: nx-check
@@ -446,6 +506,7 @@ fi
 ```
 
 **Key Elements**:
+
 1. Auto-detection step
 2. Input override capability (`useNx`)
 3. Conditional steps based on strategy
@@ -457,19 +518,23 @@ fi
 ## Decoupling Priority Matrix
 
 ### Critical (Start Immediately)
+
 1. **promote-branch** - Actively reads config, blocks marketplace
 
 ### High (Next Sprint)
+
 2. **calculate-version** - Unclear dependencies, critical functionality
 3. **detect-changes** - Publish immediately (already ready) ✅
 4. **create-tag** - Publish immediately (already ready) ✅
 
 ### Medium (Following Sprint)
+
 5. **manage-branch** - Audit first
 6. **create-pr** - Audit first
 7. **create-release** - Audit first
 
 ### Low (Nice to Have)
+
 8. **run-nx-affected** - Nx-specific okay, verify package manager
 
 ---
@@ -477,19 +542,23 @@ fi
 ## Marketplace Readiness Roadmap
 
 ### Wave 1: Quick Wins (Week 1-2)
+
 - ✅ `detect-changes` - Publish immediately
 - ✅ `create-tag` - Publish immediately
 
 ### Wave 2: After Decoupling (Week 3-4)
+
 - ⚠️ `promote-branch` - Decouple first, then publish
 
 ### Wave 3: After Audit (Week 5-7)
+
 - ❓ `calculate-version` - Audit → decouple → publish
 - ❓ `manage-branch` - Audit → fix if needed → publish
 - ❓ `create-pr` - Audit → fix if needed → publish
 - ❓ `create-release` - Audit → fix if needed → publish
 
 ### Wave 4: Specialized (Week 8+)
+
 - ⚠️ `run-nx-affected` - Verify → publish (Nx-specific okay)
 
 ---
@@ -497,6 +566,7 @@ fi
 ## Success Metrics
 
 ### Per Action
+
 - [ ] Config file reading: None (✅) or via input only
 - [ ] Strategy support: Agnostic or clearly specialized
 - [ ] Package manager: Auto-detect or N/A
@@ -506,6 +576,7 @@ fi
 - [ ] CI/CD: Automated releases
 
 ### Overall Suite
+
 - [ ] 7+ actions published
 - [ ] All decoupled from PipeCraft config
 - [ ] All independently versioned
@@ -528,6 +599,7 @@ fi
 ## Document Maintenance
 
 This document should be updated:
+
 - ✅ After each action is audited (fill in ❓ unknowns)
 - ✅ After each action is refactored (update status)
 - ✅ After each action is published (update marketplace status)

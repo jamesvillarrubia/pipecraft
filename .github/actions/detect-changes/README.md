@@ -67,13 +67,13 @@
 
 ## Inputs
 
-| Input | Description | Required | Default |
-|-------|-------------|----------|---------|
-| `domains-config` | YAML string defining domains and their paths | ✅ Yes | - |
-| `baseRef` | Base reference to compare against | ❌ No | `main` |
-| `useNx` | Use Nx dependency graph if available | ❌ No | `true` |
-| `node-version` | Node.js version for Nx | ❌ No | `20` |
-| `pnpm-version` | pnpm version (if using pnpm) | ❌ No | `9` |
+| Input            | Description                                  | Required | Default |
+| ---------------- | -------------------------------------------- | -------- | ------- |
+| `domains-config` | YAML string defining domains and their paths | ✅ Yes   | -       |
+| `baseRef`        | Base reference to compare against            | ❌ No    | `main`  |
+| `useNx`          | Use Nx dependency graph if available         | ❌ No    | `true`  |
+| `node-version`   | Node.js version for Nx                       | ❌ No    | `20`    |
+| `pnpm-version`   | pnpm version (if using pnpm)                 | ❌ No    | `9`     |
 
 ### `domains-config` Format
 
@@ -88,6 +88,7 @@
 ```
 
 **Example**:
+
 ```yaml
 core:
   paths:
@@ -106,16 +107,17 @@ infrastructure:
 
 ## Outputs
 
-| Output | Description | Example |
-|--------|-------------|---------|
-| `changes` | JSON object with domain results | `{"frontend": true, "backend": false}` |
-| `affectedDomains` | Comma-separated list of changed domains | `frontend,docs` |
-| `nxAvailable` | Whether Nx was detected | `true` or `false` |
-| `affectedProjects` | Comma-separated Nx projects (if using Nx) | `web,api,shared-ui` |
+| Output             | Description                               | Example                                |
+| ------------------ | ----------------------------------------- | -------------------------------------- |
+| `changes`          | JSON object with domain results           | `{"frontend": true, "backend": false}` |
+| `affectedDomains`  | Comma-separated list of changed domains   | `frontend,docs`                        |
+| `nxAvailable`      | Whether Nx was detected                   | `true` or `false`                      |
+| `affectedProjects` | Comma-separated Nx projects (if using Nx) | `web,api,shared-ui`                    |
 
 ### Using Outputs
 
 **JSON parsing**:
+
 ```yaml
 - name: Check if frontend changed
   if: fromJSON(steps.changes.outputs.changes).frontend == true
@@ -123,6 +125,7 @@ infrastructure:
 ```
 
 **List iteration**:
+
 ```yaml
 - name: Deploy affected domains
   run: |
@@ -134,6 +137,7 @@ infrastructure:
 ```
 
 **Matrix strategy**:
+
 ```yaml
 jobs:
   detect:
@@ -169,12 +173,14 @@ npx nx show projects --affected --base=main
 ```
 
 **Benefits**:
+
 - 🔍 Understands project dependencies
 - 🎯 Only runs tests for truly affected code
 - ⚡ Faster CI with smart caching
 
 **Mapping**:
 The action maps Nx project names to domains using flexible matching:
+
 - `frontend-web` → `frontend` domain
 - `backend_api` → `backend` domain
 - Handles `-` and `_` interchangeably
@@ -190,6 +196,7 @@ frontend:
 ```
 
 **Benefits**:
+
 - ✅ Works in any repository
 - 📁 Simple glob pattern matching
 - 🚀 No dependencies required
@@ -210,10 +217,11 @@ graph TD
 ```
 
 **Override detection**:
+
 ```yaml
 - uses: ./.github/actions/detect-changes
   with:
-    useNx: false  # Force path-based even if Nx exists
+    useNx: false # Force path-based even if Nx exists
 ```
 
 ## Package Manager Detection
@@ -221,12 +229,14 @@ graph TD
 The action auto-detects your package manager:
 
 1. **pnpm** (if `pnpm-lock.yaml` exists)
+
    ```bash
    corepack enable
    pnpm install --frozen-lockfile
    ```
 
 2. **yarn** (if `yarn.lock` exists)
+
    ```bash
    yarn install --frozen-lockfile
    ```
@@ -252,7 +262,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required for accurate change detection
+          fetch-depth: 0 # Required for accurate change detection
 
       - name: Detect Changes
         id: changes
@@ -351,8 +361,8 @@ api:
   paths:
     - 'apps/api/**'
     - 'libs/api-client/**'
-    - 'docker/api.Dockerfile'     # Related infrastructure
-    - '.github/workflows/api-*'   # Related CI/CD
+    - 'docker/api.Dockerfile' # Related infrastructure
+    - '.github/workflows/api-*' # Related CI/CD
 ```
 
 ### 3. Use Wildcards Wisely
@@ -394,14 +404,17 @@ workspace-b:
 **Problem**: Action reports no changes even though files changed.
 
 **Solutions**:
+
 1. **Ensure fetch-depth is set**:
+
    ```yaml
    - uses: actions/checkout@v4
      with:
-       fetch-depth: 0  # Required!
+       fetch-depth: 0 # Required!
    ```
 
 2. **Check base ref**:
+
    ```yaml
    - uses: ./.github/actions/detect-changes
      with:
@@ -409,6 +422,7 @@ workspace-b:
    ```
 
 3. **Verify glob patterns**:
+
    ```yaml
    # Wrong: Missing **
    paths: ['apps/web/*.ts']
@@ -422,6 +436,7 @@ workspace-b:
 **Problem**: Nx is installed but not detected.
 
 **Solutions**:
+
 1. **Check `nx.json` exists** in repository root
 2. **Verify Nx in `package.json`**:
    ```json
@@ -442,12 +457,15 @@ workspace-b:
 **Problem**: Dependencies fail to install.
 
 **Solutions**:
+
 1. **Lock file exists**:
+
    - pnpm: `pnpm-lock.yaml`
    - yarn: `yarn.lock`
    - npm: `package-lock.json`
 
 2. **Correct corepack setup** (for pnpm):
+
    ```yaml
    - name: Enable Corepack
      run: corepack enable
@@ -462,6 +480,7 @@ workspace-b:
 **Problem**: `fromJSON()` fails in workflows.
 
 **Solution**: Ensure you're accessing the correct output:
+
 ```yaml
 # ❌ Wrong
 if: steps.changes.outputs.changes.frontend == true
@@ -477,7 +496,7 @@ if: fromJSON(steps.changes.outputs.changes).frontend == true
 ```yaml
 - uses: actions/checkout@v4
   with:
-    fetch-depth: 50  # Last 50 commits (faster than 0)
+    fetch-depth: 50 # Last 50 commits (faster than 0)
 ```
 
 ### 2. Cache Dependencies
@@ -485,7 +504,7 @@ if: fromJSON(steps.changes.outputs.changes).frontend == true
 ```yaml
 - uses: actions/setup-node@v4
   with:
-    cache: 'pnpm'  # or 'yarn', 'npm'
+    cache: 'pnpm' # or 'yarn', 'npm'
 ```
 
 ### 3. Skip Unnecessary Checks
@@ -516,14 +535,14 @@ jobs:
 
 ## Comparison with Other Tools
 
-| Feature | This Action | paths-filter | turborepo | Nx |
-|---------|-------------|--------------|-----------|-----|
-| Strategy detection | ✅ Automatic | ❌ Manual | ⚠️ Turbo only | ⚠️ Nx only |
-| Path-based | ✅ Yes | ✅ Yes | ❌ No | ⚠️ Limited |
-| Dependency graph | ✅ Yes (Nx) | ❌ No | ✅ Yes | ✅ Yes |
-| Package manager agnostic | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
-| Domain mapping | ✅ Yes | ⚠️ Manual | ⚠️ Manual | ⚠️ Manual |
-| Unified output | ✅ JSON | ⚠️ Boolean | ⚠️ Custom | ⚠️ Custom |
+| Feature                  | This Action  | paths-filter | turborepo     | Nx         |
+| ------------------------ | ------------ | ------------ | ------------- | ---------- |
+| Strategy detection       | ✅ Automatic | ❌ Manual    | ⚠️ Turbo only | ⚠️ Nx only |
+| Path-based               | ✅ Yes       | ✅ Yes       | ❌ No         | ⚠️ Limited |
+| Dependency graph         | ✅ Yes (Nx)  | ❌ No        | ✅ Yes        | ✅ Yes     |
+| Package manager agnostic | ✅ Yes       | ✅ Yes       | ✅ Yes        | ✅ Yes     |
+| Domain mapping           | ✅ Yes       | ⚠️ Manual    | ⚠️ Manual     | ⚠️ Manual  |
+| Unified output           | ✅ JSON      | ⚠️ Boolean   | ⚠️ Custom     | ⚠️ Custom  |
 
 ## Real-World Examples
 
@@ -584,6 +603,7 @@ jobs:
 ### Q: What about Git submodules?
 
 **A:** Submodules are supported. Ensure `submodules: true` in checkout:
+
 ```yaml
 - uses: actions/checkout@v4
   with:
