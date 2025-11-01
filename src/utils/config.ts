@@ -63,7 +63,10 @@ export const loadConfig = (configPath?: string) => {
 
   if (!result) {
     throw new Error(
-      `No configuration file found. Expected: ${configPath || '.pipecraftrc, .pipecraftrc.json, .pipecraftrc.yml, .pipecraftrc.yaml, or .pipecraftrc.js'}`
+      `No configuration file found. Expected: ${
+        configPath ||
+        '.pipecraftrc, .pipecraftrc.json, .pipecraftrc.yml, .pipecraftrc.yaml, or .pipecraftrc.js'
+      }`
     )
   }
 
