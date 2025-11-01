@@ -47,16 +47,17 @@ Get a working pipeline in three commands:
 # Initialize PipeCraft in your project
 npx pipecraft init
 
-# Edit the generated .pipecraftrc.json to customize:
+# Edit the generated .pipecraftrc to customize:
 # - Branch names (branchFlow, initialBranch, finalBranch)
 # - Domain paths and configurations
 # - CI provider and merge strategy
+# (Supports .pipecraftrc, .json, .yml, .yaml, or .js formats)
 
 # Generate your CI/CD workflows
 npx pipecraft generate
 
 # Commit the generated files
-git add .github/workflows .pipecraftrc.json
+git add .github/workflows .pipecraftrc
 git commit -m "chore: add PipeCraft workflows"
 git push
 ```

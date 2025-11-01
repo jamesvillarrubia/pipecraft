@@ -4,7 +4,10 @@
  * This module provides functions to load and validate PipeCraft configuration files.
  * It uses cosmiconfig to search for configuration in multiple locations:
  * - .pipecraftrc (YAML or JSON, recommended)
- * - .pipecraftrc.json (legacy, still supported)
+ * - .pipecraftrc.json
+ * - .pipecraftrc.yaml
+ * - .pipecraftrc.yml
+ * - .pipecraftrc.js
  * - pipecraft.config.js
  * - package.json (pipecraft key)
  *
@@ -24,9 +27,12 @@ import { type DomainConfig, PipecraftConfig } from '../types/index.js'
  * If no path is provided, searches the current directory and ancestors for
  * configuration files in this order:
  * 1. .pipecraftrc (YAML or JSON, recommended)
- * 2. .pipecraftrc.json (legacy, still supported)
- * 3. pipecraft.config.js
- * 4. package.json (pipecraft key)
+ * 2. .pipecraftrc.json
+ * 3. .pipecraftrc.yaml
+ * 4. .pipecraftrc.yml
+ * 5. .pipecraftrc.js
+ * 6. pipecraft.config.js
+ * 7. package.json (pipecraft key)
  *
  * @param configPath - Optional explicit path to configuration file
  * @returns Parsed configuration object
@@ -42,12 +48,25 @@ import { type DomainConfig, PipecraftConfig } from '../types/index.js'
  * ```
  */
 export const loadConfig = (configPath?: string) => {
-  const explorer = cosmiconfigSync('pipecraft')
+  const explorer = cosmiconfigSync('pipecraft', {
+    searchPlaces: [
+      '.pipecraftrc',
+      '.pipecraftrc.json',
+      '.pipecraftrc.yaml',
+      '.pipecraftrc.yml',
+      '.pipecraftrc.js',
+      'pipecraft.config.js',
+      'package.json'
+    ]
+  })
   const result = configPath ? explorer.load(configPath) : explorer.search()
 
   if (!result) {
     throw new Error(
-      `No configuration file found. Expected: ${configPath || '.pipecraftrc or .pipecraftrc.json'}`
+      `No configuration file found. Expected: ${
+        configPath ||
+        '.pipecraftrc, .pipecraftrc.json, .pipecraftrc.yml, .pipecraftrc.yaml, or .pipecraftrc.js'
+      }`
     )
   }
 
