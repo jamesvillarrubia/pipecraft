@@ -27,6 +27,7 @@ import { logger } from '../../utils/logger.js'
 /**
  * Generates the run-nx-affected composite action YAML content.
  */
+/* eslint-disable no-useless-escape */
 function runNxAffectedActionTemplate(ctx: PinionContext) {
   return `name: 'Run Nx Affected'
 description: 'Runs Nx affected commands with caching and reporting'
@@ -325,6 +326,7 @@ runs:
           }
 `
 }
+/* eslint-enable no-useless-escape */
 
 /**
  * Generator entry point for run-nx-affected composite action.
