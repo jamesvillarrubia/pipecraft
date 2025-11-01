@@ -16,6 +16,7 @@ A **strategy-agnostic action** is a single GitHub Action that can adapt to diffe
 ### The Problem
 
 **Traditional approach** (anti-pattern):
+
 ```
 actions/
 ├── detect-changes-nx/        # Separate action for Nx
@@ -25,6 +26,7 @@ actions/
 ```
 
 **Problems with this approach**:
+
 - ❌ Must generate different actions based on strategy
 - ❌ Changing strategy (Nx → path-based) requires regeneration
 - ❌ Adding Turbo → need third action
@@ -34,6 +36,7 @@ actions/
 ### The Solution
 
 **Strategy-agnostic approach** (best practice):
+
 ```
 actions/
 └── detect-changes/           # One action, multiple strategies
@@ -41,6 +44,7 @@ actions/
 ```
 
 **Benefits**:
+
 - ✅ Single action file handles all strategies
 - ✅ Auto-detects strategy at runtime
 - ✅ Graceful fallback between strategies
@@ -57,10 +61,12 @@ The `detect-changes` action is the **gold standard** for this pattern.
 **Location**: [`.github/actions/detect-changes/action.yml`](../.github/actions/detect-changes/action.yml)
 
 **Strategies supported**:
+
 1. **Nx dependency graph** (primary) - Uses `nx show projects --affected`
 2. **Path-based detection** (fallback) - Uses `dorny/paths-filter@v3`
 
 **Key features**:
+
 - Auto-detects Nx availability
 - Conditional step execution based on strategy
 - Unified output format
@@ -90,6 +96,7 @@ Auto-detect what's available in the repository:
 ```
 
 **Key points**:
+
 - Check for marker files (`nx.json`, `turbo.json`, etc.)
 - Output result as `available` flag
 - User-friendly logging
@@ -103,10 +110,11 @@ inputs:
   useNx:
     description: 'Whether to use Nx dependency graph for change detection'
     required: false
-    default: 'true'  # Will be skipped if Nx not available
+    default: 'true' # Will be skipped if Nx not available
 ```
 
 **Why provide override?**:
+
 - Testing specific strategies
 - Debugging
 - Performance tuning
@@ -137,6 +145,7 @@ Execute strategy-specific logic based on detection:
 ```
 
 **Key points**:
+
 - Mutually exclusive conditions
 - Clear logging of which strategy is active
 - Same `id` namespace can be used if outputs differ
@@ -159,6 +168,7 @@ outputs:
 ```
 
 **Consolidation step**:
+
 ```yaml
 - name: Generate Outputs
   id: output
@@ -340,6 +350,7 @@ Another common multi-strategy concern: package managers.
 ```
 
 **Key points**:
+
 - Check for lockfiles in priority order
 - Use frozen installs when possible
 - Fallback to npm (always available)
@@ -447,6 +458,7 @@ test-strategy-switching:
 ### ⚠️ When to Create Separate Actions
 
 Create separate actions when:
+
 - Strategies serve different purposes (e.g., `run-nx-affected` is Nx-only by design)
 - No meaningful fallback exists
 - Outputs are incompatible
@@ -459,6 +471,7 @@ Create separate actions when:
 ### Example: Adding Turbo Support
 
 1. **Add detection step**:
+
 ```yaml
 - name: Detect Turbo
   id: turbo-check
@@ -471,6 +484,7 @@ Create separate actions when:
 ```
 
 2. **Add strategy input**:
+
 ```yaml
 inputs:
   useTurbo:
@@ -480,6 +494,7 @@ inputs:
 ```
 
 3. **Add conditional step**:
+
 ```yaml
 - name: Execute Turbo Strategy
   if: steps.turbo-check.outputs.available == 'true' && inputs.useTurbo == 'true'
@@ -488,6 +503,7 @@ inputs:
 ```
 
 4. **Update fallback conditions**:
+
 ```yaml
 - name: Fallback
   if: |
@@ -496,6 +512,7 @@ inputs:
 ```
 
 5. **Update consolidation logic**:
+
 ```yaml
 - name: Generate Outputs
   run: |
@@ -564,16 +581,19 @@ Users should understand what's happening.
 ### 3. Document Strategy Support
 
 In action README:
+
 ```markdown
 ## Supported Strategies
 
 This action automatically detects and uses the best available strategy:
 
 1. **Nx** (preferred): Uses dependency graph for intelligent change detection
+
    - Requires: `nx.json` or Nx in `package.json`
    - Override: Set `useNx: false` to disable
 
 2. **Turbo**: Uses Turbo's caching and task detection
+
    - Requires: `turbo.json`
    - Override: Set `useTurbo: false` to disable
 
@@ -594,6 +614,7 @@ outputs:
 ```
 
 Useful for:
+
 - Debugging
 - Analytics
 - Conditional downstream logic
@@ -617,6 +638,7 @@ done
 ### From Strategy-Specific to Strategy-Agnostic
 
 **Before** (multiple actions):
+
 ```
 actions/
 ├── detect-changes-nx/
@@ -625,6 +647,7 @@ actions/
 ```
 
 **Step 1**: Create unified action with all strategies
+
 ```
 actions/
 ├── detect-changes/           # New unified action
@@ -634,6 +657,7 @@ actions/
 ```
 
 **Step 2**: Deprecate old actions
+
 ```yaml
 # detect-changes-nx/action.yml
 name: 'Detect Changes (Nx) - DEPRECATED'
@@ -644,6 +668,7 @@ description: |
 ```
 
 **Step 3**: Remove after migration period
+
 ```
 actions/
 └── detect-changes/           # Only unified action remains

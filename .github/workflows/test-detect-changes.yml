@@ -1,0 +1,211 @@
+name: Test detect-changes Action
+
+on:
+  pull_request:
+    paths:
+      - '.github/actions/detect-changes/**'
+      - '.github/workflows/test-detect-changes.yml'
+  workflow_dispatch:
+
+jobs:
+  test-path-based:
+    name: Test Path-Based Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Test Action (Path-Based)
+        id: changes
+        uses: ./.github/actions/detect-changes
+        with:
+          baseRef: ${{ github.event.pull_request.base.ref || 'develop' }}
+          useNx: false  # Force path-based for this test
+          domains-config: |
+            actions:
+              paths:
+                - '.github/actions/**'
+            workflows:
+              paths:
+                - '.github/workflows/**'
+            src:
+              paths:
+                - 'src/**'
+            docs:
+              paths:
+                - 'docs/**'
+                - '**.md'
+
+      - name: Display Results
+        run: |
+          echo "📋 Change Detection Results:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Changes JSON:"
+          echo '${{ steps.changes.outputs.changes }}' | jq '.'
+          echo ""
+          echo "Affected Domains: ${{ steps.changes.outputs.affectedDomains }}"
+          echo "Nx Available: ${{ steps.changes.outputs.nxAvailable }}"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: Validate JSON Output
+        run: |
+          # Ensure output is valid JSON
+          echo '${{ steps.changes.outputs.changes }}' | jq empty || {
+            echo "❌ Invalid JSON output"
+            exit 1
+          }
+          echo "✅ JSON output is valid"
+
+      - name: Test Conditional Execution
+        if: fromJSON(steps.changes.outputs.changes).actions == true
+        run: |
+          echo "✅ Actions domain changed - this step should run!"
+
+  test-nx-detection:
+    name: Test Nx Detection (if available)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Test Action (Auto-detect Nx)
+        id: changes
+        uses: ./.github/actions/detect-changes
+        with:
+          baseRef: ${{ github.event.pull_request.base.ref || 'develop' }}
+          useNx: true  # Will auto-detect and fallback to path-based
+          domains-config: |
+            cicd:
+              paths:
+                - '.github/**'
+            core:
+              paths:
+                - 'src/**'
+            tests:
+              paths:
+                - 'tests/**'
+
+      - name: Display Results
+        run: |
+          echo "📋 Nx Detection Test Results:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Nx Available: ${{ steps.changes.outputs.nxAvailable }}"
+          echo "Affected Domains: ${{ steps.changes.outputs.affectedDomains }}"
+
+          if [ "${{ steps.changes.outputs.nxAvailable }}" == "true" ]; then
+            echo "Affected Nx Projects: ${{ steps.changes.outputs.affectedProjects }}"
+            echo ""
+            echo "🚀 Using Nx dependency graph"
+          else
+            echo ""
+            echo "📁 Using path-based detection (Nx not available)"
+          fi
+          echo ""
+          echo "Changes:"
+          echo '${{ steps.changes.outputs.changes }}' | jq '.'
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  test-matrix-strategy:
+    name: Test Matrix Strategy
+    runs-on: ubuntu-latest
+    outputs:
+      domains: ${{ steps.changes.outputs.affectedDomains }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect Changes
+        id: changes
+        uses: ./.github/actions/detect-changes
+        with:
+          baseRef: ${{ github.event.pull_request.base.ref || 'develop' }}
+          domains-config: |
+            actions:
+              paths: ['.github/actions/**']
+            workflows:
+              paths: ['.github/workflows/**']
+            src:
+              paths: ['src/**']
+            docs:
+              paths: ['docs/**']
+
+  process-domains:
+    name: Process Domain (${{ matrix.domain }})
+    needs: test-matrix-strategy
+    if: needs.test-matrix-strategy.outputs.domains != ''
+    strategy:
+      matrix:
+        domain: ${{ fromJSON(format('["{0}"]', needs.test-matrix-strategy.outputs.domains)) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process Domain
+        run: |
+          echo "🎯 Processing domain: ${{ matrix.domain }}"
+          echo "This job runs only for affected domains"
+
+  test-no-changes:
+    name: Test No Changes Scenario
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Test with Non-existent Paths
+        id: changes
+        uses: ./.github/actions/detect-changes
+        with:
+          baseRef: ${{ github.event.pull_request.base.ref || 'develop' }}
+          domains-config: |
+            nonexistent:
+              paths:
+                - 'this/does/not/exist/**'
+
+      - name: Verify No Changes
+        run: |
+          if [ "${{ steps.changes.outputs.affectedDomains }}" == "" ]; then
+            echo "✅ Correctly detected no changes"
+          else
+            echo "❌ Unexpectedly detected changes: ${{ steps.changes.outputs.affectedDomains }}"
+            exit 1
+          fi
+
+  summary:
+    name: Test Summary
+    needs: [test-path-based, test-nx-detection, test-matrix-strategy, test-no-changes]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## 📊 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Path-Based Detection | ${{ needs.test-path-based.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Nx Detection | ${{ needs.test-nx-detection.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Matrix Strategy | ${{ needs.test-matrix-strategy.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| No Changes Scenario | ${{ needs.test-no-changes.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.test-path-based.result }}" == "success" ] && \
+             [ "${{ needs.test-nx-detection.result }}" == "success" ] && \
+             [ "${{ needs.test-matrix-strategy.result }}" == "success" ] && \
+             [ "${{ needs.test-no-changes.result }}" == "success" ]; then
+            echo "### ✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          else
+            echo "### ❌ Some tests failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
