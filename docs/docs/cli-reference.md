@@ -37,7 +37,7 @@ The init command automatically detects your package manager by checking for lock
 
 You can confirm or override the detected package manager during the interactive prompts.
 
-Once complete, you'll have a `.pipecraftrc.json` file that contains your configuration.
+Once complete, you'll have a `.pipecraftrc` file that contains your configuration (format can be JSON, YAML, or JavaScript).
 
 ## Generating workflows
 
@@ -47,13 +47,13 @@ After you have a configuration file, generate your workflows:
 pipecraft generate
 ```
 
-This reads your `.pipecraftrc.json` and creates workflow files in `.github/workflows/` and `.github/actions/`. The first time you run this, it will create all the necessary files. On subsequent runs, it only regenerates if your configuration has changed, making it fast and efficient.
+This reads your `.pipecraftrc` (or `.pipecraftrc.json`, `.pipecraftrc.yml`, etc.) and creates workflow files in `.github/workflows/` and `.github/actions/`. The first time you run this, it will create all the necessary files. On subsequent runs, it only regenerates if your configuration has changed, making it fast and efficient.
 
 ### Pre-flight checks
 
 Before generating any files, PipeCraft runs automatic pre-flight checks to validate your setup. These checks help catch common issues early, before you end up with cryptic errors or workflows that don't run. The checks verify:
 
-**Configuration file discovery**: PipeCraft searches for your configuration using cosmiconfig, looking in `.pipecraftrc.json`, `.pipecraftrc`, or the `pipecraft` key in `package.json`. It searches parent directories recursively, so you can run commands from subdirectories. If no configuration is found, you'll see a clear message suggesting you run `pipecraft init` first.
+**Configuration file discovery**: PipeCraft searches for your configuration using cosmiconfig, looking in `.pipecraftrc`, `.pipecraftrc.json`, `.pipecraftrc.yml`, `.pipecraftrc.yaml`, `.pipecraftrc.js`, `pipecraft.config.js`, or the `pipecraft` key in `package.json`. It searches parent directories recursively, so you can run commands from subdirectories. If no configuration is found, you'll see a clear message suggesting you run `pipecraft init` first.
 
 **Configuration validation**: Your configuration JSON must be syntactically valid and include all required fields. PipeCraft checks that you've defined a `ciProvider` (github or gitlab), a `branchFlow` array with at least two branches, and at least one domain with valid path patterns. If anything is missing or malformed, the error message explains exactly what needs to be fixed.
 
@@ -207,7 +207,7 @@ ls -la .github/workflows/
 cat .github/workflows/pipeline.yml
 
 # 6. Commit the changes
-git add .github/ .pipecraftrc.json
+git add .github/ .pipecraftrc
 git commit -m "chore: add pipecraft workflows"
 git push
 
@@ -220,12 +220,14 @@ pipecraft setup
 
 PipeCraft looks for configuration in several places, in this order:
 
-1. `.pipecraftrc.json` (recommended)
-2. `.pipecraftrc`
-3. `pipecraft.config.js`
-4. `package.json` under a "pipecraft" key
+1. `.pipecraftrc` (YAML or JSON, recommended)
+2. `.pipecraftrc.json`
+3. `.pipecraftrc.yaml` or `.pipecraftrc.yml`
+4. `.pipecraftrc.js`
+5. `pipecraft.config.js`
+6. `package.json` under a "pipecraft" key
 
-Most projects use `.pipecraftrc.json` because it's simple and explicit. Here's a minimal example:
+Most projects use `.pipecraftrc` because it's simple and can be either JSON or YAML format. Here's a minimal JSON example:
 
 ```json
 {

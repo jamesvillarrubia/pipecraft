@@ -85,6 +85,118 @@ describe('Config Utilities', () => {
         rmSync(uniqueTempDir, { recursive: true, force: true })
       }
     })
+
+    it('should load valid configuration from .pipecraftrc.json', () => {
+      const uniqueTempDir = join(
+        tmpdir(),
+        `pipecraft-config-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+      )
+      mkdirSync(uniqueTempDir, { recursive: true })
+
+      const configPath = join(FIXTURES_DIR, 'basic-config.json')
+      const configContent = readFileSync(configPath, 'utf8')
+      const testConfigPath = join(uniqueTempDir, '.pipecraftrc.json')
+      writeFileSync(testConfigPath, configContent)
+
+      const originalCwd = process.cwd()
+      try {
+        process.chdir(uniqueTempDir)
+        const config = loadConfig()
+
+        expect(config).toBeDefined()
+        expect(config.ciProvider).toBe('github')
+        expect(config.mergeStrategy).toBe('fast-forward')
+        expect(config.domains).toHaveProperty('api')
+        expect(config.domains).toHaveProperty('web')
+      } finally {
+        process.chdir(originalCwd)
+        rmSync(uniqueTempDir, { recursive: true, force: true })
+      }
+    })
+
+    it('should load valid configuration from .pipecraftrc.yml', () => {
+      const uniqueTempDir = join(
+        tmpdir(),
+        `pipecraft-config-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+      )
+      mkdirSync(uniqueTempDir, { recursive: true })
+
+      const configPath = join(FIXTURES_DIR, 'basic-config.yml')
+      const configContent = readFileSync(configPath, 'utf8')
+      const testConfigPath = join(uniqueTempDir, '.pipecraftrc.yml')
+      writeFileSync(testConfigPath, configContent)
+
+      const originalCwd = process.cwd()
+      try {
+        process.chdir(uniqueTempDir)
+        const config = loadConfig()
+
+        expect(config).toBeDefined()
+        expect(config.ciProvider).toBe('github')
+        expect(config.mergeStrategy).toBe('fast-forward')
+        expect(config.domains).toHaveProperty('api')
+        expect(config.domains).toHaveProperty('web')
+      } finally {
+        process.chdir(originalCwd)
+        rmSync(uniqueTempDir, { recursive: true, force: true })
+      }
+    })
+
+    it('should load valid configuration from .pipecraftrc.yaml', () => {
+      const uniqueTempDir = join(
+        tmpdir(),
+        `pipecraft-config-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+      )
+      mkdirSync(uniqueTempDir, { recursive: true })
+
+      const configPath = join(FIXTURES_DIR, 'basic-config.yml')
+      const configContent = readFileSync(configPath, 'utf8')
+      const testConfigPath = join(uniqueTempDir, '.pipecraftrc.yaml')
+      writeFileSync(testConfigPath, configContent)
+
+      const originalCwd = process.cwd()
+      try {
+        process.chdir(uniqueTempDir)
+        const config = loadConfig()
+
+        expect(config).toBeDefined()
+        expect(config.ciProvider).toBe('github')
+        expect(config.mergeStrategy).toBe('fast-forward')
+        expect(config.domains).toHaveProperty('api')
+        expect(config.domains).toHaveProperty('web')
+      } finally {
+        process.chdir(originalCwd)
+        rmSync(uniqueTempDir, { recursive: true, force: true })
+      }
+    })
+
+    it('should load valid configuration from .pipecraftrc.js', () => {
+      const uniqueTempDir = join(
+        tmpdir(),
+        `pipecraft-config-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+      )
+      mkdirSync(uniqueTempDir, { recursive: true })
+
+      const configPath = join(FIXTURES_DIR, 'basic-config.js')
+      const configContent = readFileSync(configPath, 'utf8')
+      const testConfigPath = join(uniqueTempDir, '.pipecraftrc.js')
+      writeFileSync(testConfigPath, configContent)
+
+      const originalCwd = process.cwd()
+      try {
+        process.chdir(uniqueTempDir)
+        const config = loadConfig()
+
+        expect(config).toBeDefined()
+        expect(config.ciProvider).toBe('github')
+        expect(config.mergeStrategy).toBe('fast-forward')
+        expect(config.domains).toHaveProperty('api')
+        expect(config.domains).toHaveProperty('web')
+      } finally {
+        process.chdir(originalCwd)
+        rmSync(uniqueTempDir, { recursive: true, force: true })
+      }
+    })
   })
 
   describe('validateConfig', () => {

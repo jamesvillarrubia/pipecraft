@@ -285,6 +285,30 @@ jobs:
           echo "Replace this with your actual remote test commands"
           # Example: npm run test:remote:core
 
+
+
+
+  custom-jobs-gate:
+    needs:
+      - deploy-docs
+      - remote-test-core
+    # no failures and a new version
+    if: ${{
+        always() &&
+        needs.remote-test-core.result != 'failure' &&
+        needs.deploy-docs.result != 'failure'
+      }}
+    runs-on: ubuntu-latest  
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commitSha || github.sha }}
+      # TODO: Replace with your gate remote testing logic
+      - name: Test gate remotely
+        run: |
+          echo "Testing gate remotely"
+          echo "Replace this with your actual remote test commands"
+          # Example: npm run test:remote:gate
   # <--END CUSTOM JOBS-->
 
   #=============================================================================
@@ -293,9 +317,10 @@ jobs:
   # Creates git tags and promotes code through branch flow.
 
   tag:
-    needs: [ version ]
+    needs: [ version, custom-jobs-gate ]
     if: ${{
         always() &&
+        needs.custom-jobs-gate.result == 'success' &&
         github.event_name != 'pull_request' &&
         github.ref_name == 'develop' &&
         needs.version.result == 'success' &&
