@@ -14,7 +14,7 @@ PipeCraft creates two types of files in your repository:
 
 **The main workflow file** at `.github/workflows/pipeline.yml` contains all the jobs that run when you push code. This includes testing, version calculation, deployments, and branch promotions. The workflow includes clearly marked sections where you can add custom jobs and deployment steps that survive regeneration.
 
-**Composite actions** in `.github/actions/` are reusable pieces of logic that the main workflow calls. These handle common operations like detecting which files changed, calculating version numbers from conventional commits, and creating git tags. These actions encapsulate best practices and are debugged once in the templates rather than in each project.
+**Composite actions** in `actions/` are reusable pieces of logic that the main workflow calls. These handle common operations like detecting which files changed, calculating version numbers from conventional commits, and creating git tags. These actions encapsulate best practices and are debugged once in the templates rather than in each project.
 
 ## How configuration maps to workflows
 

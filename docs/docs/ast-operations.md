@@ -88,7 +88,7 @@ Replace existing value completely
   value: createValueFromString(`
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/detect-changes
+      - uses: ./actions/detect-changes
   `)
 }
 ```
@@ -146,7 +146,7 @@ Multi-line YAML with proper formatting
   value: createValueFromString(`
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/detect-changes
+      - uses: ./actions/detect-changes
         with:
           baseRef: \${{ inputs.baseRef || 'main' }}
   `)
@@ -255,7 +255,7 @@ const operations = [
     value: createValueFromString(`
       runs-on: ubuntu-latest
       steps:
-        - uses: ./.github/actions/detect-changes
+        - uses: ./actions/detect-changes
           with:
             baseRef: \${{ inputs.baseRef || 'main' }}
     `)

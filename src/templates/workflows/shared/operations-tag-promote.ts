@@ -67,7 +67,7 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
         with:
           ref: \${{ inputs.commitSha || github.sha }}
           fetch-depth: \${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/create-tag
+      - uses: ./actions/create-tag
         with:
           version: \${{ needs.version.outputs.version }}
           commitSha: \${{ inputs.commitSha || github.sha }}
@@ -96,7 +96,7 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
         with:
           ref: \${{ inputs.commitSha || github.sha }}
           fetch-depth: \${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/promote-branch
+      - uses: ./actions/promote-branch
         with:
           version: \${{ needs.version.outputs.version }}
           sourceBranch: \${{ github.ref_name }}
@@ -128,7 +128,7 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
         with:
           ref: \${{ inputs.commitSha || github.sha }}
           fetch-depth: \${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/create-release
+      - uses: ./actions/create-release
         with:
           version: \${{ needs.version.outputs.version }}
           commitSha: \${{ inputs.commitSha || github.sha }}

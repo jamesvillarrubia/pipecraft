@@ -120,7 +120,7 @@ jobs:
         with:
           ref: ${{ inputs.commitSha || github.sha }}
           fetch-depth: ${{ env.FETCH_DEPTH_AFFECTED }}
-      - uses: ./.github/actions/detect-changes
+      - uses: ./actions/detect-changes
         id: detect
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
@@ -152,7 +152,7 @@ jobs:
         with:
           ref: ${{ inputs.commitSha || github.sha }}
           fetch-depth: ${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/calculate-version
+      - uses: ./actions/calculate-version
         id: version
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
@@ -171,7 +171,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commitSha || github.sha }}
-      - uses: ./.github/actions/lint
+      - uses: ./actions/lint
         with:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
@@ -332,7 +332,7 @@ jobs:
         with:
           ref: ${{ inputs.commitSha || github.sha }}
           fetch-depth: ${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/create-tag
+      - uses: ./actions/create-tag
         with:
           version: ${{ needs.version.outputs.version }}
           commitSha: ${{ inputs.commitSha || github.sha }}
@@ -367,7 +367,7 @@ jobs:
         with:
           ref: ${{ inputs.commitSha || github.sha }}
           fetch-depth: ${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/promote-branch
+      - uses: ./actions/promote-branch
         with:
           version: ${{ needs.version.outputs.version }}
           sourceBranch: ${{ github.ref_name }}
@@ -395,7 +395,7 @@ jobs:
         with:
           ref: ${{ inputs.commitSha || github.sha }}
           fetch-depth: ${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/create-release
+      - uses: ./actions/create-release
         with:
           version: ${{ needs.version.outputs.version }}
           commitSha: ${{ inputs.commitSha || github.sha }}

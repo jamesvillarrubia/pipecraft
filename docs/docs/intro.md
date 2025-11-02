@@ -127,13 +127,13 @@ PipeCraft creates:
 
 **Reusable actions:**
 
-- `.github/actions/detect-changes/action.yml` - Path-based change detection
-- `.github/actions/calculate-version/action.yml` - Semantic version calculation
-- `.github/actions/create-tag/action.yml` - Git tag creation
-- `.github/actions/create-pr/action.yml` - Pull request management
-- `.github/actions/manage-branch/action.yml` - Branch operations
-- `.github/actions/promote-branch/action.yml` - Branch promotion
-- `.github/actions/create-release/action.yml` - GitHub release creation
+- `actions/detect-changes/action.yml` - Path-based change detection
+- `actions/calculate-version/action.yml` - Semantic version calculation
+- `actions/create-tag/action.yml` - Git tag creation
+- `actions/create-pr/action.yml` - Pull request management
+- `actions/manage-branch/action.yml` - Branch operations
+- `actions/promote-branch/action.yml` - Branch promotion
+- `actions/create-release/action.yml` - GitHub release creation
 
 **Additional workflows:**
 
@@ -146,7 +146,7 @@ PipeCraft creates:
 
 If you have an Nx workspace, PipeCraft also generates:
 
-- `.github/actions/detect-changes-nx/action.yml` - Nx-optimized change detection
+- `actions/detect-changes-nx/action.yml` - Nx-optimized change detection
 
 Open `.github/workflows/pipeline.yml` and you'll see a complete workflow with jobs for testing, versioning, and deploying both domains. The workflow is ready to use - you just need to add your specific test and deploy commands.
 
@@ -243,7 +243,7 @@ jobs:
         with:
           ref: ${{ inputs.commitSha || github.sha }}
           fetch-depth: 0
-      - uses: ./.github/actions/detect-changes
+      - uses: ./actions/detect-changes
         id: detect
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
@@ -293,7 +293,7 @@ PipeCraft also generates jobs for **version bumping** on your final branch (main
 
 ### Reusable actions
 
-PipeCraft creates composite actions in `.github/actions/` for common operations:
+PipeCraft creates composite actions in `actions/` for common operations:
 
 - **detect-changes**: Analyzes file paths to determine affected domains using GitHub's paths-filter
 - **calculate-version**: Inspects commits to calculate the next semantic version number

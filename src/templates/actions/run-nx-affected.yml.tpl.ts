@@ -15,7 +15,7 @@
  *
  * ## Generated Action Location
  *
- * `.github/actions/run-nx-affected/action.yml`
+ * `actions/run-nx-affected/action.yml`
  *
  * @module templates/actions/run-nx-affected.yml.tpl
  */
@@ -337,15 +337,10 @@ runs:
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
     .then(ctx => {
-      const filePath = '.github/actions/run-nx-affected/action.yml'
+      const filePath = 'actions/run-nx-affected/action.yml'
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
       logger.verbose(`${status} ${filePath}`)
       return ctx
     })
-    .then(
-      renderTemplate(
-        runNxAffectedActionTemplate,
-        toFile('.github/actions/run-nx-affected/action.yml')
-      )
-    )
+    .then(renderTemplate(runNxAffectedActionTemplate, toFile('actions/run-nx-affected/action.yml')))

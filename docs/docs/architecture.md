@@ -6,7 +6,7 @@ PipeCraft generates CI/CD workflows from a simple configuration file. Understand
 
 At its core, PipeCraft is a template generator. You provide a configuration file that describes your project structure, and PipeCraft transforms that into complete GitHub Actions workflows. The generated workflows handle testing, versioning, branch promotions, and deployments automatically.
 
-The process looks like this: you run `pipecraft generate`, which reads your `.pipecraftrc.json` file, applies some validation checks, and then generates workflow files in `.github/workflows/` and `.github/actions/`. These files are committed to your repository and run automatically when you push code.
+The process looks like this: you run `pipecraft generate`, which reads your `.pipecraftrc.json` file, applies some validation checks, and then generates workflow files in `.github/workflows/` and `actions/`. These files are committed to your repository and run automatically when you push code.
 
 ## Domain-based testing
 

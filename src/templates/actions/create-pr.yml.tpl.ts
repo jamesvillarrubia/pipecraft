@@ -159,10 +159,10 @@ export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx)
     .then(ctx => {
       // Check if file exists to determine merge status
-      const filePath = '.github/actions/create-pr/action.yml'
+      const filePath = 'actions/create-pr/action.yml'
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
       logger.verbose(`${status} ${filePath}`)
       return ctx
     })
-    .then(renderTemplate(createprActionTemplate, toFile('.github/actions/create-pr/action.yml')))
+    .then(renderTemplate(createprActionTemplate, toFile('actions/create-pr/action.yml')))

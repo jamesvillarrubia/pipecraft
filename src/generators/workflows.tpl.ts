@@ -30,13 +30,13 @@
  *
  * // Creates:
  * // .github/workflows/pipeline.yml         - Main pipeline
- * // .github/actions/detect-changes/...     - Change detection action
- * // .github/actions/calculate-version/...  - Version calculation action
- * // .github/actions/create-tag/...         - Tag creation action
- * // .github/actions/create-pr/...          - PR creation action
- * // .github/actions/manage-branch/...      - Branch management action
- * // .github/actions/promote-branch/...     - Branch promotion action
- * // .github/actions/create-release/...     - Release creation action
+ * // actions/detect-changes/...     - Change detection action
+ * // actions/calculate-version/...  - Version calculation action
+ * // actions/create-tag/...         - Tag creation action
+ * // actions/create-pr/...          - PR creation action
+ * // actions/manage-branch/...      - Branch management action
+ * // actions/promote-branch/...     - Branch promotion action
+ * // actions/create-release/...     - Release creation action
  * // .release-it.cjs                        - Release-it configuration
  * ```
  */
@@ -130,7 +130,7 @@ const defaultConfig = {
  *
  * @note The generator creates 9 files:
  * - 1 main workflow (pipeline.yml)
- * - 7 composite actions (in .github/actions/)
+ * - 7 composite actions (in actions/)
  * - 1 release-it configuration (.release-it.cjs)
  *
  * All actions are generated in parallel for performance, followed by

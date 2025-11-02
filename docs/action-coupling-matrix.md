@@ -35,7 +35,7 @@ This document provides a comprehensive assessment of each GitHub Action generate
 
 **Status**: ✅ **MARKETPLACE READY** - Best practice example
 
-**Location**: [`.github/actions/detect-changes/action.yml`](../.github/actions/detect-changes/action.yml)
+**Location**: [`actions/detect-changes/action.yml`](../actions/detect-changes/action.yml)
 
 **Template**: [`src/templates/actions/detect-changes.yml.tpl.ts`](../src/templates/actions/detect-changes.yml.tpl.ts)
 
@@ -98,7 +98,7 @@ This document provides a comprehensive assessment of each GitHub Action generate
 
 **Status**: ✅ **MARKETPLACE READY** - Simple and clean
 
-**Location**: [`.github/actions/create-tag/action.yml`](../.github/actions/create-tag/action.yml)
+**Location**: [`actions/create-tag/action.yml`](../actions/create-tag/action.yml)
 
 **Template**: [`src/templates/actions/create-tag.yml.tpl.ts`](../src/templates/actions/create-tag.yml.tpl.ts)
 
@@ -147,7 +147,7 @@ This document provides a comprehensive assessment of each GitHub Action generate
 
 **Status**: ⚠️ **NEEDS REVIEW** - Unclear dependencies
 
-**Location**: [`.github/actions/calculate-version/action.yml`](../.github/actions/calculate-version/action.yml)
+**Location**: [`actions/calculate-version/action.yml`](../actions/calculate-version/action.yml)
 
 **Template**: [`src/templates/actions/calculate-version.yml.tpl.ts`](../src/templates/actions/calculate-version.yml.tpl.ts)
 
@@ -202,7 +202,7 @@ This document provides a comprehensive assessment of each GitHub Action generate
 
 **Status**: ❌ **NEEDS DECOUPLING** - Actively reads config
 
-**Location**: [`.github/actions/promote-branch/action.yml`](../.github/actions/promote-branch/action.yml)
+**Location**: [`actions/promote-branch/action.yml`](../actions/promote-branch/action.yml)
 
 **Template**: [`src/templates/actions/promote-branch.yml.tpl.ts`](../src/templates/actions/promote-branch.yml.tpl.ts)
 
@@ -300,7 +300,7 @@ jobs:
 
 **Status**: ❓ **NEEDS AUDIT** - Unknown coupling
 
-**Location**: [`.github/actions/manage-branch/action.yml`](../.github/actions/manage-branch/action.yml)
+**Location**: [`actions/manage-branch/action.yml`](../actions/manage-branch/action.yml)
 
 **Template**: [`src/templates/actions/manage-branch.yml.tpl.ts`](../src/templates/actions/manage-branch.yml.tpl.ts)
 
@@ -332,7 +332,7 @@ jobs:
 
 **Status**: ❓ **NEEDS AUDIT** - Likely close to ready
 
-**Location**: [`.github/actions/create-pr/action.yml`](../.github/actions/create-pr/action.yml)
+**Location**: [`actions/create-pr/action.yml`](../actions/create-pr/action.yml)
 
 **Template**: [`src/templates/actions/create-pr.yml.tpl.ts`](../src/templates/actions/create-pr.yml.tpl.ts)
 
@@ -364,7 +364,7 @@ jobs:
 
 **Status**: ❓ **NEEDS AUDIT** - Likely close to ready
 
-**Location**: [`.github/actions/create-release/action.yml`](../.github/actions/create-release/action.yml)
+**Location**: [`actions/create-release/action.yml`](../actions/create-release/action.yml)
 
 **Template**: [`src/templates/actions/create-release.yml.tpl.ts`](../src/templates/actions/create-release.yml.tpl.ts)
 
@@ -396,7 +396,7 @@ jobs:
 
 **Status**: ⚠️ **NX-SPECIFIC** - By design
 
-**Location**: [`.github/actions/run-nx-affected/action.yml`](../.github/actions/run-nx-affected/action.yml)
+**Location**: [`actions/run-nx-affected/action.yml`](../actions/run-nx-affected/action.yml)
 (Note: Only generated when Nx detected)
 
 **Template**: [`src/templates/actions/run-nx-affected.yml.tpl.ts`](../src/templates/actions/run-nx-affected.yml.tpl.ts)

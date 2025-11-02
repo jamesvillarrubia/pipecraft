@@ -161,7 +161,7 @@ Add your specific test commands to the generated jobs, commit everything, and yo
 
 ## What Gets Generated
 
-PipeCraft creates `.github/workflows/pipeline.yml` containing all the jobs that run when you push code. It also generates reusable actions in `.github/actions/` for common operations like change detection and version calculation.
+PipeCraft creates `.github/workflows/pipeline.yml` containing all the jobs that run when you push code. It also generates reusable actions in `actions/` for common operations like change detection and version calculation.
 
 The generated workflows include clearly marked sections for your customizations. Anything you add in these sections survives regeneration—PipeCraft's AST-based merging ensures your test commands, deployment scripts, and custom jobs remain intact when you update configuration.
 

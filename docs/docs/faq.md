@@ -213,11 +213,11 @@ PipeCraft generates:
 
 **Composite actions:**
 
-- `.github/actions/detect-changes/action.yml` - Change detection
-- `.github/actions/calculate-version/action.yml` - Version calculation
-- `.github/actions/create-tag/action.yml` - Git tagging
-- `.github/actions/promote-branch/action.yml` - Branch promotion
-- `.github/actions/create-release/action.yml` - GitHub releases
+- `actions/detect-changes/action.yml` - Change detection
+- `actions/calculate-version/action.yml` - Version calculation
+- `actions/create-tag/action.yml` - Git tagging
+- `actions/promote-branch/action.yml` - Branch promotion
+- `actions/create-release/action.yml` - GitHub releases
 - (and others)
 
 **Configuration:**

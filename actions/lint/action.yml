@@ -1,0 +1,76 @@
+name: 'Lint Code'
+description: 'Run ESLint and Prettier checks on the codebase'
+author: 'PipeCraft'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '20'
+  pnpm-version:
+    description: 'pnpm version to use'
+    required: false
+    default: '9'
+  eslint:
+    description: 'Run ESLint checks'
+    required: false
+    default: 'true'
+  prettier:
+    description: 'Run Prettier format checks'
+    required: false
+    default: 'true'
+  working-directory:
+    description: 'Working directory for commands'
+    required: false
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: ${{ inputs.pnpm-version }}
+
+    - name: Get pnpm store directory
+      id: pnpm-cache
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "📦 Installing dependencies..."
+        pnpm install --frozen-lockfile || pnpm install
+
+    - name: Run ESLint
+      if: inputs.eslint == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "🔍 Running ESLint..."
+        pnpm run lint
+
+    - name: Run Prettier
+      if: inputs.prettier == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "✨ Checking code formatting with Prettier..."
+        pnpm run format:check
+

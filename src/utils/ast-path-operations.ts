@@ -44,7 +44,7 @@ import { type Node, parseDocument, Scalar, stringify, YAMLMap, YAMLSeq } from 'y
  *   value: createValueFromString(`
  *     runs-on: ubuntu-latest
  *     steps:
- *       - uses: ./.github/actions/detect-changes
+ *       - uses: ./actions/detect-changes
  *         with:
  *           baseRef: ${{ inputs.baseRef || 'main' }}
  *   `)
@@ -492,7 +492,7 @@ function createNode(value: PathValue): Node {
  *     value: createValueFromString(`
  *       runs-on: ubuntu-latest
  *       steps:
- *         - uses: ./.github/actions/detect-changes
+ *         - uses: ./actions/detect-changes
  *     `)
  *   }
  * ]

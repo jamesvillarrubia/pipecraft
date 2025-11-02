@@ -134,7 +134,7 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/detect-changes
+      - uses: ./actions/detect-changes
     outputs:
       domain1: ${{ steps.detect.outputs.domain1 }}
       domain2: ${{ steps.detect.outputs.domain2 }}
@@ -160,7 +160,7 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/calculate-version
+      - uses: ./actions/calculate-version
     outputs:
       version: ${{ steps.version.outputs.version }}
 
@@ -188,7 +188,7 @@ jobs:
       needs.version.outputs.version != ''
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/create-tag
+      - uses: ./actions/create-tag
         with:
           version: ${{ needs.version.outputs.version }}
 
@@ -200,7 +200,7 @@ jobs:
       (github.ref_name == 'develop' || github.ref_name == 'staging')
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/promote-branch
+      - uses: ./actions/promote-branch
         with:
           sourceBranch: ${{ github.ref_name }}
           version: ${{ needs.version.outputs.version }}
@@ -213,7 +213,7 @@ jobs:
       needs.version.outputs.version != ''
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/create-release
+      - uses: ./actions/create-release
         with:
           version: ${{ needs.version.outputs.version }}
 ```

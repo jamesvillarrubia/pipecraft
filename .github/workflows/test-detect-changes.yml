@@ -3,7 +3,7 @@ name: Test detect-changes Action
 on:
   pull_request:
     paths:
-      - '.github/actions/detect-changes/**'
+      - 'actions/detect-changes/**'
       - '.github/workflows/test-detect-changes.yml'
   workflow_dispatch:
 
@@ -19,14 +19,14 @@ jobs:
 
       - name: Test Action (Path-Based)
         id: changes
-        uses: ./.github/actions/detect-changes
+        uses: ./actions/detect-changes
         with:
           baseRef: ${{ github.event.pull_request.base.ref || 'develop' }}
           useNx: false  # Force path-based for this test
           domains-config: |
             actions:
               paths:
-                - '.github/actions/**'
+                - 'actions/**'
             workflows:
               paths:
                 - '.github/workflows/**'
@@ -76,7 +76,7 @@ jobs:
 
       - name: Test Action (Auto-detect Nx)
         id: changes
-        uses: ./.github/actions/detect-changes
+        uses: ./actions/detect-changes
         with:
           baseRef: ${{ github.event.pull_request.base.ref || 'develop' }}
           useNx: true  # Will auto-detect and fallback to path-based
@@ -126,12 +126,12 @@ jobs:
 
       - name: Detect Changes
         id: changes
-        uses: ./.github/actions/detect-changes
+        uses: ./actions/detect-changes
         with:
           baseRef: ${{ github.event.pull_request.base.ref || 'develop' }}
           domains-config: |
             actions:
-              paths: ['.github/actions/**']
+              paths: ['actions/**']
             workflows:
               paths: ['.github/workflows/**']
             src:
@@ -164,7 +164,7 @@ jobs:
 
       - name: Test with Non-existent Paths
         id: changes
-        uses: ./.github/actions/detect-changes
+        uses: ./actions/detect-changes
         with:
           baseRef: ${{ github.event.pull_request.base.ref || 'develop' }}
           domains-config: |

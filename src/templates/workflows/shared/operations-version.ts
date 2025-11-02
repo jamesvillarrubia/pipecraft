@@ -64,7 +64,7 @@ export function createVersionJobOperation(ctx: VersionContext): PathOperationCon
         with:
           ref: \${{ inputs.commitSha || github.sha }}
           fetch-depth: \${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/calculate-version
+      - uses: ./actions/calculate-version
         id: version
         with:
           baseRef: \${{ inputs.baseRef || '${baseRef}' }}

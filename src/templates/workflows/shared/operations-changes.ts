@@ -72,7 +72,7 @@ ${domainsYaml}
         with:
           ref: \${{ inputs.commitSha || github.sha }}
           fetch-depth: \${{ env.FETCH_DEPTH_AFFECTED }}
-      - uses: ./.github/actions/detect-changes
+      - uses: ./actions/detect-changes
         id: detect
         with:
           baseRef: \${{ inputs.baseRef || '${baseRef}' }}

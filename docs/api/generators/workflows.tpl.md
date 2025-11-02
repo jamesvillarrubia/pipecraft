@@ -37,12 +37,12 @@ await generate({
 
 // Creates:
 // .github/workflows/pipeline.yml         - Main pipeline
-// .github/actions/detect-changes/...     - Change detection action
-// .github/actions/calculate-version/...  - Version calculation action
-// .github/actions/create-tag/...         - Tag creation action
-// .github/actions/create-pr/...          - PR creation action
-// .github/actions/manage-branch/...      - Branch management action
-// .github/actions/promote-branch/...     - Branch promotion action
+// actions/detect-changes/...     - Change detection action
+// actions/calculate-version/...  - Version calculation action
+// actions/create-tag/...         - Tag creation action
+// actions/create-pr/...          - PR creation action
+// actions/manage-branch/...      - Branch management action
+// actions/promote-branch/...     - Branch promotion action
 ```
 
 ## Functions
@@ -110,7 +110,7 @@ await generate({
 The generator creates 7 files:
 
 - 1 main workflow (pipeline.yml)
-- 6 composite actions (in .github/actions/)
+- 6 composite actions (in actions/)
 
 All actions are generated in parallel for performance, followed by
 the main pipeline which may reference the actions.
