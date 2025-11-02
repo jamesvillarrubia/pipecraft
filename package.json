@@ -65,7 +65,10 @@
     "docs:deploy": "npm run build && cd docs && pnpm run typedoc && pnpm run build",
     "examples:store-git": "./scripts/store-example-git-repos.sh",
     "examples:activate": "node scripts/activate-example-repos.mjs",
-    "examples:deactivate": "node scripts/deactivate-example-repos.mjs"
+    "examples:deactivate": "node scripts/deactivate-example-repos.mjs",
+    "sync-actions": "tsx scripts/sync-actions.ts",
+    "sync-actions:check": "tsx scripts/sync-actions.ts --check",
+    "sync-actions:verify": "tsx scripts/sync-actions.ts --verify"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
