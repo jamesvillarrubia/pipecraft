@@ -1,0 +1,529 @@
+name: Test promote-branch Action
+
+on:
+  pull_request:
+    paths:
+      - '.github/actions/promote-branch/**'
+      - '.github/workflows/test-promote-branch.yml'
+  workflow_dispatch:
+
+# Only allow one concurrent test run
+concurrency:
+  group: test-promote-branch-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Test 1: Basic promotion with manual approval
+  test-manual-promotion:
+    name: 'Test: Manual Approval Promotion'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Test Environment
+        id: setup
+        run: |
+          # Create unique branch names for this test
+          TEST_ID="manual-${{ github.run_number }}"
+          SOURCE_BRANCH="test-source-${TEST_ID}"
+          TARGET_BRANCH="test-target-${TEST_ID}"
+
+          echo "source=${SOURCE_BRANCH}" >> $GITHUB_OUTPUT
+          echo "target=${TARGET_BRANCH}" >> $GITHUB_OUTPUT
+
+          # Create source and target branches
+          git checkout -b "${SOURCE_BRANCH}"
+          echo "Test content ${TEST_ID}" > test-file-${TEST_ID}.txt
+          git add test-file-${TEST_ID}.txt
+          git commit -m "test: add test content for ${TEST_ID}"
+          git push origin "${SOURCE_BRANCH}"
+
+          # Create target branch (simulating existing branch)
+          git checkout -b "${TARGET_BRANCH}"
+          git push origin "${TARGET_BRANCH}"
+
+          # Switch back to source for promotion
+          git checkout "${SOURCE_BRANCH}"
+
+      - name: Promote with Manual Approval
+        id: promote
+        uses: ./.github/actions/promote-branch
+        with:
+          sourceBranch: ${{ steps.setup.outputs.source }}
+          targetBranch: ${{ steps.setup.outputs.target }}
+          version: v0.0.0-test-${{ github.run_number }}
+          autoMerge: 'false'
+
+      - name: Verify PR Created
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER="${{ steps.promote.outputs.prNumber }}"
+          PR_URL="${{ steps.promote.outputs.prUrl }}"
+          TEMP_BRANCH="${{ steps.promote.outputs.tempBranch }}"
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "❌ PR number not set"
+            exit 1
+          fi
+
+          if [ -z "$PR_URL" ]; then
+            echo "❌ PR URL not set"
+            exit 1
+          fi
+
+          if [ -z "$TEMP_BRANCH" ]; then
+            echo "❌ Temp branch not set"
+            exit 1
+          fi
+
+          # Verify PR exists and is open
+          PR_STATE=$(gh pr view "$PR_NUMBER" --json state --jq '.state')
+          if [ "$PR_STATE" != "OPEN" ]; then
+            echo "❌ PR is not open: $PR_STATE"
+            exit 1
+          fi
+
+          echo "✅ PR #${PR_NUMBER} created successfully"
+          echo "✅ PR URL: ${PR_URL}"
+          echo "✅ Temp branch: ${TEMP_BRANCH}"
+
+      - name: Cleanup
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER="${{ steps.promote.outputs.prNumber }}"
+          TEMP_BRANCH="${{ steps.promote.outputs.tempBranch }}"
+          SOURCE_BRANCH="${{ steps.setup.outputs.source }}"
+          TARGET_BRANCH="${{ steps.setup.outputs.target }}"
+
+          # Close PR if it exists
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr close "$PR_NUMBER" --comment "Test completed, cleaning up" || true
+          fi
+
+          # Delete branches
+          git push origin --delete "$TEMP_BRANCH" 2>/dev/null || true
+          git push origin --delete "$SOURCE_BRANCH" 2>/dev/null || true
+          git push origin --delete "$TARGET_BRANCH" 2>/dev/null || true
+
+          echo "🧹 Cleanup completed"
+
+  # Test 2: Auto-merge (fast-forward)
+  test-auto-merge:
+    name: 'Test: Auto-Merge Fast-Forward'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      workflows: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Test Environment
+        id: setup
+        run: |
+          # Create unique branch names for this test
+          TEST_ID="auto-${{ github.run_number }}"
+          SOURCE_BRANCH="test-source-${TEST_ID}"
+          TARGET_BRANCH="test-target-${TEST_ID}"
+
+          echo "source=${SOURCE_BRANCH}" >> $GITHUB_OUTPUT
+          echo "target=${TARGET_BRANCH}" >> $GITHUB_OUTPUT
+
+          # Create target branch first
+          git checkout -b "${TARGET_BRANCH}"
+          git push origin "${TARGET_BRANCH}"
+
+          # Create source branch with new commit (ahead of target)
+          git checkout -b "${SOURCE_BRANCH}"
+          echo "Test content ${TEST_ID}" > test-file-${TEST_ID}.txt
+          git add test-file-${TEST_ID}.txt
+          git commit -m "test: add test content for ${TEST_ID}"
+          git push origin "${SOURCE_BRANCH}"
+
+      - name: Promote with Auto-Merge
+        id: promote
+        uses: ./.github/actions/promote-branch
+        with:
+          sourceBranch: ${{ steps.setup.outputs.source }}
+          targetBranch: ${{ steps.setup.outputs.target }}
+          version: v0.0.0-test-${{ github.run_number }}
+          autoMerge: 'true'
+
+      - name: Verify Fast-Forward Merge
+        run: |
+          SOURCE_BRANCH="${{ steps.setup.outputs.source }}"
+          TARGET_BRANCH="${{ steps.setup.outputs.target }}"
+
+          # Fetch latest
+          git fetch origin
+
+          # Get commit SHAs
+          SOURCE_SHA=$(git rev-parse origin/${SOURCE_BRANCH})
+          TARGET_SHA=$(git rev-parse origin/${TARGET_BRANCH})
+
+          echo "Source SHA: $SOURCE_SHA"
+          echo "Target SHA: $TARGET_SHA"
+
+          # Target should now point to same commit as source
+          if [ "$SOURCE_SHA" != "$TARGET_SHA" ]; then
+            echo "❌ Fast-forward merge failed"
+            echo "Target branch was not updated to source commit"
+            exit 1
+          fi
+
+          echo "✅ Fast-forward merge successful"
+
+      - name: Verify PR Closed and Branch Deleted
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER="${{ steps.promote.outputs.prNumber }}"
+          TEMP_BRANCH="${{ steps.promote.outputs.tempBranch }}"
+
+          # Check PR is closed
+          if [ -n "$PR_NUMBER" ]; then
+            PR_STATE=$(gh pr view "$PR_NUMBER" --json state --jq '.state' 2>/dev/null || echo "NOTFOUND")
+            if [ "$PR_STATE" == "OPEN" ]; then
+              echo "❌ PR should be closed but is still open"
+              exit 1
+            fi
+            echo "✅ PR #${PR_NUMBER} closed"
+          fi
+
+          # Check temp branch is deleted
+          if git ls-remote --heads origin "$TEMP_BRANCH" | grep -q "$TEMP_BRANCH"; then
+            echo "❌ Temp branch should be deleted but still exists"
+            exit 1
+          fi
+
+          echo "✅ Temp branch cleaned up"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          SOURCE_BRANCH="${{ steps.setup.outputs.source }}"
+          TARGET_BRANCH="${{ steps.setup.outputs.target }}"
+
+          # Delete test branches
+          git push origin --delete "$SOURCE_BRANCH" 2>/dev/null || true
+          git push origin --delete "$TARGET_BRANCH" 2>/dev/null || true
+
+          echo "🧹 Cleanup completed"
+
+  # Test 3: Version auto-detection
+  test-version-autodetect:
+    name: 'Test: Version Auto-Detection'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Test Environment
+        id: setup
+        run: |
+          TEST_ID="version-${{ github.run_number }}"
+          SOURCE_BRANCH="test-source-${TEST_ID}"
+          TARGET_BRANCH="test-target-${TEST_ID}"
+
+          echo "source=${SOURCE_BRANCH}" >> $GITHUB_OUTPUT
+          echo "target=${TARGET_BRANCH}" >> $GITHUB_OUTPUT
+
+          # Create source branch
+          git checkout -b "${SOURCE_BRANCH}"
+          echo "Test content" > test-file.txt
+          git add test-file.txt
+          git commit -m "test: version detection"
+
+          # Create a tag for version detection
+          git tag "v9.9.9-test-${TEST_ID}"
+
+          git push origin "${SOURCE_BRANCH}"
+          git push origin "v9.9.9-test-${TEST_ID}"
+
+          # Create target branch
+          git checkout -b "${TARGET_BRANCH}"
+          git push origin "${TARGET_BRANCH}"
+
+          git checkout "${SOURCE_BRANCH}"
+
+      - name: Promote Without Version Input
+        id: promote
+        uses: ./.github/actions/promote-branch
+        with:
+          sourceBranch: ${{ steps.setup.outputs.source }}
+          targetBranch: ${{ steps.setup.outputs.target }}
+          autoMerge: 'false'
+          # version not provided - should auto-detect
+
+      - name: Verify Version Detected
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER="${{ steps.promote.outputs.prNumber }}"
+          TEMP_BRANCH="${{ steps.promote.outputs.tempBranch }}"
+
+          echo "Temp branch: $TEMP_BRANCH"
+
+          # Temp branch should contain version
+          if [[ ! "$TEMP_BRANCH" =~ 9\.9\.9-test-${{ github.run_number }} ]]; then
+            echo "❌ Version not detected in temp branch name"
+            echo "Expected version 9.9.9-test-${{ github.run_number }} in: $TEMP_BRANCH"
+            exit 1
+          fi
+
+          echo "✅ Version auto-detected and used in branch name"
+
+      - name: Cleanup
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TEST_ID="version-${{ github.run_number }}"
+          PR_NUMBER="${{ steps.promote.outputs.prNumber }}"
+          TEMP_BRANCH="${{ steps.promote.outputs.tempBranch }}"
+          SOURCE_BRANCH="${{ steps.setup.outputs.source }}"
+          TARGET_BRANCH="${{ steps.setup.outputs.target }}"
+
+          # Close PR
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr close "$PR_NUMBER" --comment "Test completed" || true
+          fi
+
+          # Delete branches and tag
+          git push origin --delete "$TEMP_BRANCH" 2>/dev/null || true
+          git push origin --delete "$SOURCE_BRANCH" 2>/dev/null || true
+          git push origin --delete "$TARGET_BRANCH" 2>/dev/null || true
+          git push origin --delete "v9.9.9-test-${TEST_ID}" 2>/dev/null || true
+
+          echo "🧹 Cleanup completed"
+
+  # Test 4: Custom branch pattern
+  test-custom-pattern:
+    name: 'Test: Custom Branch Pattern'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Test Environment
+        id: setup
+        run: |
+          TEST_ID="pattern-${{ github.run_number }}"
+          SOURCE_BRANCH="test-source-${TEST_ID}"
+          TARGET_BRANCH="test-target-${TEST_ID}"
+
+          echo "source=${SOURCE_BRANCH}" >> $GITHUB_OUTPUT
+          echo "target=${TARGET_BRANCH}" >> $GITHUB_OUTPUT
+
+          # Create branches
+          git checkout -b "${SOURCE_BRANCH}"
+          echo "Test content" > test-file.txt
+          git add test-file.txt
+          git commit -m "test: custom pattern"
+          git push origin "${SOURCE_BRANCH}"
+
+          git checkout -b "${TARGET_BRANCH}"
+          git push origin "${TARGET_BRANCH}"
+
+          git checkout "${SOURCE_BRANCH}"
+
+      - name: Promote with Custom Pattern
+        id: promote
+        uses: ./.github/actions/promote-branch
+        with:
+          sourceBranch: ${{ steps.setup.outputs.source }}
+          targetBranch: ${{ steps.setup.outputs.target }}
+          version: '1.0.0'
+          tempBranchPattern: 'custom-release/{version}-{target}'
+          autoMerge: 'false'
+
+      - name: Verify Custom Pattern
+        run: |
+          TEMP_BRANCH="${{ steps.promote.outputs.tempBranch }}"
+          TARGET_BRANCH="${{ steps.setup.outputs.target }}"
+
+          # Should match pattern: custom-release/1.0.0-{target}
+          EXPECTED="custom-release/1.0.0-${TARGET_BRANCH}"
+
+          if [ "$TEMP_BRANCH" != "$EXPECTED" ]; then
+            echo "❌ Branch pattern mismatch"
+            echo "Expected: $EXPECTED"
+            echo "Got: $TEMP_BRANCH"
+            exit 1
+          fi
+
+          echo "✅ Custom pattern applied correctly"
+
+      - name: Cleanup
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER="${{ steps.promote.outputs.prNumber }}"
+          TEMP_BRANCH="${{ steps.promote.outputs.tempBranch }}"
+          SOURCE_BRANCH="${{ steps.setup.outputs.source }}"
+          TARGET_BRANCH="${{ steps.setup.outputs.target }}"
+
+          gh pr close "$PR_NUMBER" --comment "Test completed" 2>/dev/null || true
+          git push origin --delete "$TEMP_BRANCH" 2>/dev/null || true
+          git push origin --delete "$SOURCE_BRANCH" 2>/dev/null || true
+          git push origin --delete "$TARGET_BRANCH" 2>/dev/null || true
+
+          echo "🧹 Cleanup completed"
+
+  # Test 5: Existing PR handling
+  test-existing-pr:
+    name: 'Test: Existing PR Handling'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Test Environment
+        id: setup
+        run: |
+          TEST_ID="existing-${{ github.run_number }}"
+          SOURCE_BRANCH="test-source-${TEST_ID}"
+          TARGET_BRANCH="test-target-${TEST_ID}"
+
+          echo "source=${SOURCE_BRANCH}" >> $GITHUB_OUTPUT
+          echo "target=${TARGET_BRANCH}" >> $GITHUB_OUTPUT
+
+          # Create branches
+          git checkout -b "${SOURCE_BRANCH}"
+          echo "Test content" > test-file.txt
+          git add test-file.txt
+          git commit -m "test: existing PR"
+          git push origin "${SOURCE_BRANCH}"
+
+          git checkout -b "${TARGET_BRANCH}"
+          git push origin "${TARGET_BRANCH}"
+
+          git checkout "${SOURCE_BRANCH}"
+
+      - name: First Promotion (Create PR)
+        id: first-promote
+        uses: ./.github/actions/promote-branch
+        with:
+          sourceBranch: ${{ steps.setup.outputs.source }}
+          targetBranch: ${{ steps.setup.outputs.target }}
+          version: v0.0.0-test-${{ github.run_number }}
+          autoMerge: 'false'
+
+      - name: Second Promotion (Should Use Existing PR)
+        id: second-promote
+        uses: ./.github/actions/promote-branch
+        with:
+          sourceBranch: ${{ steps.setup.outputs.source }}
+          targetBranch: ${{ steps.setup.outputs.target }}
+          version: v0.0.0-test-${{ github.run_number }}
+          autoMerge: 'false'
+
+      - name: Verify Same PR Used
+        run: |
+          FIRST_PR="${{ steps.first-promote.outputs.prNumber }}"
+          SECOND_PR="${{ steps.second-promote.outputs.prNumber }}"
+
+          if [ "$FIRST_PR" != "$SECOND_PR" ]; then
+            echo "❌ Different PRs created"
+            echo "First: $FIRST_PR"
+            echo "Second: $SECOND_PR"
+            exit 1
+          fi
+
+          echo "✅ Same PR reused: #${FIRST_PR}"
+
+      - name: Cleanup
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER="${{ steps.first-promote.outputs.prNumber }}"
+          TEMP_BRANCH="${{ steps.first-promote.outputs.tempBranch }}"
+          SOURCE_BRANCH="${{ steps.setup.outputs.source }}"
+          TARGET_BRANCH="${{ steps.setup.outputs.target }}"
+
+          gh pr close "$PR_NUMBER" --comment "Test completed" 2>/dev/null || true
+          git push origin --delete "$TEMP_BRANCH" 2>/dev/null || true
+          git push origin --delete "$SOURCE_BRANCH" 2>/dev/null || true
+          git push origin --delete "$TARGET_BRANCH" 2>/dev/null || true
+
+          echo "🧹 Cleanup completed"
+
+  # Summary job
+  test-summary:
+    name: 'Test Summary'
+    runs-on: ubuntu-latest
+    needs:
+      - test-manual-promotion
+      - test-auto-merge
+      - test-version-autodetect
+      - test-custom-pattern
+      - test-existing-pr
+    if: always()
+    steps:
+      - name: Check Test Results
+        run: |
+          echo "## promote-branch Action Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          RESULTS=(
+            "Manual Approval Promotion:${{ needs.test-manual-promotion.result }}"
+            "Auto-Merge Fast-Forward:${{ needs.test-auto-merge.result }}"
+            "Version Auto-Detection:${{ needs.test-version-autodetect.result }}"
+            "Custom Branch Pattern:${{ needs.test-custom-pattern.result }}"
+            "Existing PR Handling:${{ needs.test-existing-pr.result }}"
+          )
+
+          ALL_PASSED=true
+          for result in "${RESULTS[@]}"; do
+            TEST_NAME="${result%:*}"
+            TEST_RESULT="${result#*:}"
+
+            if [ "$TEST_RESULT" == "success" ]; then
+              echo "- ✅ $TEST_NAME" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- ❌ $TEST_NAME (${TEST_RESULT})" >> $GITHUB_STEP_SUMMARY
+              ALL_PASSED=false
+            fi
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$ALL_PASSED" == "true" ]; then
+            echo "### ✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The promote-branch action is working correctly and is ready for marketplace publication." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Some tests failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please review the failed tests above and fix any issues before proceeding." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
