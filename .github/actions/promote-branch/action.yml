@@ -2,6 +2,10 @@ name: 'Promote Branch'
 description: 'Promote code from source to target branch via temporary branch + PR'
 author: 'PipeCraft'
 
+branding:
+  icon: 'git-merge'
+  color: 'purple'
+
 inputs:
   sourceBranch:
     description: 'Source branch to promote from (defaults to github.ref_name)'
