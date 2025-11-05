@@ -290,15 +290,17 @@ jobs:
 
   custom-jobs-gate:
     needs:
+      - version
       - deploy-docs
       - remote-test-core
-    # no failures and a new version
+    # no failures and a new version (runs as a gate before tag/promote/release)
     if: ${{
         always() &&
+        needs.version.result == 'success' &&
         needs.remote-test-core.result != 'failure' &&
         needs.deploy-docs.result != 'failure'
       }}
-    runs-on: ubuntu-latest  
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -318,13 +320,14 @@ jobs:
   # Creates git tags and promotes code through branch flow.
 
   tag:
-    needs: [ version ]
+    needs: [ version, custom-jobs-gate ]
     if: ${{
         always() &&
         github.event_name != 'pull_request' &&
         github.ref_name == 'develop' &&
         needs.version.result == 'success' &&
-        needs.version.outputs.version != ''
+        needs.version.outputs.version != '' &&
+        needs.custom-jobs-gate.result == 'success'
       }}
     runs-on: ubuntu-latest
     steps:
@@ -373,7 +376,7 @@ jobs:
           sourceBranch: ${{ github.ref_name }}
           targetBranch: ${{ github.ref_name == 'develop' && 'staging' || 'main' }}
           autoMerge: ${{ github.ref_name == 'develop' && 'true' || 'true' }}
-          run_number: ${{ github.run_number }}
+          run_number: ${{ inputs.run_number || github.run_number }}
 
   #=============================================================================
   # RELEASE (⚠️  Managed by Pipecraft - do not modify)
