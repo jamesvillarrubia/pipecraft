@@ -20,24 +20,23 @@ The templates include best practices for monorepos where different parts of your
 
 Let's walk through setting up PipeCraft in a real project. We'll use a monorepo with an API and web frontend as an example.
 
-### Install PipeCraft
+### Run PipeCraft
 
-Start by installing PipeCraft globally:
-
-```bash
-npm install -g pipecraft
-```
-
-This makes the `pipecraft` command available in your terminal.
-
-### Initialize your configuration
-
-Navigate to your project and run the init command:
+No installation required—use `npx` to run PipeCraft directly:
 
 ```bash
 cd my-monorepo
+npx pipecraft init
+```
+
+Alternatively, you can install PipeCraft globally:
+
+```bash
+npm install -g pipecraft
 pipecraft init
 ```
+
+### Initialize your configuration
 
 PipeCraft will ask you questions about your project:
 

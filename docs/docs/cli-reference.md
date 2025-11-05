@@ -4,21 +4,27 @@ PipeCraft is a command-line tool that generates CI/CD workflows for your project
 
 ## Installation
 
-Install PipeCraft globally using npm or pnpm:
+**Recommended: Use npx** (no installation required):
+
+```bash
+npx pipecraft init
+npx pipecraft generate
+```
+
+**Alternative: Install globally**:
 
 ```bash
 npm install -g pipecraft
+pipecraft init
 ```
-
-Once installed, the `pipecraft` command will be available in your terminal.
 
 ## Getting started with a new project
 
-When you're ready to add PipeCraft to your project, start by running the init command in your project directory:
+When you're ready to add PipeCraft to your project, run the init command in your project directory:
 
 ```bash
 cd your-project
-pipecraft init
+npx pipecraft init
 ```
 
 This launches an interactive setup that asks you about your project structure. It will ask questions like:
@@ -190,17 +196,14 @@ See the [Security](security.md) documentation for more details on why these perm
 Here's a typical workflow when adding PipeCraft to an existing project:
 
 ```bash
-# 1. Install globally
-npm install -g pipecraft
-
-# 2. Navigate to your project
+# 1. Navigate to your project
 cd my-monorepo
 
-# 3. Initialize configuration
-pipecraft init
+# 2. Initialize configuration
+npx pipecraft init
 
-# 4. Generate workflows
-pipecraft generate
+# 3. Generate workflows
+npx pipecraft generate
 
 # 5. Review the generated files
 ls -la .github/workflows/

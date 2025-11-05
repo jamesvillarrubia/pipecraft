@@ -57,7 +57,7 @@ npx pipecraft init
 npx pipecraft generate
 
 # Commit the generated files
-git add .github/workflows .pipecraftrc
+git add .github/workflows .github/actions .pipecraftrc
 git commit -m "chore: add PipeCraft workflows"
 git push
 ```
