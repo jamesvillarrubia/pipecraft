@@ -42,10 +42,11 @@ export function getActionReference(actionName: string, config: Partial<Pipecraft
       // Default: Actions in .github/actions/ (user repos)
       return `./.github/actions/${actionName}`
 
-    case 'remote':
+    case 'remote': {
       // Reference published marketplace actions
       const version = config.actionVersion || 'v1'
       return `pipecraft-lab/pipecraft/actions/${actionName}@${version}`
+    }
 
     case 'source':
       // Internal: Actions in /actions/ (PipeCraft repo only)
@@ -122,9 +123,10 @@ export function getActionSourceDescription(config: Partial<PipecraftConfig>): st
     case 'local':
       return 'Local actions (full control, in .github/actions/)'
 
-    case 'remote':
+    case 'remote': {
       const version = config.actionVersion || 'v1'
       return `Marketplace actions (pinned to ${version})`
+    }
 
     case 'source':
       return 'Repository actions (dogfooding /actions/ folder)'
