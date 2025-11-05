@@ -364,8 +364,25 @@ export async function updateWorkflowPermissions(
   )
 
   if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`Failed to update workflow permissions: ${response.status} ${error}`)
+    const errorText = await response.text()
+
+    // Check if this is an organization-level policy conflict
+    if (response.status === 409) {
+      throw new Error(
+        `Organization-level policy prevents changing workflow permissions.\n\n` +
+          `⚠️  This repository's organization has restricted workflow permissions.\n` +
+          `    The organization administrator must:\n\n` +
+          `    1. Visit: https://github.com/organizations/${owner}/settings/actions\n` +
+          `    2. Under "Workflow permissions":\n` +
+          `       - Enable "Read and write permissions"\n` +
+          `       - Check "Allow GitHub Actions to create and approve pull requests"\n` +
+          `    3. Save changes\n\n` +
+          `    Then run 'pipecraft setup-github' again to configure this repository.\n\n` +
+          `API Error: ${errorText}`
+      )
+    }
+
+    throw new Error(`Failed to update workflow permissions: ${response.status} ${errorText}`)
   }
 }
 
@@ -1248,10 +1265,14 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
 
   // Apply permission changes if needed
   if (!permissionsAlreadyCorrect && changes && changes !== 'declined') {
-    console.log('\n🔄 Updating repository settings...')
-    await updateWorkflowPermissions(repoInfo.owner, repoInfo.repo, token, changes)
-
-    console.log('✅ GitHub Actions permissions updated successfully!')
+    console.log('\n🔄 Updating workflow permissions...')
+    try {
+      await updateWorkflowPermissions(repoInfo.owner, repoInfo.repo, token, changes)
+      console.log('✅ GitHub Actions permissions updated successfully!')
+    } catch (error: any) {
+      console.error(`\n❌ ${error.message}`)
+      // Continue with rest of setup even if permissions can't be updated
+    }
   }
 
   // Check and configure repository settings (merge strategies, auto-merge, etc.)
