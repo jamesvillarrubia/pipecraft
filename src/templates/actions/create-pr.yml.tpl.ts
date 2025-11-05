@@ -11,6 +11,8 @@ import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinio
 import dedent from 'dedent'
 import fs from 'fs'
 import { logger } from '../../utils/logger.js'
+import { getActionOutputDir } from '../../utils/action-reference.js'
+import type { PipecraftConfig } from '../../types/index.js'
 
 /**
  * Generates the create-pr composite action YAML content.
@@ -155,14 +157,21 @@ const createprActionTemplate = (ctx: any) => {
  * @param {PinionContext} ctx - Pinion generator context
  * @returns {Promise<PinionContext>} Updated context after file generation
  */
-export const generate = (ctx: PinionContext) =>
+export const generate = (ctx: PinionContext & { config?: Partial<PipecraftConfig> }) =>
   Promise.resolve(ctx)
     .then(ctx => {
       // Check if file exists to determine merge status
-      const filePath = 'actions/create-pr/action.yml'
+      const config = ctx.config || {}
+      const outputDir = getActionOutputDir(config)
+      const filePath = `${outputDir}/create-pr/action.yml`
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
       logger.verbose(`${status} ${filePath}`)
-      return ctx
+      return { ...ctx, actionOutputPath: filePath }
     })
-    .then(renderTemplate(createprActionTemplate, toFile('actions/create-pr/action.yml')))
+    .then(ctx =>
+      renderTemplate(
+        createprActionTemplate,
+        toFile(ctx.actionOutputPath || 'actions/create-pr/action.yml')
+      )(ctx)
+    )

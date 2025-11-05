@@ -27,6 +27,8 @@
 import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import fs from 'fs'
 import { logger } from '../../utils/logger.js'
+import { getActionOutputDir } from '../../utils/action-reference.js'
+import type { PipecraftConfig } from '../../types/index.js'
 
 /**
  * Generates the detect-changes composite action YAML content.
@@ -335,14 +337,21 @@ runs:
  * @param {PinionContext} ctx - Pinion generator context (domains no longer needed in template)
  * @returns {Promise<PinionContext>} Updated context after file generation
  */
-export const generate = (ctx: PinionContext) =>
+export const generate = (ctx: PinionContext & { config?: Partial<PipecraftConfig> }) =>
   Promise.resolve(ctx)
     .then(ctx => {
-      // Check if file exists to determine merge status
-      const filePath = 'actions/detect-changes/action.yml'
+      // Determine output directory based on actionSourceMode
+      const config = ctx.config || {}
+      const outputDir = getActionOutputDir(config)
+      const filePath = `${outputDir}/detect-changes/action.yml`
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
       logger.verbose(`${status} ${filePath}`)
-      return ctx
+      return { ...ctx, actionOutputPath: filePath }
     })
-    .then(renderTemplate(changesActionTemplate, toFile('actions/detect-changes/action.yml')))
+    .then(ctx =>
+      renderTemplate(
+        changesActionTemplate,
+        toFile(ctx.actionOutputPath || 'actions/detect-changes/action.yml')
+      )(ctx)
+    )
