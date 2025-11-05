@@ -141,7 +141,7 @@ When you're ready to use marketplace actions:
 2. Regenerate workflows:
 
    ```bash
-   pipecraft generate
+   npx pipecraft generate
    ```
 
 3. Your customized actions in `.github/actions/` will remain but won't be used by generated workflows
@@ -163,7 +163,7 @@ When you need to customize actions:
 2. Regenerate workflows:
 
    ```bash
-   pipecraft generate
+   npx pipecraft generate
    ```
 
 3. Actions will be copied to `.github/actions/` where you can modify them
@@ -289,7 +289,7 @@ Your customizations remain in `.github/actions/` but won't be used. To apply cus
 
 ### How do I update actions in `local` mode?
 
-Run `pipecraft generate` after updating PipeCraft. Your customizations in generated workflows are preserved, but action code is updated.
+Run `npx pipecraft generate` after updating PipeCraft. Your customizations in generated workflows are preserved, but action code is updated.
 
 ### Can I use actions from different versions?
 

@@ -190,11 +190,13 @@ The workflow will run on your next push. Open GitHub Actions to watch it execute
 
 ## What gets generated
 
-When you run `pipecraft generate`, PipeCraft creates a complete GitHub Actions workflow tailored to your configuration. Understanding what's in these files helps you customize them effectively.
+When you run `npx pipecraft generate`, PipeCraft creates a complete GitHub Actions workflow tailored to your configuration. Understanding what's in these files helps you customize them effectively.
 
 ### The main pipeline file
 
 The heart of your CI/CD is `.github/workflows/pipeline.yml`. This file orchestrates all the jobs that run when you push code. Let's look at what it contains:
+
+> **Note**: The examples below show action paths like `./actions/detect-changes`. By default, PipeCraft generates actions to `.github/actions/` and references them as `./.github/actions/detect-changes`. The shorter path shown here is from PipeCraft's own repository which uses a different configuration. See [Action Reference Modes](action-modes.md) for details.
 
 ```yaml
 name: Pipeline
