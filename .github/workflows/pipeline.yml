@@ -171,12 +171,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commitSha || github.sha }}
-      - uses: ./actions/lint
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          pnpm-version: ${{ env.PNPM_VERSION }}
-          eslint: 'true'
-          prettier: 'true'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+      - run: pnpm run format:check
 
   test-cicd:
     needs: changes
