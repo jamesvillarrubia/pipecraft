@@ -17,6 +17,7 @@ const sidebars: SidebarsConfig = {
     'intro',
     'commands',
     'configuration-reference',
+    'action-modes',
     'cli-reference',
     'workflow-generation',
     'architecture',

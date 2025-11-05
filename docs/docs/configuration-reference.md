@@ -496,6 +496,92 @@ Here's a comprehensive example showing all major configuration options working t
 }
 ```
 
+## Action Reference Configuration
+
+### actionSourceMode
+
+**Type**: `'local' | 'remote' | 'source'`
+**Required**: No
+**Default**: `'local'`
+
+Controls how generated workflows reference GitHub Actions. This determines whether actions are copied into your repository, referenced from the marketplace, or used from source.
+
+```json
+{
+  "actionSourceMode": "local"
+}
+```
+
+**Available modes**:
+
+- **`local`** (default): Actions are copied to `.github/actions/` where you can customize them
+
+  - Full control over action code
+  - Larger repository size
+  - Must manually update actions
+  - Best for: Teams that need customization
+
+- **`remote`**: Actions are referenced from GitHub Marketplace with version pinning
+
+  - No action code in your repository
+  - Explicit version control via `actionVersion`
+  - Can't customize actions
+  - Best for: Teams that prefer marketplace stability
+
+- **`source`**: Actions are referenced from `/actions/` directory
+  - Used by PipeCraft repository itself
+  - For testing actions before marketplace publication
+  - Not recommended for general use
+  - Best for: PipeCraft contributors
+
+For detailed information about each mode, trade-offs, and migration strategies, see [Action Reference Modes](action-modes.md).
+
+### actionVersion
+
+**Type**: `string`
+**Required**: No (only used when `actionSourceMode` is `'remote'`)
+**Default**: `'v1'`
+
+Specifies which version of marketplace actions to use when `actionSourceMode` is `'remote'`. Follows GitHub Actions version pinning conventions.
+
+```json
+{
+  "actionSourceMode": "remote",
+  "actionVersion": "v1"
+}
+```
+
+**Version pinning strategies**:
+
+- **Major version**: `"v1"` - Gets automatic minor and patch updates (recommended)
+- **Minor version**: `"v1.2"` - Gets automatic patch updates only
+- **Exact version**: `"v1.2.3"` - No automatic updates (maximum stability)
+
+This option is ignored when `actionSourceMode` is `'local'` or `'source'`.
+
+**Example with remote mode**:
+
+```json
+{
+  "actionSourceMode": "remote",
+  "actionVersion": "v1",
+  "branchFlow": ["develop", "staging", "main"],
+  "domains": {
+    "core": {
+      "paths": ["src/**"],
+      "description": "Core application code"
+    }
+  }
+}
+```
+
+The generated workflows will reference actions like:
+
+```yaml
+- uses: pipecraft-lab/pipecraft/actions/detect-changes@v1
+- uses: pipecraft-lab/pipecraft/actions/calculate-version@v1
+```
+
 ## Validation
 
 PipeCraft validates your configuration when you run any command. Common validation errors and their solutions:
