@@ -62,27 +62,37 @@ git commit -m "chore: add PipeCraft workflows"
 git push
 ```
 
-That's it. Your trunk-based development workflow is now automated.
+That's it. You now have a structured CI/CD workflow with change detection. Add your test commands to the generated jobs.
 
 ## Key Features
 
-**Smart change detection** analyzes your commits to determine which parts of your monorepo changed. When you modify your API code, only API tests run. When you change the web frontend, only web tests run. When you touch shared libraries, all dependent tests run. This intelligence is built into the generated workflows—you don't manage it yourself.
+**Smart change detection** - PipeCraft generates workflows that detect which parts of your monorepo changed. The `changes` job outputs domain flags (`api: true`, `web: false`) that you use in conditional job execution. You write the test commands—PipeCraft handles running them only when needed.
 
-**Automatic semantic versioning** reads your conventional commit messages (feat:, fix:, breaking:) and calculates the next version number. No more manually deciding whether something is a major, minor, or patch release. PipeCraft handles version bumping, git tagging, and changelog generation based on your commits.
+```yaml
+test-api:
+  needs: changes
+  if: ${{ needs.changes.outputs.api == 'true' }} # Only runs when API changed
+  runs-on: ubuntu-latest
+  steps:
+    # You add your test commands here:
+    - run: npm run test:api
+```
 
-**Trunk-based development support** provides a complete branch flow system. Code moves through develop → staging → main automatically after passing tests at each stage. Fast-forward merging keeps git history clean. Version gating ensures only tested code promotes to production.
+**Semantic versioning scaffolding** - PipeCraft generates a `version` job that reads conventional commits and calculates version numbers. You get the version as an output to use in your deployment jobs. Tag creation and branch promotion workflows are generated—you add the deployment commands.
 
-**Safe workflow regeneration** preserves your customizations when you update configuration. PipeCraft uses AST-based merging to separate managed workflow structure from your custom test and deployment commands. Add your own jobs, modify test steps, customize deployments—all survive regeneration.
+**Branch promotion structure** - PipeCraft generates `tag`, `promote`, and `release` jobs that run after your tests pass. These jobs handle git operations (creating tags, merging branches, creating releases). You add deploy steps to run when code reaches each branch.
 
-**Pre-flight validation** catches configuration errors before they become cryptic workflow failures. PipeCraft validates your setup, checks git configuration, verifies permissions, and provides helpful error messages when something needs fixing.
+**Safe workflow regeneration** - PipeCraft preserves your custom jobs when you regenerate. The generated workflow has clearly marked sections (`<--START CUSTOM JOBS-->` / `<--END CUSTOM JOBS-->`) where your test, deploy, and custom logic lives. Regeneration updates the managed sections (changes detection, version calculation, tag/promote jobs) while keeping your customizations intact.
+
+**Change detection works with both strategies** - For standard repos, PipeCraft uses path-based detection (you define glob patterns per domain). For Nx monorepos, it automatically uses Nx's dependency graph for precise change detection. Either way, you get domain-based conditional job execution.
 
 ## When to Use PipeCraft
 
-**You're managing a monorepo** with multiple applications or services. Running all tests for every change wastes time and money. PipeCraft's domain-based testing ensures you only test what changed while automatically testing shared dependencies across all dependent code.
+**You're managing a monorepo** with multiple applications or services. PipeCraft gives you the scaffolding for domain-based testing—change detection, conditional job execution, and the workflow structure. You add your actual test commands.
 
-**You want consistent CI/CD** across multiple projects or teams. Define your organization's workflow pattern once, then generate it consistently across repos. Changes to the pattern propagate through regeneration while preserving project-specific customizations.
+**You want a structured trunk-based workflow** with version calculation, tagging, and branch promotions. PipeCraft generates the git operations and flow control. You add your deployment steps at each stage.
 
-**You're tired of maintaining YAML** with hundreds of lines of repetitive workflow configuration. PipeCraft generates the boilerplate while letting you focus on what's unique about your project—the actual test and deployment commands.
+**You need smart change detection** that understands your monorepo structure. PipeCraft provides path-based detection (or Nx graph integration) so you can run `if: ${{ needs.changes.outputs.api == 'true' }}` in your jobs and test only what changed.
 
 ## Installation
 
@@ -149,23 +159,75 @@ Create a `.pipecraftrc.json` configuration describing your project:
 }
 ```
 
-Run `pipecraft generate` and you get a complete GitHub Actions workflow with:
+Run `pipecraft generate` and you get workflow scaffolding with:
 
-- Change detection that identifies which domains modified
-- Parallel test jobs for api and web (conditional on changes)
-- Semantic versioning based on conventional commits
-- Automatic branch promotion through your flow
-- Version tagging and changelog generation
+- **Change detection job** - Outputs `api: true/false` and `web: true/false` based on what changed
+- **Conditional test job structure** - `test-api` and `test-web` jobs with `if:` conditions, ready for your test commands
+- **Version calculation job** - Reads conventional commits, outputs semantic version
+- **Tag/promote/release jobs** - Handle git operations after tests pass
 
-Add your specific test commands to the generated jobs, commit everything, and you're running.
+**What you add**:
+
+- Test commands in each `test-*` job (e.g., `npm run test:api`)
+- Deploy commands in custom jobs for each branch (staging deploy, production deploy)
+- Remote test commands if you need post-deployment testing
+
+**Example of what a generated test job looks like**:
+
+```yaml
+test-api:
+  needs: [changes, version]
+  if: ${{ needs.changes.outputs.api == 'true' }}
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    # <--START CUSTOM TEST STEPS-->
+    # Add your test commands here:
+    # - run: npm install
+    # - run: npm run test:api
+    # <--END CUSTOM TEST STEPS-->
+```
+
+You fill in the custom sections with your actual test logic.
 
 ## What Gets Generated
 
-PipeCraft creates `.github/workflows/pipeline.yml` containing all the jobs that run when you push code. It also generates reusable actions in `actions/` for common operations like change detection and version calculation.
+**Managed sections** (PipeCraft controls these):
 
-The generated workflows include clearly marked sections for your customizations. Anything you add in these sections survives regeneration—PipeCraft's AST-based merging ensures your test commands, deployment scripts, and custom jobs remain intact when you update configuration.
+- `changes` job - Detects which domains changed using path patterns or Nx graph
+- `version` job - Calculates semantic version from conventional commits
+- `tag` job - Creates git tags for new versions
+- `promote` job - Merges code through your branch flow (develop → staging → main)
+- `release` job - Creates GitHub releases
+- Domain test job structure with conditional execution
 
-See the [Getting Started guide](https://pipecraft.thecraftlab.dev/docs/intro) for a complete walkthrough with examples, or check out [What Gets Generated](https://pipecraft.thecraftlab.dev/docs/intro#what-gets-generated) for detailed workflow structure.
+**Custom sections** (you control these):
+
+- Test commands inside each `test-*` job
+- Deploy jobs for each environment (staging-deploy, production-deploy)
+- Remote test jobs for post-deployment testing
+- Any additional jobs you need (e.g., security scanning, notifications)
+
+**Example workflow structure**:
+
+```yaml
+changes: # Managed - detects what changed
+version: # Managed - calculates version
+test-api: # Managed structure, you add test commands
+test-web: # Managed structure, you add test commands
+
+# <--START CUSTOM JOBS-->
+deploy-staging: # You create this
+remote-test-api: # You create this
+deploy-prod: # You create this
+# <--END CUSTOM JOBS-->
+
+tag: # Managed - creates git tags
+promote: # Managed - merges branches
+release: # Managed - creates GitHub release
+```
+
+Regeneration preserves everything in custom sections. See the [Getting Started guide](https://pipecraft.thecraftlab.dev/docs/intro) for a complete walkthrough.
 
 ## Next Steps
 
