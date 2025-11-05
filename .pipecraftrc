@@ -85,6 +85,10 @@ versioning:
     fix: patch
     breaking: major
 
+# Action source mode (how workflows reference PipeCraft actions)
+# Options: 'local' (default, ./.github/actions/), 'remote' (published actions), 'source' (./actions/, for this repo only)
+actionSourceMode: source  # Use ./actions/ since this is the PipeCraft repo itself
+
 # Workflow rebuild optimization
 rebuild:
   enabled: true           # Enable smart rebuild detection

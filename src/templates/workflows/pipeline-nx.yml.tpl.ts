@@ -169,7 +169,8 @@ export const generate = (ctx: NxPipelineContext) =>
         createChangesJobOperation({
           domains,
           useNx: true,
-          baseRef: nxConfig.baseRef || 'origin/main'
+          baseRef: nxConfig.baseRef || 'origin/main',
+          config
         }),
 
         // Nx test job (runs all Nx tasks)
@@ -179,7 +180,8 @@ export const generate = (ctx: NxPipelineContext) =>
         createVersionJobOperation({
           testJobNames: [], // No domain test job dependencies
           nxEnabled: true, // Depends on test-nx job
-          baseRef: nxConfig.baseRef || 'origin/main'
+          baseRef: nxConfig.baseRef || 'origin/main',
+          config
         }),
 
         // Tag, promote, release
@@ -187,7 +189,8 @@ export const generate = (ctx: NxPipelineContext) =>
           branchFlow,
           deployJobNames: [], // No deployment dependencies in new model
           remoteTestJobNames: [],
-          autoMerge: typeof config.autoMerge === 'object' ? config.autoMerge : {}
+          autoMerge: typeof config.autoMerge === 'object' ? config.autoMerge : {},
+          config
         })
       ]
 

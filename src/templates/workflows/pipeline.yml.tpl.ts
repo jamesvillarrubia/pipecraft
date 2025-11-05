@@ -79,14 +79,16 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         createChangesJobOperation({
           domains,
           useNx: false,
-          baseRef: config.finalBranch
+          baseRef: config.finalBranch,
+          config
         }),
 
         // Version calculation (simplified - only depends on changes)
         createVersionJobOperation({
           testJobNames: [], // No test job dependencies in new model
           nxEnabled: false,
-          baseRef: config.finalBranch
+          baseRef: config.finalBranch,
+          config
         }),
 
         // Tag, promote, release
@@ -94,7 +96,8 @@ export const generate = (ctx: PathBasedPipelineContext) =>
           branchFlow,
           deployJobNames: [], // No deployment dependencies in new model
           remoteTestJobNames: [],
-          autoMerge: typeof config.autoMerge === 'object' ? config.autoMerge : {}
+          autoMerge: typeof config.autoMerge === 'object' ? config.autoMerge : {},
+          config
         })
       ]
 

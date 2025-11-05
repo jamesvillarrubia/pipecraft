@@ -309,6 +309,7 @@ jobs:
           echo "Testing gate remotely"
           echo "Replace this with your actual remote test commands"
           # Example: npm run test:remote:gate
+
   # <--END CUSTOM JOBS-->
 
   #=============================================================================
@@ -317,10 +318,9 @@ jobs:
   # Creates git tags and promotes code through branch flow.
 
   tag:
-    needs: [ version, custom-jobs-gate ]
+    needs: [ version ]
     if: ${{
         always() &&
-        needs.custom-jobs-gate.result == 'success' &&
         github.event_name != 'pull_request' &&
         github.ref_name == 'develop' &&
         needs.version.result == 'success' &&
