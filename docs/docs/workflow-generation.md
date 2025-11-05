@@ -1,6 +1,6 @@
 # Workflow Generation
 
-When you run `pipecraft generate`, PipeCraft uses battle-tested templates to create a complete CI/CD pipeline in your repository. This guide explains what gets generated and how you can customize it.
+When you run `npx pipecraft generate`, PipeCraft uses battle-tested templates to create a complete CI/CD pipeline in your repository. This guide explains what gets generated and how you can customize it.
 
 ## Understanding template-based generation
 
@@ -14,7 +14,7 @@ PipeCraft creates two types of files in your repository:
 
 **The main workflow file** at `.github/workflows/pipeline.yml` contains all the jobs that run when you push code. This includes testing, version calculation, deployments, and branch promotions. The workflow includes clearly marked sections where you can add custom jobs and deployment steps that survive regeneration.
 
-**Composite actions** in `actions/` are reusable pieces of logic that the main workflow calls. These handle common operations like detecting which files changed, calculating version numbers from conventional commits, and creating git tags. These actions encapsulate best practices and are debugged once in the templates rather than in each project.
+**Composite actions** in `.github/actions/` (by default) are reusable pieces of logic that the main workflow calls. These handle common operations like detecting which files changed, calculating version numbers from conventional commits, and creating git tags. These actions encapsulate best practices and are debugged once in the templates rather than in each project.
 
 ## How configuration maps to workflows
 
