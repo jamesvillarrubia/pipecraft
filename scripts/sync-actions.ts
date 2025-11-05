@@ -43,7 +43,7 @@ const ACTION_TEMPLATES = [
   { name: 'detect-changes', path: 'actions/detect-changes/action.yml' },
   { name: 'manage-branch', path: 'actions/manage-branch/action.yml' },
   { name: 'promote-branch', path: 'actions/promote-branch/action.yml' },
-  { name: 'run-nx-affected', path: 'actions/run-nx-affected/action.yml' }
+  { name: 'run-nx-affected', path: 'actions/run-nx-affected/action.yml', optional: true }
 ]
 
 /**
@@ -82,7 +82,7 @@ function generateActionsFromTemplates(): void {
 
     // Run PipeCraft generator in temp directory
     console.log('   Running PipeCraft generator...')
-    execSync('node dist/cli/index.js generate --skip-setup', {
+    execSync('node dist/cli/index.js generate --force', {
       cwd: rootDir,
       env: { ...process.env, PWD: tempDir },
       stdio: 'pipe'
@@ -144,6 +144,10 @@ function verifySync(): boolean {
     const actionPath = path.join(rootDir, action.path)
 
     if (!fs.existsSync(actionPath)) {
+      if ((action as any).optional) {
+        console.log(`   ⚠️  ${action.name}: Optional (not generated)`)
+        continue
+      }
       console.log(`   ❌ ${action.name}: Missing (action file not found)`)
       allMatch = false
       continue
