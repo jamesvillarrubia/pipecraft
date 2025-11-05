@@ -15,7 +15,7 @@
  *
  * ## Generated Action Location
  *
- * `.github/actions/run-nx-affected/action.yml`
+ * `actions/run-nx-affected/action.yml`
  *
  * @module templates/actions/run-nx-affected.yml.tpl
  */
@@ -23,6 +23,8 @@
 import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import fs from 'fs'
 import { logger } from '../../utils/logger.js'
+import { getActionOutputDir } from '../../utils/action-reference.js'
+import type { PipecraftConfig } from '../../types/index.js'
 
 /**
  * Generates the run-nx-affected composite action YAML content.
@@ -334,18 +336,20 @@ runs:
  * @param {PinionContext} ctx - Pinion generator context
  * @returns {Promise<PinionContext>} Updated context after file generation
  */
-export const generate = (ctx: PinionContext) =>
+export const generate = (ctx: PinionContext & { config?: Partial<PipecraftConfig> }) =>
   Promise.resolve(ctx)
     .then(ctx => {
-      const filePath = '.github/actions/run-nx-affected/action.yml'
+      const config = ctx.config || {}
+      const outputDir = getActionOutputDir(config)
+      const filePath = `${outputDir}/run-nx-affected/action.yml`
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
       logger.verbose(`${status} ${filePath}`)
-      return ctx
+      return { ...ctx, actionOutputPath: filePath }
     })
-    .then(
+    .then(ctx =>
       renderTemplate(
         runNxAffectedActionTemplate,
-        toFile('.github/actions/run-nx-affected/action.yml')
-      )
+        toFile(ctx.actionOutputPath || 'actions/run-nx-affected/action.yml')
+      )(ctx)
     )

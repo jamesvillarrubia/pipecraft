@@ -58,7 +58,7 @@ actions/
 
 The `detect-changes` action is the **gold standard** for this pattern.
 
-**Location**: [`.github/actions/detect-changes/action.yml`](../.github/actions/detect-changes/action.yml)
+**Location**: [`actions/detect-changes/action.yml`](../actions/detect-changes/action.yml)
 
 **Strategies supported**:
 
@@ -381,7 +381,7 @@ jobs:
           echo '{}' > nx.json
 
       - name: Test Action (Nx Mode)
-        uses: ./.github/actions/detect-changes
+        uses: ./actions/detect-changes
         with:
           useNx: true
           config: |
@@ -398,7 +398,7 @@ jobs:
           rm -f nx.json
 
       - name: Test Action (Path Mode)
-        uses: ./.github/actions/detect-changes
+        uses: ./actions/detect-changes
         with:
           useNx: false
           config: |
@@ -418,7 +418,7 @@ test-strategy-switching:
 
     # Test 1: Path-based (no Nx)
     - name: Test Path-based
-      uses: ./.github/actions/detect-changes
+      uses: ./actions/detect-changes
       with:
         config: ${{ env.DOMAINS }}
 
@@ -430,7 +430,7 @@ test-strategy-switching:
 
     # Test 2: Nx (auto-detected)
     - name: Test Nx (should auto-switch)
-      uses: ./.github/actions/detect-changes
+      uses: ./actions/detect-changes
       with:
         config: ${{ env.DOMAINS }}
 
@@ -771,4 +771,4 @@ When creating a strategy-agnostic action:
 
 ---
 
-**Reference Implementation**: See [`.github/actions/detect-changes/action.yml`](../.github/actions/detect-changes/action.yml) for a complete working example of this pattern.
+**Reference Implementation**: See [`actions/detect-changes/action.yml`](../actions/detect-changes/action.yml) for a complete working example of this pattern.

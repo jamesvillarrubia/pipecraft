@@ -8,18 +8,24 @@ import {
   createValueFromString,
   type PathOperationConfig
 } from '../../../utils/ast-path-operations.js'
+import { getActionReference } from '../../../utils/action-reference.js'
+import type { PipecraftConfig } from '../../../types/index.js'
 
 export interface VersionContext {
   testJobNames: string[]
   nxEnabled?: boolean
   baseRef?: string
+  config?: Partial<PipecraftConfig>
 }
 
 /**
  * Create the version calculation job operation
  */
 export function createVersionJobOperation(ctx: VersionContext): PathOperationConfig {
-  const { testJobNames, nxEnabled = false, baseRef = 'main' } = ctx
+  const { testJobNames, nxEnabled = false, baseRef = 'main', config = {} } = ctx
+
+  // Get the action reference based on configuration
+  const actionRef = getActionReference('calculate-version', config)
 
   // Build the needs array
   const nxJobName = nxEnabled ? 'test-nx' : null
@@ -64,7 +70,7 @@ export function createVersionJobOperation(ctx: VersionContext): PathOperationCon
         with:
           ref: \${{ inputs.commitSha || github.sha }}
           fetch-depth: \${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/calculate-version
+      - uses: ${actionRef}
         id: version
         with:
           baseRef: \${{ inputs.baseRef || '${baseRef}' }}

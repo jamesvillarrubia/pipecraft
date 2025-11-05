@@ -248,6 +248,63 @@ For documentation changes:
 - Ensure proper formatting and links work
 - Include code examples where helpful
 
+#### Action Template Changes
+
+When modifying action templates in `src/templates/actions/*.tpl.ts`, you must ensure the generated actions in `/actions/` stay in sync:
+
+**Workflow:**
+
+1. **Edit the template** in `src/templates/actions/`:
+
+   ```bash
+   # Example: Update detect-changes template
+   vim src/templates/actions/detect-changes.yml.tpl.ts
+   ```
+
+2. **Regenerate actions** from templates:
+
+   ```bash
+   pnpm sync-actions
+   ```
+
+3. **Verify sync**:
+
+   ```bash
+   pnpm sync-actions:check
+   ```
+
+4. **Review changes**:
+
+   ```bash
+   git diff actions/
+   ```
+
+5. **Commit both files**:
+   ```bash
+   git add src/templates/actions/*.tpl.ts actions/
+   git commit -m "feat(actions): update detect-changes to support X"
+   ```
+
+**Why This Matters:**
+
+The `/actions/` directory is published to GitHub Marketplace, while `src/templates/actions/` generates actions for local use. Keeping them in sync ensures:
+
+- ✅ Marketplace actions match generated actions
+- ✅ Users get same functionality in both modes
+- ✅ No drift between template and published versions
+
+**CI Validation:**
+
+The `.github/workflows/verify-action-sync.yml` workflow automatically verifies sync on every PR. If you forget to run `pnpm sync-actions`, CI will fail with instructions.
+
+**Scripts:**
+
+| Script                     | Purpose                               |
+| -------------------------- | ------------------------------------- |
+| `pnpm sync-actions`        | Regenerate `/actions/` from templates |
+| `pnpm sync-actions:check`  | Verify sync without changes           |
+| `pnpm sync-actions:verify` | Same as check (alias)                 |
+
 ---
 
 ## Testing Guidelines

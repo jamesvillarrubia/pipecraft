@@ -15,11 +15,14 @@ import {
   createValueFromString,
   type PathOperationConfig
 } from '../../../utils/ast-path-operations.js'
+import { getActionReference } from '../../../utils/action-reference.js'
+import type { PipecraftConfig } from '../../../types/index.js'
 
 export interface ChangesContext {
   domains: Record<string, any>
   useNx?: boolean
   baseRef?: string
+  config?: Partial<PipecraftConfig>
 }
 
 /**
@@ -29,8 +32,11 @@ export interface ChangesContext {
  * The detect-changes action receives this as structured input.
  */
 export function createChangesJobOperation(ctx: ChangesContext): PathOperationConfig {
-  const { domains, useNx = false, baseRef = 'main' } = ctx
+  const { domains, useNx = false, baseRef = 'main', config = {} } = ctx
   const sortedDomains = Object.keys(domains).sort()
+
+  // Get the action reference based on configuration
+  const actionRef = getActionReference('detect-changes', config)
 
   const comment = `
 =============================================================================
@@ -72,7 +78,7 @@ ${domainsYaml}
         with:
           ref: \${{ inputs.commitSha || github.sha }}
           fetch-depth: \${{ env.FETCH_DEPTH_AFFECTED }}
-      - uses: ./.github/actions/detect-changes
+      - uses: ${actionRef}
         id: detect
         with:
           baseRef: \${{ inputs.baseRef || '${baseRef}' }}

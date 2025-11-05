@@ -200,6 +200,41 @@ export interface PipecraftConfig {
   packageManager?: 'npm' | 'yarn' | 'pnpm'
 
   /**
+   * How workflows should reference PipeCraft actions.
+   *
+   * - 'local': Actions copied to ./.github/actions/ (default, full control)
+   * - 'remote': Reference published marketplace actions (e.g., pipecraft-lab/pipecraft/actions/detect-changes@v1)
+   * - 'source': Use ./actions/ from repo root (internal use only, for PipeCraft's own CI)
+   *
+   * @default 'local'
+   * @example
+   * ```typescript
+   * // User repos (local mode)
+   * actionSourceMode: 'local'
+   * // Generates: uses: ./.github/actions/detect-changes
+   *
+   * // User repos (remote mode)
+   * actionSourceMode: 'remote'
+   * actionVersion: 'v1.2.3'
+   * // Generates: uses: pipecraft-lab/pipecraft/actions/detect-changes@v1.2.3
+   *
+   * // PipeCraft repo only (source mode)
+   * actionSourceMode: 'source'
+   * // Generates: uses: ./actions/detect-changes
+   * ```
+   */
+  actionSourceMode?: 'local' | 'remote' | 'source'
+
+  /**
+   * Version/tag to use when actionSourceMode is 'remote'.
+   * Pins workflows to a specific marketplace action version.
+   *
+   * @example 'v1.2.3', 'v1', 'main'
+   * @default 'v1'
+   */
+  actionVersion?: string
+
+  /**
    * Nx monorepo integration configuration.
    * When enabled, PipeCraft generates workflows that leverage Nx's dependency graph
    * and affected detection for intelligent change-based testing.

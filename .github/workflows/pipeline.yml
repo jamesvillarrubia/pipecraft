@@ -120,7 +120,7 @@ jobs:
         with:
           ref: ${{ inputs.commitSha || github.sha }}
           fetch-depth: ${{ env.FETCH_DEPTH_AFFECTED }}
-      - uses: ./.github/actions/detect-changes
+      - uses: ./actions/detect-changes
         id: detect
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
@@ -152,7 +152,7 @@ jobs:
         with:
           ref: ${{ inputs.commitSha || github.sha }}
           fetch-depth: ${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/calculate-version
+      - uses: ./actions/calculate-version
         id: version
         with:
           baseRef: ${{ inputs.baseRef || 'main' }}
@@ -309,6 +309,7 @@ jobs:
           echo "Testing gate remotely"
           echo "Replace this with your actual remote test commands"
           # Example: npm run test:remote:gate
+
   # <--END CUSTOM JOBS-->
 
   #=============================================================================
@@ -317,10 +318,9 @@ jobs:
   # Creates git tags and promotes code through branch flow.
 
   tag:
-    needs: [ version, custom-jobs-gate ]
+    needs: [ version ]
     if: ${{
         always() &&
-        needs.custom-jobs-gate.result == 'success' &&
         github.event_name != 'pull_request' &&
         github.ref_name == 'develop' &&
         needs.version.result == 'success' &&
@@ -332,7 +332,7 @@ jobs:
         with:
           ref: ${{ inputs.commitSha || github.sha }}
           fetch-depth: ${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/create-tag
+      - uses: ./actions/create-tag
         with:
           version: ${{ needs.version.outputs.version }}
           commitSha: ${{ inputs.commitSha || github.sha }}
@@ -367,7 +367,7 @@ jobs:
         with:
           ref: ${{ inputs.commitSha || github.sha }}
           fetch-depth: ${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/promote-branch
+      - uses: ./actions/promote-branch
         with:
           version: ${{ needs.version.outputs.version }}
           sourceBranch: ${{ github.ref_name }}
@@ -395,7 +395,7 @@ jobs:
         with:
           ref: ${{ inputs.commitSha || github.sha }}
           fetch-depth: ${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/create-release
+      - uses: ./actions/create-release
         with:
           version: ${{ needs.version.outputs.version }}
           commitSha: ${{ inputs.commitSha || github.sha }}

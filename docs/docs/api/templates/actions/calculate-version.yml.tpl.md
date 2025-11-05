@@ -17,7 +17,7 @@ Automates semantic versioning in the CI/CD pipeline by:
 
 ## Generated Action Location
 
-`.github/actions/calculate-version/action.yml`
+`actions/calculate-version/action.yml`
 
 ## Usage in Workflows
 
@@ -28,7 +28,7 @@ jobs:
     outputs:
       version: ${{ steps.calc.outputs.version }}
     steps:
-      - uses: ./.github/actions/calculate-version
+      - uses: ./actions/calculate-version
         id: calc
         with:
           baseRef: main

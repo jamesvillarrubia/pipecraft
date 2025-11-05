@@ -21,7 +21,7 @@ have modifications, allowing subsequent jobs to run conditionally.
 
 ## Generated Action Location
 
-`.github/actions/detect-changes/action.yml`
+`actions/detect-changes/action.yml`
 
 ## Usage in Workflows
 
@@ -33,7 +33,7 @@ jobs:
       api: ${{ steps.changes.outputs.api }}
       web: ${{ steps.changes.outputs.web }}
     steps:
-      - uses: ./.github/actions/detect-changes
+      - uses: ./actions/detect-changes
         id: changes
         with:
           baseRef: main
@@ -56,7 +56,7 @@ Defined in: [templates/actions/detect-changes.yml.tpl.ts:174](https://github.com
 
 Generator entry point for detect-changes composite action.
 
-Generates the `.github/actions/detect-changes/action.yml` file with domain-specific
+Generates the `actions/detect-changes/action.yml` file with domain-specific
 change detection logic. This action is used by the main pipeline to determine which
 domains have changes and need to run tests/deployment.
 
@@ -84,5 +84,5 @@ await generate({
     web: { paths: ['src/web/**'], description: 'Web' }
   }
 })
-// Creates: .github/actions/detect-changes/action.yml
+// Creates: actions/detect-changes/action.yml
 ```

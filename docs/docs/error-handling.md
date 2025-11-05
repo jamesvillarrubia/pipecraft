@@ -535,7 +535,7 @@ pipecraft generate --dry-run
 
 # Example output:
 # Would create: .github/workflows/pipeline.yml
-# Would create: .github/actions/detect-changes/action.yml
+# Would create: actions/detect-changes/action.yml
 # Would update: .pipecraft-cache.json
 ```
 

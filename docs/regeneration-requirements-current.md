@@ -12,18 +12,18 @@ This document captures the **current state** of regeneration requirements. As we
 
 ### ❌ Currently Requires Regeneration
 
-| Change Type                      | Requires Regen? | Why                                 | Target State              |
-| -------------------------------- | --------------- | ----------------------------------- | ------------------------- |
-| Adding/removing domains          | ❌ YES          | Domains embedded in workflow ENV    | ✅ NO (runtime config)    |
-| Changing domain paths            | ❌ YES          | Paths embedded in workflow          | ✅ NO (runtime config)    |
-| Changing branch flow             | ❌ YES          | `promote-branch` reads config       | ✅ NO (runtime config)    |
-| Changing autoMerge setting       | ❌ YES          | `promote-branch` reads config       | ✅ NO (runtime config)    |
-| Adding/removing Nx               | ❌ YES          | Different workflow generated        | ✅ NO (runtime detection) |
-| Changing package manager         | ⚠️ MAYBE        | Some actions may hardcode npm       | ✅ NO (auto-detect)       |
-| Changing merge strategy          | ❌ YES          | Workflow structure changes          | ⚠️ YES (structural)       |
-| Adding custom jobs               | ⚠️ MANUAL       | Must use custom job markers         | ✅ NO (preserved)         |
-| Updating action code             | ❌ YES          | Actions in local `.github/actions/` | ✅ NO (marketplace refs)  |
-| Config format change (JSON↔YAML) | ❌ YES          | Actions use jq (JSON only)          | ✅ NO (format-agnostic)   |
+| Change Type                      | Requires Regen? | Why                              | Target State              |
+| -------------------------------- | --------------- | -------------------------------- | ------------------------- |
+| Adding/removing domains          | ❌ YES          | Domains embedded in workflow ENV | ✅ NO (runtime config)    |
+| Changing domain paths            | ❌ YES          | Paths embedded in workflow       | ✅ NO (runtime config)    |
+| Changing branch flow             | ❌ YES          | `promote-branch` reads config    | ✅ NO (runtime config)    |
+| Changing autoMerge setting       | ❌ YES          | `promote-branch` reads config    | ✅ NO (runtime config)    |
+| Adding/removing Nx               | ❌ YES          | Different workflow generated     | ✅ NO (runtime detection) |
+| Changing package manager         | ⚠️ MAYBE        | Some actions may hardcode npm    | ✅ NO (auto-detect)       |
+| Changing merge strategy          | ❌ YES          | Workflow structure changes       | ⚠️ YES (structural)       |
+| Adding custom jobs               | ⚠️ MANUAL       | Must use custom job markers      | ✅ NO (preserved)         |
+| Updating action code             | ❌ YES          | Actions in local `actions/`      | ✅ NO (marketplace refs)  |
+| Config format change (JSON↔YAML) | ❌ YES          | Actions use jq (JSON only)       | ✅ NO (format-agnostic)   |
 
 ### ✅ Never Requires Regeneration
 
@@ -74,7 +74,7 @@ env:
 The workflow passes this embedded config to `detect-changes`:
 
 ```yaml
-- uses: ./.github/actions/detect-changes
+- uses: ./actions/detect-changes
   with:
     domains-config: ${{ env.DOMAINS }}
 ```
@@ -143,7 +143,7 @@ branchFlow:
 The `promote-branch` action **reads `.pipecraftrc` directly** to determine target branch:
 
 ```yaml
-# .github/actions/promote-branch/action.yml (generated)
+# actions/promote-branch/action.yml (generated)
 steps:
   - name: Determine Target Branch
     run: |
@@ -575,13 +575,13 @@ PipeCraft CLI is updated with action improvements:
 
 ```bash
 npm update pipecraft
-# Actions in .github/actions/ are now outdated
+# Actions in actions/ are now outdated
 pipecraft generate --force  # ← Must regenerate
 ```
 
 #### Why Regeneration is Required
 
-Actions are **local code** in `.github/actions/`:
+Actions are **local code** in `actions/`:
 
 - Not versioned independently
 - Tied to PipeCraft CLI version

@@ -165,7 +165,7 @@ const operations: PathOperationConfig[] = [
     value: createValueFromString(`
       runs-on: ubuntu-latest
       steps:
-        - uses: ./.github/actions/detect-changes
+        - uses: ./actions/detect-changes
     `)
   }
 ]

@@ -15,7 +15,7 @@
  *
  * ## Generated Action Location
  *
- * `.github/actions/calculate-version/action.yml`
+ * `actions/calculate-version/action.yml`
  *
  * ## Usage in Workflows
  *
@@ -26,7 +26,7 @@
  *     outputs:
  *       version: ${{ steps.calc.outputs.version }}
  *     steps:
- *       - uses: ./.github/actions/calculate-version
+ *       - uses: ./actions/calculate-version
  *         id: calc
  *         with:
  *           baseRef: main
@@ -43,6 +43,8 @@
 import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import fs from 'fs'
 import { logger } from '../../utils/logger.js'
+import { getActionOutputDir } from '../../utils/action-reference.js'
+import type { PipecraftConfig } from '../../types/index.js'
 
 /**
  * Generates the calculate-version composite action YAML content.
@@ -185,16 +187,21 @@ runs:
  * @param {PinionContext} ctx - Pinion generator context
  * @returns {Promise<PinionContext>} Updated context after file generation
  */
-export const generate = (ctx: PinionContext) =>
+export const generate = (ctx: PinionContext & { config?: Partial<PipecraftConfig> }) =>
   Promise.resolve(ctx)
     .then(ctx => {
-      // Check if file exists to determine merge status
-      const filePath = '.github/actions/calculate-version/action.yml'
+      // Determine output directory based on actionSourceMode
+      const config = ctx.config || {}
+      const outputDir = getActionOutputDir(config)
+      const filePath = `${outputDir}/calculate-version/action.yml`
       const exists = fs.existsSync(filePath)
       const status = exists ? '🔄 Merged with existing' : '📝 Created new'
       logger.verbose(`${status} ${filePath}`)
-      return ctx
+      return { ...ctx, actionOutputPath: filePath }
     })
-    .then(
-      renderTemplate(versionActionTemplate, toFile('.github/actions/calculate-version/action.yml'))
+    .then(ctx =>
+      renderTemplate(
+        versionActionTemplate,
+        toFile(ctx.actionOutputPath || 'actions/calculate-version/action.yml')
+      )(ctx)
     )

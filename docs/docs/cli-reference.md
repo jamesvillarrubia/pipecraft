@@ -47,7 +47,7 @@ After you have a configuration file, generate your workflows:
 pipecraft generate
 ```
 
-This reads your `.pipecraftrc` (or `.pipecraftrc.json`, `.pipecraftrc.yml`, etc.) and creates workflow files in `.github/workflows/` and `.github/actions/`. The first time you run this, it will create all the necessary files. On subsequent runs, it only regenerates if your configuration has changed, making it fast and efficient.
+This reads your `.pipecraftrc` (or `.pipecraftrc.json`, `.pipecraftrc.yml`, etc.) and creates workflow files in `.github/workflows/` and `actions/`. The first time you run this, it will create all the necessary files. On subsequent runs, it only regenerates if your configuration has changed, making it fast and efficient.
 
 ### Pre-flight checks
 

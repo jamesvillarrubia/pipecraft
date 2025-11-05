@@ -189,7 +189,7 @@ jobs:
   promote:
     needs: prepare
     steps:
-      - uses: ./.github/actions/promote-branch
+      - uses: ./actions/promote-branch
         with:
           targetBranch: ${{ needs.prepare.outputs.targetBranch }}
 ```
@@ -201,7 +201,7 @@ jobs:
 Keep both versions during migration:
 
 ```
-.github/actions/promote-branch/
+actions/promote-branch/
 ├── action.yml              # Current (coupled)
 └── action-decoupled.yml    # New (decoupled)
 ```
@@ -212,10 +212,10 @@ Update one workflow at a time to use decoupled actions:
 
 ```yaml
 # Old
-- uses: ./.github/actions/promote-branch
+- uses: ./actions/promote-branch
 
 # New
-- uses: ./.github/actions/promote-branch/action-decoupled.yml
+- uses: ./actions/promote-branch/action-decoupled.yml
   with:
     targetBranch: staging # explicit
 ```
@@ -249,7 +249,7 @@ jobs:
       - name: Publish promote-branch
         uses: actions/publish-action@v1
         with:
-          path: .github/actions/promote-branch
+          path: actions/promote-branch
           marketplace: true
 ```
 
@@ -362,7 +362,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Test with Mock Inputs
-        uses: ./.github/actions/promote-branch
+        uses: ./actions/promote-branch
         with:
           sourceBranch: test-source
           targetBranch: test-target
@@ -377,10 +377,10 @@ jobs:
 
 ```yaml
 # ❌ Bad: Implicit dependencies
-- uses: ./.github/actions/promote-branch
+- uses: ./actions/promote-branch
 
 # ✅ Good: Explicit inputs
-- uses: ./.github/actions/promote-branch
+- uses: ./actions/promote-branch
   with:
     targetBranch: staging
     version: v1.2.3
@@ -442,7 +442,7 @@ description: |
     - version: Version tag (auto-detected if not provided)
 
   Example:
-    - uses: ./.github/actions/promote-branch
+    - uses: ./actions/promote-branch
       with:
         targetBranch: staging
 ```

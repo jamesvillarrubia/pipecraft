@@ -87,6 +87,9 @@ importers:
       release-it:
         specifier: ^18.1.2
         version: 18.1.2(@types/node@24.7.0)(typescript@5.9.3)
+      tsx:
+        specifier: ^4.20.6
+        version: 4.20.6
       typedoc:
         specifier: ^0.28.14
         version: 0.28.14(typescript@5.9.3)

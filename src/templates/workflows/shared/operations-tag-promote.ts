@@ -8,24 +8,32 @@ import {
   createValueFromString,
   type PathOperationConfig
 } from '../../../utils/ast-path-operations.js'
+import { getActionReference } from '../../../utils/action-reference.js'
+import type { PipecraftConfig } from '../../../types/index.js'
 
 export interface TagPromoteContext {
   branchFlow: string[]
   deployJobNames: string[]
   remoteTestJobNames: string[]
   autoMerge?: Record<string, boolean> // autoMerge settings per branch
+  config?: Partial<PipecraftConfig>
 }
 
 /**
  * Create tag, promote, and release job operations
  */
 export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathOperationConfig[] {
-  const { branchFlow, deployJobNames, remoteTestJobNames } = ctx
+  const { branchFlow, deployJobNames, remoteTestJobNames, config = {} } = ctx
   // Provide sensible defaults if branchFlow is invalid
   const validBranchFlow =
     branchFlow && Array.isArray(branchFlow) && branchFlow.length > 0 ? branchFlow : ['main']
   const allDeploymentJobs = [...deployJobNames, ...remoteTestJobNames]
   const initialBranch = validBranchFlow[0]
+
+  // Get action references based on configuration
+  const tagActionRef = getActionReference('create-tag', config)
+  const promoteActionRef = getActionReference('promote-branch', config)
+  const releaseActionRef = getActionReference('create-release', config)
 
   // Build tag job conditional (should only run on initial branch, not on PRs)
   const tagConditions = [
@@ -67,7 +75,7 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
         with:
           ref: \${{ inputs.commitSha || github.sha }}
           fetch-depth: \${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/create-tag
+      - uses: ${tagActionRef}
         with:
           version: \${{ needs.version.outputs.version }}
           commitSha: \${{ inputs.commitSha || github.sha }}
@@ -96,7 +104,7 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
         with:
           ref: \${{ inputs.commitSha || github.sha }}
           fetch-depth: \${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/promote-branch
+      - uses: ${promoteActionRef}
         with:
           version: \${{ needs.version.outputs.version }}
           sourceBranch: \${{ github.ref_name }}
@@ -128,7 +136,7 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
         with:
           ref: \${{ inputs.commitSha || github.sha }}
           fetch-depth: \${{ env.FETCH_DEPTH_VERSIONING }}
-      - uses: ./.github/actions/create-release
+      - uses: ${releaseActionRef}
         with:
           version: \${{ needs.version.outputs.version }}
           commitSha: \${{ inputs.commitSha || github.sha }}

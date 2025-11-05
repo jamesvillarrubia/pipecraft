@@ -30,7 +30,7 @@ Can run interactively or accept flags for automation.
 Generates GitHub Actions workflows based on configuration:
 
 - Main pipeline workflow (.github/workflows/pipeline.yml)
-- Reusable actions (.github/actions/\*)
+- Reusable actions (actions/\*)
 - Idempotent regeneration (only when config/templates change)
 
 ### validate

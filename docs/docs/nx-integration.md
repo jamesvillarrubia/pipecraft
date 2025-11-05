@@ -63,7 +63,7 @@ This means your CI/CD pipeline only runs tests and deployments for domains that 
 pipecraft generate
 ```
 
-The generated `.github/actions/detect-changes/action.yml` will automatically include Nx support!
+The generated `actions/detect-changes/action.yml` will automatically include Nx support!
 
 ### 3. Verify Nx Mappings
 
@@ -264,7 +264,7 @@ When these change, workflows are regenerated and you're prompted to verify mappi
 ### Generated Action Flow
 
 ```yaml
-# .github/actions/detect-changes/action.yml
+# actions/detect-changes/action.yml
 
 - name: Check for Nx
   run: |
@@ -442,7 +442,7 @@ pipecraft check-sync --nx --suggest
   run: npm ci # Installs Nx
 
 - name: Detect Changes
-  uses: ./.github/actions/detect-changes
+  uses: ./actions/detect-changes
   # Now Nx will be available
 ```
 
