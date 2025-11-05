@@ -2,6 +2,10 @@ name: 'Calculate Version'
 description: 'Calculate semantic version using release-it and conventional commits'
 author: 'Pipecraft'
 
+branding:
+  icon: 'hash'
+  color: 'orange'
+
 inputs:
   baseRef:
     description: 'Base reference for version calculation'
