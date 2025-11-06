@@ -286,7 +286,13 @@ jobs:
 
   deploy-docs:
     needs: [ version, changes, test-docs ]
-    if: ${{ always() && needs.version.result == 'success' && needs.test-docs.result == 'success' && needs.changes.outputs.docs == 'true' && github.ref_name == 'main' }}
+    if: ${{
+        always() &&
+        needs.version.result == 'success' &&
+        needs.test-docs.result == 'success' &&
+        needs.changes.outputs.docs == 'true' &&
+        github.ref_name == 'main'
+      }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -350,14 +356,13 @@ jobs:
   # Creates git tags and promotes code through branch flow.
 
   tag:
-    needs: [ version, custom-jobs-gate ]
+    needs: [ version ]
     if: ${{
         always() &&
         github.event_name != 'pull_request' &&
         github.ref_name == 'develop' &&
         needs.version.result == 'success' &&
-        needs.version.outputs.version != '' &&
-        needs.custom-jobs-gate.result == 'success'
+        needs.version.outputs.version != ''
       }}
     runs-on: ubuntu-latest
     steps:

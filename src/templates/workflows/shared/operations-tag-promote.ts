@@ -110,7 +110,7 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
           sourceBranch: \${{ github.ref_name }}
           targetBranch: \${{ ${buildTargetBranchExpression(validBranchFlow)} }}
           autoMerge: \${{ ${buildAutoMergeExpression(validBranchFlow, ctx.autoMerge)} }}
-          run_number: \${{ github.run_number }}
+          run_number: \${{ inputs.run_number || github.run_number }}
   `)
     },
 
