@@ -248,3 +248,7 @@
 [data-theme='dark'] .hero__subtitle {
   color: var(--ifm-font-color-secondary) !important;
 }
+
+.DocSearch-Button {
+  border-radius: 8px;
+}
