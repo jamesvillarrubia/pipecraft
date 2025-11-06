@@ -105,6 +105,11 @@ const config: Config = {
           label: 'Documentation'
         },
         {
+          to: '/config-builder',
+          label: 'Config Builder',
+          position: 'left'
+        },
+        {
           href: 'https://github.com/jamesvillarrubia/pipecraft',
           label: 'GitHub',
           position: 'right'
@@ -125,6 +130,10 @@ const config: Config = {
             {
               label: 'Getting Started',
               to: '/docs/intro'
+            },
+            {
+              label: 'Config Builder',
+              to: '/config-builder'
             },
             {
               label: 'CLI Reference',
@@ -172,8 +181,8 @@ const config: Config = {
     },
     algolia: {
       // You'll need to add Algolia later for search
-      appId: 'YOUR_APP_ID',
-      apiKey: 'YOUR_SEARCH_API_KEY',
+      appId: 'DCG4CKGMNT',
+      apiKey: 'adf1f82db72b5f1f360684b19d4ea648',
       indexName: 'pipecraft',
       contextualSearch: true
     }
