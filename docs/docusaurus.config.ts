@@ -8,7 +8,18 @@ import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPackageJsonPath = path.resolve(__dirname, '../package.json')
 const rootPackageJson = JSON.parse(readFileSync(rootPackageJsonPath, 'utf8'))
-const PIPECRAFT_VERSION: string = rootPackageJson.version
+
+// Version resolution priority:
+// 1. PIPECRAFT_DOCS_VERSION env var (set by CI/CD pipeline during release builds, format: v1.2.3)
+// 2. package.json version (fallback for local development, format: 1.2.3)
+const rawDocsVersion = process.env.PIPECRAFT_DOCS_VERSION
+const derivedDocsVersion =
+  typeof rawDocsVersion === 'string' && rawDocsVersion.trim().length > 0
+    ? rawDocsVersion
+    : rootPackageJson.version
+
+// Normalize to remove v prefix if present (handles both CI and local dev formats)
+const PIPECRAFT_VERSION: string = (derivedDocsVersion ?? '0.0.0-dev').replace(/^v/i, '')
 
 const config: Config = {
   title: 'PipeCraft',
@@ -183,7 +194,12 @@ const config: Config = {
           ]
         }
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} PipeCraft. Built with Docusaurus.`
+      copyright: `
+        <div>Copyright © ${new Date().getFullYear()} PipeCraft. Built with Docusaurus.</div>
+        <div id="docs-version-badge" style="margin-top: 0.5rem; font-size: 0.875rem; opacity: 0.8;">
+          Latest Release: <span class="version-value">v${PIPECRAFT_VERSION}</span>
+        </div>
+      `
     },
     prism: {
       theme: prismThemes.github,

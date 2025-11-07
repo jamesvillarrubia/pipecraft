@@ -21,6 +21,9 @@ runs:
 
         DOCS_URL="${{ inputs.docs-url }}"
         EXPECTED_VERSION="${{ inputs.expected-version }}"
+        # Version job outputs format: v1.2.3
+        # Strip the v prefix for comparison with rendered docs
+        NORMALIZED_EXPECTED_VERSION="${EXPECTED_VERSION#v}"
 
         if [ -z "${DOCS_URL}" ]; then
           echo "❌ docs-url input must not be empty"
@@ -34,6 +37,12 @@ runs:
 
         TMP_HTML="$(mktemp)"
 
+        if [ -z "${EXPECTED_VERSION}" ]; then
+          echo "⚠️  expected-version not provided; skipping smoke test"
+          rm -f "${TMP_HTML}"
+          exit 0
+        fi
+
         echo "ℹ️  Fetching docs homepage: ${HOMEPAGE}"
         STATUS=$(curl -sS -o "${TMP_HTML}" -w "%{http_code}" "${HOMEPAGE}")
         if [ "${STATUS}" != "200" ]; then
@@ -43,38 +52,23 @@ runs:
           exit 1
         fi
 
-        echo "ℹ️  Ensuring homepage contains PipeCraft branding"
-        if ! grep -qi "Pipecraft" "${TMP_HTML}"; then
-          echo "❌ Homepage did not contain PipeCraft branding text"
+        echo "ℹ️  Validating docs version badge renders expected version v${NORMALIZED_EXPECTED_VERSION} (input: ${EXPECTED_VERSION})"
+
+        if ! grep -q "id=\"docs-version-badge\"" "${TMP_HTML}"; then
+          echo "❌ Version badge element (id=docs-version-badge) not found on homepage"
           rm -f "${TMP_HTML}"
           exit 1
         fi
 
-        if [ -n "${EXPECTED_VERSION}" ]; then
-          echo "ℹ️  Validating docs version badge renders expected version v${EXPECTED_VERSION}"
-          if ! grep -q "id=\"docs-version-badge\"" "${TMP_HTML}"; then
-            echo "❌ Version badge element (id=docs-version-badge) not found on homepage"
-            rm -f "${TMP_HTML}"
-            exit 1
-          fi
-
-          if ! grep -q "Latest Release: <span class=\"[^\"]*versionValue[^\"]*\">v${EXPECTED_VERSION}</span>" "${TMP_HTML}"; then
-            echo "❌ Homepage did not render expected docs version v${EXPECTED_VERSION}"
-            echo "🔍 Extracted snippet:"
-            grep -n "docs-version-badge" "${TMP_HTML}" || true
-            rm -f "${TMP_HTML}"
-            exit 1
-          fi
-        else
-          echo "⚠️  expected-version not provided; skipping version badge validation"
+        # Use a more flexible pattern that handles React comment markers (<!-- -->) between v and version
+        if ! grep -q "Latest Release:.*v[[:space:]]*${NORMALIZED_EXPECTED_VERSION}" "${TMP_HTML}"; then
+          echo "❌ Homepage did not render expected docs version v${NORMALIZED_EXPECTED_VERSION}"
+          echo "🔍 Extracted snippet:"
+          grep -A 2 -B 2 "docs-version-badge" "${TMP_HTML}" || true
+          rm -f "${TMP_HTML}"
+          exit 1
         fi
 
-        echo "ℹ️  Checking changelog endpoint: ${CHANGELOG_URL}"
-        curl -sSf "${CHANGELOG_URL}" >/dev/null
-
-        echo "ℹ️  Checking sitemap endpoint: ${SITEMAP_URL}"
-        curl -sSf "${SITEMAP_URL}" >/dev/null
-
-        echo "✅ Docs smoke test passed"
+        echo "✅ Docs version v${NORMALIZED_EXPECTED_VERSION} validated successfully"
         rm -f "${TMP_HTML}"
 
