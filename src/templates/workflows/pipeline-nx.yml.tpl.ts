@@ -221,7 +221,15 @@ export const generate = (ctx: NxPipelineContext) =>
           existingDoc.contents && (existingDoc.contents as any).get
             ? (existingDoc.contents as any).get('jobs')
             : null
-        const managedJobs = new Set(['changes', 'version', 'gate', 'tag', 'promote', 'release', 'test-nx'])
+        const managedJobs = new Set([
+          'changes',
+          'version',
+          'gate',
+          'tag',
+          'promote',
+          'release',
+          'test-nx'
+        ])
         if (existingJobs && (existingJobs as any).items) {
           for (const pair of (existingJobs as any).items) {
             const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key

@@ -77,7 +77,11 @@ function generatePrefixedJobsText(domains: Record<string, any>): string {
     .sort()
     .forEach(domain => {
       const domainConfig = domains[domain]
-      logger.verbose(`📋 Domain ${domain}: prefixes = ${domainConfig.prefixes ? JSON.stringify(domainConfig.prefixes) : 'undefined'}`)
+      logger.verbose(
+        `📋 Domain ${domain}: prefixes = ${
+          domainConfig.prefixes ? JSON.stringify(domainConfig.prefixes) : 'undefined'
+        }`
+      )
       if (domainConfig.prefixes && Array.isArray(domainConfig.prefixes)) {
         domainConfig.prefixes.forEach((prefix: string) => {
           if (!jobsByPrefix[prefix]) {
@@ -147,7 +151,9 @@ function mergeCustomJobsContent(userSection: string | null, generatedJobs: strin
     }
   }
 
-  logger.verbose(`📋 Existing custom job names: ${Array.from(existingJobNames).join(', ') || 'none'}`)
+  logger.verbose(
+    `📋 Existing custom job names: ${Array.from(existingJobNames).join(', ') || 'none'}`
+  )
 
   // Filter generated jobs to only include those that don't exist
   const generatedJobLines = generatedJobs.split('\n\n')
@@ -338,7 +344,11 @@ export const generate = (ctx: PathBasedPipelineContext) =>
           .map(j => j.match(/^ {2}([a-zA-Z0-9_-]+):/))
           .filter(m => m)
           .map(m => m![1])
-        logger.verbose(`📋 Generated ${generatedJobNames.length} placeholder jobs: ${generatedJobNames.join(', ')}`)
+        logger.verbose(
+          `📋 Generated ${generatedJobNames.length} placeholder jobs: ${generatedJobNames.join(
+            ', '
+          )}`
+        )
 
         const mergedCustomContent = mergeCustomJobsContent(userSection, generatedPlaceholders)
 
@@ -358,7 +368,9 @@ export const generate = (ctx: PathBasedPipelineContext) =>
               userSectionWithMarkers +
               '\n' +
               yamlContent.slice(insertionIndex)
-            logger.verbose('📋 Inserted custom jobs section (user + generated placeholders) after version job')
+            logger.verbose(
+              '📋 Inserted custom jobs section (user + generated placeholders) after version job'
+            )
           }
         } else if (!fileExists) {
           // For new files, add placeholder markers

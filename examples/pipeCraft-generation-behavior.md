@@ -19,9 +19,9 @@ This document outlines how PipeCraft's `generate` and `--force` options interact
 | **Workflow Metadata** (`name`, `run-name`) | ✅ Updated if config changes | ✅ Completely regenerated | Name can be customized but may be overwritten |
 | **Changes Detection** (`changes` job)      | ✅ Updated if config changes | ✅ Completely regenerated | Core functionality, always managed            |
 | **Version Calculation** (`version` job)    | ✅ Updated if config changes | ✅ Completely regenerated | Semantic versioning logic                     |
-| **Tag Creation** (`tag` job)               | ✅ `needs`/`if` preserved    | ✅ `needs`/`if` preserved  | `needs` and `if` customizable, rest managed |
-| **Branch Promotion** (`promote` job)      | ✅ Updated if config changes | ✅ Completely regenerated | Trunk-based flow management                   |
-| **Release Creation** (`release` job)      | ✅ Updated if config changes | ✅ Completely regenerated | GitHub releases                               |
+| **Tag Creation** (`tag` job)               | ✅ `needs`/`if` preserved    | ✅ `needs`/`if` preserved | `needs` and `if` customizable, rest managed   |
+| **Branch Promotion** (`promote` job)       | ✅ Updated if config changes | ✅ Completely regenerated | Trunk-based flow management                   |
+| **Release Creation** (`release` job)       | ✅ Updated if config changes | ✅ Completely regenerated | GitHub releases                               |
 
 ### 🎯 Domain Jobs (Configuration-Driven)
 
@@ -33,11 +33,11 @@ This document outlines how PipeCraft's `generate` and `--force` options interact
 
 ### 👤 User Jobs (Always Preserved)
 
-| Job Type                       | Normal Generate              | Force Generate       | Notes                                   |
-| ------------------------------ | ---------------------------- | -------------------- | --------------------------------------- |
-| **Custom Jobs** (user-defined) | ✅ Always preserved          | ✅ Always preserved  | Any job not matching PipeCraft patterns |
-| **Custom Dependencies**        | ✅ Preserved in tag job      | ✅ Preserved in tag job | User modifications to `tag.needs` array |
-| **Custom Conditions**          | ✅ Preserved in tag job      | ✅ Preserved in tag job | User modifications to `tag.if` statement |
+| Job Type                       | Normal Generate         | Force Generate          | Notes                                    |
+| ------------------------------ | ----------------------- | ----------------------- | ---------------------------------------- |
+| **Custom Jobs** (user-defined) | ✅ Always preserved     | ✅ Always preserved     | Any job not matching PipeCraft patterns  |
+| **Custom Dependencies**        | ✅ Preserved in tag job | ✅ Preserved in tag job | User modifications to `tag.needs` array  |
+| **Custom Conditions**          | ✅ Preserved in tag job | ✅ Preserved in tag job | User modifications to `tag.if` statement |
 
 ## Detailed Behavior Matrix
 

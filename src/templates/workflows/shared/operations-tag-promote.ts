@@ -43,7 +43,7 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
     `github.ref_name == '${initialBranch}'`,
     "needs.version.result == 'success'",
     "needs.version.outputs.version != ''",
-    "needs.gate.result == 'success'"  // Gate job must succeed
+    "needs.gate.result == 'success'" // Gate job must succeed
   ]
 
   // Default needs: version + gate (gate already checks all test jobs)
@@ -64,7 +64,7 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
  The 'needs' and 'if' fields are customizable and will be preserved.
  All other fields (runs-on, steps) are managed by Pipecraft.
 `,
-      value: {}  // Empty object - just ensures the job exists with the comment
+      value: {} // Empty object - just ensures the job exists with the comment
     },
     // TAG JOB NEEDS - Preserve user customizations, default to version + gate
     {
@@ -177,22 +177,22 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
 
 /**
  * Builds a condition that ensures at least ONE success AND NO failures for a set of jobs.
- * 
+ *
  * This is the standard pattern for gating jobs (like tag) that depend on multiple test/deploy jobs.
- * 
+ *
  * Pattern:
  *   - NO failures: All jobs must not be 'failure' (skipped is OK, failure is not)
  *   - AT LEAST ONE success: At least one job must be 'success' (skipped doesn't count as success)
- * 
+ *
  * @param jobNames - Array of job names to check (e.g., ['test-cicd', 'test-core', 'deploy-docs'])
  * @returns Condition string like: "(needs.job1.result != 'failure' && needs.job2.result != 'failure') && (needs.job1.result == 'success' || needs.job2.result == 'success')"
- * 
+ *
  * @example
  * ```typescript
  * // For test jobs
  * buildAtLeastOneSuccessNoFailuresCondition(['test-cicd', 'test-core', 'test-docs'])
  * // Returns: "(needs.test-cicd.result != 'failure' && needs.test-core.result != 'failure' && needs.test-docs.result != 'failure') && (needs.test-cicd.result == 'success' || needs.test-core.result == 'success' || needs.test-docs.result == 'success')"
- * 
+ *
  * // For deployment jobs
  * buildAtLeastOneSuccessNoFailuresCondition(['deploy-staging', 'deploy-prod'])
  * // Returns: "(needs.deploy-staging.result != 'failure' && needs.deploy-prod.result != 'failure') && (needs.deploy-staging.result == 'success' || needs.deploy-prod.result == 'success')"
@@ -205,10 +205,10 @@ function buildAtLeastOneSuccessNoFailuresCondition(jobNames: string[]): string {
 
   // Ensure NO failures (skipped is OK, but failure is not)
   const noFailures = jobNames.map(job => `needs.${job}.result != 'failure'`).join(' && ')
-  
+
   // Ensure AT LEAST ONE success (skipped jobs don't count as success)
   const atLeastOneSuccess = jobNames.map(job => `needs.${job}.result == 'success'`).join(' || ')
-  
+
   return `(${noFailures}) && (${atLeastOneSuccess})`
 }
 
