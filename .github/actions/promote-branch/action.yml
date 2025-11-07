@@ -51,6 +51,12 @@ runs:
         fetch-depth: 0
         token: ${{ inputs.token }}
 
+    - name: Configure Git
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
     - name: Get Version
       id: get-version
       shell: bash
