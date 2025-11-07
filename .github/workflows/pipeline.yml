@@ -241,8 +241,13 @@ jobs:
           fail_ci_if_error: false
 
   test-docs:
-    needs: changes
-    if: ${{ needs.changes.outputs.docs == 'true' }}
+    needs:
+      - changes
+      - version
+    if: ${{
+        needs.changes.outputs.docs == 'true' ||
+        (needs.version.result == 'success' && needs.version.outputs.version != '')
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -260,6 +265,13 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
+
+      - name: Export docs version for build
+        if: ${{ needs.version.result == 'success' && needs.version.outputs.version != '' }}
+        shell: bash
+        run: |
+          # Pass version as-is from version job (format: v1.2.3)
+          echo "PIPECRAFT_DOCS_VERSION=${{ needs.version.outputs.version }}" >> "$GITHUB_ENV"
 
       - name: Install dependencies
         run: |
@@ -290,7 +302,10 @@ jobs:
         always() &&
         needs.version.result == 'success' &&
         needs.test-docs.result == 'success' &&
-        needs.changes.outputs.docs == 'true' &&
+        (
+          needs.changes.outputs.docs == 'true' ||
+          needs.version.outputs.version != ''
+        ) &&
         github.ref_name == 'main'
       }}
     runs-on: ubuntu-latest
@@ -326,7 +341,10 @@ jobs:
       - changes
       - deploy-docs
     if: ${{
-        needs.changes.outputs.docs == 'true' &&
+        (
+          needs.changes.outputs.docs == 'true' ||
+          needs.version.outputs.version != ''
+        ) &&
         needs.deploy-docs.result == 'success' &&
         needs.version.result == 'success' &&
         needs.version.outputs.version != ''

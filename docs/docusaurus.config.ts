@@ -8,7 +8,19 @@ import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPackageJsonPath = path.resolve(__dirname, '../package.json')
 const rootPackageJson = JSON.parse(readFileSync(rootPackageJsonPath, 'utf8'))
-const PIPECRAFT_VERSION: string = rootPackageJson.version
+
+// Version resolution priority:
+// 1. PIPECRAFT_DOCS_VERSION env var (set by CI/CD pipeline during release builds, format: v1.2.3)
+// 2. package.json version (fallback for local development, format: 1.2.3)
+const rawDocsVersion = process.env.PIPECRAFT_DOCS_VERSION
+const derivedDocsVersion =
+  (typeof rawDocsVersion === 'string' && rawDocsVersion.trim().length > 0)
+    ? rawDocsVersion
+    : rootPackageJson.version
+
+// Normalize to remove v prefix if present (handles both CI and local dev formats)
+const PIPECRAFT_VERSION: string = (derivedDocsVersion ?? '0.0.0-dev')
+  .replace(/^v/i, '')
 
 const config: Config = {
   title: 'PipeCraft',

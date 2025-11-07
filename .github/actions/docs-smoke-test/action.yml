@@ -21,6 +21,9 @@ runs:
 
         DOCS_URL="${{ inputs.docs-url }}"
         EXPECTED_VERSION="${{ inputs.expected-version }}"
+        # Version job outputs format: v1.2.3
+        # Strip the v prefix for comparison with rendered docs
+        NORMALIZED_EXPECTED_VERSION="${EXPECTED_VERSION#v}"
 
         if [ -z "${DOCS_URL}" ]; then
           echo "❌ docs-url input must not be empty"
@@ -51,15 +54,15 @@ runs:
         fi
 
         if [ -n "${EXPECTED_VERSION}" ]; then
-          echo "ℹ️  Validating docs version badge renders expected version v${EXPECTED_VERSION}"
+          echo "ℹ️  Validating docs version badge renders expected version v${NORMALIZED_EXPECTED_VERSION} (input: ${EXPECTED_VERSION})"
           if ! grep -q "id=\"docs-version-badge\"" "${TMP_HTML}"; then
             echo "❌ Version badge element (id=docs-version-badge) not found on homepage"
             rm -f "${TMP_HTML}"
             exit 1
           fi
 
-          if ! grep -q "Latest Release: <span class=\"[^\"]*versionValue[^\"]*\">v${EXPECTED_VERSION}</span>" "${TMP_HTML}"; then
-            echo "❌ Homepage did not render expected docs version v${EXPECTED_VERSION}"
+          if ! grep -q "Latest Release: <span class=\"[^\"]*versionValue[^\"]*\">v${NORMALIZED_EXPECTED_VERSION}</span>" "${TMP_HTML}"; then
+            echo "❌ Homepage did not render expected docs version v${NORMALIZED_EXPECTED_VERSION}"
             echo "🔍 Extracted snippet:"
             grep -n "docs-version-badge" "${TMP_HTML}" || true
             rm -f "${TMP_HTML}"
