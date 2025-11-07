@@ -9,7 +9,7 @@
 
 import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import fs from 'fs'
-import { parseDocument, Scalar, stringify, YAMLMap } from 'yaml'
+import { Document, parseDocument, Scalar, stringify, YAMLMap } from 'yaml'
 import type { PipecraftConfig } from '../../types/index.js'
 import { applyPathOperations, type PathOperationConfig } from '../../utils/ast-path-operations.js'
 import { logger } from '../../utils/logger.js'
@@ -196,7 +196,8 @@ function mergeCustomJobsContent(userSection: string | null, generatedJobs: strin
 export const generate = (ctx: PathBasedPipelineContext) =>
   Promise.resolve(ctx)
     .then(ctx => {
-      const filePath = `${ctx.cwd || process.cwd()}/.github/workflows/pipeline.yml`
+      const filePath =
+        (ctx as any).pipelinePath || `${ctx.cwd || process.cwd()}/.github/workflows/pipeline.yml`
       const { config, branchFlow } = ctx
       const domains = config?.domains || {}
 
@@ -275,6 +276,38 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         }
         if (customJobsFromExisting.length > 0) {
           logger.verbose(`📋 Found ${customJobsFromExisting.length} custom job(s) to preserve`)
+
+          // If no userSection but custom jobs exist, convert custom jobs to YAML text
+          if (!userSection && customJobsFromExisting.length > 0) {
+            // Stringify each job pair individually to get proper formatting
+            const jobTexts: string[] = []
+
+            for (const pair of customJobsFromExisting) {
+              // Create a temp doc for this one job to get proper YAML formatting
+              const tempDoc = new Document(new YAMLMap())
+              ;(tempDoc.contents as YAMLMap).items = [pair]
+
+              let jobYaml = tempDoc.toString({
+                lineWidth: 0,
+                indent: 2,
+                defaultStringType: 'PLAIN',
+                defaultKeyType: 'PLAIN',
+                minContentWidth: 0
+              })
+
+              // Remove trailing newlines and add proper indentation (2 spaces for YAML jobs section)
+              jobYaml = jobYaml
+                .trim()
+                .split('\n')
+                .map(line => '  ' + line)
+                .join('\n')
+              jobTexts.push(jobYaml)
+            }
+
+            // Join all jobs with double newlines
+            userSection = jobTexts.join('\n\n')
+            logger.verbose('📋 Converted custom jobs to user section')
+          }
         }
       }
 
