@@ -124,18 +124,18 @@ export function checkConfigExists(): PreflightResult {
  * ```
  */
 export function checkConfigValid(): PreflightResult {
-  const explorer = cosmiconfigSync('pipecraft')
-  const result = explorer.search()
-
-  if (!result) {
-    return {
-      passed: false,
-      message: 'No configuration file found',
-      suggestion: "Run 'pipecraft init' first"
-    }
-  }
-
   try {
+    const explorer = cosmiconfigSync('pipecraft')
+    const result = explorer.search()
+
+    if (!result) {
+      return {
+        passed: false,
+        message: 'No configuration file found',
+        suggestion: "Run 'pipecraft init' first"
+      }
+    }
+
     const config = result.config
 
     // Check for required fields
