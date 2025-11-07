@@ -140,7 +140,7 @@ function mergeCustomJobsContent(userSection: string | null, generatedJobs: strin
   const existingJobNames = new Set<string>()
   if (userSection) {
     // Match job names: lines starting with spaces + jobname + :
-    const jobNameRegex = /^  ([a-zA-Z0-9_-]+):/gm
+    const jobNameRegex = /^ {2}([a-zA-Z0-9_-]+):/gm
     let match
     while ((match = jobNameRegex.exec(userSection)) !== null) {
       existingJobNames.add(match[1])
@@ -156,7 +156,7 @@ function mergeCustomJobsContent(userSection: string | null, generatedJobs: strin
 
   generatedJobLines.forEach(jobText => {
     // Extract job name from first line
-    const jobNameMatch = jobText.match(/^  ([a-zA-Z0-9_-]+):/)
+    const jobNameMatch = jobText.match(/^ {2}([a-zA-Z0-9_-]+):/)
     if (jobNameMatch) {
       const jobName = jobNameMatch[1]
       if (!existingJobNames.has(jobName)) {
@@ -335,7 +335,7 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         // Debug: log generated job names
         const generatedJobNames = generatedPlaceholders
           .split('\n\n')
-          .map(j => j.match(/^  ([a-zA-Z0-9_-]+):/))
+          .map(j => j.match(/^ {2}([a-zA-Z0-9_-]+):/))
           .filter(m => m)
           .map(m => m![1])
         logger.verbose(`📋 Generated ${generatedJobNames.length} placeholder jobs: ${generatedJobNames.join(', ')}`)

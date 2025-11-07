@@ -1,0 +1,311 @@
+name: 'Promote Branch'
+description: 'Promote code from source to target branch via temporary branch + PR'
+author: 'PipeCraft'
+
+inputs:
+  sourceBranch:
+    description: 'Source branch to promote from (defaults to github.ref_name)'
+    required: false
+    default: ${{ github.ref_name }}
+  targetBranch:
+    description: 'Target branch to promote to'
+    required: true
+  version:
+    description: 'Version being promoted (e.g., v1.2.3, auto-detected from git tags if not provided)'
+    required: false
+    default: ''
+  run_number:
+    description: 'The original run number from develop branch for traceability'
+    required: false
+    default: ''
+  autoMerge:
+    description: 'Whether to enable auto-merge for the PR'
+    required: false
+    default: 'false'
+  tempBranchPattern:
+    description: 'Pattern for temp branch name'
+    required: false
+    default: 'release/{source}-to-{target}-{version}'
+  token:
+    description: 'GitHub token for authentication'
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  prNumber:
+    description: 'The created PR number'
+    value: ${{ steps.create-pr.outputs.prNumber }}
+  prUrl:
+    description: 'The created PR URL'
+    value: ${{ steps.create-pr.outputs.prUrl }}
+  tempBranch:
+    description: 'The temporary branch name'
+    value: ${{ steps.create-temp.outputs.tempBranch }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ inputs.token }}
+
+    - name: Get Version
+      id: get-version
+      shell: bash
+      run: |
+        VERSION_INPUT="${{ inputs.version }}"
+
+        if [ -n "$VERSION_INPUT" ]; then
+          VERSION="$VERSION_INPUT"
+          echo "📌 Using provided version: $VERSION"
+        else
+          # Auto-detect from git tags
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+          echo "🏷️  Auto-detected version from tags: $VERSION"
+        fi
+
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Create Temporary Branch
+      id: create-temp
+      shell: bash
+      run: |
+        SOURCE="${{ inputs.sourceBranch }}"
+        TARGET="${{ inputs.targetBranch }}"
+        VERSION="${{ steps.get-version.outputs.version }}"
+        PATTERN="${{ inputs.tempBranchPattern }}"
+
+        # Remove 'v' prefix from version for branch name
+        VERSION_CLEAN="${VERSION#v}"
+
+        # Replace placeholders in pattern
+        TEMP_BRANCH="$PATTERN"
+        TEMP_BRANCH="${TEMP_BRANCH//{source\}/$SOURCE}"
+        TEMP_BRANCH="${TEMP_BRANCH//{target\}/$TARGET}"
+        TEMP_BRANCH="${TEMP_BRANCH//{version\}/$VERSION_CLEAN}"
+
+        echo "🌿 Preparing temporary branch: $TEMP_BRANCH"
+        echo "   From: $SOURCE"
+        echo "   To: $TARGET"
+        echo "   Version: $VERSION"
+
+        # Ensure we're on the source branch
+        git checkout "$SOURCE"
+
+        # Check if temp branch already exists locally or remotely
+        if git show-ref --verify --quiet refs/heads/"$TEMP_BRANCH" || git ls-remote --heads origin "$TEMP_BRANCH" | grep -q "$TEMP_BRANCH"; then
+          echo "⚠️  Temp branch $TEMP_BRANCH already exists, using existing branch"
+          # Fetch and checkout existing branch
+          git fetch origin "$TEMP_BRANCH" 2>/dev/null || true
+          git checkout "$TEMP_BRANCH" 2>/dev/null || git checkout -b "$TEMP_BRANCH" origin/"$TEMP_BRANCH"
+        else
+          echo "📝 Creating new temp branch $TEMP_BRANCH"
+          # Create temp branch from current commit
+          git checkout -b "$TEMP_BRANCH"
+          # Push temp branch to remote
+          git push origin "$TEMP_BRANCH"
+        fi
+
+        echo "tempBranch=$TEMP_BRANCH" >> $GITHUB_OUTPUT
+        echo "✅ Temporary branch ready"
+
+    - name: Check for Existing PR
+      id: check-pr
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        TEMP_BRANCH="${{ steps.create-temp.outputs.tempBranch }}"
+        TARGET="${{ inputs.targetBranch }}"
+
+        # Check if PR already exists from temp branch to target
+        EXISTING_PR=$(gh pr list --head "$TEMP_BRANCH" --base "$TARGET" --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+        if [ -n "$EXISTING_PR" ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+          echo "prNumber=$EXISTING_PR" >> $GITHUB_OUTPUT
+          echo "⚠️  PR already exists: #$EXISTING_PR"
+
+          # Get PR URL
+          PR_URL=$(gh pr view "$EXISTING_PR" --json url --jq '.url')
+          echo "prUrl=$PR_URL" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+          echo "✅ No existing PR found"
+        fi
+
+    - name: Create Pull Request
+      id: create-pr
+      if: steps.check-pr.outputs.exists == 'false'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        TEMP_BRANCH="${{ steps.create-temp.outputs.tempBranch }}"
+        TARGET="${{ inputs.targetBranch }}"
+        SOURCE="${{ inputs.sourceBranch }}"
+        VERSION="${{ steps.get-version.outputs.version }}"
+        AUTO_MERGE="${{ inputs.autoMerge }}"
+
+        TITLE="🚀 Release $VERSION to $TARGET"
+
+        # Determine merge behavior text
+        if [ "$AUTO_MERGE" == "true" ]; then
+          MERGE_TEXT="merge automatically"
+        else
+          MERGE_TEXT="require manual approval"
+        fi
+
+        # Disable error exit to capture gh pr create output even on failure
+        set +e
+
+        # Create the PR - gh pr create returns the PR URL on success
+        PR_URL=$(gh pr create \--title "$TITLE" \--body "Release $VERSION from $SOURCE to $TARGET" \--head "$TEMP_BRANCH" \--base "$TARGET" 2>&1)
+        PR_EXIT_CODE=$?
+
+        # Re-enable error exit
+        set -e
+
+        if [ $PR_EXIT_CODE -eq 0 ] && [[ "$PR_URL" =~ ^https://github.com/.*/pull/[0-9]+$ ]]; then
+          # Extract PR number from URL (e.g., https://github.com/owner/repo/pull/123)
+          PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$')
+          echo "prNumber=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "prUrl=$PR_URL" >> $GITHUB_OUTPUT
+          echo "✅ Created PR #$PR_NUMBER"
+          echo "🔗 URL: $PR_URL"
+        else
+          echo "❌ Failed to create PR"
+          echo "Error output:"
+          echo "$PR_URL"
+          exit 1
+        fi
+
+    - name: Enable PR Auto-Merge with Rebase (Manual Approval Required)
+      if: inputs.autoMerge == 'false'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        PR_NUMBER="${{ steps.check-pr.outputs.prNumber || steps.create-pr.outputs.prNumber }}"
+        TARGET="${{ inputs.targetBranch }}"
+
+        echo "🔐 Enabling auto-merge with rebase for PR #$PR_NUMBER (requires approval)"
+        echo "   This will fast-forward $TARGET when approved, maintaining linear history"
+
+        # Enable auto-merge with rebase method (fast-forward, no merge commit)
+        gh pr merge "$PR_NUMBER" --auto --rebase
+
+        echo "✅ Auto-merge enabled - PR will fast-forward merge when approved"
+        echo "⚠️  Manual approval required before merge completes"
+
+    - name: Fast-Forward Merge (Immediate Auto-Merge)
+      if: inputs.autoMerge == 'true'
+      shell: bash
+      run: |
+        SOURCE="${{ inputs.sourceBranch }}"
+        TARGET="${{ inputs.targetBranch }}"
+        VERSION="${{ steps.get-version.outputs.version }}"
+
+        echo "🚀 Fast-forwarding $TARGET to $SOURCE (maintaining linear history)"
+
+        # Get the commit SHA from source branch
+        COMMIT_SHA=$(git rev-parse $SOURCE)
+        echo "Source commit: $COMMIT_SHA"
+
+        # Fetch target branch
+        git fetch origin $TARGET:$TARGET 2>/dev/null || true
+
+        # Checkout target branch
+        git checkout $TARGET
+
+        # Verify we can fast-forward (no divergent commits)
+        if git merge-base --is-ancestor $TARGET $SOURCE; then
+          echo "✅ Fast-forward is possible (linear history maintained)"
+        else
+          echo "❌ Cannot fast-forward - branches have diverged"
+          echo "Target branch has commits not in source branch"
+          exit 1
+        fi
+
+        # Fast-forward merge (no merge commit)
+        git merge --ff-only $SOURCE
+
+        # Push to remote
+        git push origin $TARGET
+
+        echo "✅ Fast-forwarded $TARGET to $COMMIT_SHA"
+        echo "📝 PR will be closed automatically for audit trail"
+
+    - name: Wait for Branch to Propagate
+      if: inputs.autoMerge == 'true'
+      shell: bash
+      run: |
+        echo "⏳ Waiting 5 seconds for branch update to propagate..."
+        sleep 5
+        echo "✅ Branch should be fully propagated"
+
+    - name: Trigger Pipeline Workflow on Target Branch
+      if: inputs.autoMerge == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        TARGET="${{ inputs.targetBranch }}"
+        VERSION="${{ steps.get-version.outputs.version }}"
+        RUN_NUMBER="${{ inputs.run_number }}"
+
+        # Get the exact commit SHA that was just pushed to target branch
+        COMMIT_SHA=$(git rev-parse $TARGET)
+        echo "🔄 Triggering pipeline workflow on $TARGET branch"
+        echo "   Version: $VERSION"
+        echo "   Commit SHA: $COMMIT_SHA"
+
+        # Trigger the pipeline workflow on the target branch
+        # This is necessary because GITHUB_TOKEN pushes don't trigger workflows by default
+        # Pass the exact commit SHA to ensure the workflow checks out the correct commit
+        # (avoids race conditions from GitHub's eventual consistency)
+        WORKFLOW_ARGS=(--ref "$TARGET" --field version="$VERSION" --field commitSha="$COMMIT_SHA")
+        if [ -n "$RUN_NUMBER" ]; then
+          WORKFLOW_ARGS+=(--field run_number="$RUN_NUMBER")
+          echo "   Run number: $RUN_NUMBER (for traceability)"
+        fi
+
+        gh workflow run pipeline.yml "${WORKFLOW_ARGS[@]}"
+
+        echo "✅ Pipeline workflow triggered on $TARGET with version $VERSION at commit $COMMIT_SHA"
+
+    - name: Close PR and Delete Branch
+      if: inputs.autoMerge == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        TEMP_BRANCH="${{ steps.create-temp.outputs.tempBranch }}"
+        PR_NUMBER="${{ steps.check-pr.outputs.prNumber || steps.create-pr.outputs.prNumber }}"
+
+        echo "🧹 Cleaning up temporary branch: $TEMP_BRANCH"
+
+        # Close the PR (it's already been fast-forward merged)
+        if [ -n "$PR_NUMBER" ]; then
+          gh pr close "$PR_NUMBER" --comment "Automatically merged via fast-forward. Closing PR and cleaning up release branch." || true
+          echo "✅ Closed PR #$PR_NUMBER"
+        fi
+
+        # Delete the temporary branch from remote
+        git push origin --delete "$TEMP_BRANCH" || echo "⚠️  Branch may already be deleted"
+
+        echo "✅ Deleted temporary branch $TEMP_BRANCH"
+
+    - name: Use Existing PR
+      if: steps.check-pr.outputs.exists == 'true'
+      shell: bash
+      run: |
+        PR_NUMBER="${{ steps.check-pr.outputs.prNumber }}"
+        PR_URL="${{ steps.check-pr.outputs.prUrl }}"
+
+        echo "ℹ️  Using existing PR #$PR_NUMBER"
+        echo "🔗 URL: $PR_URL"
+
+        # Note: Fast-forward merge happens in separate step if autoMerge is enabled
