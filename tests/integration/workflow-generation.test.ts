@@ -91,11 +91,11 @@ describe('Workflow Generation Integration', () => {
           env: { ...process.env, CI: 'true' }
         })
 
-        // Verify all domains in detect-changes action
-        const detectChanges = readFileSync('.github/actions/detect-changes/action.yml', 'utf-8')
-        expect(detectChanges).toContain('api')
-        expect(detectChanges).toContain('web')
-        expect(detectChanges).toContain('shared')
+        // Verify all domains in pipeline workflow (domains are passed to detect-changes dynamically)
+        const pipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
+        expect(pipeline).toContain('api')
+        expect(pipeline).toContain('web')
+        expect(pipeline).toContain('shared')
       })
     })
 
