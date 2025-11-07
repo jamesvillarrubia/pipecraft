@@ -6,7 +6,11 @@ import clsx from 'clsx'
 
 import styles from './index.module.css'
 
-function HomepageHeader() {
+type HomepageHeaderProps = {
+  version?: string
+}
+
+function HomepageHeader({ version }: HomepageHeaderProps) {
   return (
     <header className={clsx('hero', styles.heroBanner)}>
       <div className="container">
@@ -36,6 +40,11 @@ function HomepageHeader() {
             Get Started - 5min ⏱️
           </Link>
         </div>
+        {version ? (
+          <div className={styles.versionBadge} id="docs-version-badge">
+            Latest Release: <span className={styles.versionValue}>v{version}</span>
+          </div>
+        ) : null}
         <div className={styles.heroCode}>
           <pre>
             <code>
@@ -52,12 +61,13 @@ function HomepageHeader() {
 
 export default function Home(): JSX.Element {
   const { siteConfig } = useDocusaurusContext()
+  const version = siteConfig.customFields?.pipecraftVersion as string | undefined
   return (
     <Layout
       title={`${siteConfig.title} - Battle-Tested CI/CD Templates`}
       description="Skip the debugging cycles. Generate battle-tested CI/CD workflows into your repository with best practices built in. Fully customizable, completely yours."
     >
-      <HomepageHeader />
+      <HomepageHeader version={version} />
       <main>
         <HomepageFeatures />
       </main>

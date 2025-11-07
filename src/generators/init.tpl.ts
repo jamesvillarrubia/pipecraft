@@ -212,13 +212,13 @@ const generateYamlConfig = (config: any): string => {
   Object.entries(config.domains).forEach(([domainName, domainConfig]: [string, any]) => {
     lines.push(`  ${domainName}:`)
 
+    // Description (always write as field)
+    if (domainConfig.description) {
+      lines.push(`    description: '${domainConfig.description}'`)
+    }
+
     // Paths
     if (domainConfig.paths) {
-      if (domainConfig.description && domainName !== 'cicd') {
-        lines.push(`    # ${domainConfig.description}`)
-      } else if (domainName === 'cicd') {
-        lines.push('    # CI/CD configuration changes')
-      }
       lines.push('    paths:')
       domainConfig.paths.forEach((path: string) => {
         lines.push(`      - ${path}`)
@@ -230,11 +230,6 @@ const generateYamlConfig = (config: any): string => {
       lines.push(`    prefixes: [${domainConfig.prefixes.map((p: string) => `'${p}'`).join(', ')}]`)
     }
 
-    // Description (standalone if no paths)
-    if (!domainConfig.paths && domainConfig.description) {
-      lines.push(`    description: ${domainConfig.description}`)
-    }
-
     lines.push('')
   })
 
@@ -243,11 +238,15 @@ const generateYamlConfig = (config: any): string => {
     lines.push('# Nx integration for monorepo optimization')
     lines.push('nx:')
     lines.push(`  enabled: ${config.nx.enabled}`)
-    if (config.nx.tasks) {
-      lines.push('  tasks:')
-      config.nx.tasks.forEach((task: string) => {
-        lines.push(`    - ${task}`)
-      })
+    if (config.nx.tasks !== undefined) {
+      if (config.nx.tasks.length > 0) {
+        lines.push('  tasks:')
+        config.nx.tasks.forEach((task: string) => {
+          lines.push(`    - ${task}`)
+        })
+      } else {
+        lines.push('  tasks: []')
+      }
     }
     if (config.nx.baseRef) {
       lines.push(`  baseRef: ${config.nx.baseRef}`)

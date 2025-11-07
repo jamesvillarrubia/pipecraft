@@ -1,11 +1,22 @@
 import type * as Preset from '@docusaurus/preset-classic'
 import type { Config } from '@docusaurus/types'
 import { themes as prismThemes } from 'prism-react-renderer'
+import { readFileSync } from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPackageJsonPath = path.resolve(__dirname, '../package.json')
+const rootPackageJson = JSON.parse(readFileSync(rootPackageJsonPath, 'utf8'))
+const PIPECRAFT_VERSION: string = rootPackageJson.version
 
 const config: Config = {
   title: 'PipeCraft',
   tagline: 'Automated CI/CD Pipeline Generator for Trunk-Based Development',
   favicon: 'img/favicon.ico',
+  customFields: {
+    pipecraftVersion: PIPECRAFT_VERSION
+  },
 
   // Test deployment trigger - small change to docs
 

@@ -19,6 +19,29 @@
   margin: 2rem 0;
 }
 
+.versionBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin: 0 auto 1.5rem;
+  border-radius: 999px;
+  background: var(--ifm-color-primary-lightest);
+  color: var(--ifm-color-primary-darkest);
+  font-weight: 600;
+  box-shadow: var(--ifm-global-shadow-lw);
+}
+
+.versionValue {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.95rem;
+  background: var(--ifm-color-primary);
+  color: var(--ifm-color-white);
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.5rem;
+}
+
 .heroCode {
   margin: 2rem auto 0;
   max-width: 600px;

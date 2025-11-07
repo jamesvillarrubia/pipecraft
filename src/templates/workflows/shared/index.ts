@@ -6,6 +6,7 @@
 
 export * from './operations-changes.js'
 export * from './operations-domain-jobs.js'
+export * from './operations-gate.js'
 export * from './operations-header.js'
 export * from './operations-tag-promote.js'
 export * from './operations-version.js'

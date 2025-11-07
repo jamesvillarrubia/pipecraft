@@ -9,17 +9,20 @@
 
 import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import fs from 'fs'
-import { parseDocument, Scalar, stringify } from 'yaml'
+import { parseDocument, Scalar, stringify, YAMLMap } from 'yaml'
 import type { PipecraftConfig } from '../../types/index.js'
 import { applyPathOperations, type PathOperationConfig } from '../../utils/ast-path-operations.js'
 import { logger } from '../../utils/logger.js'
 import { formatIfConditions } from '../yaml-format-utils.js'
 import {
   createChangesJobOperation,
+  createGateJobOperation,
   createHeaderOperations,
+  createPrefixedDomainJobOperations,
   createTagPromoteReleaseOperations,
   createVersionJobOperation
 } from './shared/index.js'
+import { getDomainJobNames } from './shared/operations-domain-jobs.js'
 
 interface PathBasedPipelineContext extends PinionContext {
   config: PipecraftConfig
@@ -61,6 +64,133 @@ function extractUserSection(yamlContent: string): string | null {
 }
 
 /**
+ * Generate placeholder jobs for domains with prefixes as YAML text
+ *
+ * @param domains - Domain configuration
+ * @returns YAML text for placeholder jobs, grouped by prefix
+ */
+function generatePrefixedJobsText(domains: Record<string, any>): string {
+  // Group jobs by prefix
+  const jobsByPrefix: Record<string, Array<{ domain: string; jobName: string }>> = {}
+
+  Object.keys(domains)
+    .sort()
+    .forEach(domain => {
+      const domainConfig = domains[domain]
+      logger.verbose(
+        `📋 Domain ${domain}: prefixes = ${
+          domainConfig.prefixes ? JSON.stringify(domainConfig.prefixes) : 'undefined'
+        }`
+      )
+      if (domainConfig.prefixes && Array.isArray(domainConfig.prefixes)) {
+        domainConfig.prefixes.forEach((prefix: string) => {
+          if (!jobsByPrefix[prefix]) {
+            jobsByPrefix[prefix] = []
+          }
+          jobsByPrefix[prefix].push({
+            domain,
+            jobName: `${prefix}-${domain}`
+          })
+        })
+      }
+    })
+
+  // Generate YAML text for each prefix group
+  const jobTexts: string[] = []
+
+  Object.keys(jobsByPrefix)
+    .sort()
+    .forEach(prefix => {
+      const jobs = jobsByPrefix[prefix]
+
+      jobs.forEach(job => {
+        const jobYaml = `  ${job.jobName}:
+    needs: changes
+    if: \${{ needs.changes.outputs.${job.domain} == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: \${{ inputs.commitSha || github.sha }}
+      # TODO: Replace with your ${job.domain} ${prefix} logic
+      - name: Run ${prefix} for ${job.domain}
+        run: |
+          echo "Running ${prefix} for ${job.domain} domain"
+          echo "Replace this with your actual ${prefix} commands"
+          # Example: npm run ${prefix}:${job.domain}`
+
+        jobTexts.push(jobYaml)
+      })
+    })
+
+  return jobTexts.join('\n\n')
+}
+
+/**
+ * Merge generated placeholder jobs with existing custom section content
+ *
+ * Only adds jobs that don't already exist in the custom section
+ *
+ * @param userSection - Existing custom section content (may be null)
+ * @param generatedJobs - Generated placeholder jobs text
+ * @returns Merged content
+ */
+function mergeCustomJobsContent(userSection: string | null, generatedJobs: string): string {
+  if (!generatedJobs) {
+    return userSection || ''
+  }
+
+  // Extract existing job names from userSection
+  const existingJobNames = new Set<string>()
+  if (userSection) {
+    // Match job names: lines starting with spaces + jobname + :
+    const jobNameRegex = /^ {2}([a-zA-Z0-9_-]+):/gm
+    let match
+    while ((match = jobNameRegex.exec(userSection)) !== null) {
+      existingJobNames.add(match[1])
+    }
+  }
+
+  logger.verbose(
+    `📋 Existing custom job names: ${Array.from(existingJobNames).join(', ') || 'none'}`
+  )
+
+  // Filter generated jobs to only include those that don't exist
+  const generatedJobLines = generatedJobs.split('\n\n')
+  const newJobs: string[] = []
+  const skippedJobs: string[] = []
+
+  generatedJobLines.forEach(jobText => {
+    // Extract job name from first line
+    const jobNameMatch = jobText.match(/^ {2}([a-zA-Z0-9_-]+):/)
+    if (jobNameMatch) {
+      const jobName = jobNameMatch[1]
+      if (!existingJobNames.has(jobName)) {
+        newJobs.push(jobText)
+      } else {
+        skippedJobs.push(jobName)
+      }
+    }
+  })
+
+  logger.verbose(`📋 Generated ${newJobs.length} new placeholder job(s)`)
+  if (skippedJobs.length > 0) {
+    logger.verbose(`📋 Skipped ${skippedJobs.length} existing job(s): ${skippedJobs.join(', ')}`)
+  }
+
+  // Merge: existing jobs first, then new jobs
+  const parts: string[] = []
+  if (userSection && userSection.trim()) {
+    parts.push(userSection)
+  }
+  if (newJobs.length > 0) {
+    parts.push(newJobs.join('\n\n'))
+  }
+
+  return parts.join('\n\n')
+}
+
+/**
  * Main generator that handles merging with existing workflow
  */
 export const generate = (ctx: PathBasedPipelineContext) =>
@@ -69,6 +199,9 @@ export const generate = (ctx: PathBasedPipelineContext) =>
       const filePath = `${ctx.cwd || process.cwd()}/.github/workflows/pipeline.yml`
       const { config, branchFlow } = ctx
       const domains = config?.domains || {}
+
+      // Get job names from domains (supports both prefixes and legacy boolean flags)
+      const { testJobs, deployJobs, remoteTestJobs, allJobsByPrefix } = getDomainJobNames(domains)
 
       // Build operations array - only managed jobs
       const operations: PathOperationConfig[] = [
@@ -91,11 +224,22 @@ export const generate = (ctx: PathBasedPipelineContext) =>
           config
         }),
 
+        // NOTE: Prefixed domain jobs are NOT generated via operations
+        // They are generated as text and merged into the custom section below
+
+        // Gate job (runs after ALL prefix-based jobs, gates downstream jobs)
+        createGateJobOperation({
+          testJobNames: testJobs,
+          deployJobNames: deployJobs,
+          allJobsByPrefix // Includes ALL jobs from all prefixes (test, deploy, lint, build, etc.)
+        }),
+
         // Tag, promote, release
         ...createTagPromoteReleaseOperations({
           branchFlow,
           deployJobNames: [], // No deployment dependencies in new model
           remoteTestJobNames: [],
+          testJobNames: testJobs, // Pass test jobs for default tag job dependencies
           autoMerge: typeof config.autoMerge === 'object' ? config.autoMerge : {},
           config
         })
@@ -120,7 +264,7 @@ export const generate = (ctx: PathBasedPipelineContext) =>
           existingDoc.contents && (existingDoc.contents as any).get
             ? (existingDoc.contents as any).get('jobs')
             : null
-        const managedJobs = new Set(['changes', 'version', 'tag', 'promote', 'release'])
+        const managedJobs = new Set(['changes', 'version', 'gate', 'tag', 'promote', 'release'])
         if (existingJobs && (existingJobs as any).items) {
           for (const pair of (existingJobs as any).items) {
             const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
@@ -174,6 +318,10 @@ export const generate = (ctx: PathBasedPipelineContext) =>
 =============================================================================`
         doc.commentBefore = headerComment
 
+        // NOTE: Custom jobs are NOT added to the document via AST
+        // They are preserved in userSection and merged with generated placeholders
+        // Then inserted as text after version job (see below)
+
         if (doc.contents) {
           applyPathOperations(doc.contents as any, operations, doc)
         }
@@ -187,43 +335,42 @@ export const generate = (ctx: PathBasedPipelineContext) =>
           minContentWidth: 0
         })
 
-        // Insert user section and custom jobs after version job if they exist
-        const hasCustomContent = userSection || customJobsFromExisting.length > 0
-        if (hasCustomContent) {
+        // Generate placeholder jobs from prefixes and merge with existing custom section
+        const generatedPlaceholders = generatePrefixedJobsText(domains)
+
+        // Debug: log generated job names
+        const generatedJobNames = generatedPlaceholders
+          .split('\n\n')
+          .map(j => j.match(/^ {2}([a-zA-Z0-9_-]+):/))
+          .filter(m => m)
+          .map(m => m![1])
+        logger.verbose(
+          `📋 Generated ${generatedJobNames.length} placeholder jobs: ${generatedJobNames.join(
+            ', '
+          )}`
+        )
+
+        const mergedCustomContent = mergeCustomJobsContent(userSection, generatedPlaceholders)
+
+        // Insert merged custom section (user jobs + generated placeholders)
+        if (mergedCustomContent && mergedCustomContent.trim().length > 0) {
           // Find the version job's outputs section
           const versionOutputsPattern =
             /^ {2}version:\s*\n(?:.*\n)*? {4}outputs:\s*\n\s*version:.*$/m
           const match = yamlContent.match(versionOutputsPattern)
           if (match) {
             const insertionIndex = match.index! + match[0].length
-            let contentToInsert = ''
 
-            // Add user section if exists
-            if (userSection) {
-              contentToInsert = userSection
-            } else if (customJobsFromExisting.length > 0) {
-              // Add custom jobs if they exist (and weren't in user section)
-              const customJobsYaml = customJobsFromExisting
-                .map(pair => {
-                  const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
-                  const valueYaml = stringify(pair.value, { indent: 2 })
-                  return `  ${keyStr}:\n${valueYaml
-                    .split('\n')
-                    .map((line: string) => (line ? '  ' + line : line))
-                    .join('\n')}`
-                })
-                .join('\n\n')
-              contentToInsert = customJobsYaml
-            }
-
-            const userSectionWithMarkers = `# <--START CUSTOM JOBS-->\n\n${contentToInsert}\n\n  # <--END CUSTOM JOBS-->`
+            const userSectionWithMarkers = `# <--START CUSTOM JOBS-->\n\n${mergedCustomContent}\n\n  # <--END CUSTOM JOBS-->`
             yamlContent =
               yamlContent.slice(0, insertionIndex) +
               '\n\n  ' +
               userSectionWithMarkers +
               '\n' +
               yamlContent.slice(insertionIndex)
-            logger.verbose('📋 Inserted user-customized section after version job')
+            logger.verbose(
+              '📋 Inserted custom jobs section (user + generated placeholders) after version job'
+            )
           }
         } else if (!fileExists) {
           // For new files, add placeholder markers
@@ -237,7 +384,7 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         }
 
         const formattedContent = formatIfConditions(yamlContent)
-        const status = hasCustomContent ? 'merged' : fileExists ? 'rebuilt' : 'created'
+        const status = mergedCustomContent ? 'merged' : fileExists ? 'rebuilt' : 'created'
         return { ...ctx, yamlContent: formattedContent, mergeStatus: status }
       }
 

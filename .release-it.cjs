@@ -10,6 +10,7 @@ const DEFAULT_PREFIXES = {
   refactor: 'patch',
   feat: 'minor',
   major: 'major',
+  cicd: 'patch',
   patch: 'patch',
   minor: 'minor',
   breaking: 'major'

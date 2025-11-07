@@ -53,7 +53,7 @@ class PipeCraftWidget {
 
     this.render()
     this.attachEventListeners()
-    
+
     // Watch for theme changes to update Prism theme
     this.setupThemeWatcher()
   }
@@ -63,7 +63,7 @@ class PipeCraftWidget {
     const observer = new MutationObserver(() => {
       this.updatePrismTheme()
     })
-    
+
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['data-theme']
@@ -253,7 +253,8 @@ class PipeCraftWidget {
       // Update autoMerge to match the new branch flow
       const newAutoMerge = {}
       branches.forEach((branch, idx) => {
-        if (idx > 0) { // Skip initial branch
+        if (idx > 0) {
+          // Skip initial branch
           // Preserve existing setting or default to true
           newAutoMerge[branch] = this.state.autoMerge.hasOwnProperty(branch)
             ? this.state.autoMerge[branch]
@@ -294,7 +295,8 @@ class PipeCraftWidget {
     // Preserve existing settings for branches that remain, default new branches to true
     const newAutoMerge = {}
     branches.forEach((branch, idx) => {
-      if (idx > 0) { // Skip initial branch
+      if (idx > 0) {
+        // Skip initial branch
         // If this branch already has a setting, keep it; otherwise default to true
         newAutoMerge[branch] = this.state.autoMerge.hasOwnProperty(branch)
           ? this.state.autoMerge[branch]
@@ -323,7 +325,9 @@ class PipeCraftWidget {
 
       autoMergeDiv.innerHTML = `
         <label class="checkbox-label">
-          <input type="checkbox" ${isAutoMerge ? 'checked' : ''} data-branch="${branch}" class="automerge-checkbox">
+          <input type="checkbox" ${
+            isAutoMerge ? 'checked' : ''
+          } data-branch="${branch}" class="automerge-checkbox">
           <span>Auto-merge to <strong>${branch}</strong></span>
         </label>
         <div class="help-text">Automatically merge after tests pass (vs. manual PR approval)</div>
@@ -490,9 +494,11 @@ class PipeCraftWidget {
 
         // Show different arrow style for auto-merge vs manual
         if (nextIsAutoMerge) {
-          html += '<div class="branch-arrow auto-merge" title="Auto-merge enabled"><span class="arrow-label">AUTO</span> →</div>'
+          html +=
+            '<div class="branch-arrow auto-merge" title="Auto-merge enabled"><span class="arrow-label">AUTO</span> →</div>'
         } else {
-          html += '<div class="branch-arrow manual-merge" title="Manual approval required"><span class="arrow-label">MANUAL</span> →</div>'
+          html +=
+            '<div class="branch-arrow manual-merge" title="Manual approval required"><span class="arrow-label">MANUAL</span> →</div>'
         }
       }
     })
@@ -505,17 +511,27 @@ class PipeCraftWidget {
       html += '<div class="domain-grid">'
       Object.entries(this.state.domains).forEach(([name, config]) => {
         const prefixes = config.prefixes || []
-        const badgesHtml = prefixes.map(prefix => {
-          const badgeClass = prefix === 'deploy' ? 'badge deploy' : prefix === 'remote-test' ? 'badge remote-test' : 'badge'
-          return `<span class="${badgeClass}">${prefix}</span>`
-        }).join('')
+        const badgesHtml = prefixes
+          .map(prefix => {
+            const badgeClass =
+              prefix === 'deploy'
+                ? 'badge deploy'
+                : prefix === 'remote-test'
+                ? 'badge remote-test'
+                : 'badge'
+            return `<span class="${badgeClass}">${prefix}</span>`
+          })
+          .join('')
 
         html += `
                     <div class="domain-card">
                         <div class="domain-card-name">${name}</div>
                         <div class="domain-card-paths">${config.paths[0] || 'No paths'}</div>
                         <div class="domain-card-badges">
-                            ${badgesHtml || '<span style="color: var(--ifm-font-color-secondary, #999); font-size: 11px;">No prefixes</span>'}
+                            ${
+                              badgesHtml ||
+                              '<span style="color: var(--ifm-font-color-secondary, #999); font-size: 11px;">No prefixes</span>'
+                            }
                         </div>
                     </div>
                 `
@@ -561,7 +577,8 @@ class PipeCraftWidget {
     // Load Prism.js dark theme CSS - using Dracula theme to match Docusaurus dark theme
     const darkCssLink = document.createElement('link')
     darkCssLink.rel = 'stylesheet'
-    darkCssLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-dark.min.css'
+    darkCssLink.href =
+      'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-dark.min.css'
     darkCssLink.id = 'prism-dark-theme'
     document.head.appendChild(darkCssLink)
 
@@ -571,7 +588,8 @@ class PipeCraftWidget {
     script.onload = () => {
       // Load YAML language support
       const yamlScript = document.createElement('script')
-      yamlScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js'
+      yamlScript.src =
+        'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js'
       yamlScript.onload = () => {
         // Re-render spec with highlighting
         this.renderSpec()
@@ -587,7 +605,7 @@ class PipeCraftWidget {
     const darkTheme = document.getElementById('prism-dark-theme')
     const lightTheme = document.getElementById('prism-light-theme')
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
-    
+
     if (darkTheme) {
       darkTheme.disabled = !isDark
     }
@@ -624,7 +642,9 @@ ${this.state.branchFlow.map(b => `  - ${b}`).join('\n')}
 
 # Automatic promotion after successful tests
 autoMerge:
-${Object.entries(this.state.autoMerge).map(([branch, enabled]) => `  ${branch}: ${enabled}`).join('\n')}
+${Object.entries(this.state.autoMerge)
+  .map(([branch, enabled]) => `  ${branch}: ${enabled}`)
+  .join('\n')}
 
 # Semantic versioning bump rules
 semver:
@@ -662,7 +682,7 @@ ${config.paths.map(p => `      - ${p}`).join('\n')}
   copySpec() {
     const spec = this.generateYAML()
     const copyBtn = document.getElementById('pc-copyBtn')
-    
+
     navigator.clipboard
       .writeText(spec)
       .then(() => {

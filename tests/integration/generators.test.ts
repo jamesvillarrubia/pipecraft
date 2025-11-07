@@ -91,12 +91,7 @@ describe('Generator Integration Tests', () => {
       expect(existsSync(configPath)).toBe(true)
 
       const rawContent = readFileSync(configPath, 'utf8')
-      let configContent = JSON.parse(rawContent)
-
-      // Handle double-encoded JSON
-      if (typeof configContent === 'string') {
-        configContent = JSON.parse(configContent)
-      }
+      const configContent = parseYAML(rawContent)
 
       expect(configContent.ciProvider).toBe('github')
       expect(configContent.branchFlow).toEqual(['develop', 'staging', 'main'])
@@ -135,12 +130,7 @@ describe('Generator Integration Tests', () => {
 
       const configPath = join(workspace, '.pipecraftrc')
       const rawContent = readFileSync(configPath, 'utf8')
-      let configContent = JSON.parse(rawContent)
-
-      // Handle double-encoded JSON
-      if (typeof configContent === 'string') {
-        configContent = JSON.parse(configContent)
-      }
+      const configContent = parseYAML(rawContent)
 
       // Verify required fields exist (actual behavior of init generator)
       expect(configContent.ciProvider).toBeDefined()
@@ -180,18 +170,8 @@ describe('Generator Integration Tests', () => {
       const configPath = join(workspace, '.pipecraftrc')
       const rawContent = readFileSync(configPath, 'utf8')
 
-      // Should be valid JSON (may be double-encoded)
-      let parsedContent
-      try {
-        parsedContent = JSON.parse(rawContent)
-        // If it's double-encoded, parse again
-        if (typeof parsedContent === 'string') {
-          parsedContent = JSON.parse(parsedContent)
-        }
-      } catch {
-        // If parsing fails, that's a real issue
-        throw new Error('Config file is not valid JSON')
-      }
+      // Should be valid YAML
+      const parsedContent = parseYAML(rawContent)
 
       // Verify it has the expected structure
       expect(parsedContent.ciProvider).toBe('github')

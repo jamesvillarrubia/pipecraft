@@ -38,9 +38,27 @@ export interface DomainConfig {
   description: string
 
   /**
+   * Job prefixes to generate for this domain.
+   * Each prefix generates a customizable placeholder job named `{prefix}-{domain}`.
+   *
+   * For example, with domain 'core' and prefixes: ['test', 'deploy', 'lint']:
+   * - test-core (runs when core/ changes)
+   * - deploy-core (runs when core/ changes)
+   * - lint-core (runs when core/ changes)
+   *
+   * These are placeholder jobs where you add your own logic in the custom jobs section.
+   * Prefixes provide more flexibility than the boolean flags (testable, deployable, etc).
+   *
+   * @example ['test', 'deploy', 'remote-test']
+   * @example ['lint', 'build', 'test', 'deploy', 'e2e']
+   */
+  prefixes?: string[]
+
+  /**
    * Whether this domain has tests that should be run.
    * If true, generates test jobs for this domain.
    * @default false
+   * @deprecated Use `prefixes: ['test']` instead for more flexibility
    */
   testable?: boolean
 
@@ -48,6 +66,7 @@ export interface DomainConfig {
    * Whether this domain should be deployed.
    * If true, generates deployment jobs for this domain.
    * @default false
+   * @deprecated Use `prefixes: ['deploy']` instead for more flexibility
    */
   deployable?: boolean
 
@@ -55,6 +74,7 @@ export interface DomainConfig {
    * Whether this domain should be tested remotely after deployment.
    * If true, generates remote test jobs for this domain.
    * @default false
+   * @deprecated Use `prefixes: ['remote-test']` instead for more flexibility
    */
   remoteTestable?: boolean
 }
@@ -418,6 +438,7 @@ export interface PipecraftContext {
     {
       paths: string[]
       description: string
+      prefixes?: string[]
       testable?: boolean
       deployable?: boolean
       remoteTestable?: boolean
