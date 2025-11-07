@@ -61,10 +61,11 @@ runs:
             exit 1
           fi
 
-          if ! grep -q "Latest Release: <span class=\"[^\"]*versionValue[^\"]*\">v${NORMALIZED_EXPECTED_VERSION}</span>" "${TMP_HTML}"; then
+          # Use a more flexible pattern that handles React's comment markers (<!-- -->) between v and version
+          if ! grep -q "Latest Release:.*v[[:space:]]*${NORMALIZED_EXPECTED_VERSION}" "${TMP_HTML}"; then
             echo "❌ Homepage did not render expected docs version v${NORMALIZED_EXPECTED_VERSION}"
             echo "🔍 Extracted snippet:"
-            grep -n "docs-version-badge" "${TMP_HTML}" || true
+            grep -A 2 -B 2 "docs-version-badge" "${TMP_HTML}" || true
             rm -f "${TMP_HTML}"
             exit 1
           fi

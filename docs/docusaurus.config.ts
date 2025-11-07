@@ -195,7 +195,12 @@ const config: Config = {
           ]
         }
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} PipeCraft. Built with Docusaurus.`
+      copyright: `
+        <div>Copyright © ${new Date().getFullYear()} PipeCraft. Built with Docusaurus.</div>
+        <div id="docs-version-badge" style="margin-top: 0.5rem; font-size: 0.875rem; opacity: 0.8;">
+          Latest Release: <span class="version-value">v${PIPECRAFT_VERSION}</span>
+        </div>
+      `
     },
     prism: {
       theme: prismThemes.github,

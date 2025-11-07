@@ -40,11 +40,6 @@ function HomepageHeader({ version }: HomepageHeaderProps) {
             Get Started - 5min ⏱️
           </Link>
         </div>
-        {version ? (
-          <div className={styles.versionBadge} id="docs-version-badge">
-            Latest Release: <span className={styles.versionValue}>v{version}</span>
-          </div>
-        ) : null}
         <div className={styles.heroCode}>
           <pre>
             <code>
