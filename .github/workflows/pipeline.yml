@@ -320,49 +320,80 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  custom-jobs-gate:
+  remote-test-docs:
     needs:
       - version
-      - test-cicd
-      - test-core
-      - test-docs
+      - changes
       - deploy-docs
-    # no failures and a new version (runs as a gate before tag/promote/release)
     if: ${{
-        always() &&
+        needs.changes.outputs.docs == 'true' &&
+        needs.deploy-docs.result == 'success' &&
         needs.version.result == 'success' &&
-        needs.test-cicd.result != 'failure' &&
-        needs.test-core.result != 'failure' &&
-        needs.test-docs.result != 'failure' &&
-        needs.deploy-docs.result != 'failure'
+        needs.version.outputs.version != ''
       }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commitSha || github.sha }}
-      # TODO: Replace with your gate remote testing logic
-      - name: Test gate remotely
-        run: |
-          echo "Testing gate remotely"
-          echo "Replace this with your actual remote test commands"
-          # Example: npm run test:remote:gate
+      - name: Run docs smoke test
+        uses: ./.github/actions/docs-smoke-test
+        with:
+          docs-url: https://pipecraft.thecraftlab.dev
+          expected-version: ${{ needs.version.outputs.version }}
 
   # <--END CUSTOM JOBS-->
 
+
   #=============================================================================
-  # TAG (⚠️  Managed by Pipecraft - do not modify)
+  # GATE (⚠️  Managed by Pipecraft - do not modify)
+  #=============================================================================
+  # Gate job that ensures tests pass before allowing tag/promote/deploy.
+  # Uses pattern: at least ONE success AND NO failures (skipped is OK).
+
+  gate:
+    needs: [ version, test-cicd, test-core, test-docs, deploy-docs, remote-test-docs ]
+    if: ${{
+        always() &&
+        needs.version.result == 'success' &&
+        (
+        needs.test-cicd.result != 'failure' &&
+        needs.test-core.result != 'failure' &&
+        needs.test-docs.result != 'failure' &&
+        needs.deploy-docs.result != 'failure' &&
+        needs.remote-test-docs.result != 'failure'
+      ) &&
+        (
+        needs.test-cicd.result == 'success' ||
+        needs.test-core.result == 'success' ||
+        needs.test-docs.result == 'success' ||
+        needs.deploy-docs.result == 'success' ||
+        needs.remote-test-docs.result == 'success'
+      )
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gate passed
+        run: echo "All tests passed - gate allows progression"
+
+  #=============================================================================
+  # TAG (⚠️  Managed by Pipecraft - customizable needs and if)
   #=============================================================================
   # Creates git tags and promotes code through branch flow.
+  # The 'needs' and 'if' fields are customizable and will be preserved.
+  # All other fields (runs-on, steps) are managed by Pipecraft.
 
   tag:
-    needs: [ version ]
+    needs:
+      - version
+      - gate
     if: ${{
         always() &&
         github.event_name != 'pull_request' &&
         github.ref_name == 'develop' &&
         needs.version.result == 'success' &&
-        needs.version.outputs.version != ''
+        needs.version.outputs.version != '' &&
+        needs.gate.result == 'success'
       }}
     runs-on: ubuntu-latest
     steps:
