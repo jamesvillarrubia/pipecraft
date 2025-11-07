@@ -309,7 +309,8 @@ describe('CLI Logic Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle malformed config file', () => {
-      const configPath = join(testDir, '.pipecraftrc')
+      // Use .json extension so cosmiconfig parses as JSON (not YAML where '{ invalid json }' is valid)
+      const configPath = join(testDir, '.pipecraftrc.json')
       writeFileSync(configPath, '{ invalid json }')
 
       expect(() => loadConfig(configPath)).toThrow()

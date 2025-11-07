@@ -28,6 +28,7 @@ jobs:
             test
             build
             ci
+            cicd
             docs
             style
             fix

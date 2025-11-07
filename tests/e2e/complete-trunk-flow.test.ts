@@ -131,16 +131,20 @@ describe('Complete Trunk Flow E2E', () => {
           env: { ...process.env, CI: 'true' }
         })
 
-        // Verify detect-changes action includes all domains
+        // Verify detect-changes action exists
         const detectChanges = readFileSync('.github/actions/detect-changes/action.yml', 'utf-8')
-        expect(detectChanges).toContain('api')
-        expect(detectChanges).toContain('web')
-        expect(detectChanges).toContain('shared')
+        expect(detectChanges).toContain('Detect Changes')
 
-        // Verify paths are correctly configured
-        expect(detectChanges).toContain('apps/api/**')
-        expect(detectChanges).toContain('apps/web/**')
-        expect(detectChanges).toContain('libs/**')
+        // Verify domains are configured in the pipeline workflow (not in the action itself)
+        const pipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
+        expect(pipeline).toContain('api')
+        expect(pipeline).toContain('web')
+        expect(pipeline).toContain('shared')
+
+        // Verify paths are correctly configured in pipeline
+        expect(pipeline).toContain('apps/api/**')
+        expect(pipeline).toContain('apps/web/**')
+        expect(pipeline).toContain('libs/**')
       })
     }, 30000)
   })
@@ -373,13 +377,12 @@ describe('Complete Trunk Flow E2E', () => {
         expect(pipeline).toContain('staging')
         expect(pipeline).toContain('main')
 
-        // Verify detect-changes has all paths
-        const detectChanges = readFileSync('.github/actions/detect-changes/action.yml', 'utf-8')
-        expect(detectChanges).toContain('apps/api/**')
-        expect(detectChanges).toContain('apps/web/**')
-        expect(detectChanges).toContain('apps/mobile/**')
-        expect(detectChanges).toContain('libs/shared/**')
-        expect(detectChanges).toContain('libs/ui/**')
+        // Verify pipeline has all domain paths (domains are passed to detect-changes dynamically)
+        expect(pipeline).toContain('apps/api/**')
+        expect(pipeline).toContain('apps/web/**')
+        expect(pipeline).toContain('apps/mobile/**')
+        expect(pipeline).toContain('libs/shared/**')
+        expect(pipeline).toContain('libs/ui/**')
       })
     }, 30000)
   })

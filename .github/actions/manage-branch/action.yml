@@ -33,6 +33,12 @@ runs:
         fetch-depth: 0
         token: ${{ inputs.token }}
 
+    - name: Configure Git
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
     - name: Validate Inputs
       id: validate
       shell: bash
@@ -41,7 +47,7 @@ runs:
         TARGET="${{ inputs.targetBranch }}"
         SOURCE="${{ inputs.sourceBranch }}"
         BRANCH_NAME="${{ inputs.branchName }}"
-        
+
         case "$ACTION" in
           "fast-forward")
             if [ -z "$SOURCE" ]; then
@@ -66,7 +72,7 @@ runs:
             exit 1
             ;;
         esac
-        
+
         echo "✅ Input validation passed"
 
     - name: Perform Branch Action

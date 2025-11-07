@@ -2,10 +2,6 @@ name: 'Detect Changes (Configuration-Driven)'
 description: 'Enhanced change detection using Nx dependency graph with path-based fallback. Accepts domain configuration as JSON input.'
 author: 'Pipecraft'
 
-branding:
-  icon: 'git-branch'
-  color: 'blue'
-
 inputs:
   baseRef:
     description: 'Base reference to compare against'

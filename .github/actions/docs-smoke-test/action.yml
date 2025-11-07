@@ -1,0 +1,80 @@
+name: 'Docs Smoke Test'
+description: 'Validate live documentation availability, key endpoints, and release version badge'
+author: 'Pipecraft'
+
+inputs:
+  docs-url:
+    description: 'Base URL of the published documentation site'
+    required: false
+    default: 'https://pipecraft.thecraftlab.dev'
+  expected-version:
+    description: 'Version string that should be rendered on the docs homepage (e.g., 1.2.3)'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run docs smoke test
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        DOCS_URL="${{ inputs.docs-url }}"
+        EXPECTED_VERSION="${{ inputs.expected-version }}"
+
+        if [ -z "${DOCS_URL}" ]; then
+          echo "❌ docs-url input must not be empty"
+          exit 1
+        fi
+
+        BASE_URL="${DOCS_URL%/}"
+        HOMEPAGE="${BASE_URL}/"
+        CHANGELOG_URL="${BASE_URL}/changelog"
+        SITEMAP_URL="${BASE_URL}/sitemap.xml"
+
+        TMP_HTML="$(mktemp)"
+
+        echo "ℹ️  Fetching docs homepage: ${HOMEPAGE}"
+        STATUS=$(curl -sS -o "${TMP_HTML}" -w "%{http_code}" "${HOMEPAGE}")
+        if [ "${STATUS}" != "200" ]; then
+          echo "❌ Expected HTTP 200 from ${HOMEPAGE}, got ${STATUS}"
+          cat "${TMP_HTML}" || true
+          rm -f "${TMP_HTML}"
+          exit 1
+        fi
+
+        echo "ℹ️  Ensuring homepage contains PipeCraft branding"
+        if ! grep -qi "Pipecraft" "${TMP_HTML}"; then
+          echo "❌ Homepage did not contain PipeCraft branding text"
+          rm -f "${TMP_HTML}"
+          exit 1
+        fi
+
+        if [ -n "${EXPECTED_VERSION}" ]; then
+          echo "ℹ️  Validating docs version badge renders expected version v${EXPECTED_VERSION}"
+          if ! grep -q "id=\"docs-version-badge\"" "${TMP_HTML}"; then
+            echo "❌ Version badge element (id=docs-version-badge) not found on homepage"
+            rm -f "${TMP_HTML}"
+            exit 1
+          fi
+
+          if ! grep -q "Latest Release: <span class=\"[^\"]*versionValue[^\"]*\">v${EXPECTED_VERSION}</span>" "${TMP_HTML}"; then
+            echo "❌ Homepage did not render expected docs version v${EXPECTED_VERSION}"
+            echo "🔍 Extracted snippet:"
+            grep -n "docs-version-badge" "${TMP_HTML}" || true
+            rm -f "${TMP_HTML}"
+            exit 1
+          fi
+        else
+          echo "⚠️  expected-version not provided; skipping version badge validation"
+        fi
+
+        echo "ℹ️  Checking changelog endpoint: ${CHANGELOG_URL}"
+        curl -sSf "${CHANGELOG_URL}" >/dev/null
+
+        echo "ℹ️  Checking sitemap endpoint: ${SITEMAP_URL}"
+        curl -sSf "${SITEMAP_URL}" >/dev/null
+
+        echo "✅ Docs smoke test passed"
+        rm -f "${TMP_HTML}"
+

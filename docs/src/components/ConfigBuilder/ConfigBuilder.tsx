@@ -1,23 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import CodeBlock from '@theme/CodeBlock';
-import styles from './styles.module.css';
+import React, { useState, useEffect } from 'react'
+import CodeBlock from '@theme/CodeBlock'
+import styles from './styles.module.css'
 
 interface DomainConfig {
-  paths: string[];
-  prefixes: string[];
-  description: string;
+  paths: string[]
+  prefixes: string[]
+  description: string
 }
 
 interface ConfigState {
-  ciProvider: 'github' | 'gitlab';
-  mergeStrategy: 'fast-forward' | 'merge';
-  requireConventionalCommits: boolean;
-  packageManager: 'npm' | 'yarn' | 'pnpm';
-  initialBranch: string;
-  finalBranch: string;
-  branchFlow: string[];
-  autoMerge: Record<string, boolean>;
-  domains: Record<string, DomainConfig>;
+  ciProvider: 'github' | 'gitlab'
+  mergeStrategy: 'fast-forward' | 'merge'
+  requireConventionalCommits: boolean
+  packageManager: 'npm' | 'yarn' | 'pnpm'
+  initialBranch: string
+  finalBranch: string
+  branchFlow: string[]
+  autoMerge: Record<string, boolean>
+  domains: Record<string, DomainConfig>
 }
 
 // Template configurations
@@ -29,7 +29,7 @@ const TEMPLATES: Record<string, Partial<ConfigState>> = {
     autoMerge: {
       staging: true,
       main: true
-    },
+    }
   },
   'three-stage-manual': {
     initialBranch: 'develop',
@@ -38,13 +38,13 @@ const TEMPLATES: Record<string, Partial<ConfigState>> = {
     autoMerge: {
       staging: true,
       main: false
-    },
+    }
   },
   'github-flow': {
     initialBranch: 'main',
     finalBranch: 'main',
     branchFlow: ['main'],
-    autoMerge: {},
+    autoMerge: {}
   },
   'complex-pipeline': {
     initialBranch: 'develop',
@@ -55,9 +55,9 @@ const TEMPLATES: Record<string, Partial<ConfigState>> = {
       staging: true,
       'pre-prod': false,
       main: false
-    },
-  },
-};
+    }
+  }
+}
 
 export default function ConfigBuilder() {
   const [config, setConfig] = useState<ConfigState>({
@@ -84,30 +84,33 @@ export default function ConfigBuilder() {
         description: 'Web application changes'
       }
     }
-  });
+  })
 
-  const [branchFlowInput, setBranchFlowInput] = useState('develop, staging, main');
-  const [copiedToast, setCopiedToast] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState('three-stage-auto');
+  const [branchFlowInput, setBranchFlowInput] = useState('develop, staging, main')
+  const [copiedToast, setCopiedToast] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState('three-stage-auto')
 
   // Update branchFlow and autoMerge when branch flow input changes
   useEffect(() => {
-    const branches = branchFlowInput.split(',').map(b => b.trim()).filter(b => b);
+    const branches = branchFlowInput
+      .split(',')
+      .map(b => b.trim())
+      .filter(b => b)
 
     // Update autoMerge for new branches
-    const newAutoMerge: Record<string, boolean> = {};
+    const newAutoMerge: Record<string, boolean> = {}
     branches.forEach((branch, idx) => {
       if (idx > 0) {
-        newAutoMerge[branch] = config.autoMerge[branch] ?? true;
+        newAutoMerge[branch] = config.autoMerge[branch] ?? true
       }
-    });
+    })
 
     setConfig(prev => ({
       ...prev,
       branchFlow: branches,
       autoMerge: newAutoMerge
-    }));
-  }, [branchFlowInput]);
+    }))
+  }, [branchFlowInput])
 
   const generateYAML = (): string => {
     let yaml = `# PipeCraft Configuration
@@ -137,7 +140,9 @@ ${config.branchFlow.map(b => `  - ${b}`).join('\n')}
 
 # Automatic promotion after successful tests
 autoMerge:
-${Object.entries(config.autoMerge).map(([branch, enabled]) => `  ${branch}: ${enabled}`).join('\n')}
+${Object.entries(config.autoMerge)
+  .map(([branch, enabled]) => `  ${branch}: ${enabled}`)
+  .join('\n')}
 
 # Semantic versioning bump rules
 semver:
@@ -157,36 +162,36 @@ semver:
 
 # Domain configuration for independent testing and deployment
 domains:
-`;
+`
 
     Object.entries(config.domains).forEach(([name, domainConfig]) => {
-      const prefixes = (domainConfig as DomainConfig).prefixes || [];
+      const prefixes = (domainConfig as DomainConfig).prefixes || []
       yaml += `  ${name}:
     description: ${(domainConfig as DomainConfig).description}
     paths:
 ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
     prefixes: [${prefixes.map(p => `'${p}'`).join(', ')}]
-`;
-    });
+`
+    })
 
-    return yaml;
-  };
+    return yaml
+  }
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(generateYAML());
-      setCopiedToast(true);
-      setTimeout(() => setCopiedToast(false), 3000);
+      await navigator.clipboard.writeText(generateYAML())
+      setCopiedToast(true)
+      setTimeout(() => setCopiedToast(false), 3000)
     } catch (err) {
-      console.error('Failed to copy:', err);
+      console.error('Failed to copy:', err)
     }
-  };
+  }
 
   const addDomain = () => {
-    const name = prompt('Enter domain name:');
+    const name = prompt('Enter domain name:')
     if (!name || config.domains[name]) {
-      if (config.domains[name]) alert('Domain already exists');
-      return;
+      if (config.domains[name]) alert('Domain already exists')
+      return
     }
 
     setConfig(prev => ({
@@ -199,14 +204,14 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
           description: `${name} changes`
         }
       }
-    }));
-  };
+    }))
+  }
 
   const removeDomain = (name: string) => {
-    const newDomains = { ...config.domains };
-    delete newDomains[name];
-    setConfig(prev => ({ ...prev, domains: newDomains }));
-  };
+    const newDomains = { ...config.domains }
+    delete newDomains[name]
+    setConfig(prev => ({ ...prev, domains: newDomains }))
+  }
 
   const updateDomain = (name: string, field: string, value: any) => {
     setConfig(prev => ({
@@ -218,20 +223,20 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
           [field]: value
         }
       }
-    }));
-  };
+    }))
+  }
 
   const applyTemplate = (templateKey: string) => {
-    const template = TEMPLATES[templateKey];
-    if (!template) return;
+    const template = TEMPLATES[templateKey]
+    if (!template) return
 
-    setSelectedTemplate(templateKey);
+    setSelectedTemplate(templateKey)
     setConfig(prev => ({
       ...prev,
       ...template
-    }));
-    setBranchFlowInput(template.branchFlow?.join(', ') || '');
-  };
+    }))
+    setBranchFlowInput(template.branchFlow?.join(', ') || '')
+  }
 
   return (
     <div className={styles.configBuilder}>
@@ -241,7 +246,9 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
           <div className={styles.templateSelector}>
             <div>
               <h2 style={{ marginBottom: '0.5rem' }}>Start with a Template</h2>
-              <p className={styles.helpText}>Choose a workflow pattern as a starting point, then customize as needed</p>
+              <p className={styles.helpText}>
+                Choose a workflow pattern as a starting point, then customize as needed
+              </p>
             </div>
             <select
               value={selectedTemplate}
@@ -249,8 +256,12 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
               className={styles.templateSelect}
             >
               <option value="three-stage-auto">Three-Stage Flow (auto-merge to production)</option>
-              <option value="three-stage-manual">Three-Stage Flow (manual merge to production)</option>
-              <option value="complex-pipeline">Complex Pipeline (5-stage with QA and pre-prod)</option>
+              <option value="three-stage-manual">
+                Three-Stage Flow (manual merge to production)
+              </option>
+              <option value="complex-pipeline">
+                Complex Pipeline (5-stage with QA and pre-prod)
+              </option>
               <option value="github-flow">GitHub Flow (feature → main only)</option>
             </select>
           </div>
@@ -271,7 +282,9 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
                 className={styles.select}
               >
                 <option value="github">GitHub Actions</option>
-                <option value="gitlab" disabled>GitLab CI (coming soon)</option>
+                <option value="gitlab" disabled>
+                  GitLab CI (coming soon)
+                </option>
               </select>
             </div>
 
@@ -279,7 +292,9 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
               <label htmlFor="mergeStrategy">Merge Strategy</label>
               <select
                 value={config.mergeStrategy}
-                onChange={e => setConfig(prev => ({ ...prev, mergeStrategy: e.target.value as any }))}
+                onChange={e =>
+                  setConfig(prev => ({ ...prev, mergeStrategy: e.target.value as any }))
+                }
                 className={styles.select}
               >
                 <option value="fast-forward">Fast-forward (rebase)</option>
@@ -293,19 +308,25 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
                 <input
                   type="checkbox"
                   checked={config.requireConventionalCommits}
-                  onChange={e => setConfig(prev => ({ ...prev, requireConventionalCommits: e.target.checked }))}
+                  onChange={e =>
+                    setConfig(prev => ({ ...prev, requireConventionalCommits: e.target.checked }))
+                  }
                   disabled
                 />
                 <span>Require Conventional Commits (always enabled)</span>
               </label>
-              <span className={styles.helpText}>Conventional commits are required for semantic versioning</span>
+              <span className={styles.helpText}>
+                Conventional commits are required for semantic versioning
+              </span>
             </div>
 
             <div className={styles.formGroup}>
               <label htmlFor="packageManager">Package Manager</label>
               <select
                 value={config.packageManager}
-                onChange={e => setConfig(prev => ({ ...prev, packageManager: e.target.value as any }))}
+                onChange={e =>
+                  setConfig(prev => ({ ...prev, packageManager: e.target.value as any }))
+                }
                 className={styles.select}
               >
                 <option value="npm">npm</option>
@@ -327,13 +348,13 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
                 type="text"
                 value={config.initialBranch}
                 onChange={e => {
-                  const newValue = e.target.value.trim();
-                  setConfig(prev => ({ ...prev, initialBranch: newValue }));
+                  const newValue = e.target.value.trim()
+                  setConfig(prev => ({ ...prev, initialBranch: newValue }))
                   // Update branchFlow input if needed
-                  const branches = branchFlowInput.split(',').map(b => b.trim());
+                  const branches = branchFlowInput.split(',').map(b => b.trim())
                   if (branches.length > 0) {
-                    branches[0] = newValue;
-                    setBranchFlowInput(branches.join(', '));
+                    branches[0] = newValue
+                    setBranchFlowInput(branches.join(', '))
                   }
                 }}
                 className={styles.input}
@@ -348,13 +369,13 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
                 type="text"
                 value={config.finalBranch}
                 onChange={e => {
-                  const newValue = e.target.value.trim();
-                  setConfig(prev => ({ ...prev, finalBranch: newValue }));
+                  const newValue = e.target.value.trim()
+                  setConfig(prev => ({ ...prev, finalBranch: newValue }))
                   // Update branchFlow input if needed
-                  const branches = branchFlowInput.split(',').map(b => b.trim());
+                  const branches = branchFlowInput.split(',').map(b => b.trim())
                   if (branches.length > 0) {
-                    branches[branches.length - 1] = newValue;
-                    setBranchFlowInput(branches.join(', '));
+                    branches[branches.length - 1] = newValue
+                    setBranchFlowInput(branches.join(', '))
                   }
                 }}
                 className={styles.input}
@@ -398,11 +419,21 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
                 <React.Fragment key={branch}>
                   <div className={styles.branchBox}>
                     <span>{branch}</span>
-                    {branch === config.initialBranch && <span className={styles.badgeInitial}>DEV</span>}
-                    {branch === config.finalBranch && <span className={styles.badgeFinal}>PROD</span>}
+                    {branch === config.initialBranch && (
+                      <span className={styles.badgeInitial}>DEV</span>
+                    )}
+                    {branch === config.finalBranch && (
+                      <span className={styles.badgeFinal}>PROD</span>
+                    )}
                   </div>
                   {idx < config.branchFlow.length - 1 && (
-                    <div className={`${styles.arrow} ${config.autoMerge[config.branchFlow[idx + 1]] ? styles.arrowAuto : styles.arrowManual}`}>
+                    <div
+                      className={`${styles.arrow} ${
+                        config.autoMerge[config.branchFlow[idx + 1]]
+                          ? styles.arrowAuto
+                          : styles.arrowManual
+                      }`}
+                    >
                       <span className={styles.arrowLabel}>
                         {config.autoMerge[config.branchFlow[idx + 1]] ? 'AUTO' : 'MANUAL'}
                       </span>
@@ -418,15 +449,22 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
                 <h3>Domains</h3>
                 <div className={styles.domainGrid}>
                   {Object.entries(config.domains).map(([name, domain]) => {
-                    const typedDomain = domain as DomainConfig;
+                    const typedDomain = domain as DomainConfig
                     return (
                       <div key={name} className={styles.domainCard}>
                         <div className={styles.domainCardName}>{name}</div>
-                        <div className={styles.domainCardPaths}>{typedDomain.paths[0] || 'No paths'}</div>
+                        <div className={styles.domainCardPaths}>
+                          {typedDomain.paths[0] || 'No paths'}
+                        </div>
                         <div className={styles.domainCardBadges}>
                           {typedDomain.prefixes.length > 0 ? (
                             typedDomain.prefixes.map(prefix => (
-                              <span key={prefix} className={`${styles.badge} ${styles[`badge${prefix.replace('-', '')}`]}`}>
+                              <span
+                                key={prefix}
+                                className={`${styles.badge} ${
+                                  styles[`badge${prefix.replace('-', '')}`]
+                                }`}
+                              >
                                 {prefix}
                               </span>
                             ))
@@ -435,7 +473,7 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
                           )}
                         </div>
                       </div>
-                    );
+                    )
                   })}
                 </div>
               </>
@@ -450,7 +488,8 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
           <div className={styles.section}>
             <h2>Auto-Merge Configuration</h2>
             <p className={styles.helpText} style={{ marginBottom: '1rem' }}>
-              Configure which branches automatically merge after tests pass (vs. requiring manual PR approval)
+              Configure which branches automatically merge after tests pass (vs. requiring manual PR
+              approval)
             </p>
 
             {config.branchFlow.slice(1).map(branch => (
@@ -459,15 +498,19 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
                   <input
                     type="checkbox"
                     checked={config.autoMerge[branch] !== false}
-                    onChange={e => setConfig(prev => ({
-                      ...prev,
-                      autoMerge: {
-                        ...prev.autoMerge,
-                        [branch]: e.target.checked
-                      }
-                    }))}
+                    onChange={e =>
+                      setConfig(prev => ({
+                        ...prev,
+                        autoMerge: {
+                          ...prev.autoMerge,
+                          [branch]: e.target.checked
+                        }
+                      }))
+                    }
                   />
-                  <span>Auto-merge to <strong>{branch}</strong></span>
+                  <span>
+                    Auto-merge to <strong>{branch}</strong>
+                  </span>
                 </label>
               </div>
             ))}
@@ -482,16 +525,8 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
             {Object.entries(config.domains).map(([name, domain]) => (
               <div key={name} className={styles.domainItem}>
                 <div className={styles.domainHeader}>
-                  <input
-                    type="text"
-                    value={name}
-                    className={styles.domainNameInput}
-                    readOnly
-                  />
-                  <button
-                    onClick={() => removeDomain(name)}
-                    className={styles.btnRemove}
-                  >
+                  <input type="text" value={name} className={styles.domainNameInput} readOnly />
+                  <button onClick={() => removeDomain(name)} className={styles.btnRemove}>
                     Remove
                   </button>
                 </div>
@@ -512,7 +547,16 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
                   <input
                     type="text"
                     value={(domain as DomainConfig).paths.join(', ')}
-                    onChange={e => updateDomain(name, 'paths', e.target.value.split(',').map(p => p.trim()).filter(p => p))}
+                    onChange={e =>
+                      updateDomain(
+                        name,
+                        'paths',
+                        e.target.value
+                          .split(',')
+                          .map(p => p.trim())
+                          .filter(p => p)
+                      )
+                    }
                     className={styles.input}
                     placeholder="apps/api/**, src/**"
                   />
@@ -523,11 +567,22 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
                   <input
                     type="text"
                     value={(domain as DomainConfig).prefixes.join(', ')}
-                    onChange={e => updateDomain(name, 'prefixes', e.target.value.split(',').map(p => p.trim()).filter(p => p))}
+                    onChange={e =>
+                      updateDomain(
+                        name,
+                        'prefixes',
+                        e.target.value
+                          .split(',')
+                          .map(p => p.trim())
+                          .filter(p => p)
+                      )
+                    }
                     className={styles.input}
                     placeholder="test, deploy, remote-test (optional)"
                   />
-                  <span className={styles.helpText}>Job types to generate (leave empty to skip). Common: test, deploy, remote-test</span>
+                  <span className={styles.helpText}>
+                    Job types to generate (leave empty to skip). Common: test, deploy, remote-test
+                  </span>
                 </div>
               </div>
             ))}
@@ -547,9 +602,7 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
             </div>
             <div className={styles.codeBlockWrapper}>
               {/* @ts-expect-error - CodeBlock children type issue with Docusaurus theme */}
-              <CodeBlock language="yaml">
-                {generateYAML()}
-              </CodeBlock>
+              <CodeBlock language="yaml">{generateYAML()}</CodeBlock>
             </div>
             <button onClick={copyToClipboard} className={styles.btnCopy}>
               {copiedToast ? '✓ Copied!' : 'Copy Configuration'}
@@ -558,11 +611,7 @@ ${(domainConfig as DomainConfig).paths.map(p => `      - ${p}`).join('\n')}
         </div>
       </div>
 
-      {copiedToast && (
-        <div className={styles.toast}>
-          Configuration copied to clipboard!
-        </div>
-      )}
+      {copiedToast && <div className={styles.toast}>Configuration copied to clipboard!</div>}
     </div>
-  );
+  )
 }

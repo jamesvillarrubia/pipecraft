@@ -10,10 +10,6 @@ inputs:
   targetBranch:
     description: 'Target branch to promote to'
     required: true
-  autoMerge:
-    description: 'Whether to automatically merge (fast-forward) or require manual approval'
-    required: false
-    default: 'false'
   version:
     description: 'Version being promoted (e.g., v1.2.3, auto-detected from git tags if not provided)'
     required: false
@@ -22,6 +18,10 @@ inputs:
     description: 'The original run number from develop branch for traceability'
     required: false
     default: ''
+  autoMerge:
+    description: 'Whether to enable auto-merge for the PR'
+    required: false
+    default: 'false'
   tempBranchPattern:
     description: 'Pattern for temp branch name'
     required: false
@@ -51,22 +51,11 @@ runs:
         fetch-depth: 0
         token: ${{ inputs.token }}
 
-    - name: Validate Inputs
+    - name: Configure Git
       shell: bash
       run: |
-        SOURCE="${{ inputs.sourceBranch }}"
-        TARGET="${{ inputs.targetBranch }}"
-        AUTO_MERGE="${{ inputs.autoMerge }}"
-
-        echo "📋 Promotion Configuration"
-        echo "   Source: $SOURCE"
-        echo "   Target: $TARGET"
-        echo "   Auto-merge: $AUTO_MERGE"
-
-        if [ -z "$TARGET" ]; then
-          echo "❌ targetBranch input is required"
-          exit 1
-        fi
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
 
     - name: Get Version
       id: get-version

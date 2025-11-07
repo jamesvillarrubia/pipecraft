@@ -34,6 +34,7 @@ semver:
     test: 'ignore'
     build: 'ignore'
     ci: 'patch'
+    cicd: 'patch'
     docs: 'patch'
     style: 'patch'
     fix: 'patch'
@@ -54,14 +55,14 @@ domains:
     paths:
       - src/**
       - tests/**
-    prefixes: ['test', 'deploy', 'remote-test']
+    prefixes: ['test']
     description: PipeCraft core changes
 
   cicd:
     # CI/CD configuration changes
     paths:
       - .github/**
-    prefixes: ['test', 'deploy', 'remote-test']
+    prefixes: ['test']
     description: PipeCraft CI/CD changes
 
   docs:

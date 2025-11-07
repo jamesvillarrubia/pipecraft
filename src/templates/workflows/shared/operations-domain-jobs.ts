@@ -15,6 +15,74 @@ export interface DomainJobsContext {
 }
 
 /**
+ * Create placeholder job operations for domains with custom prefixes
+ *
+ * Generates jobs based on the `prefixes` field in domain config.
+ * For example, with domain 'core' and prefixes ['lint', 'build', 'test'],
+ * this creates: lint-core, build-core, test-core
+ *
+ * @param ctx Context with domain configurations
+ * @returns Array of path operations for all prefix-based jobs
+ */
+export function createPrefixedDomainJobOperations(ctx: DomainJobsContext): PathOperationConfig[] {
+  const { domains } = ctx
+  const operations: PathOperationConfig[] = []
+
+  // Group jobs by prefix to add section comments
+  const jobsByPrefix: Record<string, Array<{ domain: string; jobName: string }>> = {}
+
+  Object.keys(domains)
+    .sort()
+    .forEach(domain => {
+      const domainConfig = domains[domain]
+
+      // Only process domains with prefixes defined
+      if (domainConfig.prefixes && Array.isArray(domainConfig.prefixes)) {
+        domainConfig.prefixes.forEach((prefix: string) => {
+          if (!jobsByPrefix[prefix]) {
+            jobsByPrefix[prefix] = []
+          }
+          jobsByPrefix[prefix].push({
+            domain,
+            jobName: `${prefix}-${domain}`
+          })
+        })
+      }
+    })
+
+  // Generate operations for each prefix group
+  Object.keys(jobsByPrefix)
+    .sort()
+    .forEach(prefix => {
+      const jobs = jobsByPrefix[prefix]
+
+      jobs.forEach((job, index) => {
+        operations.push({
+          path: `jobs.${job.jobName}`,
+          operation: 'preserve', // User can customize these jobs - won't overwrite if exists
+          value: createValueFromString(`
+    needs: changes
+    if: \${{ needs.changes.outputs.${job.domain} == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: \${{ inputs.commitSha || github.sha }}
+      # TODO: Replace with your ${job.domain} ${prefix} logic
+      - name: Run ${prefix} for ${job.domain}
+        run: |
+          echo "Running ${prefix} for ${job.domain} domain"
+          echo "Replace this with your actual ${prefix} commands"
+          # Example: npm run ${prefix}:${job.domain}
+  `)
+        })
+      })
+    })
+
+  return operations
+}
+
+/**
  * Create test job operations for each domain
  */
 export function createDomainTestJobOperations(ctx: DomainJobsContext): PathOperationConfig[] {
@@ -154,24 +222,78 @@ export function createDomainRemoteTestJobOperations(ctx: DomainJobsContext): Pat
 
 /**
  * Get list of all domain job names for dependency management
+ *
+ * Supports both legacy boolean flags (testable, deployable, remoteTestable)
+ * and new flexible prefixes array.
+ *
+ * @returns Object with arrays of job names categorized by type
  */
 export function getDomainJobNames(domains: Record<string, any>): {
   testJobs: string[]
   deployJobs: string[]
   remoteTestJobs: string[]
+  allJobsByPrefix: Record<string, string[]>
 } {
-  return {
-    testJobs: Object.keys(domains)
-      .sort()
-      .filter(d => domains[d].testable !== false)
-      .map(d => `test-${d}`),
-    deployJobs: Object.keys(domains)
-      .sort()
-      .filter(d => domains[d].deployable === true)
-      .map(d => `deploy-${d}`),
-    remoteTestJobs: Object.keys(domains)
-      .sort()
-      .filter(d => domains[d].remoteTestable === true)
-      .map(d => `remote-test-${d}`)
-  }
+  const testJobs: string[] = []
+  const deployJobs: string[] = []
+  const remoteTestJobs: string[] = []
+  const allJobsByPrefix: Record<string, string[]> = {}
+
+  Object.keys(domains)
+    .sort()
+    .forEach(domain => {
+      const domainConfig = domains[domain]
+
+      // New approach: use prefixes if defined
+      if (domainConfig.prefixes && Array.isArray(domainConfig.prefixes)) {
+        domainConfig.prefixes.forEach((prefix: string) => {
+          const jobName = `${prefix}-${domain}`
+
+          // Categorize by known prefixes for backwards compatibility
+          if (prefix === 'test') {
+            testJobs.push(jobName)
+          } else if (prefix === 'deploy') {
+            deployJobs.push(jobName)
+          } else if (prefix === 'remote-test') {
+            remoteTestJobs.push(jobName)
+          }
+
+          // Also track all jobs by prefix for flexible access
+          if (!allJobsByPrefix[prefix]) {
+            allJobsByPrefix[prefix] = []
+          }
+          allJobsByPrefix[prefix].push(jobName)
+        })
+      } else {
+        // Legacy approach: use boolean flags
+        if (domainConfig.testable !== false) {
+          const jobName = `test-${domain}`
+          testJobs.push(jobName)
+          if (!allJobsByPrefix['test']) {
+            allJobsByPrefix['test'] = []
+          }
+          allJobsByPrefix['test'].push(jobName)
+        }
+
+        if (domainConfig.deployable === true) {
+          const jobName = `deploy-${domain}`
+          deployJobs.push(jobName)
+          if (!allJobsByPrefix['deploy']) {
+            allJobsByPrefix['deploy'] = []
+          }
+          allJobsByPrefix['deploy'].push(jobName)
+        }
+
+        if (domainConfig.remoteTestable === true) {
+          const jobName = `remote-test-${domain}`
+          remoteTestJobs.push(jobName)
+          if (!allJobsByPrefix['remote-test']) {
+            allJobsByPrefix['remote-test'] = []
+          }
+          allJobsByPrefix['remote-test'].push(jobName)
+        }
+      }
+    })
+
+  return { testJobs, deployJobs, remoteTestJobs, allJobsByPrefix }
 }

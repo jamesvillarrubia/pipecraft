@@ -24,6 +24,7 @@ import {
   createDomainDeployJobOperations,
   createDomainRemoteTestJobOperations,
   createDomainTestJobOperations,
+  createGateJobOperation,
   createHeaderOperations,
   createTagPromoteReleaseOperations,
   createVersionJobOperation,
@@ -184,11 +185,18 @@ export const generate = (ctx: NxPipelineContext) =>
           config
         }),
 
+        // Gate job (runs after test-nx, gates downstream jobs)
+        createGateJobOperation({
+          testJobNames: ['test-nx'], // Gate on the Nx test job
+          deployJobNames: [] // Could add deploy jobs here if needed
+        }),
+
         // Tag, promote, release
         ...createTagPromoteReleaseOperations({
           branchFlow,
           deployJobNames: [], // No deployment dependencies in new model
           remoteTestJobNames: [],
+          testJobNames: ['test-nx'], // For Nx, the single test-nx job is the gate
           autoMerge: typeof config.autoMerge === 'object' ? config.autoMerge : {},
           config
         })
@@ -213,7 +221,15 @@ export const generate = (ctx: NxPipelineContext) =>
           existingDoc.contents && (existingDoc.contents as any).get
             ? (existingDoc.contents as any).get('jobs')
             : null
-        const managedJobs = new Set(['changes', 'version', 'tag', 'promote', 'release', 'test-nx'])
+        const managedJobs = new Set([
+          'changes',
+          'version',
+          'gate',
+          'tag',
+          'promote',
+          'release',
+          'test-nx'
+        ])
         if (existingJobs && (existingJobs as any).items) {
           for (const pair of (existingJobs as any).items) {
             const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key

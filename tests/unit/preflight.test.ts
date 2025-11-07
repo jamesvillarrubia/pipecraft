@@ -192,9 +192,10 @@ describe('Preflight Checks', () => {
       await inWorkspace(workspace, () => {
         writeFileSync('.pipecraftrc', '{ invalid json }')
 
-        // Cosmiconfig throws before we can catch it,
-        // so we expect the function to throw
-        expect(() => checkConfigValid()).toThrow()
+        // Function should gracefully catch and return error result
+        const result = checkConfigValid()
+        expect(result.passed).toBe(false)
+        expect(result.message.toLowerCase()).toContain('config')
       })
     })
   })
