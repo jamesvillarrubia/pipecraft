@@ -25,7 +25,7 @@ of all tracked files along with metadata.
 
 ### IdempotencyManager
 
-Defined in: [utils/idempotency.ts:82](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L82)
+Defined in: [utils/idempotency.ts:82](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L82)
 
 Manager for idempotent workflow generation through intelligent caching.
 
@@ -54,7 +54,7 @@ if (await manager.hasChanges()) {
 
 > **new IdempotencyManager**(`config`, `cacheFile`): [`IdempotencyManager`](#idempotencymanager)
 
-Defined in: [utils/idempotency.ts:92](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L92)
+Defined in: [utils/idempotency.ts:92](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L92)
 
 Create a new IdempotencyManager instance.
 
@@ -82,7 +82,7 @@ Path to cache file (default: .pipecraft-cache.json)
 
 > **calculateHash**(`filePath`, `algorithm`): `Promise`\<`string`\>
 
-Defined in: [utils/idempotency.ts:115](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L115)
+Defined in: [utils/idempotency.ts:115](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L115)
 
 Calculate cryptographic hash for a file or directory.
 
@@ -122,7 +122,7 @@ const templateHash = await manager.calculateHash('src/templates')
 
 > **hasChanges**(): `Promise`\<`boolean`\>
 
-Defined in: [utils/idempotency.ts:239](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L239)
+Defined in: [utils/idempotency.ts:239](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L239)
 
 Check if any tracked files have changed since last generation.
 
@@ -159,7 +159,7 @@ if (await manager.hasChanges()) {
 
 > **loadCache**(): [`RebuildCache`](#rebuildcache) \| `null`
 
-Defined in: [utils/idempotency.ts:184](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L184)
+Defined in: [utils/idempotency.ts:184](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L184)
 
 Load rebuild cache from filesystem.
 
@@ -176,7 +176,7 @@ Parsed cache object or null if unavailable
 
 > **saveCache**(`cache`): `void`
 
-Defined in: [utils/idempotency.ts:206](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L206)
+Defined in: [utils/idempotency.ts:206](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L206)
 
 Save rebuild cache to filesystem.
 
@@ -199,7 +199,7 @@ Cache object to persist
 
 > **shouldRegenerateFile**(`filePath`): `Promise`\<`boolean`\>
 
-Defined in: [utils/idempotency.ts:344](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L344)
+Defined in: [utils/idempotency.ts:344](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L344)
 
 Check if a specific file should be regenerated.
 
@@ -232,7 +232,7 @@ if (await manager.shouldRegenerateFile('.github/workflows/pipeline.yml')) {
 
 > **updateCache**(): `Promise`\<`void`\>
 
-Defined in: [utils/idempotency.ts:295](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L295)
+Defined in: [utils/idempotency.ts:295](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L295)
 
 Update cache with current file states after successful generation.
 
@@ -255,7 +255,7 @@ await manager.updateCache() // Save current state
 
 ### FileHash
 
-Defined in: [utils/idempotency.ts:27](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L27)
+Defined in: [utils/idempotency.ts:27](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L27)
 
 Metadata and hash information for a tracked file.
 
@@ -265,7 +265,7 @@ Metadata and hash information for a tracked file.
 
 > **hash**: `string`
 
-Defined in: [utils/idempotency.ts:32](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L32)
+Defined in: [utils/idempotency.ts:32](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L32)
 
 Cryptographic hash of file content and metadata
 
@@ -273,7 +273,7 @@ Cryptographic hash of file content and metadata
 
 > **mtime**: `number`
 
-Defined in: [utils/idempotency.ts:35](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L35)
+Defined in: [utils/idempotency.ts:35](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L35)
 
 Last modification time (Unix timestamp in milliseconds)
 
@@ -281,7 +281,7 @@ Last modification time (Unix timestamp in milliseconds)
 
 > **path**: `string`
 
-Defined in: [utils/idempotency.ts:29](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L29)
+Defined in: [utils/idempotency.ts:29](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L29)
 
 Relative path to the file
 
@@ -289,7 +289,7 @@ Relative path to the file
 
 > **size**: `number`
 
-Defined in: [utils/idempotency.ts:38](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L38)
+Defined in: [utils/idempotency.ts:38](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L38)
 
 File size in bytes
 
@@ -297,7 +297,7 @@ File size in bytes
 
 ### RebuildCache
 
-Defined in: [utils/idempotency.ts:47](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L47)
+Defined in: [utils/idempotency.ts:47](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L47)
 
 Complete rebuild cache structure stored in .pipecraft-cache.json.
 
@@ -310,7 +310,7 @@ configuration or template files change.
 
 > **configHash**: `string`
 
-Defined in: [utils/idempotency.ts:52](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L52)
+Defined in: [utils/idempotency.ts:52](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L52)
 
 Hash of the configuration file (.pipecraftrc.json)
 
@@ -318,7 +318,7 @@ Hash of the configuration file (.pipecraftrc.json)
 
 > **files**: `Record`\<`string`, [`FileHash`](#filehash)\>
 
-Defined in: [utils/idempotency.ts:49](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L49)
+Defined in: [utils/idempotency.ts:49](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L49)
 
 Map of file paths to their hash metadata
 
@@ -326,7 +326,7 @@ Map of file paths to their hash metadata
 
 > **lastGenerated**: `number`
 
-Defined in: [utils/idempotency.ts:55](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L55)
+Defined in: [utils/idempotency.ts:55](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L55)
 
 Timestamp when workflows were last generated
 
@@ -334,6 +334,6 @@ Timestamp when workflows were last generated
 
 > **version**: `string`
 
-Defined in: [utils/idempotency.ts:58](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L58)
+Defined in: [utils/idempotency.ts:58](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/idempotency.ts#L58)
 
 Cache format version for future migration compatibility

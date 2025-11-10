@@ -1,21 +1,21 @@
-<img src="https://raw.githubusercontent.com/jamesvillarrubia/pipecraft/main/assets/logo_banner.png" alt="PipeCraft Logo" width="auto">
+<img src="https://raw.githubusercontent.com/pipecraft-lab/pipecraft/main/assets/logo_banner.png" alt="PipeCraft Logo" width="auto">
 
 # PipeCraft
 
 [![npm version](https://badge.fury.io/js/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
 [![NPM downloads](https://img.shields.io/npm/dm/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
-[![License](https://img.shields.io/npm/l/pipecraft.svg)](https://github.com/jamesvillarrubia/pipecraft/blob/main/LICENSE)
+[![License](https://img.shields.io/npm/l/pipecraft.svg)](https://github.com/pipecraft-lab/pipecraft/blob/main/LICENSE)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/en/)
 [![Documentation](https://img.shields.io/badge/docs-pipecraft.thecraftlab.dev-blue)](https://pipecraft.thecraftlab.dev)
-[![codecov](https://codecov.io/gh/jamesvillarrubia/pipecraft/branch/main/graph/badge.svg)](https://codecov.io/gh/jamesvillarrubia/pipecraft)
-[![GitHub issues](https://img.shields.io/github/issues/jamesvillarrubia/pipecraft)](https://github.com/jamesvillarrubia/pipecraft/issues)
-[![GitHub stars](https://img.shields.io/github/stars/jamesvillarrubia/pipecraft)](https://github.com/jamesvillarrubia/pipecraft/stargazers)
+[![codecov](https://codecov.io/gh/pipecraft-lab/pipecraft/branch/main/graph/badge.svg)](https://codecov.io/gh/pipecraft-lab/pipecraft)
+[![GitHub issues](https://img.shields.io/github/issues/pipecraft-lab/pipecraft)](https://github.com/pipecraft-lab/pipecraft/issues)
+[![GitHub stars](https://img.shields.io/github/stars/pipecraft-lab/pipecraft)](https://github.com/pipecraft-lab/pipecraft/stargazers)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 **Pipeline Status:**
-[![develop](https://img.shields.io/github/actions/workflow/status/jamesvillarrubia/pipecraft/pipeline.yml?branch=develop&label=develop)](https://github.com/jamesvillarrubia/pipecraft/actions/workflows/pipeline.yml?query=branch%3Adevelop)
-[![staging](https://img.shields.io/github/actions/workflow/status/jamesvillarrubia/pipecraft/pipeline.yml?branch=staging&label=staging)](https://github.com/jamesvillarrubia/pipecraft/actions/workflows/pipeline.yml?query=branch%3Astaging)
-[![main](https://img.shields.io/github/actions/workflow/status/jamesvillarrubia/pipecraft/pipeline.yml?branch=main&label=main)](https://github.com/jamesvillarrubia/pipecraft/actions/workflows/pipeline.yml?query=branch%3Amain)
+[![develop](https://img.shields.io/github/actions/workflow/status/pipecraft-lab/pipecraft/pipeline.yml?branch=develop&label=develop)](https://github.com/pipecraft-lab/pipecraft/actions/workflows/pipeline.yml?query=branch%3Adevelop)
+[![staging](https://img.shields.io/github/actions/workflow/status/pipecraft-lab/pipecraft/pipeline.yml?branch=staging&label=staging)](https://github.com/pipecraft-lab/pipecraft/actions/workflows/pipeline.yml?query=branch%3Astaging)
+[![main](https://img.shields.io/github/actions/workflow/status/pipecraft-lab/pipecraft/pipeline.yml?branch=main&label=main)](https://github.com/pipecraft-lab/pipecraft/actions/workflows/pipeline.yml?query=branch%3Amain)
 
 Skip the debugging cycles. Generate battle-tested CI/CD workflows into your repository with best practices built in. Fully customizable, completely yours.
 
@@ -245,9 +245,9 @@ Regeneration preserves everything in custom sections. See the [Getting Started g
 
 If you encounter issues, the [Troubleshooting guide](https://pipecraft.thecraftlab.dev/docs/troubleshooting) covers common problems with detailed solutions.
 
-For questions and discussions, visit [GitHub Discussions](https://github.com/jamesvillarrubia/pipecraft/discussions).
+For questions and discussions, visit [GitHub Discussions](https://github.com/pipecraft-lab/pipecraft/discussions).
 
-To report bugs or request features, open an issue on [GitHub Issues](https://github.com/jamesvillarrubia/pipecraft/issues).
+To report bugs or request features, open an issue on [GitHub Issues](https://github.com/pipecraft-lab/pipecraft/issues).
 
 ## Contributing
 
@@ -261,7 +261,7 @@ We welcome contributions! See the [Contributing guide](https://pipecraft.thecraf
 Quick development setup:
 
 ```bash
-git clone https://github.com/jamesvillarrubia/pipecraft.git
+git clone https://github.com/pipecraft-lab/pipecraft.git
 cd pipecraft
 npm install
 npm test
@@ -277,7 +277,7 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 
 **Built with ❤️ for trunk-based development teams**
 
-[Documentation](https://pipecraft.thecraftlab.dev) · [Report Bug](https://github.com/jamesvillarrubia/pipecraft/issues) · [Request Feature](https://github.com/jamesvillarrubia/pipecraft/issues)
+[Documentation](https://pipecraft.thecraftlab.dev) · [Report Bug](https://github.com/pipecraft-lab/pipecraft/issues) · [Request Feature](https://github.com/pipecraft-lab/pipecraft/issues)
 
 </div>
 # Testing change detection

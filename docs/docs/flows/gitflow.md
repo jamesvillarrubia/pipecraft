@@ -48,4 +48,4 @@ The current trunk-based flow is simpler and more suitable when:
 
 ## Timeline
 
-GitFlow is on the roadmap but hasn't been scheduled yet. The complexity of implementing GitFlow properly means it will take longer than simpler patterns like GitHub Flow. If your team needs GitFlow support, share your use case on [GitHub Discussions](https://github.com/jamesvillarrubia/pipecraft/discussions).
+GitFlow is on the roadmap but hasn't been scheduled yet. The complexity of implementing GitFlow properly means it will take longer than simpler patterns like GitHub Flow. If your team needs GitFlow support, share your use case on [GitHub Discussions](https://github.com/pipecraft-lab/pipecraft/discussions).

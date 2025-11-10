@@ -376,6 +376,6 @@ You now have a working CI/CD pipeline. From here you can:
 
 If something goes wrong, check the [Troubleshooting](./troubleshooting) page for common issues and solutions.
 
-For questions or discussions, visit [GitHub Discussions](https://github.com/jamesvillarrubia/pipecraft/discussions).
+For questions or discussions, visit [GitHub Discussions](https://github.com/pipecraft-lab/pipecraft/discussions).
 
-To report bugs or request features, open an issue on [GitHub Issues](https://github.com/jamesvillarrubia/pipecraft/issues).
+To report bugs or request features, open an issue on [GitHub Issues](https://github.com/pipecraft-lab/pipecraft/issues).

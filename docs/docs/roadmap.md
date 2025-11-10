@@ -38,5 +38,5 @@ Join discussions on GitHub Discussions to share ideas and debate approaches. Man
 
 Links:
 
-- [GitHub Issues](https://github.com/jamesvillarrubia/pipecraft/issues) for bugs and feature requests
-- [GitHub Discussions](https://github.com/jamesvillarrubia/pipecraft/discussions) for open-ended questions and ideas
+- [GitHub Issues](https://github.com/pipecraft-lab/pipecraft/issues) for bugs and feature requests
+- [GitHub Discussions](https://github.com/pipecraft-lab/pipecraft/discussions) for open-ended questions and ideas

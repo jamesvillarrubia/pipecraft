@@ -1,17 +1,17 @@
-![PipeCraft Logo](https://raw.githubusercontent.com/jamesvillarrubia/pipecraft/main/assets/logo_banner.png)
+![PipeCraft Logo](https://raw.githubusercontent.com/pipecraft-lab/pipecraft/main/assets/logo_banner.png)
 
 # PipeCraft
 
 [![npm version](https://badge.fury.io/js/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
-[![License](https://img.shields.io/npm/l/pipecraft.svg)](https://github.com/jamesvillarrubia/pipecraft/blob/main/LICENSE)
+[![License](https://img.shields.io/npm/l/pipecraft.svg)](https://github.com/pipecraft-lab/pipecraft/blob/main/LICENSE)
 [![NPM downloads](https://img.shields.io/npm/dm/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/en/)
-[![codecov](https://codecov.io/gh/jamesvillarrubia/pipecraft/branch/main/graph/badge.svg)](https://codecov.io/gh/jamesvillarrubia/pipecraft)
+[![codecov](https://codecov.io/gh/pipecraft-lab/pipecraft/branch/main/graph/badge.svg)](https://codecov.io/gh/pipecraft-lab/pipecraft)
 
 **Pipeline Status:**
-[![develop](https://img.shields.io/github/actions/workflow/status/jamesvillarrubia/pipecraft/pipeline.yml?branch=develop&label=develop)](https://github.com/jamesvillarrubia/pipecraft/actions/workflows/pipeline.yml?query=branch%3Adevelop)
-[![staging](https://img.shields.io/github/actions/workflow/status/jamesvillarrubia/pipecraft/pipeline.yml?branch=staging&label=staging)](https://github.com/jamesvillarrubia/pipecraft/actions/workflows/pipeline.yml?query=branch%3Astaging)
-[![main](https://img.shields.io/github/actions/workflow/status/jamesvillarrubia/pipecraft/pipeline.yml?branch=main&label=main)](https://github.com/jamesvillarrubia/pipecraft/actions/workflows/pipeline.yml?query=branch%3Amain)
+[![develop](https://img.shields.io/github/actions/workflow/status/pipecraft-lab/pipecraft/pipeline.yml?branch=develop&label=develop)](https://github.com/pipecraft-lab/pipecraft/actions/workflows/pipeline.yml?query=branch%3Adevelop)
+[![staging](https://img.shields.io/github/actions/workflow/status/pipecraft-lab/pipecraft/pipeline.yml?branch=staging&label=staging)](https://github.com/pipecraft-lab/pipecraft/actions/workflows/pipeline.yml?query=branch%3Astaging)
+[![main](https://img.shields.io/github/actions/workflow/status/pipecraft-lab/pipecraft/pipeline.yml?branch=main&label=main)](https://github.com/pipecraft-lab/pipecraft/actions/workflows/pipeline.yml?query=branch%3Amain)
 
 PipeCraft is a powerful CLI tool for automating trunk-based development workflows with GitHub Actions. It generates intelligent CI/CD pipelines that adapt to your codebase structure, support multiple domains (monorepos), handle semantic versioning, and manage branch flows with fast-forward merging strategies.
 
@@ -972,12 +972,12 @@ PipeCraft provides comprehensive documentation for different aspects of the proj
 
 ### Development Documentation
 
-- **[Test Structure](https://github.com/jamesvillarrubia/pipecraft/tree/main/tests)** - Test structure and organization on GitHub
-- **[Repository Structure](https://github.com/jamesvillarrubia/pipecraft)** - Repository organization and structure
+- **[Test Structure](https://github.com/pipecraft-lab/pipecraft/tree/main/tests)** - Test structure and organization on GitHub
+- **[Repository Structure](https://github.com/pipecraft-lab/pipecraft)** - Repository organization and structure
 
 ### Planning Documents
 
-- **[Trunk Flow Roadmap](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md)** - Future roadmap for trunk flow variations _(future plans, not current implementation)_
+- **[Trunk Flow Roadmap](https://github.com/pipecraft-lab/pipecraft/blob/main/TRUNK_FLOW_PLAN.md)** - Future roadmap for trunk flow variations _(future plans, not current implementation)_
 
 ### Quick Links
 
@@ -1005,7 +1005,7 @@ See [Current Trunk Flow](./flows/trunk-flow) for details on what's implemented.
 
 ### Planned Features
 
-The roadmap is documented in [TRUNK_FLOW_PLAN.md](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md). Key planned features include:
+The roadmap is documented in [TRUNK_FLOW_PLAN.md](https://github.com/pipecraft-lab/pipecraft/blob/main/TRUNK_FLOW_PLAN.md). Key planned features include:
 
 #### Short Term (v2.x)
 
@@ -1026,14 +1026,14 @@ The roadmap is documented in [TRUNK_FLOW_PLAN.md](https://github.com/jamesvillar
 - **Plugin System** - Custom workflow patterns and extensions
 - **Multi-Repository** Support - Manage pipelines across multiple repos
 
-For the complete roadmap and feature comparison, see [TRUNK_FLOW_PLAN.md](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md).
+For the complete roadmap and feature comparison, see [TRUNK_FLOW_PLAN.md](https://github.com/pipecraft-lab/pipecraft/blob/main/TRUNK_FLOW_PLAN.md).
 
 ### Contributing to the Roadmap
 
 Have a feature request? We'd love to hear from you!
 
-1. Check existing [feature requests](https://github.com/jamesvillarrubia/pipecraft/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
-2. [Open a new feature request](https://github.com/jamesvillarrubia/pipecraft/issues/new?labels=enhancement)
+1. Check existing [feature requests](https://github.com/pipecraft-lab/pipecraft/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
+2. [Open a new feature request](https://github.com/pipecraft-lab/pipecraft/issues/new?labels=enhancement)
 3. Vote on existing feature requests with 👍
 4. Consider contributing! See [Contributing](#contributing)
 
@@ -1103,11 +1103,11 @@ Have a feature request? We'd love to hear from you!
 
 If you encounter issues not covered here:
 
-1. Check the [GitHub Issues](https://github.com/jamesvillarrubia/pipecraft/issues)
+1. Check the [GitHub Issues](https://github.com/pipecraft-lab/pipecraft/issues)
 2. Enable verbose logging: `pipecraft generate --verbose`
 3. Enable debug logging for more detail: `pipecraft generate --debug`
 4. Validate your configuration: `pipecraft validate`
-5. [Open a new issue](https://github.com/jamesvillarrubia/pipecraft/issues/new) with:
+5. [Open a new issue](https://github.com/pipecraft-lab/pipecraft/issues/new) with:
    - PipeCraft version: `pipecraft --version`
    - Node version: `node --version`
    - Your configuration (sanitized)
@@ -1115,7 +1115,7 @@ If you encounter issues not covered here:
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/jamesvillarrubia/pipecraft/blob/main/CONTRIBUTING.md) for details on:
+Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/pipecraft-lab/pipecraft/blob/main/CONTRIBUTING.md) for details on:
 
 - Code of conduct
 - Development setup
@@ -1127,7 +1127,7 @@ Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/james
 
 ```bash
 # Clone the repository
-git clone https://github.com/jamesvillarrubia/pipecraft.git
+git clone https://github.com/pipecraft-lab/pipecraft.git
 cd pipecraft
 
 # Install dependencies
@@ -1158,7 +1158,7 @@ npm test tests/unit/config.test.ts
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/jamesvillarrubia/pipecraft/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/pipecraft-lab/pipecraft/blob/main/LICENSE) file for details.
 
 ## Acknowledgments
 
@@ -1174,6 +1174,6 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 
 **Built with ❤️ for trunk-based development teams**
 
-[Report Bug](https://github.com/jamesvillarrubia/pipecraft/issues) · [Request Feature](https://github.com/jamesvillarrubia/pipecraft/issues) · [Documentation](https://github.com/jamesvillarrubia/pipecraft/wiki)
+[Report Bug](https://github.com/pipecraft-lab/pipecraft/issues) · [Request Feature](https://github.com/pipecraft-lab/pipecraft/issues) · [Documentation](https://github.com/pipecraft-lab/pipecraft/wiki)
 
 </div>

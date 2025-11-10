@@ -1,6 +1,6 @@
 # PipeCraft Example: Gated Workflow
 
-[![CI/CD Pipeline](https://github.com/jamesvillarrubia/pipecraft-example-gated/actions/workflows/pipeline.yml/badge.svg)](https://github.com/jamesvillarrubia/pipecraft-example-gated/actions/workflows/pipeline.yml)
+[![CI/CD Pipeline](https://github.com/pipecraft-lab/pipecraft-example-gated/actions/workflows/pipeline.yml/badge.svg)](https://github.com/pipecraft-lab/pipecraft-example-gated/actions/workflows/pipeline.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Enterprise gated workflow with manual approvals at each stage.
@@ -147,7 +147,7 @@ develop ──PR──► alpha ──PR──► beta ──PR──► release
 
 ```bash
 # Clone
-git clone https://github.com/jamesvillarrubia/pipecraft-example-gated.git
+git clone https://github.com/pipecraft-lab/pipecraft-example-gated.git
 cd pipecraft-example-gated
 
 # Test locally
@@ -222,9 +222,9 @@ git push origin alpha
 
 ## Related Examples
 
-- **[minimal](https://github.com/jamesvillarrubia/pipecraft-example-minimal)** - Simplest setup
-- **[basic](https://github.com/jamesvillarrubia/pipecraft-example-basic)** - Standard trunk flow
-- **[nx](https://github.com/jamesvillarrubia/pipecraft-example-nx)** - Nx monorepo
+- **[minimal](https://github.com/pipecraft-lab/pipecraft-example-minimal)** - Simplest setup
+- **[basic](https://github.com/pipecraft-lab/pipecraft-example-basic)** - Standard trunk flow
+- **[nx](https://github.com/pipecraft-lab/pipecraft-example-nx)** - Nx monorepo
 
 ## Learn More
 

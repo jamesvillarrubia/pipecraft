@@ -75,7 +75,7 @@ module:utils/ast-path-operations for YAML manipulation details
 function createPathBasedPipeline(ctx): object
 ```
 
-Defined in: [templates/workflows/pipeline-path-based.yml.tpl.ts:123](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/templates/workflows/pipeline-path-based.yml.tpl.ts#L123)
+Defined in: [templates/workflows/pipeline-path-based.yml.tpl.ts:123](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/templates/workflows/pipeline-path-based.yml.tpl.ts#L123)
 
 Create path-based pipeline content
 
@@ -109,7 +109,7 @@ yamlContent: string = finalContent
 function generate(ctx): Promise<any>
 ```
 
-Defined in: [templates/workflows/pipeline-path-based.yml.tpl.ts:1064](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/templates/workflows/pipeline-path-based.yml.tpl.ts#L1064)
+Defined in: [templates/workflows/pipeline-path-based.yml.tpl.ts:1064](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/templates/workflows/pipeline-path-based.yml.tpl.ts#L1064)
 
 Main pipeline generator entry point.
 

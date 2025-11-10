@@ -47,10 +47,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jamesvillarrubia/pipecraft-example-nx.git"
+    "url": "https://github.com/pipecraft-lab/pipecraft-example-nx.git"
   },
-  "homepage": "https://github.com/jamesvillarrubia/pipecraft-example-nx#readme",
+  "homepage": "https://github.com/pipecraft-lab/pipecraft-example-nx#readme",
   "bugs": {
-    "url": "https://github.com/jamesvillarrubia/pipecraft-example-nx/issues"
+    "url": "https://github.com/pipecraft-lab/pipecraft-example-nx/issues"
   }
 }
