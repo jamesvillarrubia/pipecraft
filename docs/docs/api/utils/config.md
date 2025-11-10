@@ -21,7 +21,7 @@ and have valid values before being used to generate workflows.
 function loadConfig(configPath?): any
 ```
 
-Defined in: [utils/config.ts:44](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/config.ts#L44)
+Defined in: [utils/config.ts:44](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/config.ts#L44)
 
 Load PipeCraft configuration from filesystem.
 
@@ -70,7 +70,7 @@ const config = loadConfig('./my-config.json')
 function validateConfig(config): boolean
 ```
 
-Defined in: [utils/config.ts:79](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/config.ts#L79)
+Defined in: [utils/config.ts:79](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/config.ts#L79)
 
 Validate PipeCraft configuration structure and values.
 

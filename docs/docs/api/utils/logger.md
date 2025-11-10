@@ -21,7 +21,7 @@ passed to the CLI commands.
 type LogLevel = 'silent' | 'normal' | 'verbose' | 'debug'
 ```
 
-Defined in: [utils/logger.ts:24](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/logger.ts#L24)
+Defined in: [utils/logger.ts:24](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/logger.ts#L24)
 
 Available log verbosity levels in ascending order of detail.
 
@@ -38,7 +38,7 @@ Available log verbosity levels in ascending order of detail.
 const logger: Logger
 ```
 
-Defined in: [utils/logger.ts:169](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/logger.ts#L169)
+Defined in: [utils/logger.ts:169](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/logger.ts#L169)
 
 Singleton logger instance exported for use throughout the application.
 

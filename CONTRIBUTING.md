@@ -49,7 +49,7 @@ git clone https://github.com/YOUR_USERNAME/pipecraft.git
 cd pipecraft
 
 # Add upstream remote
-git remote add upstream https://github.com/jamesvillarrubia/pipecraft.git
+git remote add upstream https://github.com/pipecraft-lab/pipecraft.git
 
 # Install dependencies
 pnpm install
@@ -730,8 +730,8 @@ Documentation uses [Docusaurus](https://docusaurus.io/):
 
 ### Where to Ask
 
-- **💬 Discussions**: [General questions, ideas, help](https://github.com/jamesvillarrubia/pipecraft/discussions)
-- **🐛 Issues**: [Bug reports, feature requests](https://github.com/jamesvillarrubia/pipecraft/issues)
+- **💬 Discussions**: [General questions, ideas, help](https://github.com/pipecraft-lab/pipecraft/discussions)
+- **🐛 Issues**: [Bug reports, feature requests](https://github.com/pipecraft-lab/pipecraft/issues)
 - **📖 Docs**: [pipecraft.thecraftlab.dev](https://pipecraft.thecraftlab.dev)
 
 ### Maintainer Response Times
@@ -744,7 +744,7 @@ Documentation uses [Docusaurus](https://docusaurus.io/):
 
 Look for issues labeled `good first issue` - these are great for new contributors:
 
-[View Good First Issues →](https://github.com/jamesvillarrubia/pipecraft/labels/good%20first%20issue)
+[View Good First Issues →](https://github.com/pipecraft-lab/pipecraft/labels/good%20first%20issue)
 
 ---
 
@@ -782,4 +782,4 @@ Thank you for contributing to PipeCraft! 🎉
 
 ## Questions?
 
-Still have questions? Reach out in [GitHub Discussions](https://github.com/jamesvillarrubia/pipecraft/discussions) or email [james.villarrubia@gmail.com](mailto:james.villarrubia@gmail.com).
+Still have questions? Reach out in [GitHub Discussions](https://github.com/pipecraft-lab/pipecraft/discussions) or email [james.villarrubia@gmail.com](mailto:james.villarrubia@gmail.com).

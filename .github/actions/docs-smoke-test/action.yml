@@ -60,7 +60,7 @@ runs:
           exit 1
         fi
 
-        # Use a more flexible pattern that handles React comment markers (<!-- -->) between v and version
+        # Use a more flexible pattern that handles React's comment markers (<!-- -->) between v and version
         if ! grep -q "Latest Release:.*v[[:space:]]*${NORMALIZED_EXPECTED_VERSION}" "${TMP_HTML}"; then
           echo "❌ Homepage did not render expected docs version v${NORMALIZED_EXPECTED_VERSION}"
           echo "🔍 Extracted snippet:"

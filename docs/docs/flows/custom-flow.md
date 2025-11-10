@@ -49,4 +49,4 @@ It also needs to generate safe workflows that handle edge cases properly - paral
 
 Custom flows are lower priority than GitLab support and predefined patterns like GitHub Flow and GitFlow. They'll likely come later in the roadmap once the core patterns are solid.
 
-If you have specific requirements for a custom flow, share them on [GitHub Discussions](https://github.com/jamesvillarrubia/pipecraft/discussions). Real-world use cases help design better abstractions.
+If you have specific requirements for a custom flow, share them on [GitHub Discussions](https://github.com/pipecraft-lab/pipecraft/discussions). Real-world use cases help design better abstractions.

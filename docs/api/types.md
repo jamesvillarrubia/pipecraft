@@ -16,7 +16,7 @@ for generating CI/CD pipelines with trunk-based development workflows.
 
 ### DomainConfig
 
-Defined in: [types/index.ts:27](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L27)
+Defined in: [types/index.ts:27](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L27)
 
 Configuration for a single domain (monorepo workspace) in a PipeCraft project.
 
@@ -40,7 +40,7 @@ const apiDomain: DomainConfig = {
 
 > `optional` **deployable**: `boolean`
 
-Defined in: [types/index.ts:52](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L52)
+Defined in: [types/index.ts:52](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L52)
 
 Whether this domain should be deployed.
 If true, generates deployment jobs for this domain.
@@ -55,7 +55,7 @@ false
 
 > **description**: `string`
 
-Defined in: [types/index.ts:38](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L38)
+Defined in: [types/index.ts:38](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L38)
 
 Human-readable description of the domain's purpose.
 Used in workflow comments and documentation.
@@ -64,7 +64,7 @@ Used in workflow comments and documentation.
 
 > **paths**: `string`[]
 
-Defined in: [types/index.ts:32](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L32)
+Defined in: [types/index.ts:32](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L32)
 
 Glob patterns matching files in this domain.
 Changes to these paths will trigger domain-specific jobs.
@@ -73,7 +73,7 @@ Changes to these paths will trigger domain-specific jobs.
 
 > `optional` **testable**: `boolean`
 
-Defined in: [types/index.ts:45](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L45)
+Defined in: [types/index.ts:45](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L45)
 
 Whether this domain has tests that should be run.
 If true, generates test jobs for this domain.
@@ -88,7 +88,7 @@ false
 
 ### PipecraftConfig
 
-Defined in: [types/index.ts:86](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L86)
+Defined in: [types/index.ts:86](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L86)
 
 Complete PipeCraft configuration schema.
 
@@ -127,7 +127,7 @@ const config: PipecraftConfig = {
 
 > **actions**: `object`
 
-Defined in: [types/index.ts:176](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L176)
+Defined in: [types/index.ts:176](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L176)
 
 Actions to execute when code is merged to specific branches.
 These define the automated workflow steps like running tests,
@@ -151,7 +151,7 @@ Common actions: runTests, calculateVersion, createOrFastForwardToMain
 
 > `optional` **autoMerge**: `boolean` \| `Record`\<`string`, `boolean`\>
 
-Defined in: [types/index.ts:135](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L135)
+Defined in: [types/index.ts:135](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L135)
 
 Auto-merge configuration for branch promotions.
 
@@ -170,7 +170,7 @@ false
 
 > **branchFlow**: `string`[]
 
-Defined in: [types/index.ts:125](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L125)
+Defined in: [types/index.ts:125](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L125)
 
 Ordered list of branches in the promotion flow from initial to final.
 Must start with initialBranch and end with finalBranch.
@@ -185,7 +185,7 @@ Must start with initialBranch and end with finalBranch.
 
 > **ciProvider**: `"github"` \| `"gitlab"`
 
-Defined in: [types/index.ts:91](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L91)
+Defined in: [types/index.ts:91](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L91)
 
 CI/CD provider platform.
 Currently 'github' is fully supported, 'gitlab' support is planned.
@@ -194,7 +194,7 @@ Currently 'github' is fully supported, 'gitlab' support is planned.
 
 > **domains**: `Record`\<`string`, [`DomainConfig`](#domainconfig)\>
 
-Defined in: [types/index.ts:195](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L195)
+Defined in: [types/index.ts:195](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L195)
 
 Domain definitions for monorepo path-based change detection.
 Each domain represents a logical part of the codebase with its own
@@ -204,7 +204,7 @@ test and deployment requirements.
 
 > **finalBranch**: `string`
 
-Defined in: [types/index.ts:117](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L117)
+Defined in: [types/index.ts:117](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L117)
 
 The final production branch (typically 'main' or 'master').
 This is the last branch in the promotion flow.
@@ -213,7 +213,7 @@ This is the last branch in the promotion flow.
 
 > **initialBranch**: `string`
 
-Defined in: [types/index.ts:111](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L111)
+Defined in: [types/index.ts:111](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L111)
 
 The first branch in the promotion flow (typically 'develop' or 'dev').
 All feature branches merge into this branch.
@@ -222,7 +222,7 @@ All feature branches merge into this branch.
 
 > `optional` **mergeMethod**: `"merge"` \| `"auto"` \| `"squash"` \| `"rebase"` \| `Record`\<`string`, `"merge"` \| `"auto"` \| `"squash"` \| `"rebase"`\>
 
-Defined in: [types/index.ts:147](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L147)
+Defined in: [types/index.ts:147](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L147)
 
 Git merge method for auto-merge operations.
 
@@ -243,7 +243,7 @@ Can be set globally or per-branch.
 
 > **mergeStrategy**: `"fast-forward"` \| `"merge"`
 
-Defined in: [types/index.ts:98](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L98)
+Defined in: [types/index.ts:98](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L98)
 
 Git merge strategy for branch promotions.
 
@@ -254,7 +254,7 @@ Git merge strategy for branch promotions.
 
 > `optional` **rebuild**: `object`
 
-Defined in: [types/index.ts:201](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L201)
+Defined in: [types/index.ts:201](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L201)
 
 Idempotency and rebuild configuration.
 Controls when workflows should be regenerated based on config/template changes.
@@ -307,7 +307,7 @@ Enable watch mode for automatic regeneration on config changes.
 
 > **requireConventionalCommits**: `boolean`
 
-Defined in: [types/index.ts:105](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L105)
+Defined in: [types/index.ts:105](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L105)
 
 Whether to enforce conventional commit message format.
 If true, commit messages must follow the Conventional Commits specification.
@@ -320,7 +320,7 @@ https://www.conventionalcommits.org/
 
 > **semver**: `object`
 
-Defined in: [types/index.ts:164](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L164)
+Defined in: [types/index.ts:164](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L164)
 
 Semantic versioning configuration.
 Maps conventional commit types to version bump levels.
@@ -347,7 +347,7 @@ semver: {
 
 > `optional` **versioning**: `object`
 
-Defined in: [types/index.ts:244](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L244)
+Defined in: [types/index.ts:244](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/types/index.ts#L244)
 
 Version management configuration using release-it.
 Enables automatic version bumping, tagging, and changelog generation.

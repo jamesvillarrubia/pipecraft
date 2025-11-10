@@ -17,7 +17,7 @@
   "includeVersion": false,
   "githubPages": false,
   "disableSources": false,
-  "sourceLinkTemplate": "https://github.com/jamesvillarrubia/pipecraft/blob/{gitRevision}/{path}#L{line}",
+  "sourceLinkTemplate": "https://github.com/pipecraft-lab/pipecraft/blob/{gitRevision}/{path}#L{line}",
   "useCodeBlocks": true,
   "expandObjects": false,
   "indexFormat": "table"

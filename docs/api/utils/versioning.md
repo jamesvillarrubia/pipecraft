@@ -24,7 +24,7 @@ bump versions when code is promoted through the pipeline.
 
 ### VersionManager
 
-Defined in: [utils/versioning.ts:46](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L46)
+Defined in: [utils/versioning.ts:46](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L46)
 
 Manager for semantic versioning and release automation.
 
@@ -55,7 +55,7 @@ console.log(`Next version: ${version} (${type} bump)`)
 
 > **new VersionManager**(`config`): [`VersionManager`](#versionmanager)
 
-Defined in: [utils/versioning.ts:54](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L54)
+Defined in: [utils/versioning.ts:54](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L54)
 
 Create a new VersionManager instance.
 
@@ -77,7 +77,7 @@ PipeCraft configuration object
 
 > **calculateNextVersion**(): `object`
 
-Defined in: [utils/versioning.ts:385](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L385)
+Defined in: [utils/versioning.ts:385](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L385)
 
 Calculate the next version based on conventional commits.
 
@@ -111,7 +111,7 @@ console.log(`Next ${type} version: ${version}`)
 
 > **generateCommitlintConfig**(): `string`
 
-Defined in: [utils/versioning.ts:166](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L166)
+Defined in: [utils/versioning.ts:166](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L166)
 
 Generate commitlint configuration file content.
 
@@ -137,7 +137,7 @@ JavaScript module string ready to write to commitlint.config.js
 
 > **generateHuskyConfig**(): `string`
 
-Defined in: [utils/versioning.ts:205](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L205)
+Defined in: [utils/versioning.ts:205](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L205)
 
 Generate husky commit-msg hook script.
 
@@ -155,7 +155,7 @@ Shell script string ready to write to .husky/commit-msg
 
 > **generateReleaseItConfig**(): `string`
 
-Defined in: [utils/versioning.ts:79](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L79)
+Defined in: [utils/versioning.ts:79](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L79)
 
 Generate release-it configuration file content.
 
@@ -187,7 +187,7 @@ writeFileSync('.release-it.cjs', config)
 
 > **getCurrentVersion**(): `string`
 
-Defined in: [utils/versioning.ts:356](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L356)
+Defined in: [utils/versioning.ts:356](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L356)
 
 Get the current version from git tags.
 
@@ -211,7 +211,7 @@ console.log(`Current version: v${currentVersion}`)
 
 > **setupVersionManagement**(): `void`
 
-Defined in: [utils/versioning.ts:235](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L235)
+Defined in: [utils/versioning.ts:235](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L235)
 
 Setup version management infrastructure.
 
@@ -245,7 +245,7 @@ versionManager.setupVersionManagement()
 
 > **validateConventionalCommits**(): `boolean`
 
-Defined in: [utils/versioning.ts:324](https://github.com/jamesvillarrubia/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L324)
+Defined in: [utils/versioning.ts:324](https://github.com/pipecraft-lab/pipecraft/blob/a4d1ce6db034158185e20f941de0d6838044bd89/src/utils/versioning.ts#L324)
 
 Validate that recent commits follow conventional commit format.
 
