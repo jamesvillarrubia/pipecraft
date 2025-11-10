@@ -27,7 +27,7 @@ and settings for PipeCraft workflows to function properly, including:
 function configureBranchProtection(repoInfo, token, autoApply): Promise<void>
 ```
 
-Defined in: [utils/github-setup.ts:504](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L504)
+Defined in: [utils/github-setup.ts:504](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L504)
 
 Configure branch protection for branches that need auto-merge
 
@@ -57,7 +57,7 @@ Configure branch protection for branches that need auto-merge
 function enableAutoMerge(owner, repo, token): Promise<boolean>
 ```
 
-Defined in: [utils/github-setup.ts:452](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L452)
+Defined in: [utils/github-setup.ts:452](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L452)
 
 Enable auto-merge feature for the repository
 
@@ -87,7 +87,7 @@ Enable auto-merge feature for the repository
 function getBranchProtection(owner, repo, branch, token): Promise<BranchProtectionRules | null>
 ```
 
-Defined in: [utils/github-setup.ts:374](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L374)
+Defined in: [utils/github-setup.ts:374](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L374)
 
 Get branch protection rules
 
@@ -121,7 +121,7 @@ Get branch protection rules
 function getGitHubToken(): string
 ```
 
-Defined in: [utils/github-setup.ts:193](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L193)
+Defined in: [utils/github-setup.ts:193](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L193)
 
 Get GitHub authentication token from environment or GitHub CLI.
 
@@ -165,7 +165,7 @@ const token = getGitHubToken() // Uses gh CLI token
 function getRepositoryInfo(): RepositoryInfo
 ```
 
-Defined in: [utils/github-setup.ts:140](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L140)
+Defined in: [utils/github-setup.ts:140](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L140)
 
 Extract GitHub repository information from git remote configuration.
 
@@ -208,7 +208,7 @@ console.log(`Owner: ${info.owner}, Repo: ${info.repo}`)
 function getRequiredPermissionChanges(currentPermissions): Partial<WorkflowPermissions> | null
 ```
 
-Defined in: [utils/github-setup.ts:278](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L278)
+Defined in: [utils/github-setup.ts:278](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L278)
 
 Determine required permission changes without prompting
 Returns: changes object if changes needed, null if already correct
@@ -231,7 +231,7 @@ Returns: changes object if changes needed, null if already correct
 function getWorkflowPermissions(owner, repo, token): Promise<WorkflowPermissions>
 ```
 
-Defined in: [utils/github-setup.ts:221](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L221)
+Defined in: [utils/github-setup.ts:221](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L221)
 
 Get current workflow permissions
 
@@ -263,7 +263,7 @@ function promptPermissionChanges(
 ): Promise<Partial<WorkflowPermissions> | 'declined' | null>
 ```
 
-Defined in: [utils/github-setup.ts:306](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L306)
+Defined in: [utils/github-setup.ts:306](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L306)
 
 Display current permissions and prompt for changes
 Returns: changes object if user accepted changes, 'declined' if user declined, null if already correct
@@ -286,7 +286,7 @@ Returns: changes object if user accepted changes, 'declined' if user declined, n
 function setupGitHubPermissions(autoApply): Promise<void>
 ```
 
-Defined in: [utils/github-setup.ts:604](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L604)
+Defined in: [utils/github-setup.ts:604](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L604)
 
 Main setup function
 
@@ -308,7 +308,7 @@ Main setup function
 function updateBranchProtection(owner, repo, branch, token): Promise<void>
 ```
 
-Defined in: [utils/github-setup.ts:407](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L407)
+Defined in: [utils/github-setup.ts:407](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L407)
 
 Update branch protection rules to enable auto-merge
 
@@ -342,7 +342,7 @@ Update branch protection rules to enable auto-merge
 function updateWorkflowPermissions(owner, repo, token, permissions): Promise<void>
 ```
 
-Defined in: [utils/github-setup.ts:248](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L248)
+Defined in: [utils/github-setup.ts:248](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/utils/github-setup.ts#L248)
 
 Update workflow permissions
 

@@ -23,10 +23,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jamesvillarrubia/pipecraft-example-basic.git"
+    "url": "https://github.com/pipecraft-lab/pipecraft-example-basic.git"
   },
-  "homepage": "https://github.com/jamesvillarrubia/pipecraft-example-basic#readme",
+  "homepage": "https://github.com/pipecraft-lab/pipecraft-example-basic#readme",
   "bugs": {
-    "url": "https://github.com/jamesvillarrubia/pipecraft-example-basic/issues"
+    "url": "https://github.com/pipecraft-lab/pipecraft-example-basic/issues"
   }
 }

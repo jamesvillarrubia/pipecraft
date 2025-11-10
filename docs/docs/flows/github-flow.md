@@ -44,4 +44,4 @@ The current trunk-based flow is better when:
 
 ## Timeline
 
-GitHub Flow is on the roadmap but hasn't been scheduled yet. If this workflow would be valuable for your team, let us know on [GitHub Discussions](https://github.com/jamesvillarrubia/pipecraft/discussions). Community feedback helps prioritize features.
+GitHub Flow is on the roadmap but hasn't been scheduled yet. If this workflow would be valuable for your team, let us know on [GitHub Discussions](https://github.com/pipecraft-lab/pipecraft/discussions). Community feedback helps prioritize features.

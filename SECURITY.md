@@ -135,7 +135,7 @@ Review the [GitHub Actions security hardening guide](https://docs.github.com/en/
 Security updates will be released as patch versions and documented in:
 
 - [CHANGELOG.md](./CHANGELOG.md)
-- [GitHub Security Advisories](https://github.com/jamesvillarrubia/pipecraft/security/advisories)
+- [GitHub Security Advisories](https://github.com/pipecraft-lab/pipecraft/security/advisories)
 - [npm Package Updates](https://www.npmjs.com/package/pipecraft)
 
 Subscribe to release notifications to stay informed about security updates.

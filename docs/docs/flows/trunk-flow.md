@@ -587,7 +587,7 @@ Now that you understand the current implementation:
 
 ## Future Enhancements
 
-See [TRUNK_FLOW_PLAN.md](https://github.com/jamesvillarrubia/pipecraft/blob/main/TRUNK_FLOW_PLAN.md) for planned improvements:
+See [TRUNK_FLOW_PLAN.md](https://github.com/pipecraft-lab/pipecraft/blob/main/TRUNK_FLOW_PLAN.md) for planned improvements:
 
 - Multiple flow patterns
 - GitLab support

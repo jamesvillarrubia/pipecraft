@@ -769,7 +769,7 @@ When troubleshooting issues:
 If you encounter an error not covered in this guide:
 
 1. **Enable Debug Mode**: `pipecraft generate --debug`
-2. **Check GitHub Issues**: https://github.com/jamesvillarrubia/pipecraft/issues
+2. **Check GitHub Issues**: https://github.com/pipecraft-lab/pipecraft/issues
 3. **Create Issue**: Include:
    - PipeCraft version (`pipecraft --version`)
    - Node.js version (`node --version`)

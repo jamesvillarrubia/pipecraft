@@ -1,6 +1,6 @@
 # PipeCraft Example: Nx Monorepo
 
-[![CI/CD Pipeline](https://github.com/jamesvillarrubia/pipecraft-example-nx/actions/workflows/pipeline.yml/badge.svg)](https://github.com/jamesvillarrubia/pipecraft-example-nx/actions/workflows/pipeline.yml)
+[![CI/CD Pipeline](https://github.com/pipecraft-lab/pipecraft-example-nx/actions/workflows/pipeline.yml/badge.svg)](https://github.com/pipecraft-lab/pipecraft-example-nx/actions/workflows/pipeline.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Advanced Nx monorepo demonstrating PipeCraft with mixed detection strategies.
@@ -195,7 +195,7 @@ nx graph
 
 ```bash
 # Clone repository
-git clone https://github.com/jamesvillarrubia/pipecraft-example-nx.git
+git clone https://github.com/pipecraft-lab/pipecraft-example-nx.git
 cd pipecraft-example-nx
 
 # Install dependencies
@@ -418,9 +418,9 @@ npm run test:pipecraft
 
 ## Related Examples
 
-- **[pipecraft-example-minimal](https://github.com/jamesvillarrubia/pipecraft-example-minimal)** - Simplest setup, quickstart
-- **[pipecraft-example-basic](https://github.com/jamesvillarrubia/pipecraft-example-basic)** - Multi-domain without Nx
-- **[pipecraft-example-gated](https://github.com/jamesvillarrubia/pipecraft-example-gated)** - Enterprise gated workflow
+- **[pipecraft-example-minimal](https://github.com/pipecraft-lab/pipecraft-example-minimal)** - Simplest setup, quickstart
+- **[pipecraft-example-basic](https://github.com/pipecraft-lab/pipecraft-example-basic)** - Multi-domain without Nx
+- **[pipecraft-example-gated](https://github.com/pipecraft-lab/pipecraft-example-gated)** - Enterprise gated workflow
 
 ## Learn More
 

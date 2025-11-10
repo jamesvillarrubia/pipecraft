@@ -47,7 +47,7 @@ await generate({
 function generate(ctx): Promise<any>
 ```
 
-Defined in: [generators/workflows.tpl.ts:136](https://github.com/jamesvillarrubia/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/generators/workflows.tpl.ts#L136)
+Defined in: [generators/workflows.tpl.ts:136](https://github.com/pipecraft-lab/pipecraft/blob/4c8257c45ffc880272b225e3f335e5026e96be2e/src/generators/workflows.tpl.ts#L136)
 
 Workflows generator main entry point.
 
