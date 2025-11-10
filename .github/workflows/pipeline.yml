@@ -474,7 +474,7 @@ jobs:
         github.ref_name == 'main' &&
         needs.version.result == 'success' &&
         needs.version.outputs.version != '' &&
-        needs.tag.result == 'success'
+        (needs.tag.result == 'success' || needs.tag.result == 'skipped')
       }}
     runs-on: ubuntu-latest
     steps:
