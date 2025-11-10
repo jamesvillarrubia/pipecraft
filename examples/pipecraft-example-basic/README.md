@@ -43,4 +43,4 @@ This repository showcases how PipeCraft automates:
 
 This repository is managed by PipeCraft. The workflows are automatically generated and maintained.
 
-For more information about PipeCraft, visit the [main repository](https://github.com/pipecraft-lab/pipecraft).
+For more information about PipeCraft, visit the [main repository](https://github.com/the-craftlab/pipecraft).
