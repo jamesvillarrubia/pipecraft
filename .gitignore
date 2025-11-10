@@ -9,6 +9,7 @@
 **/.next/
 **/.vercel/
 **/.docusaurus/
+**/.pnpm-store/
 
 # Environment files
 .env

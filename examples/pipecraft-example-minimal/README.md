@@ -1,6 +1,6 @@
 # PipeCraft Example: Minimal
 
-[![CI/CD Pipeline](https://github.com/pipecraft-lab/pipecraft-example-minimal/actions/workflows/pipeline.yml/badge.svg)](https://github.com/pipecraft-lab/pipecraft-example-minimal/actions/workflows/pipeline.yml)
+[![CI/CD Pipeline](https://github.com/the-craftlab/pipecraft-example-minimal/actions/workflows/pipeline.yml/badge.svg)](https://github.com/the-craftlab/pipecraft-example-minimal/actions/workflows/pipeline.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 The simplest possible PipeCraft configuration - perfect for getting started in under 5 minutes.
@@ -128,11 +128,11 @@ This repository intentionally has **NO initial tag** to demonstrate PipeCraft's 
 
 ```bash
 # Clone this repository
-git clone https://github.com/pipecraft-lab/pipecraft-example-minimal.git
+git clone https://github.com/the-craftlab/pipecraft-example-minimal.git
 cd pipecraft-example-minimal
 
 # Install PipeCraft (if testing locally)
-npm install -D @pipecraft-lab/pipecraft
+npm install -D pipecraft
 
 # Test locally
 npm test
@@ -246,9 +246,9 @@ gh run view --log
 
 ## Related Examples
 
-- **[pipecraft-example-basic](https://github.com/pipecraft-lab/pipecraft-example-basic)** - Multi-domain with 3-branch flow
-- **[pipecraft-example-nx](https://github.com/pipecraft-lab/pipecraft-example-nx)** - Nx monorepo with mixed detection
-- **[pipecraft-example-gated](https://github.com/pipecraft-lab/pipecraft-example-gated)** - Enterprise gated workflow
+- **[pipecraft-example-basic](https://github.com/the-craftlab/pipecraft-example-basic)** - Multi-domain with 3-branch flow
+- **[pipecraft-example-nx](https://github.com/the-craftlab/pipecraft-example-nx)** - Nx monorepo with mixed detection
+- **[pipecraft-example-gated](https://github.com/the-craftlab/pipecraft-example-gated)** - Enterprise gated workflow
 
 ## Learn More
 

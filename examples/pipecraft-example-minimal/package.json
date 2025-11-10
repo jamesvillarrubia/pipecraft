@@ -19,10 +19,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pipecraft-lab/pipecraft-example-minimal.git"
+    "url": "https://github.com/the-craftlab/pipecraft-example-minimal.git"
   },
-  "homepage": "https://github.com/pipecraft-lab/pipecraft-example-minimal#readme",
+  "homepage": "https://github.com/the-craftlab/pipecraft-example-minimal#readme",
   "bugs": {
-    "url": "https://github.com/pipecraft-lab/pipecraft-example-minimal/issues"
+    "url": "https://github.com/the-craftlab/pipecraft-example-minimal/issues"
   }
 }

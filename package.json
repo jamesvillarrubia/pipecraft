@@ -64,8 +64,8 @@
     "docs:typedoc": "cd docs && pnpm run typedoc",
     "docs:deploy": "npm run build && cd docs && pnpm run typedoc && pnpm run build",
     "examples:store-git": "./scripts/store-example-git-repos.sh",
-    "examples:activate": "node scripts/activate-example-repos.mjs",
-    "examples:deactivate": "node scripts/deactivate-example-repos.mjs",
+    "examples:activate": "node tests/scripts/activate-example-repos.mjs",
+    "examples:deactivate": "node tests/scripts/deactivate-example-repos.mjs",
     "sync-actions": "tsx scripts/sync-actions.ts",
     "sync-actions:check": "tsx scripts/sync-actions.ts --check",
     "sync-actions:verify": "tsx scripts/sync-actions.ts --verify"

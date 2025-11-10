@@ -24,10 +24,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pipecraft-lab/pipecraft-example-gated.git"
+    "url": "https://github.com/the-craftlab/pipecraft-example-gated.git"
   },
-  "homepage": "https://github.com/pipecraft-lab/pipecraft-example-gated#readme",
+  "homepage": "https://github.com/the-craftlab/pipecraft-example-gated#readme",
   "bugs": {
-    "url": "https://github.com/pipecraft-lab/pipecraft-example-gated/issues"
+    "url": "https://github.com/the-craftlab/pipecraft-example-gated/issues"
   }
 }
