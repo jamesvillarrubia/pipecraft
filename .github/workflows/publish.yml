@@ -51,5 +51,5 @@ jobs:
           echo "Setting package version to $VERSION"
           npm pkg set version=$VERSION
 
-      - name: Publish to npm
+      - name: Publish to npm (using OIDC)
         run: npm publish --provenance --access public
