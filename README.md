@@ -136,27 +136,37 @@ Then add npm scripts to your package.json:
 
 ## Simple Example
 
-Create a `.pipecraftrc.json` configuration describing your project:
+Create a `.pipecraftrc` configuration describing your project:
 
-```json
-{
-  "ciProvider": "github",
-  "mergeStrategy": "fast-forward",
-  "requireConventionalCommits": true,
-  "initialBranch": "develop",
-  "finalBranch": "main",
-  "branchFlow": ["develop", "staging", "main"],
-  "domains": {
-    "api": {
-      "paths": ["apps/api/**", "libs/api-core/**"],
-      "description": "API services and core logic"
-    },
-    "web": {
-      "paths": ["apps/web/**", "libs/ui-components/**"],
-      "description": "Web application and UI"
-    }
-  }
-}
+```yaml
+# PipeCraft Configuration
+ciProvider: github
+mergeStrategy: fast-forward
+requireConventionalCommits: true
+
+# Branch flow configuration
+initialBranch: develop
+finalBranch: main
+
+# Promotion flow: develop → staging → main
+branchFlow:
+  - develop
+  - staging
+  - main
+
+# Domain definitions - what parts of your codebase trigger which jobs
+domains:
+  api:
+    description: 'API services and core logic'
+    paths:
+      - apps/api/**
+      - libs/api-core/**
+
+  web:
+    description: 'Web application and UI'
+    paths:
+      - apps/web/**
+      - libs/ui-components/**
 ```
 
 Run `pipecraft generate` and you get workflow scaffolding with:
