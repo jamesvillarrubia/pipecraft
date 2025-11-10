@@ -129,26 +129,26 @@ PipeCraft documentation is organized into user-facing guides, contributor resour
 
 ### Production Documentation (User-Facing)
 
-| Document                                                                     | Purpose                          | Audience            |
-| ---------------------------------------------------------------------------- | -------------------------------- | ------------------- |
+| Document                                                                  | Purpose                          | Audience            |
+| ------------------------------------------------------------------------- | -------------------------------- | ------------------- |
 | [Main README](https://github.com/pipecraft-lab/pipecraft#readme)          | Installation, quick start, usage | All users           |
-| [Current Trunk Flow](./flows/trunk-flow)                                     | Current implementation details   | Users, contributors |
-| [Error Handling](./error-handling.md)                                        | Troubleshooting guide            | Users               |
+| [Current Trunk Flow](./flows/trunk-flow)                                  | Current implementation details   | Users, contributors |
+| [Error Handling](./error-handling.md)                                     | Troubleshooting guide            | Users               |
 | [Examples](https://github.com/pipecraft-lab/pipecraft/tree/main/examples) | Configuration examples           | Users               |
 
 ### Technical Documentation (Contributor-Facing)
 
-| Document                                                                                                     | Purpose                     | Audience              |
-| ------------------------------------------------------------------------------------------------------------ | --------------------------- | --------------------- |
-| [Architecture](./architecture.md)                                                                            | System design               | Contributors          |
+| Document                                                                                                  | Purpose                     | Audience              |
+| --------------------------------------------------------------------------------------------------------- | --------------------------- | --------------------- |
+| [Architecture](./architecture.md)                                                                         | System design               | Contributors          |
 | [AST Operations](https://github.com/pipecraft-lab/pipecraft/blob/main/docs/AST_OPERATIONS.md)             | YAML manipulation internals | Advanced contributors |
 | [Test Documentation](https://github.com/pipecraft-lab/pipecraft/blob/main/tests/README.md)                | Testing guide               | Contributors          |
 | [Repository Cleanup Plan](https://github.com/pipecraft-lab/pipecraft/blob/main/docs/REPO_CLEANUP_PLAN.md) | Repo organization           | Contributors          |
 
 ### Planning Documentation (Reference)
 
-| Document                                                                                                                     | Purpose                 | Audience             |
-| ---------------------------------------------------------------------------------------------------------------------------- | ----------------------- | -------------------- |
+| Document                                                                                                                  | Purpose                 | Audience             |
+| ------------------------------------------------------------------------------------------------------------------------- | ----------------------- | -------------------- |
 | [Roadmap](https://github.com/pipecraft-lab/pipecraft/blob/main/TRUNK_FLOW_PLAN.md)                                        | Future features         | Product planning     |
 | [User Journey Errors Planning](https://github.com/pipecraft-lab/pipecraft/blob/main/docs/USER_JOURNEY_ERRORS_PLANNING.md) | Error scenario planning | Development planning |
 
