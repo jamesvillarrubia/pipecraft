@@ -223,7 +223,7 @@ export interface PipecraftConfig {
    * How workflows should reference PipeCraft actions.
    *
    * - 'local': Actions copied to ./.github/actions/ (default, full control)
-   * - 'remote': Reference published marketplace actions (e.g., pipecraft-lab/pipecraft/actions/detect-changes@v1)
+   * - 'remote': Reference published marketplace actions (e.g., the-craftlab/pipecraft/actions/detect-changes@v1)
    * - 'source': Use ./actions/ from repo root (internal use only, for PipeCraft's own CI)
    *
    * @default 'local'
@@ -236,7 +236,7 @@ export interface PipecraftConfig {
    * // User repos (remote mode)
    * actionSourceMode: 'remote'
    * actionVersion: 'v1.2.3'
-   * // Generates: uses: pipecraft-lab/pipecraft/actions/detect-changes@v1.2.3
+   * // Generates: uses: the-craftlab/pipecraft/actions/detect-changes@v1.2.3
    *
    * // PipeCraft repo only (source mode)
    * actionSourceMode: 'source'

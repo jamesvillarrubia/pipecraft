@@ -27,7 +27,7 @@ import type { PipecraftConfig } from '../types/index.js'
  *   actionSourceMode: 'remote',
  *   actionVersion: 'v1.2.3'
  * })
- * // Returns: 'pipecraft-lab/pipecraft/actions/detect-changes@v1.2.3'
+ * // Returns: 'the-craftlab/pipecraft/actions/detect-changes@v1.2.3'
  *
  * // Repository mode (PipeCraft's own CI)
  * getActionReference('detect-changes', { actionSourceMode: 'source' })
@@ -45,7 +45,7 @@ export function getActionReference(actionName: string, config: Partial<Pipecraft
     case 'remote': {
       // Reference published marketplace actions
       const version = config.actionVersion || 'v1'
-      return `pipecraft-lab/pipecraft/actions/${actionName}@${version}`
+      return `the-craftlab/pipecraft/actions/${actionName}@${version}`
     }
 
     case 'source':
