@@ -110,7 +110,7 @@ export default function ConfigBuilder() {
       branchFlow: branches,
       autoMerge: newAutoMerge
     }))
-  }, [branchFlowInput])
+  }, [branchFlowInput, config.autoMerge])
 
   const generateYAML = (): string => {
     let yaml = `# PipeCraft Configuration
