@@ -458,6 +458,8 @@ function hasNpmScript(scriptName: string): boolean {
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
     return !!(packageJson.scripts && packageJson.scripts[scriptName])
   } catch (error) {
+    // Silently return false for any errors (file not found, JSON parse errors, etc.)
+    // This is expected behavior - if we can't read or parse package.json, the script doesn't exist
     return false
   }
 }
@@ -541,6 +543,7 @@ export function formatPreflightResults(checks: PreflightChecks): {
     }
 
     // Add GitHub permissions step
+    const githubSetupStepNumber = stepNumber
     steps.push(
       `${stepNumber}. Configure GitHub permissions for auto-merge:`,
       '   pipecraft setup-github           # Interactive setup',
@@ -564,7 +567,7 @@ export function formatPreflightResults(checks: PreflightChecks): {
       `${stepNumber}. Watch your first pipeline run at:`,
       `   https://github.com/${getRepoInfo()}/actions`,
       '',
-      '⚠️  Important: Set up GitHub permissions (step 3) BEFORE pushing to ensure workflows run correctly!'
+      `⚠️  Important: Set up GitHub permissions (step ${githubSetupStepNumber}) BEFORE pushing to ensure workflows run correctly!`
     )
 
     nextSteps = steps
