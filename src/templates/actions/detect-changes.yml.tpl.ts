@@ -35,7 +35,7 @@ import type { PipecraftConfig } from '../../types/index.js'
  *
  * Creates a GitHub Actions composite action that:
  * - Accepts domain configuration as JSON input (not hardcoded)
- * - Dynamically parses domains using jq
+ * - Dynamically parses domains using pure bash (no external tools required)
  * - Checks for Nx availability in the repository
  * - Uses `nx show projects --affected` for dependency graph analysis
  * - Maps affected projects to domains dynamically
@@ -312,12 +312,12 @@ runs:
         echo "$CHANGES_JSON" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
         
-        # Build comma-separated list of affected domains
-        AFFECTED_DOMAINS=$(echo "$CHANGES_JSON" | jq -r 'to_entries | map(select(.value == true) | .key) | join(",")')
+        # Build comma-separated list of affected domains (pure bash, no jq required)
+        AFFECTED_DOMAINS=$(echo "$CHANGES_JSON" | grep -o '\\"[^"]*\\": *true' | sed 's/\\"\\([^"]*\\)\\": *true/\\1/' | tr '\\n' ',' | sed 's/,$//')
         echo "affectedDomains=$AFFECTED_DOMAINS" >> $GITHUB_OUTPUT
         
         echo "📋 Change Detection Results:"
-        echo "$CHANGES_JSON" | jq '.'
+        echo "$CHANGES_JSON"
         echo "🎯 Affected domains: $AFFECTED_DOMAINS"
         echo "  nx-available: \${{ steps.nx-check.outputs.available }}"
 `

@@ -246,7 +246,10 @@ jobs:
       - version
     if: ${{
         needs.changes.outputs.docs == 'true' ||
-        (needs.version.result == 'success' && needs.version.outputs.version != '')
+        (
+        needs.version.result == 'success' &&
+        needs.version.outputs.version != ''
+      )
       }}
     runs-on: ubuntu-latest
     steps:
@@ -303,9 +306,9 @@ jobs:
         needs.version.result == 'success' &&
         needs.test-docs.result == 'success' &&
         (
-          needs.changes.outputs.docs == 'true' ||
-          needs.version.outputs.version != ''
-        ) &&
+        needs.changes.outputs.docs == 'true' ||
+        needs.version.outputs.version != ''
+      ) &&
         github.ref_name == 'main'
       }}
     runs-on: ubuntu-latest
@@ -342,9 +345,9 @@ jobs:
       - deploy-docs
     if: ${{
         (
-          needs.changes.outputs.docs == 'true' ||
-          needs.version.outputs.version != ''
-        ) &&
+        needs.changes.outputs.docs == 'true' ||
+        needs.version.outputs.version != ''
+      ) &&
         needs.deploy-docs.result == 'success' &&
         needs.version.result == 'success' &&
         needs.version.outputs.version != ''
@@ -474,7 +477,7 @@ jobs:
         github.ref_name == 'main' &&
         needs.version.result == 'success' &&
         needs.version.outputs.version != '' &&
-        (needs.tag.result == 'success' || needs.tag.result == 'skipped')
+        needs.tag.result == 'success'
       }}
     runs-on: ubuntu-latest
     steps:
