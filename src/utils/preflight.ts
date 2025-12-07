@@ -18,7 +18,7 @@
 
 import { execSync } from 'child_process'
 import { cosmiconfigSync } from 'cosmiconfig'
-import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
 import { join } from 'path'
 
 /**
@@ -439,6 +439,32 @@ export function runPreflightChecks(): PreflightChecks {
 }
 
 /**
+ * Check if a specific npm script exists in package.json.
+ *
+ * Looks for package.json in the current directory and checks if
+ * the specified script is defined in the scripts section.
+ *
+ * @param scriptName - Name of the npm script to check
+ * @returns true if the script exists, false otherwise
+ * @private
+ */
+function hasNpmScript(scriptName: string): boolean {
+  try {
+    const packageJsonPath = join(process.cwd(), 'package.json')
+    if (!existsSync(packageJsonPath)) {
+      return false
+    }
+
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
+    return !!(packageJson.scripts && packageJson.scripts[scriptName])
+  } catch (error) {
+    // Silently return false for any errors (file not found, JSON parse errors, etc.)
+    // This is expected behavior - if we can't read or parse package.json, the script doesn't exist
+    return false
+  }
+}
+
+/**
  * Format pre-flight check results for human-readable display.
  *
  * Converts structured check results into formatted output with:
@@ -488,35 +514,64 @@ export function formatPreflightResults(checks: PreflightChecks): {
   }
 
   // Provide next steps if all checks passed
-  const nextSteps: string[] | undefined = allPassed
-    ? [
-        'Your environment is ready to generate workflows!',
-        '',
-        '📋 Next steps:',
-        '',
-        '1. Review and customize the generated workflows:',
-        '   - Add test commands to test-* jobs',
-        '   - Add deployment logic to deploy-* jobs (if deployable: true)',
-        '   - Add remote tests to remote-test-* jobs (if remoteTestable: true)',
-        '',
-        '2. Validate the workflow syntax:',
+  let nextSteps: string[] | undefined = undefined
+
+  if (allPassed) {
+    const steps: string[] = [
+      'Your environment is ready to generate workflows!',
+      '',
+      '📋 Next steps:',
+      '',
+      '1. Review and customize the generated workflows:',
+      '   - Add test commands to test-* jobs',
+      '   - Add deployment logic to deploy-* jobs (if deployable: true)',
+      '   - Add remote tests to remote-test-* jobs (if remoteTestable: true)',
+      ''
+    ]
+
+    // Add validation step - only if validate:pipeline script exists
+    const hasValidateScript = hasNpmScript('validate:pipeline')
+    let stepNumber = 2
+
+    if (hasValidateScript) {
+      steps.push(
+        `${stepNumber}. Validate the workflow syntax:`,
         '   npm run validate:pipeline        # Check YAML is valid',
-        '',
-        '3. Configure GitHub permissions for auto-merge:',
-        '   pipecraft setup-github           # Interactive setup',
-        '   pipecraft setup-github --apply   # Auto-apply (no prompts)',
-        '',
-        '4. Commit and push:',
-        '   git add .github/workflows/ .pipecraftrc',
-        '   git commit -m "feat: add pipecraft workflows"',
-        '   git push',
-        '',
-        '5. Watch your first pipeline run at:',
-        `   https://github.com/${getRepoInfo()}/actions`,
-        '',
-        '⚠️  Important: Set up GitHub permissions (step 3) BEFORE pushing to ensure workflows run correctly!'
-      ]
-    : undefined
+        ''
+      )
+      stepNumber++
+    }
+
+    // Add GitHub permissions step
+    const githubSetupStepNumber = stepNumber
+    steps.push(
+      `${stepNumber}. Configure GitHub permissions for auto-merge:`,
+      '   pipecraft setup-github           # Interactive setup',
+      '   pipecraft setup-github --apply   # Auto-apply (no prompts)',
+      ''
+    )
+    stepNumber++
+
+    // Add commit and push step
+    steps.push(
+      `${stepNumber}. Commit and push:`,
+      '   git add .github/workflows/ .pipecraftrc',
+      '   git commit -m "feat: add pipecraft workflows"',
+      '   git push',
+      ''
+    )
+    stepNumber++
+
+    // Add watch pipeline step
+    steps.push(
+      `${stepNumber}. Watch your first pipeline run at:`,
+      `   https://github.com/${getRepoInfo()}/actions`,
+      '',
+      `⚠️  Important: Set up GitHub permissions (step ${githubSetupStepNumber}) BEFORE pushing to ensure workflows run correctly!`
+    )
+
+    nextSteps = steps
+  }
 
   return {
     allPassed,
