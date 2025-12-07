@@ -384,7 +384,7 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         generatedPlaceholders = generatePrefixedJobsText(domains)
       }
       
-      const mergedCustomContent = mergeCustomJobsContent(userSection, generatedPlaceholders)
+      // const mergedCustomContent = mergeCustomJobsContent(userSection, generatedPlaceholders)
 
       // In force mode or new file, create fresh document to ensure correct structure
       if (!fileExists || ctx.pinion?.force) {
