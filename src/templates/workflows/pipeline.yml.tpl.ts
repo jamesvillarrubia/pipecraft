@@ -204,48 +204,6 @@ export const generate = (ctx: PathBasedPipelineContext) =>
       // Get job names from domains (supports both prefixes and legacy boolean flags)
       const { testJobs, deployJobs, remoteTestJobs, allJobsByPrefix } = getDomainJobNames(domains)
 
-      // Build operations array - only managed jobs
-      const operations: PathOperationConfig[] = [
-        // Header (name, run-name, on triggers)
-        ...createHeaderOperations({ branchFlow }),
-
-        // Changes detection (path-based)
-        createChangesJobOperation({
-          domains,
-          useNx: false,
-          baseRef: config.finalBranch,
-          config
-        }),
-
-        // Version calculation (simplified - only depends on changes)
-        createVersionJobOperation({
-          testJobNames: [], // No test job dependencies in new model
-          nxEnabled: false,
-          baseRef: config.finalBranch,
-          config
-        }),
-
-        // NOTE: Prefixed domain jobs are NOT generated via operations
-        // They are generated as text and merged into the custom section below
-
-        // Gate job (runs after ALL prefix-based jobs, gates downstream jobs)
-        createGateJobOperation({
-          testJobNames: testJobs,
-          deployJobNames: deployJobs,
-          allJobsByPrefix // Includes ALL jobs from all prefixes (test, deploy, lint, build, etc.)
-        }),
-
-        // Tag, promote, release
-        ...createTagPromoteReleaseOperations({
-          branchFlow,
-          deployJobNames: [], // No deployment dependencies in new model
-          remoteTestJobNames: [],
-          testJobNames: testJobs, // Pass test jobs for default tag job dependencies
-          autoMerge: typeof config.autoMerge === 'object' ? config.autoMerge : {},
-          config
-        })
-      ]
-
       // Check if file exists
       const fileExists = fs.existsSync(filePath)
 
@@ -310,6 +268,80 @@ export const generate = (ctx: PathBasedPipelineContext) =>
           }
         }
       }
+      
+      // Generate placeholder jobs from prefixes (only for new files, not during regeneration)
+      let generatedPlaceholders = ''
+      if (!fileExists) {
+        generatedPlaceholders = generatePrefixedJobsText(domains)
+      }
+      
+      const mergedCustomContent = mergeCustomJobsContent(userSection, generatedPlaceholders)
+      
+      // Extract actual job names from the merged custom content
+      let actualCustomJobNames: string[] = []
+      if (mergedCustomContent && mergedCustomContent.trim().length > 0) {
+        // Extract job names from the merged content using regex
+        const jobNameRegex = /^ {2}([a-zA-Z0-9_-]+):/gm
+        let match
+        while ((match = jobNameRegex.exec(mergedCustomContent)) !== null) {
+          actualCustomJobNames.push(match[1])
+        }
+        logger.verbose(`📋 Found ${actualCustomJobNames.length} job(s) in merged content: ${actualCustomJobNames.join(', ')}`)
+      }
+
+      // Determine which job names to use for gate job
+      // - Use actual job names from merged custom content if any exist
+      // - Otherwise use configured jobs from domain config
+      const gateJobNames = actualCustomJobNames.length > 0
+        ? actualCustomJobNames
+        : Array.from(new Set([...testJobs, ...deployJobs, ...Object.values(allJobsByPrefix).flat()]))
+      
+      logger.verbose(`📋 Gate job will reference ${gateJobNames.length} job(s): ${gateJobNames.join(', ') || 'none'}`)
+
+      // Build operations array - only managed jobs
+      const operations: PathOperationConfig[] = [
+        // Header (name, run-name, on triggers)
+        ...createHeaderOperations({ branchFlow }),
+
+        // Changes detection (path-based)
+        createChangesJobOperation({
+          domains,
+          useNx: false,
+          baseRef: config.finalBranch,
+          config
+        }),
+
+        // Version calculation (simplified - only depends on changes)
+        createVersionJobOperation({
+          testJobNames: [], // No test job dependencies in new model
+          nxEnabled: false,
+          baseRef: config.finalBranch,
+          config
+        }),
+
+        // NOTE: Prefixed domain jobs are NOT generated via operations
+        // They are generated as text and merged into the custom section below
+
+        // Gate job (runs after ALL prefix-based jobs, gates downstream jobs)
+        // Uses actual job names from merged custom content, or configured jobs for new files
+        createGateJobOperation({
+          testJobNames: gateJobNames.filter(j => j.startsWith('test-')),
+          deployJobNames: gateJobNames.filter(j => j.startsWith('deploy-')),
+          allJobsByPrefix: gateJobNames.length > 0 
+            ? { custom: gateJobNames }  // Group all actual jobs under 'custom' prefix
+            : {}
+        }),
+
+        // Tag, promote, release
+        ...createTagPromoteReleaseOperations({
+          branchFlow,
+          deployJobNames: [], // No deployment dependencies in new model
+          remoteTestJobNames: [],
+          testJobNames: testJobs, // Pass test jobs for default tag job dependencies
+          autoMerge: typeof config.autoMerge === 'object' ? config.autoMerge : {},
+          config
+        })
+      ]
 
       // In force mode or new file, create fresh document to ensure correct structure
       if (!fileExists || ctx.pinion?.force) {
