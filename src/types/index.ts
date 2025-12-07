@@ -220,6 +220,47 @@ export interface PipecraftConfig {
   packageManager?: 'npm' | 'yarn' | 'pnpm'
 
   /**
+   * Runtime environment configuration for CI/CD workflows.
+   * Specifies Node.js and package manager versions used in the pipeline.
+   *
+   * These values are used to set environment variables in generated workflows
+   * and can be customized per-project to match your toolchain requirements.
+   *
+   * @example
+   * ```typescript
+   * runtime: {
+   *   nodeVersion: '22',
+   *   pnpmVersion: '9'
+   * }
+   * ```
+   *
+   * @default
+   * ```typescript
+   * {
+   *   nodeVersion: '24',
+   *   pnpmVersion: '10'
+   * }
+   * ```
+   */
+  runtime?: {
+    /**
+     * Node.js version for CI/CD workflows.
+     * Supports major versions (e.g., '22', '24') or specific versions (e.g., '22.18.0').
+     *
+     * @default '24'
+     */
+    nodeVersion?: string
+
+    /**
+     * PNPM version for CI/CD workflows.
+     * Only used when packageManager is 'pnpm'.
+     *
+     * @default '10'
+     */
+    pnpmVersion?: string
+  }
+
+  /**
    * How workflows should reference PipeCraft actions.
    *
    * - 'local': Actions copied to ./.github/actions/ (default, full control)

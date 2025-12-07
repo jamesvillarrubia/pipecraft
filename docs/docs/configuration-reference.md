@@ -142,6 +142,80 @@ Use explicit configuration when:
 }
 ```
 
+### runtime
+
+**Type**: `object`
+**Required**: No
+**Default**: `{ nodeVersion: '24', pnpmVersion: '10' }`
+
+Configures the runtime environment versions used in CI/CD workflows. This allows you to control which Node.js and package manager versions are used without regenerating workflows.
+
+```json
+{
+  "runtime": {
+    "nodeVersion": "22",
+    "pnpmVersion": "9"
+  }
+}
+```
+
+**Properties:**
+
+- **nodeVersion** (`string`, optional): Node.js version for CI/CD workflows. Defaults to `'24'`.
+  - Supports major versions (e.g., `'22'`, `'24'`) or specific versions (e.g., `'22.18.0'`)
+  - Used in workflow environment variables and action defaults
+- **pnpmVersion** (`string`, optional): PNPM version for CI/CD workflows. Defaults to `'10'`.
+  - Only used when `packageManager` is set to `'pnpm'`
+  - Supports major versions or specific versions
+
+**Impact on generated workflows:**
+
+- Sets `NODE_VERSION` environment variable in `pipeline.yml`
+- Sets `PNPM_VERSION` environment variable in `pipeline.yml`
+- Configures default `node-version` input in `calculate-version` action
+- Applied during initial generation and when using `--force` flag
+
+**Preservation behavior:**
+
+When regenerating workflows **without** the `--force` flag:
+
+- Existing `NODE_VERSION` and `PNPM_VERSION` values in your workflow are **preserved**
+- The `runtime` config in `.pipecraftrc` only applies to new workflows or forced regeneration
+
+When regenerating workflows **with** the `--force` flag:
+
+- Runtime versions are updated to match your `runtime` config
+- If `runtime` is not specified, defaults to Node 24 and PNPM 10
+
+**Migration example:**
+
+If you're currently on Node 18 and want to upgrade to Node 22:
+
+```json
+{
+  "ciProvider": "github",
+  "packageManager": "pnpm",
+  "runtime": {
+    "nodeVersion": "22",
+    "pnpmVersion": "9"
+  },
+  "branchFlow": ["develop", "staging", "main"]
+}
+```
+
+Then regenerate with `--force`:
+
+```bash
+pipecraft generate --force
+```
+
+**Best practices:**
+
+- Set explicit runtime versions to match your project's tested Node.js LTS version
+- Update runtime versions only after validating toolchain compatibility (Nx, Vitest, etc.)
+- Document runtime version changes in your project's changelog
+- Test locally with matching Node versions before updating CI/CD configuration
+
 ### initialBranch
 
 **Type**: `string`

@@ -337,4 +337,161 @@ describe('Workflow Generation Integration', () => {
       })
     })
   })
+
+  describe('Runtime Configuration', () => {
+    it('should use custom Node and PNPM versions from config', async () => {
+      await inWorkspace(workspace, () => {
+        execSync('git init', { cwd: workspace, stdio: 'pipe' })
+        execSync('git remote add origin https://github.com/test/test.git', {
+          cwd: workspace,
+          stdio: 'pipe'
+        })
+
+        const config = createMinimalConfig({
+          runtime: {
+            nodeVersion: '22',
+            pnpmVersion: '9'
+          }
+        })
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+
+        execSync(`node "${cliPath}" generate --skip-checks`, {
+          cwd: workspace,
+          stdio: 'pipe',
+          timeout: 10000,
+          env: { ...process.env, CI: 'true' }
+        })
+
+        // Verify pipeline has custom runtime versions
+        const pipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
+        expect(pipeline).toContain('NODE_VERSION: "22"')
+        expect(pipeline).toContain('PNPM_VERSION: "9"')
+
+        // Verify calculate-version action has custom Node version as default
+        const calcVersion = readFileSync('.github/actions/calculate-version/action.yml', 'utf-8')
+        expect(calcVersion).toContain("default: '22'")
+      })
+    })
+
+    it('should use default Node 24 and PNPM 10 when runtime not specified', async () => {
+      await inWorkspace(workspace, () => {
+        execSync('git init', { cwd: workspace, stdio: 'pipe' })
+        execSync('git remote add origin https://github.com/test/test.git', {
+          cwd: workspace,
+          stdio: 'pipe'
+        })
+
+        const config = createMinimalConfig()
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+
+        execSync(`node "${cliPath}" generate --skip-checks`, {
+          cwd: workspace,
+          stdio: 'pipe',
+          timeout: 10000,
+          env: { ...process.env, CI: 'true' }
+        })
+
+        // Verify pipeline has default runtime versions
+        const pipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
+        expect(pipeline).toContain('NODE_VERSION: "24"')
+        expect(pipeline).toContain('PNPM_VERSION: "10"')
+
+        // Verify calculate-version action has default Node version
+        const calcVersion = readFileSync('.github/actions/calculate-version/action.yml', 'utf-8')
+        expect(calcVersion).toContain("default: '24'")
+      })
+    })
+
+    it('should preserve existing runtime versions during additive regeneration', async () => {
+      await inWorkspace(workspace, () => {
+        execSync('git init', { cwd: workspace, stdio: 'pipe' })
+        execSync('git remote add origin https://github.com/test/test.git', {
+          cwd: workspace,
+          stdio: 'pipe'
+        })
+
+        const config = createMinimalConfig()
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+
+        // First generation with defaults
+        execSync(`node "${cliPath}" generate --skip-checks`, {
+          cwd: workspace,
+          stdio: 'pipe',
+          timeout: 10000,
+          env: { ...process.env, CI: 'true' }
+        })
+
+        // Manually change runtime versions in pipeline
+        const pipelinePath = '.github/workflows/pipeline.yml'
+        let pipeline = readFileSync(pipelinePath, 'utf-8')
+        pipeline = pipeline.replace('NODE_VERSION: "24"', 'NODE_VERSION: "18"')
+        pipeline = pipeline.replace('PNPM_VERSION: "10"', 'PNPM_VERSION: "8"')
+        writeFileSync(pipelinePath, pipeline)
+
+        // Regenerate without --force (additive mode)
+        execSync(`node "${cliPath}" generate --skip-checks`, {
+          cwd: workspace,
+          stdio: 'pipe',
+          timeout: 10000,
+          env: { ...process.env, CI: 'true' }
+        })
+
+        // Verify versions were preserved
+        const updatedPipeline = readFileSync(pipelinePath, 'utf-8')
+        expect(updatedPipeline).toContain('NODE_VERSION: "18"')
+        expect(updatedPipeline).toContain('PNPM_VERSION: "8"')
+      })
+    })
+
+    it('should override runtime versions with --force and runtime config', async () => {
+      await inWorkspace(workspace, () => {
+        execSync('git init', { cwd: workspace, stdio: 'pipe' })
+        execSync('git remote add origin https://github.com/test/test.git', {
+          cwd: workspace,
+          stdio: 'pipe'
+        })
+
+        // First generation with old versions
+        const oldConfig = createMinimalConfig({
+          runtime: {
+            nodeVersion: '18',
+            pnpmVersion: '8'
+          }
+        })
+        writeFileSync('.pipecraftrc', JSON.stringify(oldConfig, null, 2))
+
+        execSync(`node "${cliPath}" generate --skip-checks`, {
+          cwd: workspace,
+          stdio: 'pipe',
+          timeout: 10000,
+          env: { ...process.env, CI: 'true' }
+        })
+
+        // Update config with new versions
+        const newConfig = createMinimalConfig({
+          runtime: {
+            nodeVersion: '22',
+            pnpmVersion: '9'
+          }
+        })
+        writeFileSync('.pipecraftrc', JSON.stringify(newConfig, null, 2))
+
+        // Regenerate with --force
+        execSync(`node "${cliPath}" generate --skip-checks --force`, {
+          cwd: workspace,
+          stdio: 'pipe',
+          timeout: 10000,
+          env: { ...process.env, CI: 'true' }
+        })
+
+        // Verify versions were updated
+        const pipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
+        expect(pipeline).toContain('NODE_VERSION: "22"')
+        expect(pipeline).toContain('PNPM_VERSION: "9"')
+
+        const calcVersion = readFileSync('.github/actions/calculate-version/action.yml', 'utf-8')
+        expect(calcVersion).toContain("default: '22'")
+      })
+    })
+  })
 })
