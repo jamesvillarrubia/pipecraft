@@ -517,6 +517,97 @@ describe('Preflight Checks', () => {
         expect(output).toContain('❌') // Some checks fail
       })
     })
+
+    it('should include validate:pipeline suggestion when script exists', async () => {
+      const config = createMinimalConfig()
+      mockExecSync.mockImplementation((cmd: string) => {
+        if (cmd.includes('rev-parse')) return 'true'
+        if (cmd.includes('remote')) return 'https://github.com/user/repo.git'
+        if (cmd.includes('branch')) return 'main'
+        return ''
+      })
+
+      await inWorkspace(workspace, () => {
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+        writeFileSync(
+          'package.json',
+          JSON.stringify(
+            {
+              name: 'test',
+              scripts: {
+                'validate:pipeline': 'echo validate'
+              }
+            },
+            null,
+            2
+          )
+        )
+
+        const checks = runPreflightChecks()
+        const { nextSteps } = formatPreflightResults(checks)
+
+        expect(nextSteps).toBeDefined()
+        const stepsText = nextSteps?.join('\n') || ''
+        expect(stepsText).toContain('validate:pipeline')
+        expect(stepsText).toContain('Check YAML is valid')
+      })
+    })
+
+    it('should exclude validate:pipeline suggestion when script does not exist', async () => {
+      const config = createMinimalConfig()
+      mockExecSync.mockImplementation((cmd: string) => {
+        if (cmd.includes('rev-parse')) return 'true'
+        if (cmd.includes('remote')) return 'https://github.com/user/repo.git'
+        if (cmd.includes('branch')) return 'main'
+        return ''
+      })
+
+      await inWorkspace(workspace, () => {
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+        writeFileSync(
+          'package.json',
+          JSON.stringify(
+            {
+              name: 'test',
+              scripts: {
+                test: 'echo test'
+              }
+            },
+            null,
+            2
+          )
+        )
+
+        const checks = runPreflightChecks()
+        const { nextSteps } = formatPreflightResults(checks)
+
+        expect(nextSteps).toBeDefined()
+        const stepsText = nextSteps?.join('\n') || ''
+        expect(stepsText).not.toContain('validate:pipeline')
+      })
+    })
+
+    it('should exclude validate:pipeline suggestion when no package.json exists', async () => {
+      const config = createMinimalConfig()
+      mockExecSync.mockImplementation((cmd: string) => {
+        if (cmd.includes('rev-parse')) return 'true'
+        if (cmd.includes('remote')) return 'https://github.com/user/repo.git'
+        if (cmd.includes('branch')) return 'main'
+        return ''
+      })
+
+      await inWorkspace(workspace, () => {
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+        // No package.json created
+
+        const checks = runPreflightChecks()
+        const { nextSteps } = formatPreflightResults(checks)
+
+        expect(nextSteps).toBeDefined()
+        const stepsText = nextSteps?.join('\n') || ''
+        expect(stepsText).not.toContain('validate:pipeline')
+      })
+    })
   })
 
   describe('Edge Cases and Error Handling', () => {
