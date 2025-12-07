@@ -55,7 +55,7 @@ import type { PipecraftConfig } from '../../types/index.js'
 const versionActionTemplate = (ctx: any) => {
   // Get Node version from config or use default
   const nodeVersion = ctx.runtime?.nodeVersion || '24'
-  
+
   return `name: 'Calculate Version'
 description: 'Calculate semantic version using release-it and conventional commits'
 author: 'Pipecraft'

@@ -164,7 +164,6 @@ Configures the runtime environment versions used in CI/CD workflows. This allows
 - **nodeVersion** (`string`, optional): Node.js version for CI/CD workflows. Defaults to `'24'`.
   - Supports major versions (e.g., `'22'`, `'24'`) or specific versions (e.g., `'22.18.0'`)
   - Used in workflow environment variables and action defaults
-  
 - **pnpmVersion** (`string`, optional): PNPM version for CI/CD workflows. Defaults to `'10'`.
   - Only used when `packageManager` is set to `'pnpm'`
   - Supports major versions or specific versions
@@ -179,10 +178,12 @@ Configures the runtime environment versions used in CI/CD workflows. This allows
 **Preservation behavior:**
 
 When regenerating workflows **without** the `--force` flag:
+
 - Existing `NODE_VERSION` and `PNPM_VERSION` values in your workflow are **preserved**
 - The `runtime` config in `.pipecraftrc` only applies to new workflows or forced regeneration
 
 When regenerating workflows **with** the `--force` flag:
+
 - Runtime versions are updated to match your `runtime` config
 - If `runtime` is not specified, defaults to Node 24 and PNPM 10
 
