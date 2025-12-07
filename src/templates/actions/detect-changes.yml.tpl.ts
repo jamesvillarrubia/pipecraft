@@ -313,7 +313,8 @@ runs:
         echo "EOF" >> $GITHUB_OUTPUT
         
         # Build comma-separated list of affected domains (pure bash, no jq required)
-        AFFECTED_DOMAINS=$(echo "$CHANGES_JSON" | grep -o '\\"[^"]*\\": *true' | sed 's/\\"\\([^"]*\\)\\": *true/\\1/' | tr '\\n' ',' | sed 's/,$//')
+        # grep returns exit code 1 when no matches found, so we add || true to prevent script failure
+        AFFECTED_DOMAINS=$(echo "$CHANGES_JSON" | grep -o '\\"[^"]*\\": *true' | sed 's/\\"\\([^"]*\\)\\": *true/\\1/' | tr '\\n' ',' | sed 's/,$//' || true)
         echo "affectedDomains=$AFFECTED_DOMAINS" >> $GITHUB_OUTPUT
         
         echo "📋 Change Detection Results:"
