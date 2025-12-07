@@ -83,8 +83,8 @@ outputs:
     description: 'Whether Nx is available in the repository'
     value: \${{ steps.nx-check.outputs.available }}
   affectedProjects:
-    description: 'Comma-separated list of affected Nx projects'
-    value: \${{ steps.nx-filter.outputs.affectedProjects }}
+    description: 'Comma-separated list of affected Nx projects (only populated when nxAvailable is true)'
+    value: \${{ steps.nx-outputs.outputs.affectedProjects }}
 
 runs:
   using: 'composite'
@@ -270,6 +270,18 @@ runs:
         base: \${{ steps.set-base.outputs.base_branch }}
         filters: \${{ steps.transform-config.outputs.filters }}
 
+    - name: Set Nx Outputs
+      id: nx-outputs
+      shell: bash
+      run: |
+        # Set affectedProjects output based on NX availability
+        if [ "\${{ steps.nx-check.outputs.available }}" == "true" ] && [ "\${{ inputs.useNx }}" == "true" ]; then
+          echo "affectedProjects=\${{ steps.nx-filter.outputs.affectedProjects }}" >> $GITHUB_OUTPUT
+        else
+          # When NX is not available, set empty value
+          echo "affectedProjects=" >> $GITHUB_OUTPUT
+        fi
+
     - name: Generate Outputs
       id: output
       shell: bash
@@ -279,7 +291,7 @@ runs:
           # Use Nx results
           CHANGES_JSON=$(cat /tmp/nx-results.json)
           echo "🔍 Using Nx dependency analysis results"
-          echo "📦 Affected projects: \${{ steps.nx-filter.outputs.affectedProjects }}"
+          echo "📦 Affected projects: \${{ steps.nx-outputs.outputs.affectedProjects }}"
         else
           # Use path filter results - convert to JSON
           echo "📁 Using path-based change detection"
