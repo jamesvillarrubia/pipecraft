@@ -65,6 +65,7 @@ function extractUserSection(yamlContent: string): string | null {
 
 /**
  * Generate placeholder jobs for domains with prefixes as YAML text
+ * Also handles legacy domains without prefixes (using testable/deployable flags)
  *
  * @param domains - Domain configuration
  * @returns YAML text for placeholder jobs, grouped by prefix
@@ -83,6 +84,7 @@ function generatePrefixedJobsText(domains: Record<string, any>): string {
         }`
       )
       if (domainConfig.prefixes && Array.isArray(domainConfig.prefixes)) {
+        // New approach: use prefixes if defined
         domainConfig.prefixes.forEach((prefix: string) => {
           if (!jobsByPrefix[prefix]) {
             jobsByPrefix[prefix] = []
@@ -92,6 +94,37 @@ function generatePrefixedJobsText(domains: Record<string, any>): string {
             jobName: `${prefix}-${domain}`
           })
         })
+      } else {
+        // Legacy approach: use boolean flags
+        if (domainConfig.testable !== false) {
+          if (!jobsByPrefix['test']) {
+            jobsByPrefix['test'] = []
+          }
+          jobsByPrefix['test'].push({
+            domain,
+            jobName: `test-${domain}`
+          })
+        }
+        
+        if (domainConfig.deployable === true) {
+          if (!jobsByPrefix['deploy']) {
+            jobsByPrefix['deploy'] = []
+          }
+          jobsByPrefix['deploy'].push({
+            domain,
+            jobName: `deploy-${domain}`
+          })
+        }
+        
+        if (domainConfig.remoteTestable === true) {
+          if (!jobsByPrefix['remote-test']) {
+            jobsByPrefix['remote-test'] = []
+          }
+          jobsByPrefix['remote-test'].push({
+            domain,
+            jobName: `remote-test-${domain}`
+          })
+        }
       }
     })
 
@@ -204,6 +237,39 @@ export const generate = (ctx: PathBasedPipelineContext) =>
       // Get job names from domains (supports both prefixes and legacy boolean flags)
       const { testJobs, deployJobs, remoteTestJobs, allJobsByPrefix } = getDomainJobNames(domains)
 
+      // Check if file exists
+      const fileExists = fs.existsSync(filePath)
+
+      // Extract actual job names from existing workflow (before any modifications)
+      let actualCustomJobNames: string[] = []
+      if (fileExists) {
+        const existingContent = fs.readFileSync(filePath, 'utf8')
+        const existingDoc = parseDocument(existingContent)
+        const existingJobs =
+          existingDoc.contents && (existingDoc.contents as any).get
+            ? (existingDoc.contents as any).get('jobs')
+            : null
+        const managedJobs = new Set(['changes', 'version', 'gate', 'tag', 'promote', 'release'])
+        if (existingJobs && (existingJobs as any).items) {
+          for (const pair of (existingJobs as any).items) {
+            const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
+            if (keyStr && !managedJobs.has(keyStr as string)) {
+              actualCustomJobNames.push(keyStr as string)
+            }
+          }
+        }
+        logger.verbose(`📋 Found ${actualCustomJobNames.length} actual custom job(s): ${actualCustomJobNames.join(', ') || 'none'}`)
+      }
+
+      // Determine which job names to use for gate job
+      // - For existing files: use actual custom jobs from existing document (even if empty)
+      // - For new files: use configured jobs from domain config
+      const gateJobNames = fileExists
+        ? actualCustomJobNames  // Use actual jobs (could be empty array)
+        : Array.from(new Set([...testJobs, ...deployJobs, ...Object.values(allJobsByPrefix).flat()]))
+      
+      logger.verbose(`📋 Gate job will reference ${gateJobNames.length} job(s): ${gateJobNames.join(', ') || 'none'}`)
+
       // Build operations array - only managed jobs
       const operations: PathOperationConfig[] = [
         // Header (name, run-name, on triggers)
@@ -229,10 +295,13 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         // They are generated as text and merged into the custom section below
 
         // Gate job (runs after ALL prefix-based jobs, gates downstream jobs)
+        // Uses actual job names from existing workflow, or configured jobs for new files
         createGateJobOperation({
-          testJobNames: testJobs,
-          deployJobNames: deployJobs,
-          allJobsByPrefix // Includes ALL jobs from all prefixes (test, deploy, lint, build, etc.)
+          testJobNames: gateJobNames.filter(j => j.startsWith('test-')),
+          deployJobNames: gateJobNames.filter(j => j.startsWith('deploy-')),
+          allJobsByPrefix: gateJobNames.length > 0 
+            ? { custom: gateJobNames }  // Group all actual jobs under 'custom' prefix
+            : {}
         }),
 
         // Tag, promote, release
@@ -246,9 +315,6 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         })
       ]
 
-      // Check if file exists
-      const fileExists = fs.existsSync(filePath)
-
       // Extract user-customized section and custom jobs from existing file if it exists
       let userSection: string | null = null
       const customJobsFromExisting: any[] = []
@@ -260,6 +326,7 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         }
 
         // Also extract custom jobs (for force mode preservation)
+        // Note: actualCustomJobNames was already extracted above for gate job
         const existingDoc = parseDocument(existingContent)
         const existingJobs =
           existingDoc.contents && (existingDoc.contents as any).get
@@ -310,6 +377,14 @@ export const generate = (ctx: PathBasedPipelineContext) =>
           }
         }
       }
+      
+      // Generate placeholder jobs from prefixes (only for new files, not during regeneration)
+      let generatedPlaceholders = ''
+      if (!fileExists) {
+        generatedPlaceholders = generatePrefixedJobsText(domains)
+      }
+      
+      // const mergedCustomContent = mergeCustomJobsContent(userSection, generatedPlaceholders)
 
       // In force mode or new file, create fresh document to ensure correct structure
       if (!fileExists || ctx.pinion?.force) {
