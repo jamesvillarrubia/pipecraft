@@ -8,10 +8,29 @@
 import { Scalar } from 'yaml'
 import type { PathOperationConfig } from '../../../utils/ast-path-operations.js'
 
+/**
+ * Context for creating workflow header operations
+ */
 export interface HeaderContext {
+  /**
+   * Ordered list of branches in the promotion flow
+   */
   branchFlow: string[]
+
+  /**
+   * Runtime environment versions for CI/CD workflows
+   * @optional
+   * @example { nodeVersion: '22', pnpmVersion: '9' }
+   */
   runtime?: {
+    /**
+     * Node.js version for workflows (e.g., '22', '24', '22.18.0')
+     */
     nodeVersion?: string
+
+    /**
+     * PNPM version for workflows (e.g., '9', '10')
+     */
     pnpmVersion?: string
   }
 }
