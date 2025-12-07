@@ -49,10 +49,13 @@ import type { PipecraftConfig } from '../../types/index.js'
 /**
  * Generates the calculate-version composite action YAML content.
  *
- * @param {any} ctx - Context (not currently used, included for consistency)
+ * @param {any} ctx - Context containing runtime configuration
  * @returns {string} YAML content for the composite action
  */
 const versionActionTemplate = (ctx: any) => {
+  // Get Node version from config or use default
+  const nodeVersion = ctx.runtime?.nodeVersion || '24'
+  
   return `name: 'Calculate Version'
 description: 'Calculate semantic version using release-it and conventional commits'
 author: 'Pipecraft'
@@ -65,7 +68,7 @@ inputs:
   node-version:
     description: 'Node.js version to use'
     required: false
-    default: '24'
+    default: '${nodeVersion}'
 
 outputs:
   version:

@@ -164,7 +164,7 @@ export const generate = (ctx: NxPipelineContext) =>
       // Build operations array - only managed jobs
       const operations: PathOperationConfig[] = [
         // Header (name, run-name, on triggers)
-        ...createHeaderOperations({ branchFlow }),
+        ...createHeaderOperations({ branchFlow, runtime: config?.runtime }),
 
         // Changes detection (Nx-enabled)
         createChangesJobOperation({

@@ -10,17 +10,25 @@ import type { PathOperationConfig } from '../../../utils/ast-path-operations.js'
 
 export interface HeaderContext {
   branchFlow: string[]
+  runtime?: {
+    nodeVersion?: string
+    pnpmVersion?: string
+  }
 }
 
 /**
  * Create workflow header operations (name, run-name, on triggers)
  */
 export function createHeaderOperations(ctx: HeaderContext): PathOperationConfig[] {
-  const { branchFlow } = ctx
+  const { branchFlow, runtime } = ctx
   // Provide sensible defaults if branchFlow is invalid
   const validBranchFlow =
     branchFlow && Array.isArray(branchFlow) && branchFlow.length > 0 ? branchFlow : ['main']
   const branchList = validBranchFlow.join(',')
+
+  // Get runtime versions from config or use defaults
+  const nodeVersion = runtime?.nodeVersion || '24'
+  const pnpmVersion = runtime?.pnpmVersion || '10'
 
   return [
     // =============================================================================
@@ -86,13 +94,13 @@ Runtime versions
     {
       path: 'env.NODE_VERSION',
       operation: 'preserve',
-      value: new Scalar('24'),
+      value: new Scalar(nodeVersion),
       required: true
     },
     {
       path: 'env.PNPM_VERSION',
       operation: 'preserve',
-      value: new Scalar('10'),
+      value: new Scalar(pnpmVersion),
       required: true
     },
 
