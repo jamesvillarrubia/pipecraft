@@ -251,13 +251,27 @@ describe('Config Utilities', () => {
         requireConventionalCommits: true,
         initialBranch: 'develop',
         finalBranch: 'main',
-        branchFlow: ['develop'], // Only one branch
+        branchFlow: [], // Empty array
         domains: { api: { paths: ['apps/api/**'], description: 'API' } }
       }
 
       expect(() => validateConfig(config)).toThrow(
-        'branchFlow must be an array with at least 2 branches'
+        'branchFlow must be an array with at least 1 branch'
       )
+    })
+
+    it('should accept single-branch workflows', () => {
+      const config = {
+        ciProvider: 'github',
+        mergeStrategy: 'fast-forward',
+        requireConventionalCommits: true,
+        initialBranch: 'main',
+        finalBranch: 'main',
+        branchFlow: ['main'], // Single-branch workflow
+        domains: { action: { paths: ['**/*'], description: 'GitHub Action' } }
+      }
+
+      expect(() => validateConfig(config)).not.toThrow()
     })
 
     it('should throw error for invalid domains', () => {
