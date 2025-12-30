@@ -1257,7 +1257,7 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
       console.log('\n📍 To update manually:')
       console.log(`   1. Visit: ${repoInfo.owner}/${repoInfo.repo}/settings/actions`)
       console.log(`   2. Enable write permissions and PR creation`)
-      console.log(`   3. Or run 'pipecraft setup-github' again to auto-apply`)
+      console.log(`   3. Or run 'pipecraft setup-github --apply' again to auto-apply`)
       // Still continue to check branch protection
       permissionsAlreadyCorrect = true
     }
@@ -1311,7 +1311,7 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
         console.log('\n📍 To update manually:')
         console.log(`   1. Visit: ${repoInfo.owner}/${repoInfo.repo}/settings`)
         console.log(`   2. Apply the recommended changes listed above`)
-        console.log(`   3. Or run 'pipecraft setup-github' again to auto-apply`)
+        console.log(`   3. Or run 'pipecraft setup-github --apply' again to auto-apply`)
       }
     }
   } catch (error: any) {
