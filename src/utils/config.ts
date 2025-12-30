@@ -79,7 +79,7 @@ export const loadConfig = (configPath?: string) => {
  * Performs comprehensive validation including:
  * - Presence of all required fields
  * - Valid enum values (ciProvider, mergeStrategy)
- * - Branch flow structure (minimum 2 branches)
+ * - Branch flow structure (minimum 1 branch, supports single-branch workflows)
  * - Domain configuration (paths, testable, deployable)
  *
  * Also sets default values for optional domain properties:
