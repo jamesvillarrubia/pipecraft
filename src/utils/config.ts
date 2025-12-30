@@ -79,7 +79,7 @@ export const loadConfig = (configPath?: string) => {
  * Performs comprehensive validation including:
  * - Presence of all required fields
  * - Valid enum values (ciProvider, mergeStrategy)
- * - Branch flow structure (minimum 2 branches)
+ * - Branch flow structure (minimum 1 branch, supports single-branch workflows)
  * - Domain configuration (paths, testable, deployable)
  *
  * Also sets default values for optional domain properties:
@@ -125,10 +125,11 @@ export const validateConfig = (config: any) => {
     throw new Error('mergeStrategy must be either "fast-forward" or "merge"')
   }
 
-  // Validate branchFlow is a non-empty array with at least 2 branches
-  // (minimum trunk-based flow requires at least develop → main)
-  if (!Array.isArray(config.branchFlow) || config.branchFlow.length < 2) {
-    throw new Error('branchFlow must be an array with at least 2 branches')
+  // Validate branchFlow is a non-empty array with at least 1 branch
+  // Single-branch workflows are valid for libraries and actions that don't need promotion
+  // (e.g., main → main for direct publishing from main branch)
+  if (!Array.isArray(config.branchFlow) || config.branchFlow.length < 1) {
+    throw new Error('branchFlow must be an array with at least 1 branch')
   }
 
   // Validate domains structure

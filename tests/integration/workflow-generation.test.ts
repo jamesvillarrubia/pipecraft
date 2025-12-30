@@ -337,4 +337,90 @@ describe('Workflow Generation Integration', () => {
       })
     })
   })
+
+  describe('Single-Branch Workflows', () => {
+    it('should generate valid workflow for single-branch configuration', async () => {
+      await inWorkspace(workspace, () => {
+        execSync('git init', { cwd: workspace, stdio: 'pipe' })
+        execSync('git config user.email "test@test.com"', { cwd: workspace, stdio: 'pipe' })
+        execSync('git config user.name "Test"', { cwd: workspace, stdio: 'pipe' })
+        execSync('git remote add origin https://github.com/test/test.git', {
+          cwd: workspace,
+          stdio: 'pipe'
+        })
+
+        // Create single-branch config (e.g., for GitHub Actions or libraries)
+        const config = createMinimalConfig({
+          initialBranch: 'main',
+          finalBranch: 'main',
+          branchFlow: ['main'],
+          domains: {
+            action: {
+              paths: ['**/*'],
+              description: 'GitHub Action',
+              testable: true,
+              deployable: false
+            }
+          }
+        })
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+
+        // Generate workflows
+        execSync(`node "${cliPath}" generate --skip-checks`, {
+          cwd: workspace,
+          encoding: 'utf-8',
+          stdio: 'pipe',
+          timeout: 10000,
+          env: { ...process.env, CI: 'true' }
+        })
+
+        // Verify pipeline workflow exists
+        assertFileExists('.github/workflows/pipeline.yml')
+
+        const pipeline = readFileSync('.github/workflows/pipeline.yml', 'utf-8')
+
+        // Verify workflow structure is valid
+        expect(pipeline).toContain('name:')
+        expect(pipeline).toContain('jobs:')
+
+        // Verify promote job has valid condition (should be 'false' for single-branch)
+        expect(pipeline).toContain('promote:')
+        
+        // The promote job should have a condition with 'false' to skip it
+        // Check that there's no empty condition like '&& ()'
+        expect(pipeline).not.toContain('&& ()')
+        expect(pipeline).toContain('if: ${{ always() &&')
+        
+        // The promote job condition should contain 'false' for single-branch workflows
+        const promoteSection = pipeline.substring(pipeline.indexOf('promote:'))
+        expect(promoteSection).toContain('false')
+      })
+    })
+
+    it('should validate single-branch configuration', async () => {
+      await inWorkspace(workspace, () => {
+        execSync('git init', { cwd: workspace, stdio: 'pipe' })
+        execSync('git remote add origin https://github.com/test/test.git', {
+          cwd: workspace,
+          stdio: 'pipe'
+        })
+
+        const config = createMinimalConfig({
+          initialBranch: 'main',
+          finalBranch: 'main',
+          branchFlow: ['main']
+        })
+        writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+
+        // Validate should succeed
+        const result = execSync(`node "${cliPath}" validate`, {
+          cwd: workspace,
+          encoding: 'utf-8',
+          stdio: 'pipe'
+        })
+
+        expect(result).toContain('Configuration is valid')
+      })
+    })
+  })
 })
