@@ -44,6 +44,13 @@ const config: Config = {
 
   headTags: [
     {
+      tagName: 'meta',
+      attributes: {
+        name: 'algolia-site-verification',
+        content: '3FB982517D1A21CD'
+      }
+    },
+    {
       tagName: 'link',
       attributes: {
         rel: 'apple-touch-icon',
