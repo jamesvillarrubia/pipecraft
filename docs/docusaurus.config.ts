@@ -38,6 +38,7 @@ const config: Config = {
   // Documentation site configuration
   url: 'https://pipecraft.thecraftlab.dev',
   baseUrl: '/',
+  trailingSlash: false,
 
   organizationName: 'jamesvillarrubia',
   projectName: 'pipecraft',
