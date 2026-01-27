@@ -208,8 +208,8 @@ const config: Config = {
     },
     algolia: {
       // You'll need to add Algolia later for search
-      appId: 'DCG4CKGMNT',
-      apiKey: 'adf1f82db72b5f1f360684b19d4ea648',
+      appId: 'JPOBW2G16D',
+      apiKey: 'fad562cc189c49a9bde177e40dc9747d',
       indexName: 'pipecraft',
       contextualSearch: true
     }
