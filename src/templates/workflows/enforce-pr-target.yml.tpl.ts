@@ -30,6 +30,14 @@
 import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 
 /**
+ * Repo-relative path this template writes to.
+ *
+ * Exported so the generator can clear a stale file when the flow collapses to a
+ * single branch and the workflow is no longer generated.
+ */
+export const ENFORCE_PR_TARGET_PATH = '.github/workflows/enforce-pr-target.yml'
+
+/**
  * Generates the enforce-pr-target.yml workflow file.
  *
  * Creates a workflow that enforces PRs target the initial branch (develop)
@@ -92,5 +100,5 @@ jobs:
         run: |
           echo "✅ PR correctly targets '${initialBranch}' branch"
 `
-    }, toFile('.github/workflows/enforce-pr-target.yml'))
+    }, toFile(ENFORCE_PR_TARGET_PATH))
   )

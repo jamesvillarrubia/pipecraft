@@ -35,11 +35,13 @@ describe('VersionManager', () => {
     it('should generate valid release-it configuration', () => {
       const configString = versionManager.generateReleaseItConfig()
 
+      // The config is emitted as JS source (not JSON) so the whatBump function survives,
+      // so assert on the keys themselves rather than on JSON quoting.
       expect(configString).toContain('module.exports =')
-      expect(configString).toContain('"git"')
-      expect(configString).toContain('"github"')
-      expect(configString).toContain('"npm"')
-      expect(configString).toContain('"plugins"')
+      expect(configString).toContain('git')
+      expect(configString).toContain('github')
+      expect(configString).toContain('npm')
+      expect(configString).toContain('plugins')
     })
 
     it('should generate config with custom bump rules', () => {
@@ -60,9 +62,11 @@ describe('VersionManager', () => {
       const manager = new VersionManager(config)
       const configString = manager.generateReleaseItConfig()
 
-      // Just verify the config was generated successfully
       expect(configString).toContain('module.exports =')
-      expect(configString).toContain('"@release-it/conventional-changelog"')
+      expect(configString).toContain('@release-it/conventional-changelog')
+      // The rules must actually reach the file — see versioning-bump-rules.test.ts for
+      // the semver-vs-versioning precedence this fell back to here.
+      expect(configString).toMatch(/docs:\s*'patch'/)
     })
   })
 

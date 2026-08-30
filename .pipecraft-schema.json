@@ -69,7 +69,7 @@
         }
       ],
       "default": false,
-      "description": "Auto-promote configuration for branch promotions. When enabled, code is automatically promoted (fast-forwarded) to the next branch after checks pass. When disabled, a PR is created for manual review.",
+      "description": "Controls how a promotion PR is merged, not whether one is opened. PipeCraft opens the promotion PR either way: true merges it automatically once checks pass, false leaves it for a human to merge. No value here stops promotion PRs from being created — to stop promoting to a branch at all, remove it from branchFlow.",
       "examples": [true, { "staging": true, "main": false }]
     },
     "mergeMethod": {

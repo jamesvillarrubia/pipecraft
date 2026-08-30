@@ -42,7 +42,8 @@
  */
 
 import { loadJSON, type PinionContext, renderTemplate, toFile, when } from '@featherscloud/pinion'
-import { existsSync, readFileSync } from 'fs'
+import { existsSync, readFileSync, rmSync } from 'fs'
+import { join } from 'path'
 import { parse } from 'yaml'
 import { generate as generateVersionWorkflow } from '../templates/actions/calculate-version.yml.tpl.js'
 import { generate as generateCreatePRWorkflow } from '../templates/actions/create-pr.yml.tpl.js'
@@ -53,7 +54,10 @@ import { generate as generateChangesWorkflow } from '../templates/actions/detect
 import { generate as generateBranchWorkflow } from '../templates/actions/manage-branch.yml.tpl.js'
 import { generate as generatePromoteBranchWorkflow } from '../templates/actions/promote-branch.yml.tpl.js'
 import { generate as generateReleaseItConfig } from '../templates/release-it.cjs.tpl.js'
-import { generate as generateEnforcePRTarget } from '../templates/workflows/enforce-pr-target.yml.tpl.js'
+import {
+  ENFORCE_PR_TARGET_PATH,
+  generate as generateEnforcePRTarget
+} from '../templates/workflows/enforce-pr-target.yml.tpl.js'
 import { generate as generatePipeline } from '../templates/workflows/pipeline.yml.tpl.js'
 import { generate as generatePRTitleCheck } from '../templates/workflows/pr-title-check.yml.tpl.js'
 import { PipecraftConfig } from '../types/index.js'
@@ -185,7 +189,25 @@ export const generate = (
       return generatePipeline(ctx)
     })
     .then(ctx => {
-      // Generate the enforce PR target workflow
+      // Generate the enforce PR target workflow.
+      //
+      // The rule is "PRs must target initialBranch, not finalBranch". In a single-branch
+      // flow those are the same branch, so the reject and confirm steps would carry the
+      // same condition — the reject step runs first and fails every PR to the only branch
+      // there is. There is nothing to enforce, so skip the workflow entirely.
+      const branchFlow = (ctx as any).branchFlow ?? []
+      if (branchFlow.length <= 1) {
+        // A file left over from a previous multi-branch config would still reject every
+        // PR, so clear it rather than just declining to rewrite it.
+        const stale = join((ctx as any).cwd ?? process.cwd(), ENFORCE_PR_TARGET_PATH)
+        if (existsSync(stale)) {
+          rmSync(stale)
+          logger.info(
+            `Removed ${ENFORCE_PR_TARGET_PATH} (single-branch flow has nothing to enforce)`
+          )
+        }
+        return ctx
+      }
       return generateEnforcePRTarget(ctx)
     })
     .then(ctx => {
