@@ -28,6 +28,10 @@
 
 import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 
+import { fullyManagedHeader } from './shared/fully-managed-header.js'
+
+const TITLE_CHECK_HEADER = fullyManagedHeader(['initialBranch', 'semver.bumpRules'])
+
 /**
  * Generates the pr-title-check.yml workflow file.
  *
@@ -91,7 +95,7 @@ export const generate = (ctx: PinionContext) =>
             revert
             major`
 
-        return `name: "PR Title Format Check"
+        return `${TITLE_CHECK_HEADER}name: "PR Title Format Check"
 
 on:
   pull_request:
