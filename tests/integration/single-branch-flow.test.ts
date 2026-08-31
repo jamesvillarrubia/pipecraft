@@ -13,12 +13,35 @@
  *
  * The rest of the pipeline must keep working — that is what these tests pin down.
  */
+import type { PinionContext } from '@featherscloud/pinion'
 import { execSync } from 'child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { generate as generateWorkflows } from '../../src/generators/workflows.tpl.js'
+import type { PipecraftConfig } from '../../src/types/index.js'
 import { createMinimalConfig } from '../helpers/fixtures.js'
 import { createWorkspaceWithCleanup, inWorkspace } from '../helpers/workspace.js'
+
+/** Minimal Pinion context for calling the generator in-process. */
+function generatorContext(
+  workspace: string,
+  config: PipecraftConfig
+): PinionContext & { config: PipecraftConfig } {
+  return {
+    cwd: workspace,
+    argv: ['generate'],
+    pinion: {
+      logger: { ...console, notice: console.log },
+      prompt: async () => ({}),
+      cwd: workspace,
+      force: true,
+      trace: [],
+      exec: async () => 0
+    },
+    config
+  } as PinionContext & { config: PipecraftConfig }
+}
 
 const cliPath = join(__dirname, '..', '..', 'dist', 'cli', 'index.js')
 
@@ -123,6 +146,41 @@ describe('single-branch flow', () => {
 
       // promote is kept in the graph but must be unreachable in a single-branch flow.
       expect(yaml).toContain('(false)')
+    })
+  })
+
+  // The tests above drive dist/cli/index.js as a subprocess, which is the closest thing to
+  // how a consumer runs it — but coverage instrumentation cannot see into that process.
+  // These call the generator directly so the branch is exercised in-process too.
+  describe('called in-process', () => {
+    const enforceRel = '.github/workflows/enforce-pr-target.yml'
+
+    it('skips enforce-pr-target for a single-branch flow', async () => {
+      mkdirSync(join(workspace, '.github', 'workflows'), { recursive: true })
+
+      await generateWorkflows(generatorContext(workspace, singleBranchConfig()))
+
+      expect(existsSync(join(workspace, enforceRel))).toBe(false)
+      // The pipeline itself must still be produced.
+      expect(existsSync(join(workspace, '.github/workflows/pipeline.yml'))).toBe(true)
+    })
+
+    it('deletes a stale enforce-pr-target left by a multi-branch config', async () => {
+      const enforceAbs = join(workspace, enforceRel)
+      mkdirSync(join(workspace, '.github', 'workflows'), { recursive: true })
+      writeFileSync(enforceAbs, 'name: stale\n')
+
+      await generateWorkflows(generatorContext(workspace, singleBranchConfig()))
+
+      expect(existsSync(enforceAbs)).toBe(false)
+    })
+
+    it('still writes enforce-pr-target for a multi-branch flow', async () => {
+      mkdirSync(join(workspace, '.github', 'workflows'), { recursive: true })
+
+      await generateWorkflows(generatorContext(workspace, createMinimalConfig()))
+
+      expect(existsSync(join(workspace, enforceRel))).toBe(true)
     })
   })
 
