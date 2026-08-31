@@ -2,6 +2,38 @@
 
 Repo-specific failures and what would have prevented them. Newest first.
 
+## 2026-08-31 — A "skip if it exists" write hid both a product bug and a test leak for months
+
+**What happened:** Pinion skips writing any file that already exists, so `generate` never
+updated `enforce-pr-target.yml` or `pr-title-check.yml` after the first run. Renaming
+`finalBranch` left the old branch enforced; adding a commit type to `semver.bumpRules` left
+PR titles using it rejected. `generate` printed "Skipped file" and exited 0, so nothing
+looked wrong. This repo's own `enforce-pr-target.yml` had silently missed the trigger
+scoping and promote-branch guard added to the template in #480.
+
+Rendering those two templates with `{ force: true }` then exposed a second bug hiding behind
+the first: `tests/unit/job-order.test.ts` ran the CLI with `cwd: process.cwd()`, the repo
+root. It redirected the pipeline with `--output-pipeline`, but the auxiliary workflows are
+written relative to cwd, so they landed in this repo's own `.github/workflows`. Previously
+those writes were skipped and invisible; with force they clobbered the real files, and the
+corrupted state then failed three unrelated tests.
+
+**Root cause:** A no-op that reports success is indistinguishable from work. "Skipped file"
+read as "nothing to do" rather than "refused to update", and because the write never landed,
+the test that was aiming at the repo root looked harmless.
+
+**Consequence:** Two silently wrong generated workflows shipped to every consumer, plus a
+stale workflow in this repo. I also first "fixed" the single-branch case by deleting the
+file, which was really a workaround for the skip — it would have made `generate` destructive
+for no reason.
+
+**Prevention:** When a generated file must reflect config, prove it _changes_: generate,
+edit the config, regenerate, and assert the new value is present and the old one is gone.
+`tests/integration/regenerate-managed-workflows.test.ts` does this for both files. When a
+test shells out to the CLI, pass a temp `cwd` — never `process.cwd()` — because only
+`pipeline.yml` honours an output override; everything else is cwd-relative. After changing
+anything about how files are written, run the suite and check `git status` is clean.
+
 ## 2026-08-30 — Called the e2e sandbox repos "real repos" and skipped the one test that covered the change
 
 **What happened:** After fixing single-branch flow handling, I declined to run

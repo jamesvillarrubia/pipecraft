@@ -59,25 +59,26 @@ export const generate = (ctx: PinionContext) =>
       return ctx
     }
 
-    return renderTemplate((ctx: any) => {
-      // Contributor PRs land on the initial branch; scope the trigger there so PipeCraft's
-      // own promotion PRs (which target downstream branches) never spawn this check.
-      const initialBranch = ctx.initialBranch || ctx.config?.initialBranch || 'develop'
-      // Get all commit types from bumpRules config
-      const bumpRules = ctx.config?.semver?.bumpRules || ctx.config?.versioning?.bumpRules || {}
-      const allTypes = Object.keys(bumpRules)
+    return renderTemplate(
+      (ctx: any) => {
+        // Contributor PRs land on the initial branch; scope the trigger there so PipeCraft's
+        // own promotion PRs (which target downstream branches) never spawn this check.
+        const initialBranch = ctx.initialBranch || ctx.config?.initialBranch || 'develop'
+        // Get all commit types from bumpRules config
+        const bumpRules = ctx.config?.semver?.bumpRules || ctx.config?.versioning?.bumpRules || {}
+        const allTypes = Object.keys(bumpRules)
 
-      // Get major bump types for breaking change detection
-      const majorTypes = Object.entries(bumpRules)
-        .filter(([_, level]) => level === 'major')
-        .map(([type, _]) => type)
+        // Get major bump types for breaking change detection
+        const majorTypes = Object.entries(bumpRules)
+          .filter(([_, level]) => level === 'major')
+          .map(([type, _]) => type)
 
-      // Build the types list for the PR title validator
-      // Use config types, or fall back to common conventional commit types
-      const typesList =
-        allTypes.length > 0
-          ? allTypes.map(type => `            ${type}`).join('\n')
-          : `            fix
+        // Build the types list for the PR title validator
+        // Use config types, or fall back to common conventional commit types
+        const typesList =
+          allTypes.length > 0
+            ? allTypes.map(type => `            ${type}`).join('\n')
+            : `            fix
             feat
             docs
             style
@@ -90,11 +91,11 @@ export const generate = (ctx: PinionContext) =>
             revert
             major`
 
-      // Build regex pattern for detecting major bump types
-      // Format: ^(major|breaking|othermajortype):
-      const majorTypesPattern = majorTypes.length > 0 ? `^(${majorTypes.join('|')}):` : '^major:'
+        // Build regex pattern for detecting major bump types
+        // Format: ^(major|breaking|othermajortype):
+        const majorTypesPattern = majorTypes.length > 0 ? `^(${majorTypes.join('|')}):` : '^major:'
 
-      return `name: "PR Title Format Check"
+        return `name: "PR Title Format Check"
 
 on:
   pull_request:
@@ -217,5 +218,11 @@ ${typesList}
         with:
           header: breaking-change-warning
           delete: true`
-    }, toFile('.github/workflows/pr-title-check.yml'))(ctx)
+      },
+      toFile('.github/workflows/pr-title-check.yml'),
+      // Fully generated, no user-editable regions. Without force, Pinion skips the file once
+      // it exists, so the allowed commit types baked in at first generation never change —
+      // adding a type to semver.bumpRules left this check rejecting titles that use it.
+      { force: true }
+    )(ctx)
   })

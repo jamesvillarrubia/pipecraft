@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from 'fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs'
+import { tmpdir } from 'os'
 import { join } from 'path'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { parseDocument } from 'yaml'
@@ -72,20 +73,31 @@ describe('Job Order Preservation', () => {
   beforeAll(async () => {
     // Generate the test pipeline using the CLI
     const { execSync } = await import('child_process')
+    const repoRoot = process.cwd()
+    const cliPath = join(repoRoot, 'dist/cli/index.js')
+
+    // --output-pipeline redirects pipeline.yml, but the auxiliary workflows
+    // (enforce-pr-target.yml, pr-title-check.yml) are written relative to cwd. Running in
+    // the repo root therefore wrote them into this repo's own .github/workflows. That went
+    // unnoticed while Pinion skipped files that already existed; now that those templates
+    // render with force, it would clobber them on every test run. Run in a temp directory —
+    // the fixture paths above are absolute, so they still resolve.
+    const sandbox = mkdtempSync(join(tmpdir(), 'pipecraft-job-order-'))
 
     try {
       // Try to use built CLI if pipecraft isn't in PATH
-      const cliCommand = existsSync(join(process.cwd(), 'dist/cli/index.js'))
-        ? `node dist/cli/index.js generate --config ${testFixtures.config} --pipeline ${testFixtures.original} --output-pipeline ${testFixtures.generated}`
-        : `pipecraft generate --config ${testFixtures.config} --pipeline ${testFixtures.original} --output-pipeline ${testFixtures.generated}`
+      const bin = existsSync(cliPath) ? `node "${cliPath}"` : 'pipecraft'
+      const cliCommand = `${bin} generate --config ${testFixtures.config} --pipeline ${testFixtures.original} --output-pipeline ${testFixtures.generated}`
 
       execSync(cliCommand, {
-        cwd: process.cwd(),
+        cwd: sandbox,
         stdio: 'pipe'
       })
     } catch (error) {
       // Silently continue - tests will use existing generated file or skip if not available
       // This is expected when CLI isn't installed globally or dist isn't built
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true })
     }
   })
 

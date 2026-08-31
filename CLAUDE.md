@@ -62,9 +62,14 @@ Never answer "single-branch isn't supported". What is true:
   one branch.
 - `promote` — deliberately emitted with a `(false)` condition and an empty `targetBranch`.
   Dead job by design; `tests/snapshots/workflow-snapshots.test.ts` pins this.
-- `enforce-pr-target.yml` — **not generated at all.** Its rule is "target initialBranch, not
-  finalBranch", which is self-contradictory when they are the same branch. Regeneration also
-  deletes a stale copy left by a previous multi-branch config.
+- `enforce-pr-target.yml` — still generated, but as a **confirm-only workflow with no reject
+  step.** Its normal rule is "target initialBranch, not finalBranch", which names the same
+  branch twice when they are equal; emitting both steps gives them an identical `if`, so the
+  reject step runs first and fails every PR. The file is kept rather than skipped so that a
+  branch protection rule requiring the `check-pr-target` status still gets a result.
+
+`generate` never deletes. Files are repaired by being rewritten — see the note on `force`
+below.
 
 ## Generated files that need a sync step
 
@@ -75,6 +80,20 @@ Never answer "single-branch isn't supported". What is true:
 pnpm build && pnpm sync-actions        # regenerate
 pnpm sync-actions:check                # CI-equivalent verification
 ```
+
+## Fully-generated workflows render with `force`
+
+Pinion **skips writing any file that already exists**. For a file rendered whole from config
+that means it is written once and then never updated — `generate` prints "Skipped file" and
+exits 0, so it looks like success.
+
+`enforce-pr-target.yml` and `pr-title-check.yml` therefore pass `{ force: true }` to
+`renderTemplate`. They have no user-editable regions, unlike `pipeline.yml`, which merges
+into existing YAML to preserve custom jobs. Without force, renaming `finalBranch` left the
+old name enforced and adding a commit type left `pr-title-check` rejecting it.
+
+If you add another fully-generated workflow, pass `{ force: true }` and cover it in
+`tests/integration/regenerate-managed-workflows.test.ts`.
 
 ## Config keys live in three places
 
@@ -119,7 +138,19 @@ is meant to be executable, evaluate it and assert on the resulting object.
 Integration tests shell out to `dist/cli/index.js`, so **`pnpm build` before running them**
 or you are testing stale output.
 
-Use isolated workspaces (`tests/helpers/workspace.ts`), never a shared `TEST_DIR`.
+Use isolated workspaces (`tests/helpers/workspace.ts`), never a shared `TEST_DIR`. When a
+test shells out to the CLI, always pass a temp `cwd` — **never `process.cwd()`**. Only
+`pipeline.yml` honours an output override (`--output-pipeline`); the auxiliary workflows are
+always written relative to cwd, so a test run from the repo root overwrites this repo's own
+`.github/workflows`.
+
+After changing anything about how files are written, run the suite and confirm
+`git status` is clean. A test that quietly wrote into the repo went unnoticed for as long as
+those writes were being skipped.
+
+For a generated file that must track config, assert that it **changes**: generate, edit the
+config, regenerate, then check the new value is present _and_ the old one is gone. See
+`tests/integration/regenerate-managed-workflows.test.ts`.
 
 ## Reserved job names
 
