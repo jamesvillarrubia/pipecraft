@@ -76,6 +76,30 @@ export const promoteBranchActionTemplate = (ctx: any) => {
     runs:
       using: 'composite'
       steps:
+        - name: Validate Inputs
+          shell: bash
+          run: |
+            # GitHub does not enforce 'required: true' for composite action inputs, so an
+            # expression that resolves to empty arrives here silently. Left unchecked it is
+            # substituted into the temp branch name and 'gh pr create --base', which fails
+            # later with a confusing message about a malformed ref. Fail fast instead.
+            TARGET="\${{ inputs.targetBranch }}"
+            TARGET="\$(echo "\$TARGET" | xargs)"
+
+            if [ -z "\$TARGET" ]; then
+              echo "::error::promote-branch requires a non-empty 'targetBranch' input."
+              echo "::error::Received an empty value. There is no branch to promote to."
+              echo ""
+              echo "This usually means one of:"
+              echo "  - The branch flow has a single branch, so there is nothing to promote."
+              echo "    Remove the promote step rather than calling it with an empty target."
+              echo "  - The expression feeding targetBranch resolved to empty (typo, or a"
+              echo "    'needs' output that was never set)."
+              exit 1
+            fi
+
+            echo "✅ Promoting to '\$TARGET'"
+
         - name: Checkout Code
           uses: actions/checkout@v5
           with:

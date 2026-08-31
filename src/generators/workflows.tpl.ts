@@ -185,7 +185,8 @@ export const generate = (
       return generatePipeline(ctx)
     })
     .then(ctx => {
-      // Generate the enforce PR target workflow
+      // Generate the enforce PR target workflow. The template adapts to a single-branch
+      // flow on its own — see enforce-pr-target.yml.tpl.ts.
       return generateEnforcePRTarget(ctx)
     })
     .then(ctx => {

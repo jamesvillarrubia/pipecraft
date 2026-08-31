@@ -77,7 +77,36 @@ export class VersionManager {
    * ```
    */
   generateReleaseItConfig(): string {
-    const defaultConfig = {
+    // Bump rules live under `semver` in the schema. `versioning.bumpRules` is the
+    // deprecated spelling and loses to it. This is the same precedence the release-it
+    // template and the pr-title-check template use — reading only `versioning` here meant
+    // a project configured the way the schema requires got none of its rules.
+    const userBumpRules = {
+      ...(this.config.versioning?.bumpRules ?? {}),
+      ...(this.config.semver?.bumpRules ?? {})
+    }
+
+    // Keep these in step with src/templates/release-it.cjs.tpl.ts.
+    const baseDefaults: Record<string, string> = {
+      test: 'ignore',
+      build: 'ignore',
+      ci: 'patch',
+      docs: 'patch',
+      chore: 'minor',
+      style: 'patch',
+      fix: 'patch',
+      perf: 'patch',
+      refactor: 'patch',
+      feat: 'minor',
+      major: 'major'
+    }
+
+    const mergedRules = { ...baseDefaults, ...userBumpRules }
+    const rulesEntries = Object.entries(mergedRules)
+      .map(([type, level]) => `  ${type}: '${level}'`)
+      .join(',\n')
+
+    const staticConfig = {
       git: {
         requireCleanWorkingDir: false,
         commit: false,
@@ -94,53 +123,55 @@ export class VersionManager {
       },
       hooks: {
         'after:release': 'echo ${version} > .release-version'
-      },
-      plugins: {
-        '@release-it/conventional-changelog': {
-          whatBump: (commits: any[], options: any) => {
-            // Import DEFAULT_PREFIXES from the release-it config
-            const { DEFAULT_PREFIXES } = require('../../.release-it.cjs')
-            const defaults = DEFAULT_PREFIXES
-
-            // Merge with user-defined bump rules
-            const bumpRules = { ...defaults, ...this.config.versioning?.bumpRules }
-
-            let breakings = 0
-            let features = 0
-            const levelSet = ['major', 'minor', 'patch', 'ignore']
-
-            // eslint-disable-next-line prefer-spread
-            const level = Math.min.apply(
-              Math,
-              commits.map(commit => {
-                let level = levelSet.indexOf(
-                  bumpRules[commit.type as keyof typeof bumpRules] || 'ignore'
-                )
-                level = level < 0 ? 3 : level
-
-                if (commit.notes.length > 0) {
-                  breakings += commit.notes.length
-                }
-                if (commit.type === 'feat') {
-                  features += 1
-                }
-                return level
-              })
-            )
-
-            return {
-              level: level,
-              reason:
-                breakings === 1
-                  ? `There is ${breakings} BREAKING CHANGE and ${features} features`
-                  : `There are ${breakings} BREAKING CHANGES and ${features} features`
-            }
-          }
-        }
       }
     }
 
-    return `module.exports = ${JSON.stringify(defaultConfig, null, 2)}`
+    // whatBump has to be emitted as source. Serialising the whole config with
+    // JSON.stringify silently dropped it — and it is the only thing that reads the bump
+    // rules, so the generated file ignored them entirely.
+    return `const DEFAULT_PREFIXES = {
+${rulesEntries}
+}
+
+module.exports = {
+  ...${JSON.stringify(staticConfig, null, 2).replace(/\n/g, '\n  ')},
+  plugins: {
+    '@release-it/conventional-changelog': {
+      whatBump: commits => {
+        const bumpRules = DEFAULT_PREFIXES
+        let breakings = 0
+        let features = 0
+        const levelSet = ['major', 'minor', 'patch', 'ignore']
+
+        const level = Math.min(
+          ...commits.map(commit => {
+            let level = levelSet.indexOf(bumpRules[commit.type] || 'ignore')
+            level = level < 0 ? 3 : level
+
+            if (commit.notes.length > 0) {
+              breakings += commit.notes.length
+            }
+            if (commit.type === 'feat') {
+              features += 1
+            }
+            return level
+          })
+        )
+
+        return {
+          level: level,
+          reason:
+            breakings === 1
+              ? \`There is \${breakings} BREAKING CHANGE and \${features} features\`
+              : \`There are \${breakings} BREAKING CHANGES and \${features} features\`
+        }
+      }
+    }
+  }
+}
+
+module.exports.DEFAULT_PREFIXES = DEFAULT_PREFIXES
+`
   }
 
   /**

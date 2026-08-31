@@ -80,6 +80,11 @@ feature → develop → staging → main
 - When `false`, PRs require manual approval
 - Typically used for automated promote-to-staging, manual promote-to-production
 
+`autoPromote` controls how the promotion PR is **merged**, not whether one is
+**opened**. The PR is created either way — setting `false` leaves it waiting for a
+human rather than suppressing it. If you want no promotion PRs against a branch at
+all, remove that branch from `branchFlow`.
+
 ### Domain-Based Testing
 
 PipeCraft implements path-based change detection for monorepo support:

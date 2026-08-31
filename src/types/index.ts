@@ -156,9 +156,15 @@ export interface PipecraftConfig {
    * - boolean: Enable/disable auto-promotion for all branches
    * - Record: Per-branch auto-promote settings (e.g., `{ staging: true, main: false }`)
    *
-   * When enabled, code is automatically promoted (fast-forwarded) to the next branch
-   * in the flow after checks pass. When disabled, a PR is created for manual review
-   * and the promotion happens when the PR is merged.
+   * This controls how a promotion PR is *merged*, not whether one is *opened*.
+   * PipeCraft opens the promotion PR either way:
+   *
+   * - `true`  — the PR is opened and merged automatically once checks pass.
+   * - `false` — the PR is opened and left for a human to merge.
+   *
+   * There is no value here that stops promotion PRs from being created. To stop
+   * promoting to a branch at all, remove it from `branchFlow`.
+   *
    * @default false
    */
   autoPromote?: boolean | Record<string, boolean>
