@@ -91,10 +91,6 @@ export const generate = (ctx: PinionContext) =>
             revert
             major`
 
-        // Build regex pattern for detecting major bump types
-        // Format: ^(major|breaking|othermajortype):
-        const majorTypesPattern = majorTypes.length > 0 ? `^(${majorTypes.join('|')}):` : '^major:'
-
         return `name: "PR Title Format Check"
 
 on:
