@@ -109,13 +109,31 @@ Adding or changing a config field means touching all three, or `tsc` /
 
 - Location: `semver.bumpRules` is what the schema requires. `versioning.bumpRules` is
   deprecated and must lose to it. Resolve as `{...versioning, ...semver}` everywhere.
-- Generator: **`src/templates/release-it.cjs.tpl.ts` is the live path** used by `generate`.
-  `VersionManager.generateReleaseItConfig()` in `src/utils/versioning.ts` is _not_ wired into
-  `generate` — it is only exercised by unit tests. Keep the `baseDefaults` in the two files
-  in step, and confirm which path a reported bug actually hits before changing code.
-- The two are still out of step on empty commits. The live template returns
-  `{ level: null }`; `VersionManager` uses bare `Math.min(...)`, which gives `Infinity`.
-  That gap is issue #287 and is unfixed.
+- Generator: there are **two**, and both reach users. `src/templates/release-it.cjs.tpl.ts`
+  is what `generate` renders. `VersionManager.generateReleaseItConfig()` in
+  `src/utils/versioning.ts` is called by `setupVersionManagement()` (`versioning.ts`), which
+  `pipecraft init --with-versioning` invokes (`src/cli/index.ts`) and which does
+  `writeFileSync('.release-it.cjs', …)`. Whichever command a user ran last wins.
+  Confirm which path a reported bug actually hits before changing code, and keep the
+  `baseDefaults` in the two files in step.
+- They still diverge on `github.release` (template `true` with a `releaseName`, VersionManager
+  `false`) and on `options.preset.types` (template merges them, VersionManager ignores
+  `options`). Unifying is a behaviour change, not a refactor.
+  `tests/integration/release-it-config-parity.test.ts` pins the behaviours they must share.
+
+### `whatBump`: config beats preset
+
+`DEFAULT_PREFIXES` in the generated `.release-it.cjs` is `baseDefaults` merged with the
+user's `semver.bumpRules`, so it is the stated intent. The preset from
+conventional-changelog only fills types the config never mentions:
+
+```js
+types = Object.assign({}, presetTypes, DEFAULT_PREFIXES) // config last, so config wins
+```
+
+Merged the other way round, a preset silently overrode configured rules — a `docs` commit
+bumped minor when the config said patch. Same failure as #483: a configured value dropped
+before it reached the consumer.
 
 ## Check the tracker before rewriting
 
