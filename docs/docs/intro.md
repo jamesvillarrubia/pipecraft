@@ -2,7 +2,6 @@
 sidebar_position: 1
 ---
 
-<!-- Pipeline validation test - triggers docs domain -->
 <!-- Testing test-docs job execution -->
 
 # Getting Started
