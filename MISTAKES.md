@@ -2,6 +2,34 @@
 
 Repo-specific failures and what would have prevented them. Newest first.
 
+## 2026-08-31 — Rewrote generateReleaseItConfig while an open issue described a third bug in it
+
+**What happened:** I rewrote `VersionManager.generateReleaseItConfig()` in v0.43.2 to fix
+two bugs: it read `versioning.bumpRules` instead of `semver.bumpRules`, and
+`JSON.stringify` dropped its `whatBump` function. Open issue #287 describes a third bug in
+the same function. `Math.min.apply(Math, commits.map(...))` returns `Infinity` when
+`commits` is empty, which is an invalid bump level. My rewrite carried that straight over
+as `Math.min(...commits.map(...))`.
+
+`src/templates/release-it.cjs.tpl.ts`, the path `generate` actually uses, handles this
+correctly and returns `{ level: null, reason: 'No commits found - skipping release' }`. It
+also quotes the `'after:release'` hook key, which is #287's other half. So the shipped
+config is fine and only the `VersionManager` copy carries the gap — the exact
+inconsistency between the two generators that I had rewritten the method to remove.
+
+**Root cause:** I scoped the work to the bug I was handed and never asked what was already
+known about this code. One `gh issue list` would have surfaced #287. I ran it only when
+James asked about open issues, after two releases had shipped.
+
+**Consequence:** v0.43.2 went out with a filed, one-line bug still sitting in a function I
+had just rewritten line by line. Closing it needs another PR and another release cascade.
+
+**Prevention:** Before rewriting a function here, search the tracker for its name and its
+file. This repo has 27 open issues, several describing exact defects in generators and
+composite actions, so the odds that the thing you are touching is already filed are high.
+Note also that a bug in `VersionManager` is invisible through `generate` — see the note in
+CLAUDE.md about which release-it generator is live.
+
 ## 2026-08-31 — A "skip if it exists" write hid both a product bug and a test leak for months
 
 **What happened:** Pinion skips writing any file that already exists, so `generate` never
