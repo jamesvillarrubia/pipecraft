@@ -61,10 +61,40 @@ export const ENFORCE_PR_TARGET_PATH = '.github/workflows/enforce-pr-target.yml'
  */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx).then(
-    renderTemplate((ctx: any) => {
-      const { initialBranch = 'develop', finalBranch = 'main' } = ctx
+    renderTemplate(
+      (ctx: any) => {
+        const { initialBranch = 'develop', finalBranch = 'main' } = ctx
 
-      return `name: Enforce PR Target Branch
+        // In a single-branch flow the rule "target initialBranch, not finalBranch" names the
+        // same branch twice. Emitting both steps gives them an identical `if`, so the reject
+        // step runs first and fails every PR to the only branch there is.
+        //
+        // Emit the confirm step alone instead of skipping the file. Regenerating then repairs
+        // a workflow left over from a previous multi-branch config, and any branch protection
+        // rule requiring the `check-pr-target` status keeps getting a result — deleting the
+        // workflow would leave that check permanently unreported and block every PR.
+        if (initialBranch === finalBranch) {
+          return `name: Enforce PR Target Branch
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    # Single-branch flow: '${finalBranch}' is the only branch, so it is the only valid target.
+    branches:
+      - ${finalBranch}
+
+jobs:
+  check-pr-target:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm correct target
+        run: |
+          echo "✅ PR correctly targets '${initialBranch}' branch"
+          echo "Single-branch flow: '${initialBranch}' is the only branch in the flow."
+`
+        }
+
+        return `name: Enforce PR Target Branch
 
 on:
   pull_request:
@@ -100,5 +130,13 @@ jobs:
         run: |
           echo "✅ PR correctly targets '${initialBranch}' branch"
 `
-    }, toFile(ENFORCE_PR_TARGET_PATH))
+      },
+      toFile(ENFORCE_PR_TARGET_PATH),
+      // This workflow is entirely generated — unlike pipeline.yml it has no user-editable
+      // regions to preserve. Without force, Pinion skips the file whenever it already
+      // exists, so the branches baked into it never change: renaming finalBranch left the
+      // old name enforced, and collapsing to a single-branch flow left the rejecting
+      // version in place, failing every PR.
+      { force: true }
+    )
   )

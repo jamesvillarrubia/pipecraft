@@ -3,9 +3,18 @@ name: Enforce PR Target Branch
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
+    # Only PRs targeting the final branch matter here (the rule rejects human PRs to it).
+    # Scoping the trigger keeps PipeCraft's own promotion PRs to intermediate branches from
+    # spawning approval-gated runs at all; the job-level guard below covers promotion PRs
+    # that do target the final branch.
+    branches:
+      - main
 
 jobs:
   check-pr-target:
+    # Skip PipeCraft's own promotion PRs (pipecraft-promote/*). They legitimately target
+    # downstream/final branches as part of the flow; this guard is for human-authored PRs.
+    if: ${{ !startsWith(github.head_ref, 'pipecraft-promote/') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check PR base branch

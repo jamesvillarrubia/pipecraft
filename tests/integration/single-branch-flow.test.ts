@@ -76,20 +76,29 @@ describe('single-branch flow', () => {
   })
   afterEach(() => cleanup())
 
-  it('does not generate enforce-pr-target.yml when the flow has one branch', async () => {
+  it('generates an enforce-pr-target.yml that passes for a single-branch flow', async () => {
     await inWorkspace(workspace, () => {
       generateInto(workspace, singleBranchConfig())
+      const enforcePath = join(workspace, '.github/workflows/enforce-pr-target.yml')
 
-      expect(existsSync(join(workspace, '.github/workflows/enforce-pr-target.yml'))).toBe(false)
+      // The file is still written — a branch protection rule requiring the check must keep
+      // getting a result.
+      expect(existsSync(enforcePath)).toBe(true)
+
+      const yaml = readFileSync(enforcePath, 'utf-8')
+      // No reject step, so nothing can fail a PR to the only branch in the flow.
+      expect(yaml).not.toContain('exit 1')
+      expect(yaml).not.toContain('::error::')
+      expect(yaml).toContain('Confirm correct target')
     })
   })
 
-  it('removes a stale enforce-pr-target.yml when regenerating into a single-branch flow', async () => {
+  it('repairs a stale self-contradictory enforce-pr-target when collapsing to one branch', async () => {
     await inWorkspace(workspace, () => {
-      // First generate a normal two-branch flow, which writes enforce-pr-target.yml.
+      // First generate a normal two-branch flow, which writes the rejecting version.
       generateInto(workspace, createMinimalConfig())
       const enforcePath = join(workspace, '.github/workflows/enforce-pr-target.yml')
-      expect(existsSync(enforcePath)).toBe(true)
+      expect(readFileSync(enforcePath, 'utf-8')).toContain('exit 1')
 
       // Now collapse to a single-branch flow and regenerate.
       writeFileSync('.pipecraftrc', JSON.stringify(singleBranchConfig(), null, 2))
@@ -100,8 +109,30 @@ describe('single-branch flow', () => {
         env: { ...process.env, CI: 'true' }
       })
 
-      // A leftover file would reject every PR, so regeneration must clear it.
-      expect(existsSync(enforcePath)).toBe(false)
+      // Regeneration must overwrite the rejecting version, not leave it in place.
+      const yaml = readFileSync(enforcePath, 'utf-8')
+      expect(yaml).not.toContain('exit 1')
+      expect(yaml).not.toMatch(/must target '(\w+)' branch, not '\1'/)
+    })
+  })
+
+  it('never deletes a file the user has in .github/workflows', async () => {
+    await inWorkspace(workspace, () => {
+      generateInto(workspace, createMinimalConfig())
+      const custom = join(workspace, '.github/workflows/my-own.yml')
+      writeFileSync(custom, 'name: mine\non: push\njobs: {}\n')
+
+      writeFileSync('.pipecraftrc', JSON.stringify(singleBranchConfig(), null, 2))
+      execSync(`node "${cliPath}" generate --skip-checks`, {
+        cwd: workspace,
+        stdio: 'pipe',
+        timeout: 20000,
+        env: { ...process.env, CI: 'true' }
+      })
+
+      // generate writes files it manages; it must not remove anything.
+      expect(existsSync(custom)).toBe(true)
+      expect(existsSync(join(workspace, '.github/workflows/enforce-pr-target.yml'))).toBe(true)
     })
   })
 
@@ -155,24 +186,26 @@ describe('single-branch flow', () => {
   describe('called in-process', () => {
     const enforceRel = '.github/workflows/enforce-pr-target.yml'
 
-    it('skips enforce-pr-target for a single-branch flow', async () => {
+    it('writes a non-rejecting enforce-pr-target for a single-branch flow', async () => {
       mkdirSync(join(workspace, '.github', 'workflows'), { recursive: true })
 
       await generateWorkflows(generatorContext(workspace, singleBranchConfig()))
 
-      expect(existsSync(join(workspace, enforceRel))).toBe(false)
-      // The pipeline itself must still be produced.
+      const yaml = readFileSync(join(workspace, enforceRel), 'utf-8')
+      expect(yaml).not.toContain('exit 1')
       expect(existsSync(join(workspace, '.github/workflows/pipeline.yml'))).toBe(true)
     })
 
-    it('deletes a stale enforce-pr-target left by a multi-branch config', async () => {
+    it('overwrites a stale rejecting enforce-pr-target rather than leaving it', async () => {
       const enforceAbs = join(workspace, enforceRel)
       mkdirSync(join(workspace, '.github', 'workflows'), { recursive: true })
-      writeFileSync(enforceAbs, 'name: stale\n')
+      writeFileSync(enforceAbs, 'name: stale\njobs:\n  x:\n    steps:\n      - run: exit 1\n')
 
       await generateWorkflows(generatorContext(workspace, singleBranchConfig()))
 
-      expect(existsSync(enforceAbs)).toBe(false)
+      const yaml = readFileSync(enforceAbs, 'utf-8')
+      expect(yaml).toContain('Confirm correct target')
+      expect(yaml).not.toContain('exit 1')
     })
 
     it('still writes enforce-pr-target for a multi-branch flow', async () => {
