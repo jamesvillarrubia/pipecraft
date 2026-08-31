@@ -260,8 +260,7 @@ Most projects use `.pipecraftrc` because it's simple and can be either JSON or Y
   "domains": {
     "app": {
       "paths": ["src/**"],
-      "testable": true,
-      "deployable": true
+      "prefixes": ["test", "deploy"]
     }
   }
 }

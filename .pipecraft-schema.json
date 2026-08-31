@@ -285,7 +285,7 @@
           "items": {
             "type": "string"
           },
-          "description": "Job prefixes to generate for this domain (e.g., ['test', 'deploy', 'lint']).",
+          "description": "Job prefixes to generate for this domain (e.g. ['test', 'deploy', 'lint']). Each entry produces a {prefix}-{domain} job. A domain with no prefixes and no legacy flags generates no jobs.",
           "examples": [
             ["test", "deploy"],
             ["lint", "build", "test", "deploy", "e2e"]
@@ -295,19 +295,19 @@
           "type": "boolean",
           "default": false,
           "deprecated": true,
-          "description": "DEPRECATED: Use prefixes: ['test'] instead."
+          "description": "DEPRECATED: use prefixes: ['test'] instead. Translated during config load; only takes effect when written explicitly."
         },
         "deployable": {
           "type": "boolean",
           "default": false,
           "deprecated": true,
-          "description": "DEPRECATED: Use prefixes: ['deploy'] instead."
+          "description": "DEPRECATED: use prefixes: ['deploy'] instead. Translated during config load; only takes effect when written explicitly."
         },
         "remoteTestable": {
           "type": "boolean",
           "default": false,
           "deprecated": true,
-          "description": "DEPRECATED: Use prefixes: ['remote-test'] instead."
+          "description": "DEPRECATED: use prefixes: ['remote-test'] instead. Translated during config load; only takes effect when written explicitly."
         }
       }
     }

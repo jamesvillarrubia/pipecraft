@@ -46,8 +46,7 @@ export function createMinimalConfig(overrides: Partial<PipecraftConfig> = {}): P
       app: {
         paths: ['src/**'],
         description: 'Application code',
-        testable: true,
-        deployable: true
+        prefixes: ['test', 'deploy']
       }
     },
     ...overrides
@@ -97,14 +96,12 @@ export function createTrunkFlowConfig(overrides: Partial<PipecraftConfig> = {}):
       api: {
         paths: ['packages/api/**', 'libs/shared/**'],
         description: 'Backend API services',
-        testable: true,
-        deployable: true
+        prefixes: ['test', 'deploy']
       },
       web: {
         paths: ['packages/web/**', 'libs/shared/**'],
         description: 'Frontend web application',
-        testable: true,
-        deployable: true
+        prefixes: ['test', 'deploy']
       }
     },
     versioning: {
@@ -150,8 +147,7 @@ export function createMonorepoConfig(
     domains[domainName] = {
       paths: [`packages/${domainName}/**`, `libs/shared/**`],
       description: `Domain ${i + 1}`,
-      testable: true,
-      deployable: true
+      prefixes: ['test', 'deploy']
     }
   }
 

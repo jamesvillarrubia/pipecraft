@@ -121,6 +121,11 @@ export const validateConfig = (config: any) => {
     throw new Error('Configuration must be an object')
   }
 
+  // Collect warnings against the config as the user wrote it. Validation below both
+  // translates deprecated domain flags into `prefixes` and defaults those flags to true,
+  // so anything computed afterwards cannot tell what the user actually typed.
+  const warnings = getConfigWarnings(config)
+
   // Reject unknown / misspelled top-level keys. Silently ignoring them was the root
   // cause of the historical autoMerge / nx bugs: a wrong key passed validation and was
   // dropped at generation time. KNOWN_CONFIG_KEYS is kept in lockstep with the types
@@ -231,6 +236,23 @@ export const validateConfig = (config: any) => {
       throw new Error(`Domain "${domainName}" must have at least one path pattern`)
     }
 
+    // Translate the deprecated boolean flags into `prefixes`, which is the only shape job
+    // generation reads (generatePrefixedJobsText in pipeline.yml.tpl.ts). Without this the
+    // flags validate, generate exits 0, and no test/deploy jobs appear at all.
+    //
+    // Only translate flags the user actually wrote. Both default to true immediately below,
+    // and turning those defaults into prefixes would invent test-* and deploy-* jobs for
+    // every config that never mentioned them.
+    if (!Array.isArray(domainConfig.prefixes)) {
+      const derived: string[] = []
+      if (domainConfig.testable === true) derived.push('test')
+      if (domainConfig.deployable === true) derived.push('deploy')
+      if (domainConfig.remoteTestable === true) derived.push('remote-test')
+      if (derived.length > 0) {
+        domainConfig.prefixes = derived
+      }
+    }
+
     // Set defaults for optional properties
     // By default, domains are both testable and deployable
     if (domainConfig.testable === undefined) {
@@ -241,8 +263,9 @@ export const validateConfig = (config: any) => {
     }
   }
 
-  // Surface declared-but-inert / deprecated fields (non-fatal).
-  for (const warning of getConfigWarnings(config)) {
+  // Surface declared-but-inert / deprecated fields (non-fatal). Computed at the top,
+  // before validation mutates the config.
+  for (const warning of warnings) {
     logger.warn(`⚠️  ${warning}`)
   }
 
@@ -269,6 +292,27 @@ export const getConfigWarnings = (config: any): string[] => {
   }
   if (config?.autoMerge !== undefined) {
     warnings.push('autoMerge is deprecated; use autoPromote instead.')
+  }
+
+  // Domain flags are translated into `prefixes` during validation, so they work — but say
+  // so, because the translation is the only thing standing between them and no jobs.
+  const legacyFlagDomains = Object.entries(config?.domains ?? {})
+    .filter(
+      ([, d]: [string, any]) =>
+        !Array.isArray(d?.prefixes) &&
+        (d?.testable !== undefined ||
+          d?.deployable !== undefined ||
+          d?.remoteTestable !== undefined)
+    )
+    .map(([name]) => name)
+
+  if (legacyFlagDomains.length > 0) {
+    warnings.push(
+      `Domain${legacyFlagDomains.length > 1 ? 's' : ''} ` +
+        `${legacyFlagDomains.map(n => `"${n}"`).join(', ')} ` +
+        `use deprecated testable/deployable/remoteTestable flags; use prefixes instead ` +
+        `(e.g. prefixes: ['test', 'deploy']).`
+    )
   }
 
   return warnings
