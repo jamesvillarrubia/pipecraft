@@ -19,8 +19,7 @@
  * const apiDomain: DomainConfig = {
  *   paths: ['packages/api/**', 'libs/shared/**'],
  *   description: 'Backend API services',
- *   testable: true,
- *   deployable: true
+ *   prefixes: ['test', 'deploy']
  * }
  * ```
  */
@@ -47,7 +46,8 @@ export interface DomainConfig {
    * - lint-core (runs when core/ changes)
    *
    * These are placeholder jobs where you add your own logic in the custom jobs section.
-   * Prefixes provide more flexibility than the boolean flags (testable, deployable, etc).
+   * Prefixes are the mechanism job generation reads. The deprecated boolean flags are
+   * translated into this array during config validation.
    *
    * @example ['test', 'deploy', 'remote-test']
    * @example ['lint', 'build', 'test', 'deploy', 'e2e']
@@ -105,7 +105,7 @@ export interface DomainConfig {
  *     onStagingMerge: ['runTests', 'calculateVersion']
  *   },
  *   domains: {
- *     api: { paths: ['packages/api/**'], description: 'API', testable: true }
+ *     api: { paths: ['packages/api/**'], description: 'API', prefixes: ['test'] }
  *   }
  * }
  * ```

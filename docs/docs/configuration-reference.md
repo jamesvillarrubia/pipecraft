@@ -309,23 +309,17 @@ Each domain is an object with a name as its key and configuration as its value:
     "api": {
       "paths": ["apps/api/**", "libs/api-utils/**"],
       "description": "API application and shared utilities",
-      "testable": true,
-      "deployable": true,
-      "remoteTestable": false
+      "prefixes": ["test", "deploy"]
     },
     "web": {
       "paths": ["apps/web/**", "libs/ui-components/**"],
       "description": "Web application and UI components",
-      "testable": true,
-      "deployable": true,
-      "remoteTestable": true
+      "prefixes": ["test", "deploy", "remote-test"]
     },
     "mobile": {
       "paths": ["apps/mobile/**"],
       "description": "Mobile application",
-      "testable": true,
-      "deployable": false,
-      "remoteTestable": false
+      "prefixes": ["test"]
     }
   }
 }
@@ -370,43 +364,13 @@ A human-readable description of what this domain represents. This appears in gen
 
 Good descriptions explain the purpose or responsibility of the domain, not just what directories it contains. They answer "what is this for?" rather than "where is this?"
 
-#### testable (optional)
+#### prefixes (optional)
 
-**Type**: `boolean`
-**Default**: `true`
+**Type**: `string[]`
+**Default**: none
 
-When `testable: true` (the default), PipeCraft generates a `test-{domain}` job that:
-
-- Only runs when the domain has changes
-- Runs in parallel with other domain tests
-- Must pass before versioning and promotion
-
-Set `testable: false` for domains that don't need testing (e.g., documentation, configuration files).
-
-```json
-{
-  "domains": {
-    "docs": {
-      "paths": ["docs/**"],
-      "description": "Documentation",
-      "testable": false // No tests needed
-    }
-  }
-}
-```
-
-#### deployable (optional)
-
-**Type**: `boolean`
-**Default**: `false`
-
-When `deployable: true`, PipeCraft generates a `deploy-{domain}` job that:
-
-- Only runs after tests pass and version is calculated
-- Runs in parallel with other deployments
-- Must succeed (or be skipped) for tagging to occur
-
-Use this for domains that need deployment (APIs, web apps, services):
+The job types PipeCraft generates for this domain. Each entry produces one job named
+`{prefix}-{domain}`.
 
 ```json
 {
@@ -414,45 +378,62 @@ Use this for domains that need deployment (APIs, web apps, services):
     "api": {
       "paths": ["apps/api/**"],
       "description": "API service",
-      "testable": true,
-      "deployable": true // Deploy after tests pass
+      "prefixes": ["test", "deploy"]
     }
   }
 }
 ```
 
-#### remoteTestable (optional)
+That config generates `test-api` and `deploy-api`. Each job:
+
+- Only runs when the domain has changes
+- Runs in parallel with the other domains' jobs of the same prefix
+- Must pass (or be skipped) before versioning and promotion
+
+Three prefixes have wiring in the managed jobs:
+
+| Prefix        | Job                    | Runs                                      |
+| ------------- | ---------------------- | ----------------------------------------- |
+| `test`        | `test-{domain}`        | On changes, before versioning             |
+| `deploy`      | `deploy-{domain}`      | After tests pass and the version resolves |
+| `remote-test` | `remote-test-{domain}` | After `deploy-{domain}` succeeds          |
+
+Any other prefix generates a placeholder job you can fill in, so `prefixes: ["lint", "build", "test"]`
+produces `lint-api`, `build-api` and `test-api`.
+
+**A domain with no `prefixes` and no legacy flags generates no jobs of its own.** It still
+takes part in change detection, so `changes` reports whether it was touched, but nothing
+runs. If you configured a domain and see no jobs in `pipeline.yml`, this is why.
+
+#### testable / deployable / remoteTestable (deprecated)
 
 **Type**: `boolean`
-**Default**: `false`
 
-When `remoteTestable: true`, PipeCraft generates a `remote-test-{domain}` job that:
+Superseded by `prefixes`. PipeCraft translates them during config load, so they still work:
 
-- Runs after `deploy-{domain}` succeeds
-- Tests the deployed service in its live environment
-- Must pass for tagging and promotion
+| Legacy flag              | Equivalent                    |
+| ------------------------ | ----------------------------- |
+| `"testable": true`       | `"prefixes": ["test"]`        |
+| `"deployable": true`     | `"prefixes": ["deploy"]`      |
+| `"remoteTestable": true` | `"prefixes": ["remote-test"]` |
 
-Use this for integration tests, smoke tests, or health checks against deployed services:
+Set several and they combine, so `"testable": true, "deployable": true` is
+`"prefixes": ["test", "deploy"]`. A flag set to `false` contributes nothing.
 
-```json
-{
-  "domains": {
-    "web": {
-      "paths": ["apps/web/**"],
-      "description": "Web application",
-      "testable": true,
-      "deployable": true,
-      "remoteTestable": true // Test deployed app
-    }
-  }
-}
-```
+Two things to know:
+
+- **Only flags you write are translated.** These are not applied by default, so a domain
+  that mentions neither `prefixes` nor any flag gets no jobs.
+- **`prefixes` wins.** If a domain has both, the flags are ignored entirely.
+
+`generate` warns when a domain uses them. Migrate by replacing the flags with the
+equivalent `prefixes` array; the generated workflow is identical.
 
 ### Workflow Phase Flow
 
-Domains with different capabilities flow through phases differently:
+Domains flow through phases according to their `prefixes`:
 
-**Domain with all capabilities enabled**:
+**Domain with `prefixes: ["test", "deploy", "remote-test"]`**:
 
 1. **Change Detection** → Determines if domain changed
 2. **Test** (`test-{domain}`) → Runs if changed
@@ -463,11 +444,11 @@ Domains with different capabilities flow through phases differently:
 7. **Promote** → Creates PR to next branch
 8. **Release** → Creates GitHub release (on final branch only)
 
-**Domain with only testable**:
+**Domain with `prefixes: ["test"]`**:
 
 1. Change Detection → Test → Version → Tag → Promote → Release
 
-**Domain with testable and deployable**:
+**Domain with `prefixes: ["test", "deploy"]`**:
 
 1. Change Detection → Test → Version → Deploy → Tag → Promote → Release
 
@@ -497,30 +478,22 @@ Here's a comprehensive example showing all major configuration options working t
     "api": {
       "paths": ["apps/api/**", "libs/api-core/**", "libs/shared/**"],
       "description": "API services and shared business logic",
-      "testable": true,
-      "deployable": true,
-      "remoteTestable": true
+      "prefixes": ["test", "deploy", "remote-test"]
     },
     "web": {
       "paths": ["apps/web/**", "libs/ui-components/**", "libs/shared/**"],
       "description": "Web application and reusable UI components",
-      "testable": true,
-      "deployable": true,
-      "remoteTestable": true
+      "prefixes": ["test", "deploy", "remote-test"]
     },
     "mobile": {
       "paths": ["apps/mobile/**", "libs/mobile-components/**", "libs/shared/**"],
       "description": "Mobile application for iOS and Android",
-      "testable": true,
-      "deployable": false,
-      "remoteTestable": false
+      "prefixes": ["test"]
     },
     "infrastructure": {
       "paths": ["infrastructure/**", "docker/**", ".github/workflows/**"],
       "description": "Infrastructure as code and deployment configurations",
-      "testable": false,
-      "deployable": false,
-      "remoteTestable": false
+      "prefixes": []
     }
   }
 }
