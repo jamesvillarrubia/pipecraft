@@ -27,8 +27,16 @@ had just rewritten line by line. Closing it needs another PR and another release
 **Prevention:** Before rewriting a function here, search the tracker for its name and its
 file. This repo has 27 open issues, several describing exact defects in generators and
 composite actions, so the odds that the thing you are touching is already filed are high.
-Note also that a bug in `VersionManager` is invisible through `generate` — see the note in
-CLAUDE.md about which release-it generator is live.
+
+**Correction, same day:** the entry above, and the CLAUDE.md note it pointed at, both said
+`generateReleaseItConfig` was reachable only from unit tests. That was wrong, and I asserted
+it twice without running the search that settles it. `grep -rn 'generateReleaseItConfig' src/`
+finds `versioning.ts` calling it inside `setupVersionManagement()`, which `src/cli/index.ts`
+calls under `pipecraft init --with-versioning`, and which then writes `.release-it.cjs` into
+the user's repo. The `Infinity` bug was live for those users, not dormant. Two lessons, and
+the second is the sharper one: a claim about what calls a function is a negative claim, so it
+needs `grep` behind it (see the global log's pattern watch); and "this code is not reachable"
+is the most load-bearing sentence you can write about a bug, so it earns the most evidence.
 
 ## 2026-08-31 — A "skip if it exists" write hid both a product bug and a test leak for months
 

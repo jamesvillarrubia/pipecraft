@@ -90,7 +90,11 @@ module.exports = {
               return { ...a, [v.type]: v.release}
             }, {}) 
   
-            types = Object.assign({},defaults,types)
+            // Config wins over the preset. DEFAULT_PREFIXES already carries the user's
+            // semver.bumpRules merged over Pipecraft's baseline, so it is the stated
+            // intent; the preset only supplies types the config never mentions. Merging
+            // the other way round silently discarded configured rules.
+            types = Object.assign({},types,defaults)
             let breakings = 0
             let features = 0
             let levelSet = ['major','minor','patch','ignore']

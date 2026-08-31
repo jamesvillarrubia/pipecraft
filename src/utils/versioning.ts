@@ -143,6 +143,12 @@ module.exports = {
         let features = 0
         const levelSet = ['major', 'minor', 'patch', 'ignore']
 
+        // Math.min() with no arguments is Infinity, which release-it cannot use as a bump
+        // level. Return an explicit "no release" instead, matching release-it.cjs.tpl.ts.
+        if (!commits || commits.length === 0) {
+          return { level: null, reason: 'No commits found - skipping release' }
+        }
+
         const level = Math.min(
           ...commits.map(commit => {
             let level = levelSet.indexOf(bumpRules[commit.type] || 'ignore')
