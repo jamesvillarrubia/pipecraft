@@ -29,6 +29,10 @@
 
 import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 
+import { fullyManagedHeader } from './shared/fully-managed-header.js'
+
+const ENFORCE_HEADER = fullyManagedHeader(['initialBranch', 'finalBranch'])
+
 /**
  * Repo-relative path this template writes to.
  *
@@ -74,7 +78,7 @@ export const generate = (ctx: PinionContext) =>
         // rule requiring the `check-pr-target` status keeps getting a result — deleting the
         // workflow would leave that check permanently unreported and block every PR.
         if (initialBranch === finalBranch) {
-          return `name: Enforce PR Target Branch
+          return `${ENFORCE_HEADER}name: Enforce PR Target Branch
 
 on:
   pull_request:
@@ -94,7 +98,7 @@ jobs:
 `
         }
 
-        return `name: Enforce PR Target Branch
+        return `${ENFORCE_HEADER}name: Enforce PR Target Branch
 
 on:
   pull_request:

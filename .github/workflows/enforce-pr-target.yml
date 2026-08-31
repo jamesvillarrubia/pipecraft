@@ -1,3 +1,17 @@
+#=============================================================================
+# PIPECRAFT MANAGED WORKFLOW
+#=============================================================================
+#
+# 🔒 THIS ENTIRE FILE IS GENERATED. Edits are overwritten on the next
+#    'pipecraft generate'. Unlike pipeline.yml, nothing here is preserved.
+#
+# ⚙️  Generated from your .pipecraftrc:
+#   - initialBranch
+#   - finalBranch
+#
+# ✏️  To change this workflow, change the config above and regenerate. To add
+#    checks of your own, put them in a separate workflow file.
+#=============================================================================
 name: Enforce PR Target Branch
 
 on:

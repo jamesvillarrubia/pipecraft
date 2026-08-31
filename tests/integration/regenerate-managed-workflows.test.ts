@@ -20,6 +20,7 @@ import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { parse } from 'yaml'
 import { createMinimalConfig } from '../helpers/fixtures.js'
 import { createWorkspaceWithCleanup, inWorkspace } from '../helpers/workspace.js'
 
@@ -89,6 +90,27 @@ describe('managed auxiliary workflows regenerate', () => {
 
       // A contributor using `infra:` would otherwise have a valid title rejected.
       expect(readFileSync(path, 'utf-8')).toContain('infra')
+    })
+  })
+
+  it('marks both files as fully managed so hand-editing is not silently invited', async () => {
+    await inWorkspace(workspace, () => {
+      execSync('git init', { cwd: workspace, stdio: 'pipe' })
+      write(createMinimalConfig({ requireConventionalCommits: true }))
+      generate()
+
+      for (const file of ['enforce-pr-target.yml', 'pr-title-check.yml']) {
+        const yaml = readFileSync(join(workspace, '.github/workflows', file), 'utf-8')
+
+        // pipeline.yml announces itself as managed; an unlabelled file reads as the user's.
+        expect(yaml).toContain('PIPECRAFT MANAGED WORKFLOW')
+        // These have no preserved regions, unlike pipeline.yml — say so.
+        expect(yaml).toContain('THIS ENTIRE FILE IS GENERATED')
+        // The header must precede the workflow itself.
+        expect(yaml.indexOf('PIPECRAFT MANAGED WORKFLOW')).toBeLessThan(yaml.indexOf('name:'))
+        // And it must still be valid YAML with the job intact.
+        expect(parse(yaml).jobs).toBeTruthy()
+      }
     })
   })
 
