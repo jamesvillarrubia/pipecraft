@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// Pipeline validation test - triggers core domain
 
 /**
  * PipeCraft Command-Line Interface
@@ -79,7 +78,7 @@
 
 import { prompt, runModule } from '@featherscloud/pinion'
 import { Command } from 'commander'
-import { readFileSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import type { PipecraftConfig } from '../types/index.js'
@@ -125,6 +124,70 @@ program
   .option('--debug', 'debug output (includes all verbose output plus additional debugging info)')
   .option('--force', 'force regeneration even if files unchanged')
   .option('--dry-run', 'show what would be done without making changes')
+
+/** Composite actions `generate` writes into .github/actions/. */
+const GENERATED_ACTIONS = [
+  'detect-changes',
+  'calculate-version',
+  'create-tag',
+  'create-pr',
+  'create-release',
+  'manage-branch',
+  'promote-branch'
+] as const
+
+/**
+ * Report what `generate` would do, without doing it.
+ *
+ * The previous implementation printed one line and returned, which told the reader
+ * nothing they did not already know from typing the command. A dry run is for seeing the
+ * decision before it is made: which files appear, which get merged into, and which domain
+ * jobs the config actually produces. That last one matters most — a domain configured so
+ * that it yields no jobs is the most common config mistake (see #499), and this is where
+ * it should become visible.
+ */
+function reportDryRun(config: PipecraftConfig, pipelinePath: string): void {
+  const mark = (path: string) => (existsSync(path) ? 'update' : 'create')
+
+  logger.info('🔍 Dry run — no files will be written.\n')
+
+  logger.info('Workflows:')
+  for (const file of [
+    pipelinePath,
+    '.github/workflows/enforce-pr-target.yml',
+    ...(config.requireConventionalCommits === false ? [] : ['.github/workflows/pr-title-check.yml'])
+  ]) {
+    logger.info(`  ${mark(file).padEnd(6)} ${file}`)
+  }
+
+  logger.info('\nComposite actions:')
+  for (const name of GENERATED_ACTIONS) {
+    const file = `.github/actions/${name}/action.yml`
+    logger.info(`  ${mark(file).padEnd(6)} ${file}`)
+  }
+
+  logger.info('\nRelease config:')
+  logger.info(`  ${mark('.release-it.cjs').padEnd(6)} .release-it.cjs`)
+
+  const domains = (config.domains ?? {}) as Record<string, { prefixes?: string[] }>
+  const jobs = Object.keys(domains)
+    .sort()
+    .flatMap(domain => (domains[domain].prefixes ?? []).map(prefix => `${prefix}-${domain}`))
+
+  logger.info('\nDomain jobs:')
+  if (jobs.length === 0) {
+    logger.info('  (none — no domain declares `prefixes`, so only the managed jobs generate)')
+  } else {
+    for (const job of jobs) {
+      logger.info(`  ${job}`)
+    }
+  }
+
+  logger.info(
+    `\nManaged jobs: changes, version, gate, tag, promote, release` +
+      `\nBranch flow:  ${(config.branchFlow ?? []).join(' → ')}`
+  )
+}
 
 // Init command - Initialize configuration
 program
@@ -253,7 +316,7 @@ program
       validateConfig(config)
 
       if (globalOptions.dryRun) {
-        logger.info('🔍 Dry run mode - would generate workflows')
+        reportDryRun(config, pipelinePath)
         return
       }
 
@@ -525,7 +588,6 @@ program
   .description('Configure GitHub Actions workflow permissions for PipeCraft')
   .option('--apply', 'Automatically apply changes without prompting')
   .option('--force', 'Alias for --apply')
-  .option('--clean', 'Use clean messaging system (default)')
   .option('--verbose', 'Show detailed technical information')
   .action(async options => {
     try {

@@ -82,11 +82,39 @@ Sometimes you need to force regeneration even when nothing has changed—for exa
 pipecraft generate --force
 ```
 
-If you want to preview what would be generated without actually creating or modifying files, dry-run mode is perfect:
+To see what would be generated without creating or modifying anything:
 
 ```bash
 pipecraft generate --dry-run
 ```
+
+It lists every file it would touch, marking each `create` or `update`, then the domain
+jobs your config produces:
+
+```
+🔍 Dry run — no files will be written.
+
+Workflows:
+  create .github/workflows/pipeline.yml
+  create .github/workflows/enforce-pr-target.yml
+  create .github/workflows/pr-title-check.yml
+
+Composite actions:
+  create .github/actions/detect-changes/action.yml
+  …
+
+Domain jobs:
+  deploy-api
+  test-api
+  test-web
+
+Managed jobs: changes, version, gate, tag, promote, release
+Branch flow:  develop → main
+```
+
+The domain jobs list is the part worth reading. A domain that declares no `prefixes`
+generates no jobs, and this is where that becomes visible rather than after you have
+committed a pipeline missing its tests.
 
 The generate command also supports custom paths, which is useful if you're managing multiple configurations or experimenting with different setups:
 
@@ -234,13 +262,15 @@ Use this when you explicitly want to overwrite existing files, regenerate cached
 
 ### Dry Run
 
-Many commands support a dry-run mode that shows you what would happen without actually making changes:
+`generate` supports a dry-run mode that reports what it would do without writing anything:
 
 ```bash
-pipecraft <command> --dry-run
+pipecraft generate --dry-run
 ```
 
-This is invaluable for testing configuration changes, previewing workflow generation, or understanding what a command will do before you commit to it.
+Use it to check a config change before it lands: which files appear, which get merged into,
+and which domain jobs the config actually produces. See
+[Generating Workflows](#generating-workflows) for the output.
 
 ## Common Command Patterns
 
