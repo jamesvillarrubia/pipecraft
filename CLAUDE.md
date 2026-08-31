@@ -113,6 +113,21 @@ Adding or changing a config field means touching all three, or `tsc` /
   `VersionManager.generateReleaseItConfig()` in `src/utils/versioning.ts` is _not_ wired into
   `generate` — it is only exercised by unit tests. Keep the `baseDefaults` in the two files
   in step, and confirm which path a reported bug actually hits before changing code.
+- The two are still out of step on empty commits. The live template returns
+  `{ level: null }`; `VersionManager` uses bare `Math.min(...)`, which gives `Infinity`.
+  That gap is issue #287 and is unfixed.
+
+## Check the tracker before rewriting
+
+This repo has ~27 open issues, several naming exact defects in specific generators and
+composite actions. Before rewriting a function, search for its name and its file:
+
+```bash
+gh issue list --repo the-craftlab/pipecraft --search "generateReleaseItConfig OR release-it"
+```
+
+Rewriting `generateReleaseItConfig` without doing this left #287's bug on lines that were
+being replaced anyway — see `MISTAKES.md`.
 
 ## `autoPromote` controls the merge, not the PR
 
