@@ -29,6 +29,18 @@
 
 import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 
+import { fullyManagedHeader } from './shared/fully-managed-header.js'
+
+const ENFORCE_HEADER = fullyManagedHeader(['initialBranch', 'finalBranch'])
+
+/**
+ * Repo-relative path this template writes to.
+ *
+ * Exported so the generator can clear a stale file when the flow collapses to a
+ * single branch and the workflow is no longer generated.
+ */
+export const ENFORCE_PR_TARGET_PATH = '.github/workflows/enforce-pr-target.yml'
+
 /**
  * Generates the enforce-pr-target.yml workflow file.
  *
@@ -53,17 +65,56 @@ import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinio
  */
 export const generate = (ctx: PinionContext) =>
   Promise.resolve(ctx).then(
-    renderTemplate((ctx: any) => {
-      const { initialBranch = 'develop', finalBranch = 'main' } = ctx
+    renderTemplate(
+      (ctx: any) => {
+        const { initialBranch = 'develop', finalBranch = 'main' } = ctx
 
-      return `name: Enforce PR Target Branch
+        // In a single-branch flow the rule "target initialBranch, not finalBranch" names the
+        // same branch twice. Emitting both steps gives them an identical `if`, so the reject
+        // step runs first and fails every PR to the only branch there is.
+        //
+        // Emit the confirm step alone instead of skipping the file. Regenerating then repairs
+        // a workflow left over from a previous multi-branch config, and any branch protection
+        // rule requiring the `check-pr-target` status keeps getting a result — deleting the
+        // workflow would leave that check permanently unreported and block every PR.
+        if (initialBranch === finalBranch) {
+          return `${ENFORCE_HEADER}name: Enforce PR Target Branch
 
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
+    # Single-branch flow: '${finalBranch}' is the only branch, so it is the only valid target.
+    branches:
+      - ${finalBranch}
 
 jobs:
   check-pr-target:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm correct target
+        run: |
+          echo "✅ PR correctly targets '${initialBranch}' branch"
+          echo "Single-branch flow: '${initialBranch}' is the only branch in the flow."
+`
+        }
+
+        return `${ENFORCE_HEADER}name: Enforce PR Target Branch
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    # Only PRs targeting the final branch matter here (the rule rejects human PRs to it).
+    # Scoping the trigger keeps PipeCraft's own promotion PRs to intermediate branches from
+    # spawning approval-gated runs at all; the job-level guard below covers promotion PRs
+    # that do target the final branch.
+    branches:
+      - ${finalBranch}
+
+jobs:
+  check-pr-target:
+    # Skip PipeCraft's own promotion PRs (pipecraft-promote/*). They legitimately target
+    # downstream/final branches as part of the flow; this guard is for human-authored PRs.
+    if: \${{ !startsWith(github.head_ref, 'pipecraft-promote/') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check PR base branch
@@ -83,5 +134,13 @@ jobs:
         run: |
           echo "✅ PR correctly targets '${initialBranch}' branch"
 `
-    }, toFile('.github/workflows/enforce-pr-target.yml'))
+      },
+      toFile(ENFORCE_PR_TARGET_PATH),
+      // This workflow is entirely generated — unlike pipeline.yml it has no user-editable
+      // regions to preserve. Without force, Pinion skips the file whenever it already
+      // exists, so the branches baked into it never change: renaming finalBranch left the
+      // old name enforced, and collapsing to a single-branch flow left the rejecting
+      // version in place, failing every PR.
+      { force: true }
+    )
   )

@@ -119,10 +119,17 @@ Specifies which package manager to use for dependency installation in generated 
 
 **Impact on generated workflows:**
 
-- **Install commands** with automatic fallback:
-  - `npm`: `npm ci || npm install`
-  - `yarn`: `yarn install --frozen-lockfile || yarn install`
-  - `pnpm`: `pnpm install --frozen-lockfile || pnpm install`
+PipeCraft does not write install steps for you. Domain job bodies are yours: each one is
+generated as a placeholder marked `# TODO: Replace with your <domain> test logic`, and what
+runs inside it — checkout options, toolchain setup, install command, test command — is your
+decision.
+
+`packageManager` is used for the example command in that placeholder, so a project
+configured for `pnpm` gets `# Example: pnpm run test:api` rather than an npm one. Nothing
+else reads it.
+
+Earlier versions of this page claimed PipeCraft generated install commands with automatic
+fallback. It never did.
 
 **When to set explicitly:**
 
@@ -171,6 +178,43 @@ Controls the Node.js and pnpm versions used in generated CI/CD workflows, so you
 - When unset, the existing value in `pipeline.yml` is **preserved**, falling back to the defaults on first generation.
 
 > Tip: pin `pnpmVersion` (e.g. `'10'`) to avoid `pnpm/action-setup`'s `latest` pulling a major release with breaking changes into CI.
+
+### Checkout depth
+
+Two env vars in the generated `pipeline.yml` control how much history each job fetches.
+Both are preserved across regeneration, so edit them in the workflow and they stick.
+
+| Variable                 | Default | Used by                        |
+| ------------------------ | ------- | ------------------------------ |
+| `FETCH_DEPTH_AFFECTED`   | `100`   | change detection               |
+| `FETCH_DEPTH_VERSIONING` | `0`     | version, tag, promote, release |
+
+`FETCH_DEPTH_AFFECTED` bounds the diff used to decide which domains changed. 100 commits
+covers a normal pull request. Raise it if your branches diverge by more than that, or set
+`0` for complete history at the cost of a slower checkout.
+
+`FETCH_DEPTH_VERSIONING` must stay `0`. Semantic versioning reads the full tag history, and
+a shallow fetch silently resolves the wrong previous version.
+
+The `version` job checks out with `filter: blob:none`, a partial clone. It fetches every
+commit and every tag, and skips the historical file contents it never reads.
+
+It does not skip blobs entirely. `actions/checkout` still builds a working tree, so Git
+fetches the files at the checked-out commit. You pay for one commit's files instead of every
+version of every file in the history. Measured on a 20-commit repository with one large file
+rewritten each time: 428 KB against 6040 KB, and the gap widens with history length.
+
+Two things to know:
+
+- **Partial clone needs the server to allow it.** GitHub does. A self-hosted Git server
+  without `uploadpack.allowFilter` ignores the filter and sends everything, with no error
+  and no saving.
+- **A missing blob costs a round trip.** If a step reads a file, Git fetches that blob on
+  demand, so the filter cannot break a step that needs one. Today the job runs only
+  `calculate-version`, which reads tags and commit subjects.
+
+`tag` and `promote` are deliberately left unfiltered: both move refs and can merge, so they
+may legitimately need file contents.
 
 ### initialBranch
 
@@ -309,23 +353,17 @@ Each domain is an object with a name as its key and configuration as its value:
     "api": {
       "paths": ["apps/api/**", "libs/api-utils/**"],
       "description": "API application and shared utilities",
-      "testable": true,
-      "deployable": true,
-      "remoteTestable": false
+      "prefixes": ["test", "deploy"]
     },
     "web": {
       "paths": ["apps/web/**", "libs/ui-components/**"],
       "description": "Web application and UI components",
-      "testable": true,
-      "deployable": true,
-      "remoteTestable": true
+      "prefixes": ["test", "deploy", "remote-test"]
     },
     "mobile": {
       "paths": ["apps/mobile/**"],
       "description": "Mobile application",
-      "testable": true,
-      "deployable": false,
-      "remoteTestable": false
+      "prefixes": ["test"]
     }
   }
 }
@@ -370,43 +408,13 @@ A human-readable description of what this domain represents. This appears in gen
 
 Good descriptions explain the purpose or responsibility of the domain, not just what directories it contains. They answer "what is this for?" rather than "where is this?"
 
-#### testable (optional)
+#### prefixes (optional)
 
-**Type**: `boolean`
-**Default**: `true`
+**Type**: `string[]`
+**Default**: none
 
-When `testable: true` (the default), PipeCraft generates a `test-{domain}` job that:
-
-- Only runs when the domain has changes
-- Runs in parallel with other domain tests
-- Must pass before versioning and promotion
-
-Set `testable: false` for domains that don't need testing (e.g., documentation, configuration files).
-
-```json
-{
-  "domains": {
-    "docs": {
-      "paths": ["docs/**"],
-      "description": "Documentation",
-      "testable": false // No tests needed
-    }
-  }
-}
-```
-
-#### deployable (optional)
-
-**Type**: `boolean`
-**Default**: `false`
-
-When `deployable: true`, PipeCraft generates a `deploy-{domain}` job that:
-
-- Only runs after tests pass and version is calculated
-- Runs in parallel with other deployments
-- Must succeed (or be skipped) for tagging to occur
-
-Use this for domains that need deployment (APIs, web apps, services):
+The job types PipeCraft generates for this domain. Each entry produces one job named
+`{prefix}-{domain}`.
 
 ```json
 {
@@ -414,45 +422,62 @@ Use this for domains that need deployment (APIs, web apps, services):
     "api": {
       "paths": ["apps/api/**"],
       "description": "API service",
-      "testable": true,
-      "deployable": true // Deploy after tests pass
+      "prefixes": ["test", "deploy"]
     }
   }
 }
 ```
 
-#### remoteTestable (optional)
+That config generates `test-api` and `deploy-api`. Each job:
+
+- Only runs when the domain has changes
+- Runs in parallel with the other domains' jobs of the same prefix
+- Must pass (or be skipped) before versioning and promotion
+
+Three prefixes have wiring in the managed jobs:
+
+| Prefix        | Job                    | Runs                                      |
+| ------------- | ---------------------- | ----------------------------------------- |
+| `test`        | `test-{domain}`        | On changes, before versioning             |
+| `deploy`      | `deploy-{domain}`      | After tests pass and the version resolves |
+| `remote-test` | `remote-test-{domain}` | After `deploy-{domain}` succeeds          |
+
+Any other prefix generates a placeholder job you can fill in, so `prefixes: ["lint", "build", "test"]`
+produces `lint-api`, `build-api` and `test-api`.
+
+**A domain with no `prefixes` and no legacy flags generates no jobs of its own.** It still
+takes part in change detection, so `changes` reports whether it was touched, but nothing
+runs. If you configured a domain and see no jobs in `pipeline.yml`, this is why.
+
+#### testable / deployable / remoteTestable (deprecated)
 
 **Type**: `boolean`
-**Default**: `false`
 
-When `remoteTestable: true`, PipeCraft generates a `remote-test-{domain}` job that:
+Superseded by `prefixes`. PipeCraft translates them during config load, so they still work:
 
-- Runs after `deploy-{domain}` succeeds
-- Tests the deployed service in its live environment
-- Must pass for tagging and promotion
+| Legacy flag              | Equivalent                    |
+| ------------------------ | ----------------------------- |
+| `"testable": true`       | `"prefixes": ["test"]`        |
+| `"deployable": true`     | `"prefixes": ["deploy"]`      |
+| `"remoteTestable": true` | `"prefixes": ["remote-test"]` |
 
-Use this for integration tests, smoke tests, or health checks against deployed services:
+Set several and they combine, so `"testable": true, "deployable": true` is
+`"prefixes": ["test", "deploy"]`. A flag set to `false` contributes nothing.
 
-```json
-{
-  "domains": {
-    "web": {
-      "paths": ["apps/web/**"],
-      "description": "Web application",
-      "testable": true,
-      "deployable": true,
-      "remoteTestable": true // Test deployed app
-    }
-  }
-}
-```
+Two things to know:
+
+- **Only flags you write are translated.** These are not applied by default, so a domain
+  that mentions neither `prefixes` nor any flag gets no jobs.
+- **`prefixes` wins.** If a domain has both, the flags are ignored entirely.
+
+`generate` warns when a domain uses them. Migrate by replacing the flags with the
+equivalent `prefixes` array; the generated workflow is identical.
 
 ### Workflow Phase Flow
 
-Domains with different capabilities flow through phases differently:
+Domains flow through phases according to their `prefixes`:
 
-**Domain with all capabilities enabled**:
+**Domain with `prefixes: ["test", "deploy", "remote-test"]`**:
 
 1. **Change Detection** → Determines if domain changed
 2. **Test** (`test-{domain}`) → Runs if changed
@@ -463,11 +488,11 @@ Domains with different capabilities flow through phases differently:
 7. **Promote** → Creates PR to next branch
 8. **Release** → Creates GitHub release (on final branch only)
 
-**Domain with only testable**:
+**Domain with `prefixes: ["test"]`**:
 
 1. Change Detection → Test → Version → Tag → Promote → Release
 
-**Domain with testable and deployable**:
+**Domain with `prefixes: ["test", "deploy"]`**:
 
 1. Change Detection → Test → Version → Deploy → Tag → Promote → Release
 
@@ -497,30 +522,22 @@ Here's a comprehensive example showing all major configuration options working t
     "api": {
       "paths": ["apps/api/**", "libs/api-core/**", "libs/shared/**"],
       "description": "API services and shared business logic",
-      "testable": true,
-      "deployable": true,
-      "remoteTestable": true
+      "prefixes": ["test", "deploy", "remote-test"]
     },
     "web": {
       "paths": ["apps/web/**", "libs/ui-components/**", "libs/shared/**"],
       "description": "Web application and reusable UI components",
-      "testable": true,
-      "deployable": true,
-      "remoteTestable": true
+      "prefixes": ["test", "deploy", "remote-test"]
     },
     "mobile": {
       "paths": ["apps/mobile/**", "libs/mobile-components/**", "libs/shared/**"],
       "description": "Mobile application for iOS and Android",
-      "testable": true,
-      "deployable": false,
-      "remoteTestable": false
+      "prefixes": ["test"]
     },
     "infrastructure": {
       "paths": ["infrastructure/**", "docker/**", ".github/workflows/**"],
       "description": "Infrastructure as code and deployment configurations",
-      "testable": false,
-      "deployable": false,
-      "remoteTestable": false
+      "prefixes": []
     }
   }
 }

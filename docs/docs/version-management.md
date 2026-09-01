@@ -156,41 +156,24 @@ Example output:
 
 The preview shows that you have two feature commits and one fix commit. Features trigger minor bumps, so your next version will be 1.5.0. If you only had fix commits, it would be 1.4.3.
 
-## Bumping Versions
+## Where bumping happens
 
-When you're ready to create a new version, the bump command handles everything:
+The pipeline bumps versions. There is no local bump command.
 
-```bash
-pipecraft version --bump
-```
+`pipecraft version --check` reports what the pipeline will decide, so you can confirm a
+change lands as a patch rather than a minor before you push. It reads; it does not write.
 
-This command:
+Keeping the decision in one place matters because the version has to agree with the tag,
+the release, and the promotion that carries them. A developer bumping locally can produce a
+tag CI would not have chosen, and the two only disagree once, in the release that matters.
 
-1. Analyzes your commit history since the last version tag
-2. Determines the appropriate version number based on your bump rules
-3. Updates the version field in package.json
-4. Creates a git commit with the version change
-5. Creates a git tag with the version number
-6. Optionally generates changelog entries
+## Creating releases
 
-The commit message will be something like `chore: release v1.5.0`, and the tag will be `v1.5.0`. If you have auto-push enabled in your configuration, these get pushed to your remote repository automatically.
+The generated `release` job creates the GitHub release, on the final branch only, after
+`tag` has placed the version tag. Changelog generation is handled by release-it through the
+generated `.release-it.cjs`, whose bump rules come from your `semver.bumpRules`.
 
-## Creating Releases
-
-For a complete release with changelog generation and GitHub release creation, use:
-
-```bash
-pipecraft version --release
-```
-
-This runs the full release-it flow, which includes everything that `--bump` does plus:
-
-- Generates or updates your CHANGELOG.md file
-- Creates a GitHub release with release notes
-- Runs any hooks defined in your release-it config
-- Handles npm publishing if configured
-
-The changelog generation groups commits by type:
+The changelog groups commits by type:
 
 ```markdown
 ## [1.5.0] - 2024-01-15
@@ -205,17 +188,27 @@ The changelog generation groups commits by type:
 - resolve sort order bug
 ```
 
-## Automatic Version Bumping in Workflows
+## What the generated workflow does
 
-When PipeCraft generates your workflows, it includes version bumping steps that run automatically when code reaches your final branch (typically `main` or `production`):
+The `version` job resolves the next version on every push to a branch in your flow:
 
 ```yaml
-- name: Bump version
-  if: github.ref == 'refs/heads/main'
-  run: npx pipecraft version --bump
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+version:
+  needs: [changes]
+  if: ${{ always() && github.event_name != 'pull_request' }}
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v5
+      with:
+        ref: ${{ inputs.commitSha || github.sha }}
+        fetch-depth: ${{ env.FETCH_DEPTH_VERSIONING }}
+        filter: blob:none
+    - uses: ./.github/actions/calculate-version
+      id: version
 ```
+
+`tag` then creates the git tag, `promote` opens the PR to the next branch, and `release`
+cuts the GitHub release once the code reaches the final branch.
 
 This means you don't manually run version commands at all in most cases—they happen automatically as part of your branch promotion flow. When you merge code to main, the workflow bumps the version, creates the tag, and pushes everything.
 
@@ -310,11 +303,7 @@ git commit --allow-empty -m "fix: test patch bump"
 # Check what version would result
 pipecraft version --check
 
-# If it looks right, try bumping
-pipecraft version --bump
-
 # Clean up
-git tag -d v1.2.4  # or whatever version was created
 git checkout main
 git branch -D test-versioning
 ```

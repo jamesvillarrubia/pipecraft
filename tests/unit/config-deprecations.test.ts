@@ -1,10 +1,10 @@
 /**
  * config deprecation / no-op warnings (P1.6)
  *
- * mergeMethod and mergeStrategy: 'merge' are declared in the schema/types and documented,
- * but consumed nowhere — promotions always fast-forward. autoMerge is a deprecated alias
- * for autoPromote. Rather than break existing configs that set them, surface them honestly
- * as warnings so the dead surface is visible.
+ * mergeMethod is declared but consumed nowhere; autoMerge is a deprecated alias for
+ * autoPromote. Rather than break existing configs that set them, surface them as warnings
+ * so the dead surface is visible. (mergeStrategy: 'merge' IS implemented — merge-commit
+ * promotion — so it must NOT warn.)
  */
 import { describe, expect, it } from 'vitest'
 import { getConfigWarnings, validateConfig } from '../../src/utils/config.js'
@@ -16,9 +16,9 @@ describe('config deprecation warnings', () => {
     expect(warnings.join(' ')).toMatch(/mergeMethod/)
   })
 
-  it("warns that mergeStrategy 'merge' is not implemented", () => {
+  it("does NOT warn for mergeStrategy 'merge' (it is implemented)", () => {
     const warnings = getConfigWarnings(createMinimalConfig({ mergeStrategy: 'merge' }))
-    expect(warnings.join(' ')).toMatch(/mergeStrategy/)
+    expect(warnings.join(' ')).not.toMatch(/mergeStrategy/)
   })
 
   it('warns that autoMerge is deprecated in favor of autoPromote', () => {

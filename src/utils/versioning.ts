@@ -19,6 +19,7 @@ import { execSync } from 'child_process'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import type { PipecraftConfig } from '../types/index.js'
+import { buildReleaseItConfig } from './release-it-config.js'
 
 /**
  * Manager for semantic versioning and release automation.
@@ -77,70 +78,9 @@ export class VersionManager {
    * ```
    */
   generateReleaseItConfig(): string {
-    const defaultConfig = {
-      git: {
-        requireCleanWorkingDir: false,
-        commit: false,
-        pushArgs: ['--tags'],
-        tagMatch: 'v[0-9]*.[0-9]*.[0-9]*'
-      },
-      github: {
-        release: false
-      },
-      npm: {
-        ignoreVersion: true,
-        publish: false,
-        skipChecks: true
-      },
-      hooks: {
-        'after:release': 'echo ${version} > .release-version'
-      },
-      plugins: {
-        '@release-it/conventional-changelog': {
-          whatBump: (commits: any[], options: any) => {
-            // Import DEFAULT_PREFIXES from the release-it config
-            const { DEFAULT_PREFIXES } = require('../../.release-it.cjs')
-            const defaults = DEFAULT_PREFIXES
-
-            // Merge with user-defined bump rules
-            const bumpRules = { ...defaults, ...this.config.versioning?.bumpRules }
-
-            let breakings = 0
-            let features = 0
-            const levelSet = ['major', 'minor', 'patch', 'ignore']
-
-            // eslint-disable-next-line prefer-spread
-            const level = Math.min.apply(
-              Math,
-              commits.map(commit => {
-                let level = levelSet.indexOf(
-                  bumpRules[commit.type as keyof typeof bumpRules] || 'ignore'
-                )
-                level = level < 0 ? 3 : level
-
-                if (commit.notes.length > 0) {
-                  breakings += commit.notes.length
-                }
-                if (commit.type === 'feat') {
-                  features += 1
-                }
-                return level
-              })
-            )
-
-            return {
-              level: level,
-              reason:
-                breakings === 1
-                  ? `There is ${breakings} BREAKING CHANGE and ${features} features`
-                  : `There are ${breakings} BREAKING CHANGES and ${features} features`
-            }
-          }
-        }
-      }
-    }
-
-    return `module.exports = ${JSON.stringify(defaultConfig, null, 2)}`
+    // Same builder `generate` uses, so `init --with-versioning` cannot produce a different
+    // file than the pipeline would. See src/utils/release-it-config.ts and #496.
+    return buildReleaseItConfig(this.config)
   }
 
   /**

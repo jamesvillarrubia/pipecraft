@@ -133,7 +133,7 @@ Each domain has:
 
 - **Path patterns**: Which files belong to this domain
 - **Test configuration**: Whether it needs testing
-- **Deployment configuration**: Whether it's deployable
+- **Deployment configuration**: Which jobs it needs (`prefixes`)
 - **Remote testing**: Whether it needs post-deployment testing
 
 When you change files in a domain, only that domain's tests run—saving time and CI costs.
@@ -147,20 +147,17 @@ In `.pipecraftrc.json`:
   "domains": {
     "api": {
       "paths": ["apps/api/**", "libs/api-core/**"],
-      "testable": true,
-      "deployable": true,
+      "prefixes": ["test", "deploy"],
       "description": "Backend API services"
     },
     "web": {
       "paths": ["apps/web/**", "libs/ui/**"],
-      "testable": true,
-      "deployable": true,
+      "prefixes": ["test", "deploy"],
       "description": "Frontend web application"
     },
     "shared": {
       "paths": ["libs/shared/**"],
-      "testable": true,
-      "deployable": false,
+      "prefixes": ["test"],
       "description": "Shared utilities"
     }
   }
@@ -332,7 +329,7 @@ Common causes:
 **Debug with:**
 
 ```bash
-npx pipecraft verify  # Validates configuration
+npx pipecraft doctor  # Full health check
 git diff origin/main --name-only  # See what git sees
 ```
 
@@ -341,7 +338,7 @@ git diff origin/main --name-only  # See what git sees
 Run pre-flight checks:
 
 ```bash
-npx pipecraft verify
+npx pipecraft doctor
 ```
 
 This validates:
@@ -484,7 +481,7 @@ This adds up quickly in active repositories.
 1. **Use caching**: PipeCraft workflows include dependency caching
 2. **Parallelize domains**: Multiple domains test concurrently
 3. **Use matrix strategies**: Test across Node versions in parallel
-4. **Skip unnecessary jobs**: Use `testable: false` for non-testable domains
+4. **Skip unnecessary jobs**: Omit `test` from a domain's `prefixes` when it needs no test job
 
 ---
 

@@ -23,13 +23,17 @@ inputs:
     required: false
     default: ''
   autoPromote:
-    description: 'Whether to automatically promote (fast-forward) to the target branch'
+    description: 'Whether to automatically promote to the target branch'
     required: false
     default: 'false'
+  mergeStrategy:
+    description: "How to land the promotion: 'fast-forward' (linear history) or 'merge' (merge commit)"
+    required: false
+    default: 'fast-forward'
   tempBranchPattern:
     description: 'Pattern for temp branch name'
     required: false
-    default: 'release/{source}-to-{target}-{version}'
+    default: 'pipecraft-promote/{source}-to-{target}-{version}'
   token:
     description: 'GitHub token for authentication'
     required: false
@@ -49,6 +53,30 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Validate Inputs
+      shell: bash
+      run: |
+        # GitHub does not enforce 'required: true' for composite action inputs, so an
+        # expression that resolves to empty arrives here silently. Left unchecked it is
+        # substituted into the temp branch name and 'gh pr create --base', which fails
+        # later with a confusing message about a malformed ref. Fail fast instead.
+        TARGET="${{ inputs.targetBranch }}"
+        TARGET="$(echo "$TARGET" | xargs)"
+
+        if [ -z "$TARGET" ]; then
+          echo "::error::promote-branch requires a non-empty 'targetBranch' input."
+          echo "::error::Received an empty value. There is no branch to promote to."
+          echo ""
+          echo "This usually means one of:"
+          echo "  - The branch flow has a single branch, so there is nothing to promote."
+          echo "    Remove the promote step rather than calling it with an empty target."
+          echo "  - The expression feeding targetBranch resolved to empty (typo, or a"
+          echo "    'needs' output that was never set)."
+          exit 1
+        fi
+
+        echo "✅ Promoting to '$TARGET'"
+
     - name: Checkout Code
       uses: actions/checkout@v5
       with:
@@ -104,19 +132,16 @@ runs:
         # Ensure we're on the source branch
         git checkout "$SOURCE"
 
-        # Check if temp branch already exists locally or remotely
-        if git show-ref --verify --quiet refs/heads/"$TEMP_BRANCH" || git ls-remote --heads origin "$TEMP_BRANCH" | grep -q "$TEMP_BRANCH"; then
-          echo "⚠️  Temp branch $TEMP_BRANCH already exists, using existing branch"
-          # Fetch and checkout existing branch
-          git fetch origin "$TEMP_BRANCH" 2>/dev/null || true
-          git checkout "$TEMP_BRANCH" 2>/dev/null || git checkout -b "$TEMP_BRANCH" origin/"$TEMP_BRANCH"
-        else
-          echo "📝 Creating new temp branch $TEMP_BRANCH"
-          # Create temp branch from current commit
-          git checkout -b "$TEMP_BRANCH"
-          # Push temp branch to remote
-          git push origin "$TEMP_BRANCH"
-        fi
+        # Always (re)create the temp branch at SOURCE's current tip. A branch of the
+        # same name may linger from an earlier no-op promotion pointing at an OLD commit
+        # (the manual-gate path leaves its temp branch behind). Reusing it as-is makes
+        # 'gh pr create' report "No commits between" and silently no-op, so a genuine
+        # promotion produces no gate PR. Forcing the temp branch to SOURCE keeps the
+        # promotion honest and stays idempotent on legitimate re-runs of the same version.
+        echo "📝 (Re)creating temp branch $TEMP_BRANCH at $SOURCE tip"
+        git branch -f "$TEMP_BRANCH" "$SOURCE"
+        git checkout "$TEMP_BRANCH"
+        git push --force origin "$TEMP_BRANCH"
 
         echo "tempBranch=$TEMP_BRANCH" >> $GITHUB_OUTPUT
         echo "✅ Temporary branch ready"
@@ -185,6 +210,16 @@ runs:
           echo "prUrl=$PR_URL" >> $GITHUB_OUTPUT
           echo "✅ Created PR #$PR_NUMBER"
           echo "🔗 URL: $PR_URL"
+        elif echo "$PR_URL" | grep -qiE "No commits between"; then
+          # '$TARGET' is already even with '$SOURCE' — there is nothing to promote.
+          # This is a no-op success (also covers re-runs), not a failure. Downstream
+          # steps tolerate an empty PR number (the ff-merge is a no-op when even).
+          echo "ℹ️  '$TARGET' is already up to date with '$SOURCE' — nothing to promote."
+          echo "prNumber=" >> $GITHUB_OUTPUT
+          echo "prUrl=" >> $GITHUB_OUTPUT
+          # No PR was opened against this temp branch, so delete it. Leaving it behind is
+          # what caused the stale-reuse no-op on the next same-version promotion.
+          git push origin --delete "$TEMP_BRANCH" 2>/dev/null || true
         else
           echo "❌ Failed to create PR"
           echo "Error output:"
@@ -205,7 +240,7 @@ runs:
         echo "⚠️  Auto-merge is disabled for this branch."
         echo "   Please review and merge the PR manually when ready."
 
-    - name: Fast-Forward Merge (Immediate Auto-Merge)
+    - name: Promote to Target (Immediate Auto-Promote)
       id: fast-forward
       if: inputs.autoPromote == 'true'
       shell: bash
@@ -213,37 +248,43 @@ runs:
         SOURCE="${{ inputs.sourceBranch }}"
         TARGET="${{ inputs.targetBranch }}"
         VERSION="${{ steps.get-version.outputs.version }}"
+        STRATEGY="${{ inputs.mergeStrategy }}"
 
-        echo "🚀 Fast-forwarding $TARGET to $SOURCE (maintaining linear history)"
-
-        # Get the commit SHA from source branch
         COMMIT_SHA=$(git rev-parse $SOURCE)
-        echo "Source commit: $COMMIT_SHA"
+        echo "Source commit: $COMMIT_SHA  (strategy: $STRATEGY)"
 
         # Fetch target branch
         git fetch origin $TARGET:$TARGET 2>/dev/null || true
 
-        # Capture the target branch's current SHA BEFORE fast-forward (for change detection)
+        # Capture the target branch's current SHA BEFORE promotion (for change detection)
         BEFORE_SHA=$(git rev-parse $TARGET)
         echo "beforeSha=$BEFORE_SHA" >> $GITHUB_OUTPUT
         echo "Target before: $BEFORE_SHA"
 
-        # Checkout target branch
         git checkout $TARGET
 
-        # Verify we can fast-forward (no divergent commits)
-        if git merge-base --is-ancestor $TARGET $SOURCE; then
-          echo "✅ Fast-forward is possible (linear history maintained)"
+        if [ "$STRATEGY" = "merge" ]; then
+          # Merge strategy: create a merge commit on the target. The release tag stays on
+          # the source tip (the merge's 2nd parent); calculate-version resolves it there.
+          if git merge-base --is-ancestor $SOURCE $TARGET; then
+            echo "ℹ️  $TARGET already contains $SOURCE — nothing to promote."
+          else
+            echo "🔀 Merging $SOURCE into $TARGET (merge commit)"
+            git merge --no-ff "$SOURCE" -m "chore: promote $VERSION from $SOURCE to $TARGET"
+          fi
         else
-          echo "❌ Cannot fast-forward - branches have diverged"
-          echo "Target branch has commits not in source branch"
-          exit 1
+          # Fast-forward strategy: linear history, no merge commit.
+          if git merge-base --is-ancestor $TARGET $SOURCE; then
+            echo "🚀 Fast-forwarding $TARGET to $SOURCE (linear history)"
+            git merge --ff-only "$SOURCE"
+          else
+            echo "❌ Cannot fast-forward - $TARGET has commits not in $SOURCE (diverged)."
+            echo "   Use mergeStrategy: merge to promote across diverged branches."
+            exit 1
+          fi
         fi
 
-        # Fast-forward merge (no merge commit)
-        git merge --ff-only $SOURCE
-
-        # Push to remote
+        # Push to remote (no-op if nothing changed)
         git push origin $TARGET
 
         echo "✅ Fast-forwarded $TARGET to $COMMIT_SHA"

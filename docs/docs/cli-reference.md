@@ -27,16 +27,17 @@ cd your-project
 npx pipecraft init
 ```
 
-By default `init` is **non-interactive**: it writes a starter `.pipecraftrc` using sensible defaults, which you can override with flags:
+`init` prompts you through the choices. Pass the values as flags to skip the questions they
+answer:
 
 ```bash
 npx pipecraft init --initial-branch develop --final-branch main --ci-provider github
 ```
 
-Prefer to be walked through it? Use the interactive wizard:
+In CI, a script, or an agent session, `--yes` accepts every default and never prompts:
 
 ```bash
-npx pipecraft init --interactive
+npx pipecraft init --yes
 ```
 
 Once complete, you'll have a `.pipecraftrc` file you can edit to define your branch flow and domains (format can be JSON, YAML, or JavaScript). Domain change detection is path-based, so any project — including monorepos — is configured by pointing each domain at its file globs.
@@ -269,7 +270,6 @@ Most projects use `.pipecraftrc` because it's simple and can be either JSON or Y
   "domains": {
     "app": {
       "paths": ["src/**"],
-      "description": "Application code",
       "prefixes": ["test", "deploy"]
     }
   }

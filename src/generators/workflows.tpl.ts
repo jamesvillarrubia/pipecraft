@@ -185,14 +185,13 @@ export const generate = (
       return generatePipeline(ctx)
     })
     .then(ctx => {
-      // Generate the enforce PR target workflow
+      // Generate the enforce PR target workflow. The template adapts to a single-branch
+      // flow on its own — see enforce-pr-target.yml.tpl.ts.
       return generateEnforcePRTarget(ctx)
     })
     .then(ctx => {
       // Generate the PR title check workflow
       return generatePRTitleCheck(ctx)
     })
-    .then(ctx => {
-      logger.success('✅ Generated workflows in: .github/workflows')
-      return ctx
-    })
+// The CLI prints the success line itself, using the real --output path. Printing a second,
+// hardcoded one here meant `generate` reported success twice on every run.

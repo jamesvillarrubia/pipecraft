@@ -1,23 +1,42 @@
 /**
  * AI Skill Installer
  *
- * Installs Pipecraft skills for AI coding assistants (Claude Code, Cursor, etc.)
+ * Installs the Pipecraft skill for AI coding assistants.
+ *
+ * Each tool reads a different file. Claude Code reads `.claude/skills/pipecraft/SKILL.md`,
+ * a directory Pipecraft owns outright. The other five read a rules file at the project root
+ * that the user writes and owns: `.cursorrules`, `.github/copilot-instructions.md`,
+ * `.windsurfrules`, `.clinerules`, `AGENTS.md`. Pipecraft claims a marked block inside those
+ * and never changes a byte outside it, so reinstalling updates the block and uninstalling
+ * gives the file back.
  */
 
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs'
-import { dirname, join } from 'path'
+import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'fs'
 import { homedir } from 'os'
+import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+/** Delimiters of the region Pipecraft maintains inside a file the user owns. */
+export const BLOCK_START = '<!-- pipecraft:start -->'
+export const BLOCK_END = '<!-- pipecraft:end -->'
+
 export interface SkillTarget {
   name: string
   displayName: string
-  globalPath: string
+  /** Destination relative to the project root. */
   localPath: string
-  configFile?: string // Optional config file at project root (e.g., .cursorrules)
+  /** Destination relative to the home directory, for tools that document a global location. */
+  globalPath?: string
+  /**
+   * True when the destination is a directory Pipecraft owns and may rewrite whole.
+   * False when the user owns the file, which means a marked block and nothing else.
+   */
+  ownsFile: boolean
+  /** Project paths whose presence means the tool is in use here. */
+  detect: string[]
 }
 
 export interface InstallResult {
@@ -27,37 +46,58 @@ export interface InstallResult {
   error?: string
   skipped?: boolean
   reason?: string
+  action?: 'created' | 'updated' | 'removed'
 }
 
 /**
- * Supported AI coding assistant targets
+ * Supported AI coding assistant targets.
+ *
+ * Only Claude Code gets a global entry. The other five formats are project files, and a copy
+ * in the home directory is a file no tool loads.
  */
 export const SKILL_TARGETS: SkillTarget[] = [
   {
     name: 'claude-code',
     displayName: 'Claude Code',
-    globalPath: join(homedir(), '.claude', 'skills', 'pipecraft'),
-    localPath: join('.claude', 'skills', 'pipecraft')
+    localPath: join('.claude', 'skills', 'pipecraft', 'SKILL.md'),
+    globalPath: join('.claude', 'skills', 'pipecraft', 'SKILL.md'),
+    ownsFile: true,
+    detect: ['.claude', 'CLAUDE.md']
   },
   {
     name: 'cursor',
     displayName: 'Cursor',
-    globalPath: join(homedir(), '.cursor', 'skills', 'pipecraft'),
-    localPath: join('.cursor', 'skills', 'pipecraft'),
-    configFile: '.cursorrules'
+    localPath: '.cursorrules',
+    ownsFile: false,
+    detect: ['.cursor', '.cursorrules']
   },
   {
     name: 'copilot',
     displayName: 'GitHub Copilot',
-    globalPath: join(homedir(), '.copilot', 'skills', 'pipecraft'),
-    localPath: join('.github', 'skills', 'pipecraft'),
-    configFile: '.github/copilot-instructions.md'
+    localPath: join('.github', 'copilot-instructions.md'),
+    ownsFile: false,
+    detect: ['.github']
   },
   {
     name: 'windsurf',
     displayName: 'Windsurf',
-    globalPath: join(homedir(), '.codeium', 'windsurf', 'skills', 'pipecraft'),
-    localPath: join('.windsurf', 'skills', 'pipecraft')
+    localPath: '.windsurfrules',
+    ownsFile: false,
+    detect: ['.windsurf', '.windsurfrules']
+  },
+  {
+    name: 'cline',
+    displayName: 'Cline / Roo Code',
+    localPath: '.clinerules',
+    ownsFile: false,
+    detect: ['.clinerules']
+  },
+  {
+    name: 'codex',
+    displayName: 'OpenAI Codex',
+    localPath: 'AGENTS.md',
+    ownsFile: false,
+    detect: ['AGENTS.md']
   }
 ]
 
@@ -96,203 +136,250 @@ Help users with **Pipecraft** - a trunk-based CI/CD workflow generator for GitHu
 pipecraft init              # Create config
 pipecraft generate          # Generate workflows
 pipecraft validate          # Check config syntax
-pipecraft verify            # Health check
+pipecraft doctor            # Health check (exits 1 on errors)
 pipecraft setup             # Create branches
 pipecraft setup-github      # GitHub permissions
 \`\`\`
 
-## Configuration
+## Key Behaviours
 
-Required fields in \`.pipecraftrc\`:
-
-\`\`\`yaml
-ciProvider: github
-mergeStrategy: fast-forward
-requireConventionalCommits: true
-initialBranch: develop        # Must be FIRST in branchFlow
-finalBranch: main             # Must be LAST in branchFlow
-branchFlow: [develop, main]
-semver:
-  bumpRules:
-    feat: minor
-    fix: patch
-    breaking: major
-domains:
-  app:
-    paths: ["src/**"]
-    description: "App code"
-\`\`\`
-
-## Reserved Domain Names
-
-Cannot use: \`version\`, \`changes\`, \`gate\`, \`tag\`, \`promote\`, \`release\`
+- \`autoPromote: false\` still opens the promotion PR; it only leaves the merge to a human.
+- Only commits GitHub itself authored promote. A directly pushed commit never releases.
+- Domain job bodies are yours. Pipecraft writes the placeholder and never fills it in.
 
 For full documentation, see https://pipecraft.thecraftlab.dev
 `
 }
 
-/**
- * Install skill to a specific path
- */
-function installToPath(targetPath: string, content: string): { success: boolean; error?: string } {
-  try {
-    // Create the full target directory (e.g., ~/.claude/skills/pipecraft)
-    mkdirSync(targetPath, { recursive: true })
-    writeFileSync(join(targetPath, 'SKILL.md'), content, 'utf8')
-    return { success: true }
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error)
-    return { success: false, error: message }
-  }
+/** The skill without its YAML frontmatter, which means nothing inside a rules file. */
+function skillBody(content: string): string {
+  const match = content.match(/^---\n[\s\S]*?\n---\n+/)
+  return match ? content.slice(match[0].length) : content
+}
+
+/** The block Pipecraft maintains, delimiters included. */
+function skillBlock(content: string): string {
+  return `${BLOCK_START}\n${skillBody(content).trim()}\n${BLOCK_END}`
 }
 
 /**
- * Check if a target appears to be installed/used
+ * Write the block into a file the user owns.
+ *
+ * A file with no block gets one appended after its existing text. A file with a block keeps
+ * everything around it and gets the block's contents replaced.
  */
-function isTargetInstalled(target: SkillTarget): boolean {
-  // Check if the global skills directory exists (indicates the tool is used)
-  const parentDir = dirname(target.globalPath)
-  return existsSync(parentDir)
+function writeBlock(filePath: string, content: string): InstallResult['action'] {
+  const block = skillBlock(content)
+  mkdirSync(dirname(filePath), { recursive: true })
+
+  if (!existsSync(filePath)) {
+    writeFileSync(filePath, `${block}\n`, 'utf8')
+    return 'created'
+  }
+
+  const existing = readFileSync(filePath, 'utf8')
+  const start = existing.indexOf(BLOCK_START)
+  const end = existing.indexOf(BLOCK_END)
+
+  if (start !== -1 && end !== -1 && end > start) {
+    const before = existing.slice(0, start)
+    const after = existing.slice(end + BLOCK_END.length)
+    writeFileSync(filePath, `${before}${block}${after}`, 'utf8')
+    return 'updated'
+  }
+
+  const separator = existing.endsWith('\n') ? '\n' : '\n\n'
+  writeFileSync(filePath, `${existing}${separator}${block}\n`, 'utf8')
+  return 'updated'
+}
+
+/** Remove the block, and the file too when the block was all it held. */
+function removeBlock(filePath: string): InstallResult['action'] | undefined {
+  if (!existsSync(filePath)) return undefined
+
+  const existing = readFileSync(filePath, 'utf8')
+  const start = existing.indexOf(BLOCK_START)
+  const end = existing.indexOf(BLOCK_END)
+  if (start === -1 || end === -1 || end < start) return undefined
+
+  const remainder = existing.slice(0, start) + existing.slice(end + BLOCK_END.length)
+  if (remainder.trim() === '') {
+    unlinkSync(filePath)
+  } else {
+    writeFileSync(filePath, remainder.replace(/\n{3,}$/, '\n'), 'utf8')
+  }
+  return 'removed'
 }
 
 export interface InstallOptions {
   global?: boolean
   local?: boolean
   targets?: string[]
-  force?: boolean
   cwd?: string
+  /** Home directory to install into. Tests pass a temporary one. */
+  home?: string
+}
+
+/** Tools whose marker files are present in the project. */
+export function detectTargets(cwd: string = process.cwd()): string[] {
+  return SKILL_TARGETS.filter(target =>
+    target.detect.some(marker => existsSync(join(cwd, marker)))
+  ).map(target => target.name)
+}
+
+/** Targets to act on: an explicit list, else what the project shows, else every format. */
+function resolveTargets(options: InstallOptions, cwd: string): SkillTarget[] {
+  if (options.targets && options.targets.length > 0) {
+    return SKILL_TARGETS.filter(t => options.targets!.includes(t.name))
+  }
+
+  const detected = detectTargets(cwd)
+  if (detected.length === 0) return SKILL_TARGETS
+  return SKILL_TARGETS.filter(t => detected.includes(t.name))
 }
 
 /**
- * Install Pipecraft skills for AI coding assistants
+ * Install the Pipecraft skill for AI coding assistants.
+ *
+ * Local is the default scope, because five of the six formats only exist inside a project.
  */
 export function installSkills(options: InstallOptions = {}): InstallResult[] {
   const results: InstallResult[] = []
   const content = getSkillContent()
   const cwd = options.cwd || process.cwd()
+  const home = options.home || homedir()
+  const installGlobal = options.global ?? false
+  const installLocal = options.local ?? !installGlobal
 
-  // Filter targets if specific ones requested
-  let targets = SKILL_TARGETS
-  if (options.targets && options.targets.length > 0) {
-    targets = SKILL_TARGETS.filter(t => options.targets!.includes(t.name))
-  }
-
-  for (const target of targets) {
-    // Determine installation scope
-    const installGlobal = options.global ?? true
-    const installLocal = options.local ?? false
-
-    // Global installation
+  for (const target of resolveTargets(options, cwd)) {
     if (installGlobal) {
-      // Skip if target tool doesn't appear to be installed (unless forced)
-      if (!options.force && !isTargetInstalled(target)) {
+      if (!target.globalPath) {
         results.push({
           target: target.displayName,
-          path: target.globalPath,
+          path: target.localPath,
           success: false,
           skipped: true,
-          reason: `${target.displayName} not detected`
+          reason: 'project-level only'
         })
       } else {
-        const result = installToPath(target.globalPath, content)
-        results.push({
-          target: target.displayName,
-          path: target.globalPath,
-          success: result.success,
-          error: result.error
-        })
+        const path = join(home, target.globalPath)
+        results.push(write(target, path, content))
       }
     }
 
-    // Local installation (project-level)
     if (installLocal) {
-      const localPath = join(cwd, target.localPath)
-      const result = installToPath(localPath, content)
-      results.push({
-        target: `${target.displayName} (project)`,
-        path: localPath,
-        success: result.success,
-        error: result.error
-      })
+      results.push(write(target, join(cwd, target.localPath), content))
     }
   }
 
   return results
 }
 
-/**
- * List available skill targets and their status
- */
-export function listSkillTargets(): Array<{
-  name: string
-  displayName: string
-  installed: boolean
-  globalPath: string
-  hasSkill: boolean
-}> {
-  return SKILL_TARGETS.map(target => ({
-    name: target.name,
-    displayName: target.displayName,
-    installed: isTargetInstalled(target),
-    globalPath: target.globalPath,
-    hasSkill: existsSync(join(target.globalPath, 'SKILL.md'))
-  }))
+function write(target: SkillTarget, path: string, content: string): InstallResult {
+  try {
+    if (target.ownsFile) {
+      const action = existsSync(path) ? 'updated' : 'created'
+      mkdirSync(dirname(path), { recursive: true })
+      writeFileSync(path, content, 'utf8')
+      return { target: target.displayName, path, success: true, action }
+    }
+    return { target: target.displayName, path, success: true, action: writeBlock(path, content) }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
+    return { target: target.displayName, path, success: false, error: message }
+  }
 }
 
-/**
- * Uninstall skills from all targets
- */
+export interface TargetStatus {
+  name: string
+  displayName: string
+  localPath: string
+  globalPath?: string
+  /** The tool's marker files are present in this project. */
+  detected: boolean
+  /** Pipecraft's skill is already installed here. */
+  hasSkill: boolean
+}
+
+/** List every target, whether the project uses it, and whether the skill is already there. */
+export function listSkillTargets(options: { cwd?: string; home?: string } = {}): TargetStatus[] {
+  const cwd = options.cwd || process.cwd()
+  const home = options.home || homedir()
+  const detected = detectTargets(cwd)
+
+  return SKILL_TARGETS.map(target => {
+    const localPath = join(cwd, target.localPath)
+    const globalPath = target.globalPath ? join(home, target.globalPath) : undefined
+
+    return {
+      name: target.name,
+      displayName: target.displayName,
+      localPath,
+      globalPath,
+      detected: detected.includes(target.name),
+      hasSkill: hasSkill(target, localPath) || (globalPath ? hasSkill(target, globalPath) : false)
+    }
+  })
+}
+
+function hasSkill(target: SkillTarget, path: string): boolean {
+  if (!existsSync(path)) return false
+  if (target.ownsFile) return true
+  return readFileSync(path, 'utf8').includes(BLOCK_START)
+}
+
+/** Remove what `installSkills` wrote, and nothing else. */
 export function uninstallSkills(
-  options: { global?: boolean; local?: boolean; cwd?: string } = {}
+  options: { global?: boolean; local?: boolean; cwd?: string; home?: string } = {}
 ): InstallResult[] {
   const results: InstallResult[] = []
   const cwd = options.cwd || process.cwd()
-  const { rmSync } = require('fs')
+  const home = options.home || homedir()
+  const removeGlobal = options.global ?? false
+  const removeLocal = options.local ?? !removeGlobal
 
   for (const target of SKILL_TARGETS) {
-    if (options.global !== false) {
-      const skillFile = join(target.globalPath, 'SKILL.md')
-      if (existsSync(skillFile)) {
-        try {
-          rmSync(target.globalPath, { recursive: true, force: true })
-          results.push({
-            target: target.displayName,
-            path: target.globalPath,
-            success: true
-          })
-        } catch (error: any) {
-          results.push({
-            target: target.displayName,
-            path: target.globalPath,
-            success: false,
-            error: error.message
-          })
-        }
-      }
+    if (removeGlobal && target.globalPath) {
+      results.push(remove(target, join(home, target.globalPath)))
     }
-
-    if (options.local) {
-      const localPath = join(cwd, target.localPath)
-      const skillFile = join(localPath, 'SKILL.md')
-      if (existsSync(skillFile)) {
-        try {
-          rmSync(localPath, { recursive: true, force: true })
-          results.push({
-            target: `${target.displayName} (project)`,
-            path: localPath,
-            success: true
-          })
-        } catch (error: any) {
-          results.push({
-            target: `${target.displayName} (project)`,
-            path: localPath,
-            success: false,
-            error: error.message
-          })
-        }
-      }
+    if (removeLocal) {
+      results.push(remove(target, join(cwd, target.localPath)))
     }
   }
 
   return results
+}
+
+function remove(target: SkillTarget, path: string): InstallResult {
+  try {
+    if (target.ownsFile) {
+      if (!existsSync(path)) {
+        return {
+          target: target.displayName,
+          path,
+          success: false,
+          skipped: true,
+          reason: 'not installed'
+        }
+      }
+      // The whole directory belongs to Pipecraft, so it goes with the file.
+      rmSync(dirname(path), { recursive: true, force: true })
+      return { target: target.displayName, path, success: true, action: 'removed' }
+    }
+
+    const action = removeBlock(path)
+    if (!action) {
+      return {
+        target: target.displayName,
+        path,
+        success: false,
+        skipped: true,
+        reason: 'not installed'
+      }
+    }
+    return { target: target.displayName, path, success: true, action }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
+    return { target: target.displayName, path, success: false, error: message }
+  }
 }

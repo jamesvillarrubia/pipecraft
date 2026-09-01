@@ -41,7 +41,7 @@ runs:
         TARGET="${{ inputs.targetBranch }}"
         SOURCE="${{ inputs.sourceBranch }}"
         BRANCH_NAME="${{ inputs.branchName }}"
-        
+
         case "$ACTION" in
           "fast-forward")
             if [ -z "$SOURCE" ]; then
@@ -66,7 +66,7 @@ runs:
             exit 1
             ;;
         esac
-        
+
         echo "✅ Input validation passed"
 
     - name: Perform Branch Action
@@ -77,7 +77,7 @@ runs:
         TARGET="${{ inputs.targetBranch }}"
         SOURCE="${{ inputs.sourceBranch }}"
         BRANCH_NAME="${{ inputs.branchName }}"
-        
+
         case "$ACTION" in
           "fast-forward")
             echo "🔄 Fast-forwarding $TARGET to $SOURCE"

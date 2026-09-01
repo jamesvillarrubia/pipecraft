@@ -1,0 +1,62 @@
+name: Sync example repos
+
+# On each published release, regenerate the the-craftlab/pipecraft-example-* repos with the
+# new generator and open a PR per repo that drifted (the remote example also gets its
+# actionVersion bumped to the release tag). Repos already in sync are skipped.
+#
+# REQUIRED SECRET: EXAMPLES_TOKEN
+#   The default GITHUB_TOKEN only has access to THIS repo. Pushing branches and opening PRs
+#   on the separate example repos needs a token with write + pull-request access to them:
+#     - Fine-grained PAT scoped to the the-craftlab/pipecraft-example-* repos
+#       (Contents: Read and write, Pull requests: Read and write), or a classic PAT (repo), or
+#     - A GitHub App installation token with the same permissions.
+#   Add it as the repo/org Actions secret `EXAMPLES_TOKEN`. Without it this workflow no-ops
+#   with a clear message (it does not fail the release).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'pipecraft version tag to sync (defaults to the latest release)'
+        required: false
+        type: string
+
+jobs:
+  sync:
+    name: Regenerate example repos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '10'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build CLI
+        run: pnpm build
+
+      - name: Sync example repos
+        env:
+          # See the header: EXAMPLES_TOKEN must have write + PR access to the example repos.
+          GH_TOKEN: ${{ secrets.EXAMPLES_TOKEN }}
+          VERSION: ${{ github.event.release.tag_name || inputs.version }}
+        run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::warning::EXAMPLES_TOKEN is not set — skipping example sync."
+            echo "Add a token with write + PR access to the pipecraft-example-* repos as the"
+            echo "EXAMPLES_TOKEN secret to enable automatic example regeneration on release."
+            exit 0
+          fi
+          pnpm exec tsx scripts/sync-examples.ts --push ${VERSION:+--version "$VERSION"} all

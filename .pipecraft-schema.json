@@ -69,7 +69,7 @@
         }
       ],
       "default": false,
-      "description": "Auto-promote configuration for branch promotions. When enabled, code is automatically promoted (fast-forwarded) to the next branch after checks pass. When disabled, a PR is created for manual review.",
+      "description": "Controls how a promotion PR is merged, not whether one is opened. PipeCraft opens the promotion PR either way: true merges it automatically once checks pass, false leaves it for a human to merge. No value here stops promotion PRs from being created — to stop promoting to a branch at all, remove it from branchFlow.",
       "examples": [true, { "staging": true, "main": false }]
     },
     "mergeMethod": {
@@ -285,7 +285,7 @@
           "items": {
             "type": "string"
           },
-          "description": "Job prefixes to generate for this domain (e.g., ['test', 'deploy', 'lint']).",
+          "description": "Job prefixes to generate for this domain (e.g. ['test', 'deploy', 'lint']). Each entry produces a {prefix}-{domain} job. A domain with no prefixes and no legacy flags generates no jobs.",
           "examples": [
             ["test", "deploy"],
             ["lint", "build", "test", "deploy", "e2e"]
@@ -295,19 +295,19 @@
           "type": "boolean",
           "default": false,
           "deprecated": true,
-          "description": "DEPRECATED: Use prefixes: ['test'] instead."
+          "description": "DEPRECATED: use prefixes: ['test'] instead. Translated during config load; only takes effect when written explicitly."
         },
         "deployable": {
           "type": "boolean",
           "default": false,
           "deprecated": true,
-          "description": "DEPRECATED: Use prefixes: ['deploy'] instead."
+          "description": "DEPRECATED: use prefixes: ['deploy'] instead. Translated during config load; only takes effect when written explicitly."
         },
         "remoteTestable": {
           "type": "boolean",
           "default": false,
           "deprecated": true,
-          "description": "DEPRECATED: Use prefixes: ['remote-test'] instead."
+          "description": "DEPRECATED: use prefixes: ['remote-test'] instead. Translated during config load; only takes effect when written explicitly."
         }
       }
     }

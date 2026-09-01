@@ -2,13 +2,73 @@
 
 # PipeCraft
 
+**Your CI/CD decisions, already made.**
+
+Nx and Turbo hand the pipeline decisions back to you. How branches promote, when a version
+is cut, which tests run for which change, what stops a bad push reaching production — every
+team works those out again, and makes the same mistakes doing it.
+
+PipeCraft has made those decisions. It generates GitHub Actions workflows into your
+repository that encode them, and the workflows are yours from the moment they land.
+
+```bash
+npx pipecraft init --yes
+npx pipecraft generate
+```
+
+Two commands, and you have this:
+
+```
+changes    which domains changed, from your path globs
+version    next semantic version, from your conventional commits
+test-api   ─┐
+test-web    ├─ one job per domain, run only when that domain changed
+test-cicd  ─┘
+gate       every prerequisite passed
+tag        the version tag, on the commit that earned it
+promote    a PR to the next branch in your flow
+release    the GitHub release, on your final branch
+```
+
+The domain jobs are placeholders holding your test commands. Everything else works on the
+first push.
+
+## What it decides for you
+
+**Only merged pull requests cut releases.** A commit pushed straight to your branch runs
+your tests and reports the version it would have used, then stops. A hotfix typed on the
+wrong branch cannot ship.
+
+**Promotion is a pull request.** Code moves along `develop → staging → main` through PRs
+that Pipecraft opens. Set `autoPromote` per branch to say which hops merge themselves and
+which wait for a person.
+
+**Versions come from commits, in one place.** Conventional commits decide the bump, the
+pipeline resolves it, and no local command can produce a tag CI disagrees with.
+
+**Tests run for what changed.** Domains are path globs; the `changes` job turns them into
+flags your jobs are gated on.
+
+Disagree with any of it? The workflows are in your repository. Edit them, or change the
+config and regenerate — custom jobs are preserved.
+
+## Documentation
+
+**[pipecraft.thecraftlab.dev](https://pipecraft.thecraftlab.dev)** — guides, configuration
+reference, examples, and troubleshooting.
+
+Working in this repo with an AI agent? See [AGENTS.md](AGENTS.md).
+
+Developing Pipecraft itself: [CONTRIBUTING.md](./CONTRIBUTING.md) for setup and workflow,
+[docs-dev/testing.md](./docs-dev/testing.md) for the testing approach, and
+[docs-dev/ast-operations.md](./docs-dev/ast-operations.md) for how the generator edits YAML.
+
 [![npm version](https://badge.fury.io/js/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
 [![NPM downloads](https://img.shields.io/npm/dm/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
 [![License](https://img.shields.io/npm/l/pipecraft.svg)](https://github.com/the-craftlab/pipecraft/blob/main/LICENSE)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/en/)
 [![Documentation](https://img.shields.io/badge/docs-pipecraft.thecraftlab.dev-blue)](https://pipecraft.thecraftlab.dev)
 [![codecov](https://codecov.io/gh/the-craftlab/pipecraft/branch/main/graph/badge.svg)](https://codecov.io/gh/the-craftlab/pipecraft)
-[![GitHub issues](https://img.shields.io/github/issues/the-craftlab/pipecraft)](https://github.com/the-craftlab/pipecraft/issues)
 [![GitHub stars](https://img.shields.io/github/stars/the-craftlab/pipecraft)](https://github.com/the-craftlab/pipecraft/stargazers)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
@@ -17,58 +77,23 @@
 [![staging](https://img.shields.io/github/actions/workflow/status/the-craftlab/pipecraft/pipeline.yml?branch=staging&label=staging)](https://github.com/the-craftlab/pipecraft/actions/workflows/pipeline.yml?query=branch%3Astaging)
 [![main](https://img.shields.io/github/actions/workflow/status/the-craftlab/pipecraft/pipeline.yml?branch=main&label=main)](https://github.com/the-craftlab/pipecraft/actions/workflows/pipeline.yml?query=branch%3Amain)
 
-Skip the debugging cycles. Generate battle-tested CI/CD workflows into your repository with best practices built in. Fully customizable, completely yours.
-
----
-
-## 📚 Documentation
-
-**For users — [pipecraft.thecraftlab.dev →](https://pipecraft.thecraftlab.dev)**
-
-The documentation site is the product manual: get-started + quickstart, guides (workflow generation, patterns, versioning, examples), reference (CLI, configuration, action modes), how-it-works, and help (troubleshooting, error reference, FAQ).
-
-**For contributors — develop Pipecraft itself:**
-
-- [CONTRIBUTING.md](./CONTRIBUTING.md) — setup, workflow, and how to contribute
-- [docs-dev/testing.md](./docs-dev/testing.md) — testing philosophy and how to run/write tests
-- [docs-dev/ast-operations.md](./docs-dev/ast-operations.md) — how the generator manipulates YAML (AST path operations)
-
----
-
-## What is PipeCraft?
-
-Debugging CI/CD pipelines is tedious. You push a change, wait 10 minutes for the pipeline to run, discover a tiny YAML syntax error, fix it, wait another 10 minutes, find another issue. Repeat until you've wasted hours on what should be simple workflow setup.
-
-PipeCraft solves this by providing battle-tested CI/CD templates that you generate into your own repository. Instead of writing GitHub Actions workflows from scratch and debugging them through trial and error, you start with proven patterns that handle common scenarios: domain-based testing for monorepos, semantic versioning, branch promotion flows, and deployment automation.
-
-The generated workflows live in your repository—you own them completely. Customize them as much as you need: add deployment steps, integrate with your tools, modify job configurations. When customizations get complex or you want to start fresh, regenerate from templates. PipeCraft preserves your customizations while updating the core workflow structure.
-
-This approach means you get a fully functional CI/CD pipeline with best practices built in from day one, without the debugging cycles and without the maintenance burden of keeping workflows synchronized across projects.
-
 ## Quick Start
 
-Get a working pipeline in three commands:
-
 ```bash
-# Initialize PipeCraft in your project
-npx pipecraft init
+# Create .pipecraftrc. Prompts unless you pass --yes.
+npx pipecraft init --yes
 
-# Edit the generated .pipecraftrc to customize:
-# - Branch names (branchFlow, initialBranch, finalBranch)
-# - Domain paths and configurations
-# - CI provider and merge strategy
-# (Supports .pipecraftrc, .json, .yml, .yaml, or .js formats)
+# See what would be generated, including the domain jobs your config produces
+npx pipecraft generate --dry-run
 
-# Generate your CI/CD workflows
+# Write the workflows
 npx pipecraft generate
 
-# Commit the generated files
-git add .github/workflows .github/actions .pipecraftrc
-git commit -m "chore: add PipeCraft workflows"
-git push
+git add .github .pipecraftrc && git commit -m "chore: add PipeCraft workflows"
 ```
 
-That's it. You now have a structured CI/CD workflow with change detection. Add your test commands to the generated jobs.
+Then edit `.pipecraftrc` to match your repository — the branch names in `branchFlow`, and
+the path globs and `prefixes` for each domain — and regenerate.
 
 ## Key Features
 
@@ -107,7 +132,7 @@ test-api:
 No installation required—just run commands directly:
 
 ```bash
-npx pipecraft init
+npx pipecraft init --yes   # drop --yes to answer the prompts
 npx pipecraft generate
 ```
 
@@ -286,25 +311,32 @@ To report bugs or request features, open an issue on [GitHub Issues](https://git
 
 ## AI Assistant Integration
 
-Pipecraft includes AI skills for Claude Code, Cursor, GitHub Copilot, and other coding assistants.
-
-### Install the Skill
+Pipecraft ships a skill for Claude Code, Cursor, GitHub Copilot, Windsurf, Cline / Roo Code
+and Codex. One command writes it in the format each tool reads:
 
 ```bash
-# Via npm (Claude Code + Cursor)
-npm install -g @pipecraft/claude-skill
-
-# Via OpenSkills (universal)
-npx openskills install the-craftlab/pipecraft
+npx pipecraft skill              # install into this project
+pipecraft skill --list           # show which tools this project uses
+pipecraft skill --uninstall      # take it back out
 ```
 
-### Manual Setup
+| Tool             | File                                | Written as             |
+| ---------------- | ----------------------------------- | ---------------------- |
+| Claude Code      | `.claude/skills/pipecraft/SKILL.md` | whole file             |
+| Cursor           | `.cursorrules`                      | block inside your file |
+| GitHub Copilot   | `.github/copilot-instructions.md`   | block inside your file |
+| Windsurf         | `.windsurfrules`                    | block inside your file |
+| Cline / Roo Code | `.clinerules`                       | block inside your file |
+| Codex            | `AGENTS.md`                         | block inside your file |
 
-| Tool           | Configuration File                                   |
-| -------------- | ---------------------------------------------------- |
-| Claude Code    | `.claude/skills/pipecraft/SKILL.md`                  |
-| Cursor         | `.cursorrules` (included in repo)                    |
-| GitHub Copilot | `.github/copilot-instructions.md` (included in repo) |
+Five of those files are yours. Pipecraft writes only between `<!-- pipecraft:start -->` and
+`<!-- pipecraft:end -->`, leaves everything else untouched, replaces that block when you
+reinstall, and removes the block on `--uninstall`. A file that held nothing else is deleted.
+
+Without `--target`, the command installs for the tools whose files or directories are already
+in the project, and installs every format when it finds none. `--global` writes
+`~/.claude/skills/pipecraft/SKILL.md`; the other five formats are project files and have no
+home-directory form.
 
 ### What the Skill Provides
 

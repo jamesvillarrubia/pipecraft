@@ -57,11 +57,11 @@ runs:
         git rev-parse HEAD
         COMMIT_HASH=$(git rev-parse HEAD)
         echo "Current commit hash: $COMMIT_HASH"
-        
+
         # Check for tags on the current commit
         TAG=$(git tag --points-at $COMMIT_HASH | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)
         echo "Tags found: $TAG"
-        
+
         if [ -z "$TAG" ]; then
           echo "No existing tag found on the current commit"
         else

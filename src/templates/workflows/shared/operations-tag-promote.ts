@@ -11,9 +11,24 @@ import {
 import { getActionReference } from '../../../utils/action-reference.js'
 import type { PipecraftConfig } from '../../../types/index.js'
 
+/**
+ * Only promote commits GitHub authored, or a run a maintainer started deliberately.
+ *
+ * A merged pull request produces a commit whose committer is `noreply@github.com`, because
+ * GitHub creates it. A fast-forward promotion preserves that, so the marker survives the
+ * whole branch flow. A commit pushed by hand keeps its author's address and does not
+ * promote — which stops a hotfix typed on the wrong branch from cutting a release.
+ *
+ * `workflow_dispatch` stays open so a promotion can always be triggered on purpose.
+ */
+const PROMOTION_SOURCE_GATE =
+  "(github.event.head_commit.committer.email == 'noreply@github.com' || " +
+  "github.event_name == 'workflow_dispatch')"
+
 export interface TagPromoteContext {
   branchFlow: string[]
-  autoPromote?: Record<string, boolean> // autoPromote settings per branch
+  autoPromote?: boolean | Record<string, boolean> // global boolean, or per-target map
+  mergeStrategy?: 'fast-forward' | 'merge' // how promotions land on the target branch
   config?: Partial<PipecraftConfig>
 }
 
@@ -26,6 +41,8 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
   const validBranchFlow =
     branchFlow && Array.isArray(branchFlow) && branchFlow.length > 0 ? branchFlow : ['main']
   const initialBranch = validBranchFlow[0]
+  // How promotions land on the target branch (default fast-forward for linear history).
+  const mergeStrategy = ctx.mergeStrategy === 'merge' ? 'merge' : 'fast-forward'
 
   // Get action references based on configuration
   const tagActionRef = getActionReference('create-tag', config)
@@ -40,7 +57,8 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
     `github.ref_name == '${initialBranch}'`,
     "needs.version.result == 'success'",
     "needs.version.outputs.version != ''",
-    "needs.gate.result == 'success'" // Gate job must succeed
+    "needs.gate.result == 'success'", // Gate job must succeed
+    PROMOTION_SOURCE_GATE
   ]
 
   // Default needs: version + gate (gate already checks all test jobs)
@@ -121,9 +139,9 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
 `,
       value: createValueFromString(`
     needs: [ version, tag ]
-    if: \${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && (${buildPromotableBranchesCondition(
-      validBranchFlow
-    )}) }}
+    if: \${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && ${PROMOTION_SOURCE_GATE} && needs.version.result == 'success' && needs.version.outputs.version != '' && (needs.tag.result == 'success' || needs.tag.result == 'skipped') && (${buildPromotableBranchesCondition(
+        validBranchFlow
+      )}) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -136,6 +154,7 @@ export function createTagPromoteReleaseOperations(ctx: TagPromoteContext): PathO
           sourceBranch: \${{ github.ref_name }}
           targetBranch: \${{ ${buildTargetBranchExpression(validBranchFlow)} }}
           autoPromote: \${{ ${buildAutoPromoteExpression(validBranchFlow, ctx.autoPromote)} }}
+          mergeStrategy: ${mergeStrategy}
           run_number: \${{ inputs.run_number || github.run_number }}
   `)
     },
@@ -242,15 +261,22 @@ function buildTargetBranchExpression(branchFlow: string[]): string {
  */
 function buildAutoPromoteExpression(
   branchFlow: string[],
-  autoPromote?: Record<string, boolean>
+  autoPromote?: boolean | Record<string, boolean>
 ): string {
   if (!autoPromote || branchFlow.length === 1) return `'false'`
+
+  // autoPromote may be a global boolean (true = auto-promote every hop) or a per-target
+  // map ({ staging: true, main: false }). A bare `true` must enable every hop — indexing
+  // it as `true[targetBranch]` yields undefined, which previously made `autoPromote: true`
+  // silently behave as all-manual.
+  const allHops = autoPromote === true
+  const map = typeof autoPromote === 'object' ? autoPromote : {}
 
   const clauses: string[] = []
   for (let i = 0; i < branchFlow.length - 1; i += 1) {
     const sourceBranch = branchFlow[i]
     const targetBranch = branchFlow[i + 1]
-    const isEnabled = autoPromote[targetBranch] ? 'true' : 'false'
+    const isEnabled = allHops || map[targetBranch] ? 'true' : 'false'
     clauses.push(`(github.ref_name == '${sourceBranch}' && '${isEnabled}')`)
   }
 

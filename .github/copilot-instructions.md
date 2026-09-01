@@ -15,11 +15,12 @@ This is **Pipecraft** - a trunk-based CI/CD workflow generator for GitHub Action
 pipecraft init              # Create .pipecraftrc config
 pipecraft generate          # Generate workflows
 pipecraft validate          # Check config syntax
-pipecraft verify            # Full setup health check
+pipecraft doctor            # Full setup health check
 pipecraft setup             # Create branches from branchFlow
 pipecraft setup-github      # Configure GitHub permissions
 pipecraft get-config <key>  # Read config value
 pipecraft version --check   # Preview next version
+pipecraft skill             # Install this guidance for AI tools
 ```
 
 ## Configuration Required Fields
@@ -58,3 +59,12 @@ These cannot be used as domain names: `version`, `changes`, `gate`, `tag`, `prom
 - Documentation: https://pipecraft.thecraftlab.dev
 - Full AI Guide: PIPECRAFT_AI_GUIDE.md
 - Schema: .pipecraft-schema.json
+
+## Gotchas
+
+- A directly-pushed commit does not release. `tag`/`release`/`promote` need a merged PR or a
+  manual `workflow_dispatch`.
+- Domain job bodies are the user's; Pipecraft writes placeholders with no test commands.
+- `enforce-pr-target.yml` and `pr-title-check.yml` are overwritten on every generate.
+- A domain with no `prefixes` generates no jobs.
+- `pipecraft init` prompts; pass `--yes` for CI, scripts and agents.

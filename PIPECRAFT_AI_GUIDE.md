@@ -40,6 +40,9 @@ npx pipecraft init
 
 ### 2. Initialize Configuration
 
+`pipecraft init` prompts. Pass `--yes` to take defaults and never prompt — required in CI,
+scripts, and when an agent is driving. It also skips prompting when stdin is not a TTY.
+
 ```bash
 pipecraft init
 ```
@@ -108,6 +111,30 @@ Configures GitHub Actions permissions, auto-merge settings, and branch protectio
 | `--apply` / `--force` | Auto-apply changes without prompting |
 | `--verbose` | Show detailed technical information |
 
+#### `pipecraft skill`
+
+Writes this guidance in the format each AI coding assistant reads: Claude Code
+(`.claude/skills/pipecraft/SKILL.md`), Cursor (`.cursorrules`), GitHub Copilot
+(`.github/copilot-instructions.md`), Windsurf (`.windsurfrules`), Cline / Roo Code
+(`.clinerules`) and Codex (`AGENTS.md`).
+
+**Options:**
+| Flag | Description |
+|------|-------------|
+| `--list` | Show which tools this project uses and where the skill would go |
+| `--target <tools>` | Comma-separated: `claude-code,cursor,copilot,windsurf,cline,codex` |
+| `--local` | Install into this project (default) |
+| `--global` | Install `~/.claude/skills/pipecraft/SKILL.md`; Claude Code only |
+| `--uninstall` | Remove the block, leaving the rest of the file |
+
+Five of the six files belong to the user. Pipecraft writes only between
+`<!-- pipecraft:start -->` and `<!-- pipecraft:end -->`, so reinstalling replaces that block
+and leaves everything else. Never hand-edit inside those markers; the next install
+overwrites it.
+
+Without `--target`, the command installs for the tools already present in the project and
+installs every format when it detects none.
+
 ### Generation Commands
 
 #### `pipecraft generate`
@@ -127,27 +154,32 @@ Generates GitHub Actions workflow files from configuration.
 
 ### Validation Commands
 
-#### `pipecraft validate` vs `pipecraft verify`
+#### `pipecraft validate` vs `pipecraft doctor`
 
-These commands serve different purposes:
+These serve different purposes:
 
-| Command    | Scope            | What it checks                                                  |
-| ---------- | ---------------- | --------------------------------------------------------------- |
-| `validate` | **Config only**  | Parses `.pipecraftrc`, checks required fields, validates schema |
-| `verify`   | **Entire setup** | Config + workflows exist + repo structure is correct            |
+| Command    | Scope            | What it checks                                                                     |
+| ---------- | ---------------- | ---------------------------------------------------------------------------------- |
+| `validate` | **Config only**  | Parses `.pipecraftrc`, checks required fields, validates schema                    |
+| `doctor`   | **Entire setup** | Config, GitHub setup, branches, generated files, workflow validation, domain paths |
 
 **When to use each:**
 
-- `validate` → After editing config, quick syntax check before `generate`
-- `verify` → Troubleshooting, health checks, after cloning a repo
+- `validate` → after editing config, quick syntax check before `generate`
+- `doctor` → troubleshooting, health checks, after cloning a repo
+
+There is no `verify` command. Earlier documentation described one; it is `doctor`.
 
 #### `pipecraft validate`
 
-Validates configuration against Pipecraft's schema. Fast, focused on config file only.
+Validates configuration against Pipecraft's schema. Fast, config file only.
 
-#### `pipecraft verify`
+#### `pipecraft doctor`
 
-Full health check - confirms config exists and is valid, workflows have been generated, and repository structure matches Pipecraft expectations.
+Full health check across six categories: Configuration, GitHub Setup, Branches, Generated
+Files, Workflow Validation, and Domain Paths.
+
+`doctor` exits 1 when it finds errors, so a non-zero exit means it worked and found problems, not that the command failed. Warnings alone exit 0.
 
 #### `pipecraft get-config <key>`
 
@@ -171,8 +203,10 @@ Version management utilities.
 | Flag | Description |
 |------|-------------|
 | `--check` | Preview next version based on commits |
-| `--bump` | Update version using conventional commits |
-| `--release` | Create release with version bump |
+
+Bumping and releasing happen in the pipeline, not locally. The `version` job resolves the
+next version, `tag` creates the tag, `release` cuts the GitHub release. `--check` only
+reports; it writes nothing.
 
 ### Global Options
 
@@ -567,14 +601,14 @@ pipecraft validate  # Check if config exists and is valid
 
 ```bash
 pipecraft generate --skip-checks  # Skip checks (not recommended)
-pipecraft verify                  # See what's wrong
+pipecraft doctor                  # See what's wrong
 ```
 
 ### Debug Commands
 
 ```bash
 # Full health check
-pipecraft verify
+pipecraft doctor
 
 # Validate config syntax
 pipecraft validate
@@ -694,3 +728,33 @@ Pipecraft calculates the actual version from conventional commits during CI/CD.
 - **GitHub Repository**: https://github.com/the-craftlab/pipecraft
 - **NPM Package**: https://www.npmjs.com/package/pipecraft
 - **Configuration Schema**: `.pipecraft-schema.json` in project root
+
+## Behaviour that surprises agents
+
+### Why didn't my push release anything?
+
+`tag`, `release` and `promote` only run for commits GitHub authored — that is, commits
+created by merging a pull request — or for a run started from the Actions tab.
+
+A commit you push directly keeps your own committer address, so the pipeline tests it and
+reports the version it _would_ have used, then stops. `tag`, `release` and `promote` show as
+skipped. That is deliberate: it stops a hotfix typed on the wrong branch from cutting a
+release.
+
+To release a directly-pushed commit, run the workflow manually from the Actions tab.
+
+### Domain job bodies belong to the user
+
+Pipecraft generates a placeholder for each domain job, marked
+`# TODO: Replace with your <domain> test logic`. It writes **no** install step, no toolchain
+setup, and no test command — those are the user's decisions. Do not tell a user their
+pipeline is broken because the domain jobs only echo; fill them in.
+
+### Two workflows are rewritten every time
+
+`enforce-pr-target.yml` and `pr-title-check.yml` are generated whole from config and
+overwritten on every `generate`. Never edit them. Change `.pipecraftrc` and regenerate, or
+put custom checks in a separate workflow file.
+
+`pipeline.yml` is different: it merges, and preserves custom jobs between its
+`# <--START CUSTOM JOBS-->` markers.

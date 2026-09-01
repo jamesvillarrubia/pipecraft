@@ -46,10 +46,10 @@ runs:
       run: |
         SOURCE="${{ inputs.sourceBranch }}"
         TARGET="${{ inputs.targetBranch }}"
-        
+
         # Check if PR already exists
         EXISTING_PR=$(gh pr list --head "$SOURCE" --base "$TARGET" --json number --jq '.[0].number' 2>/dev/null || echo "")
-        
+
         if [ -n "$EXISTING_PR" ]; then
           echo "exists=true" >> $GITHUB_OUTPUT
           echo "pr_number=$EXISTING_PR" >> $GITHUB_OUTPUT
@@ -69,7 +69,7 @@ runs:
         TITLE="${{ inputs.title }}"
         BODY="${{ inputs.body }}"
         LABELS="${{ inputs.labels }}"
-        
+
         # Prepare labels array
         LABEL_ARGS=""
         if [ -n "$LABELS" ]; then
@@ -78,7 +78,7 @@ runs:
             LABEL_ARGS="$LABEL_ARGS --label \"${label// /}\""
           done
         fi
-        
+
         # Create the PR
         PR_OUTPUT=$(gh pr create \--title "$TITLE" \--body "$BODY" \--head "$SOURCE" \--base "$TARGET" \$LABEL_ARGS \--json number,url --jq '.number,.url' 2>&1)
 

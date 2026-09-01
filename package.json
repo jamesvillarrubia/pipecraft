@@ -10,6 +10,7 @@
   "files": [
     "dist",
     "src/generators",
+    "skills/pipecraft-cli/SKILL.md",
     "README.md"
   ],
   "repository": {
@@ -62,7 +63,7 @@
     "pipecraft": "tsx src/cli/index.ts",
     "init": "tsx src/cli/index.ts init --interactive",
     "generate": "tsx src/cli/index.ts generate",
-    "verify": "tsx src/cli/index.ts verify",
+    "doctor": "tsx src/cli/index.ts doctor",
     "docs:build": "cd docs && pnpm run build",
     "docs:dev": "cd docs && pnpm run start",
     "docs:serve": "cd docs && pnpm run serve",
@@ -74,6 +75,10 @@
     "sync-actions": "tsx tests/scripts/sync-actions.ts",
     "sync-actions:check": "tsx tests/scripts/sync-actions.ts --check",
     "sync-actions:verify": "tsx tests/scripts/sync-actions.ts --verify",
+    "e2e:reset": "tsx scripts/e2e/harness.ts reset",
+    "e2e:prove": "tsx scripts/e2e/harness.ts prove",
+    "e2e:run": "tsx scripts/e2e/harness.ts run",
+    "sync-examples": "tsx scripts/sync-examples.ts",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -22,7 +22,7 @@ Error: No configuration file found. Expected: .pipecraftrc.json
 
 ```bash
 # Create initial configuration
-pipecraft init --interactive
+pipecraft init
 
 # Or specify custom path
 pipecraft generate --config path/to/config.json
@@ -50,7 +50,7 @@ Error: Missing required field: branchFlow
 
 ```bash
 # Re-run init to create valid config
-pipecraft init --interactive
+pipecraft init
 
 # Or manually add missing fields to .pipecraftrc.json
 ```

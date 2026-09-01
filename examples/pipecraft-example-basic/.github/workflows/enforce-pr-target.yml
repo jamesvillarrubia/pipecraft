@@ -19,7 +19,7 @@ jobs:
           echo "2. Click 'Edit' next to the title"
           echo "3. Change base branch from 'main' to 'develop'"
           exit 1
-      
+
       - name: Confirm correct target
         if: github.base_ref == 'develop'
         run: |

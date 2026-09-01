@@ -30,6 +30,7 @@ const sidebars: SidebarsConfig = {
           items: ['flows/trunk-flow', 'flows/github-flow', 'flows/gitflow', 'flows/custom-flow']
         },
         'version-management',
+        'upgrading',
         'examples'
       ]
     },

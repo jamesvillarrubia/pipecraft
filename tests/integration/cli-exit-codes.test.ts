@@ -65,6 +65,38 @@ describe('CLI Exit Codes', () => {
       expect(result.status).toBe(0)
     })
 
+    it('auto-discovers a .pipecraftrc.json config (not bare .pipecraftrc)', () => {
+      // Regression: the CLI used to default -c to the literal '.pipecraftrc', forcing an
+      // exact-file load that ENOENT'd on the common .pipecraftrc.json case. With no
+      // default, cosmiconfig discovers any supported format.
+      const config = {
+        ciProvider: 'github',
+        mergeStrategy: 'fast-forward',
+        requireConventionalCommits: true,
+        initialBranch: 'develop',
+        finalBranch: 'main',
+        branchFlow: ['develop', 'main'],
+        semver: { bumpRules: { feat: 'minor', fix: 'patch' } },
+        domains: { api: { paths: ['apps/api/**'], description: 'API', testable: true } }
+      }
+      writeFileSync(join(testDir, '.pipecraftrc.json'), JSON.stringify(config))
+
+      const validate = spawnSync('node', [cliPath, 'validate'], {
+        cwd: testDir,
+        encoding: 'utf8',
+        timeout: 10000
+      })
+      expect(validate.status).toBe(0)
+
+      const generate = spawnSync('node', [cliPath, 'generate', '--skip-checks'], {
+        cwd: testDir,
+        encoding: 'utf8',
+        timeout: 30000
+      })
+      expect(generate.status).toBe(0)
+      expect(existsSync(join(testDir, '.github', 'workflows', 'pipeline.yml'))).toBe(true)
+    })
+
     it('should exit 1 when config is invalid', () => {
       // Create invalid config (missing required fields)
       const invalidConfig = {

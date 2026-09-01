@@ -43,6 +43,6 @@ runs:
       shell: bash
       run: |
         echo "app=${{ contains(steps.filter.outputs.changes, 'app') }}" >> $GITHUB_OUTPUT
-        
+
         echo "📋 Change Detection Results:"
         echo "  app: ${{ contains(steps.filter.outputs.changes, 'app') }}"

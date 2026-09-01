@@ -78,3 +78,6 @@ examples/debug/
 
 # Overnight loop scaffolding (local only)
 .claude/overnight/
+
+# Loop state files (issue-loop skill)
+docs/tmp/

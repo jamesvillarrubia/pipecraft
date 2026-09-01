@@ -15,6 +15,7 @@
 
 import { type PinionContext, renderTemplate, toFile } from '@featherscloud/pinion'
 import { logger } from '../utils/logger.js'
+import { buildReleaseItConfig } from '../utils/release-it-config.js'
 
 /**
  * Generate release-it configuration content
@@ -27,106 +28,10 @@ import { logger } from '../utils/logger.js'
  * @param {any} ctx.semver.bumpRules - Version bump rules mapping
  * @returns {string} JavaScript configuration content
  */
-const releaseItTemplate = (ctx: any) => {
-  // Base default prefixes for conventional commits
-  const baseDefaults: Record<string, string> = {
-    test: 'ignore',
-    build: 'ignore',
-    ci: 'patch',
-    docs: 'patch',
-    chore: 'minor',
-    style: 'patch',
-    fix: 'patch',
-    perf: 'patch',
-    refactor: 'patch',
-    feat: 'minor',
-    major: 'major'
-  }
-
-  // Get user-defined bump rules from config
-  const userBumpRules = ctx.config?.semver?.bumpRules || ctx.semver?.bumpRules || {}
-
-  // Merge user rules with defaults (user rules take precedence)
-  const mergedRules = { ...baseDefaults, ...userBumpRules }
-
-  // Convert to formatted string for the config file
-  const rulesEntries = Object.entries(mergedRules)
-    .map(([type, level]) => `  ${type}: '${level}'`)
-    .join(',\n')
-
-  return `const DEFAULT_PREFIXES = {
-${rulesEntries}
-}
-
-module.exports = {
-    DEFAULT_PREFIXES,
-    "git": {
-      "requireCleanWorkingDir": false,
-      "commit": false,
-      "pushArgs": ["--tags"],
-      "tagMatch": "v[0-9]*.[0-9]*.[0-9]*" // Required to exclude non-versioning tags
-    },
-    "github": {
-      "release": true,
-      "releaseName": "Release \${version}"
-    },
-    "npm": {
-      "ignoreVersion": true,
-      "publish": false,
-      "skipChecks": true
-    },
-    "hooks": {
-      'after:release': "echo \${version} > .release-version"
-    },
-
-    
-    "plugins": {
-      "@release-it/conventional-changelog": {
-        "whatBump": (commits,options)=>{
-            let defaults = DEFAULT_PREFIXES;
-   
-            let types = (options?.preset?.types || [])
-            .reduce((a, v) => {
-              return { ...a, [v.type]: v.release}
-            }, {}) 
-  
-            types = Object.assign({},defaults,types)
-            let breakings = 0
-            let features = 0
-            let levelSet = ['major','minor','patch','ignore']
-
-            // Handle empty commits array - return null to skip release
-            if (!commits || commits.length === 0) {
-              return {
-                level: null,
-                reason: 'No commits found - skipping release'
-              }
-            }
-
-            let levels = commits.map(commit => {
-              let level = levelSet.indexOf(types[commit.type])
-              level = level<0?3:level
-              if (commit.notes.length > 0) {
-                breakings += commit.notes.length
-              }
-              if(commit.type === 'feat'){
-                features += 1;
-              }
-              return level
-            })
-
-            let level = Math.min.apply(Math, levels)
-            return {
-              level: level,
-              reason: breakings === 1
-                ? \`There is \${breakings} BREAKING CHANGE and \${features} features\`
-                : \`There are \${breakings} BREAKING CHANGES and \${features} features\`
-            }
-        },
-      }
-    }
-  }`
-}
+const releaseItTemplate = (ctx: any) =>
+  // `generate` and `init --with-versioning` both write .release-it.cjs. One builder, so
+  // they cannot drift apart again — see src/utils/release-it-config.ts and #496.
+  buildReleaseItConfig(ctx.config ?? ctx)
 
 /**
  * Release-It configuration generator

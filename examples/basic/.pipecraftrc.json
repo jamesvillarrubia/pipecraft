@@ -1,0 +1,30 @@
+{
+  "ciProvider": "github",
+  "mergeStrategy": "merge",
+  "requireConventionalCommits": true,
+  "initialBranch": "develop",
+  "finalBranch": "main",
+  "branchFlow": ["develop", "staging", "main"],
+  "autoPromote": { "staging": true, "main": true },
+  "semver": {
+    "bumpRules": { "feat": "minor", "fix": "patch", "breaking": "major" }
+  },
+  "domains": {
+    "frontend": {
+      "paths": ["src/frontend/**"],
+      "description": "Frontend application",
+      "prefixes": ["test", "deploy", "remote-test"]
+    },
+    "backend": {
+      "paths": ["src/backend/**"],
+      "description": "Backend API",
+      "prefixes": ["test", "deploy", "remote-test"]
+    },
+    "api": {
+      "paths": ["src/api/**"],
+      "description": "API gateway",
+      "prefixes": ["test", "deploy"]
+    },
+    "shared": { "paths": ["src/shared/**"], "description": "Shared library", "prefixes": ["test"] }
+  }
+}

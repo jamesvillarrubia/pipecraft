@@ -92,6 +92,12 @@ const branchActionTemplate = (ctx: any) => {
             
             echo "✅ Input validation passed"
 
+        - name: Configure Git
+          shell: bash
+          run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
         - name: Perform Branch Action
           id: branch-action
           shell: bash

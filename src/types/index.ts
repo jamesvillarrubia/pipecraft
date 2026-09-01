@@ -19,8 +19,7 @@
  * const apiDomain: DomainConfig = {
  *   paths: ['packages/api/**', 'libs/shared/**'],
  *   description: 'Backend API services',
- *   testable: true,
- *   deployable: true
+ *   prefixes: ['test', 'deploy']
  * }
  * ```
  */
@@ -47,7 +46,8 @@ export interface DomainConfig {
    * - lint-core (runs when core/ changes)
    *
    * These are placeholder jobs where you add your own logic in the custom jobs section.
-   * Prefixes provide more flexibility than the boolean flags (testable, deployable, etc).
+   * Prefixes are the mechanism job generation reads. The deprecated boolean flags are
+   * translated into this array during config validation.
    *
    * @example ['test', 'deploy', 'remote-test']
    * @example ['lint', 'build', 'test', 'deploy', 'e2e']
@@ -105,7 +105,7 @@ export interface DomainConfig {
  *     onStagingMerge: ['runTests', 'calculateVersion']
  *   },
  *   domains: {
- *     api: { paths: ['packages/api/**'], description: 'API', testable: true }
+ *     api: { paths: ['packages/api/**'], description: 'API', prefixes: ['test'] }
  *   }
  * }
  * ```
@@ -156,9 +156,15 @@ export interface PipecraftConfig {
    * - boolean: Enable/disable auto-promotion for all branches
    * - Record: Per-branch auto-promote settings (e.g., `{ staging: true, main: false }`)
    *
-   * When enabled, code is automatically promoted (fast-forwarded) to the next branch
-   * in the flow after checks pass. When disabled, a PR is created for manual review
-   * and the promotion happens when the PR is merged.
+   * This controls how a promotion PR is *merged*, not whether one is *opened*.
+   * PipeCraft opens the promotion PR either way:
+   *
+   * - `true`  — the PR is opened and merged automatically once checks pass.
+   * - `false` — the PR is opened and left for a human to merge.
+   *
+   * There is no value here that stops promotion PRs from being created. To stop
+   * promoting to a branch at all, remove it from `branchFlow`.
+   *
    * @default false
    */
   autoPromote?: boolean | Record<string, boolean>

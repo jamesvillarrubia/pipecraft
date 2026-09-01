@@ -1075,17 +1075,18 @@ export async function getBranchProtection(
 }
 
 /**
- * Update branch protection rules to enable auto-merge
+ * Build the branch-protection rules used for auto-promote target branches.
+ *
+ * `required_linear_history` MUST follow the merge strategy: with `mergeStrategy: merge`
+ * the auto-promote pushes a MERGE COMMIT to the target, and a branch that requires linear
+ * history rejects merge commits (GH006 "Protected branch update failed"), silently breaking
+ * the very auto-promote this protection is meant to support. Only fast-forward promotions
+ * produce linear history, so only they may require it.
  */
-export async function updateBranchProtection(
-  owner: string,
-  repo: string,
-  branch: string,
-  token: string
-): Promise<void> {
-  // Minimal branch protection to enable auto-merge
-  // GitHub requires at least ONE of the main protection types
-  const protection: BranchProtectionRules = {
+export function buildBranchProtectionRules(
+  mergeStrategy?: 'fast-forward' | 'merge'
+): BranchProtectionRules {
+  return {
     required_status_checks: {
       strict: false,
       contexts: [] // No specific checks required, but enables the feature
@@ -1095,9 +1096,24 @@ export async function updateBranchProtection(
     restrictions: null,
     allow_force_pushes: false,
     allow_deletions: false,
-    required_linear_history: true,
+    required_linear_history: mergeStrategy !== 'merge',
     required_conversation_resolution: false
   }
+}
+
+/**
+ * Update branch protection rules to enable auto-merge
+ */
+export async function updateBranchProtection(
+  owner: string,
+  repo: string,
+  branch: string,
+  token: string,
+  mergeStrategy?: 'fast-forward' | 'merge'
+): Promise<void> {
+  // Minimal branch protection to enable auto-merge.
+  // GitHub requires at least ONE of the main protection types.
+  const protection: BranchProtectionRules = buildBranchProtectionRules(mergeStrategy)
 
   const response = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/branches/${branch}/protection`,
@@ -1226,7 +1242,13 @@ export async function configureBranchProtection(
         // Branch protection not configured
         if (autoApply) {
           console.log(`🔧 Configuring branch protection for ${branch}...`)
-          await updateBranchProtection(repoInfo.owner, repoInfo.repo, branch, token)
+          await updateBranchProtection(
+            repoInfo.owner,
+            repoInfo.repo,
+            branch,
+            token,
+            config.mergeStrategy
+          )
           console.log(`✅ Branch protection enabled for ${branch}`)
         } else {
           const response: any = await prompt({
@@ -1238,7 +1260,13 @@ export async function configureBranchProtection(
 
           if (response.enableProtection) {
             console.log(`🔧 Configuring branch protection for ${branch}...`)
-            await updateBranchProtection(repoInfo.owner, repoInfo.repo, branch, token)
+            await updateBranchProtection(
+              repoInfo.owner,
+              repoInfo.repo,
+              branch,
+              token,
+              config.mergeStrategy
+            )
             console.log(`✅ Branch protection enabled for ${branch}`)
           } else {
             console.log(`⚠️  Skipped ${branch}:`)
@@ -1393,5 +1421,8 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
   console.log(`      ${repoInfo.owner}/${repoInfo.repo}/settings/actions`)
   console.log(`   2. Verify repository settings:`)
   console.log(`      ${repoInfo.owner}/${repoInfo.repo}/settings`)
-  console.log(`   3. Run 'pipecraft edit' to create your first release`)
+  console.log(`   3. Run 'pipecraft doctor' to check the setup`)
+  console.log(
+    `   4. Push a conventional commit to your initial branch — the pipeline versions, tags and releases from there`
+  )
 }

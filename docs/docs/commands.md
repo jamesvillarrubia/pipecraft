@@ -16,21 +16,55 @@ The beauty of PipeCraft is that most of the time, you won't need to think about 
 
 ### pipecraft init
 
-The `init` command creates your initial configuration file with sensible defaults. When you run it, PipeCraft creates a `.pipecraftrc.json` file in your project root configured for trunk-based development with a standard three-branch flow: develop, staging, and main.
+The `init` command creates your `.pipecraftrc`. Run it with a terminal attached and it asks
+a short series of questions — CI provider, merge strategy, branches, and how to group your
+domains:
 
 ```bash
 pipecraft init
 ```
 
-This command is intentionally simple. It doesn't ask you a lot of questions or try to detect your project structure. Instead, it gives you a working configuration that you can customize by editing the JSON file directly. This approach gives you complete control while still providing a quick start.
+#### Without prompts
 
-If you've already initialized PipeCraft and want to start fresh, you can force overwrite your existing configuration:
+Pass `--yes` to accept defaults and answer nothing. Use this in CI, in setup scripts, and
+when a coding agent is driving:
+
+```bash
+pipecraft init --yes
+```
+
+Flags set individual values, so you can shape the config without a terminal:
+
+```bash
+pipecraft init --yes \
+  --initial-branch develop \
+  --final-branch main \
+  --merge-strategy fast-forward \
+  --ci-provider github
+```
+
+| Flag                          | Default        |
+| ----------------------------- | -------------- |
+| `--ci-provider <provider>`    | `github`       |
+| `--merge-strategy <strategy>` | `fast-forward` |
+| `--initial-branch <branch>`   | `develop`      |
+| `--final-branch <branch>`     | `main`         |
+
+`init` also skips prompting when stdin is not a terminal, so piping or redirecting works
+without `--yes`. It prints a line saying it did so.
+
+**The branch flow follows the branches you choose.** With the defaults you get
+`develop → staging → main`. Name different ends and you get exactly those two, so
+`--initial-branch trunk --final-branch production` produces `trunk → production`. Give the
+same branch for both and you get a single-branch flow.
+
+#### Overwriting
 
 ```bash
 pipecraft init --force
 ```
 
-Use this carefully—it will replace your entire configuration file with the defaults. If you've customized your setup, make sure you have a backup or have committed your changes to git first.
+This replaces your entire configuration with a fresh one. Commit your changes first.
 
 ### pipecraft setup
 
@@ -41,6 +75,10 @@ pipecraft setup
 ```
 
 This is particularly useful when you're setting up a new repository or when you've added a new branch to your flow. The command creates each branch and pushes it to your remote, ensuring your repository structure matches your configuration.
+
+It does not check anything out. Branches are created as refs from your current `HEAD`, so
+you stay on the branch you were on and your working tree is untouched — uncommitted changes
+included. If the command fails partway, you are still where you started.
 
 If branches already exist, the command skips them gracefully. You can force recreation of branches if needed, though this is rarely necessary:
 
@@ -82,11 +120,39 @@ Sometimes you need to force regeneration even when nothing has changed—for exa
 pipecraft generate --force
 ```
 
-If you want to preview what would be generated without actually creating or modifying files, dry-run mode is perfect:
+To see what would be generated without creating or modifying anything:
 
 ```bash
 pipecraft generate --dry-run
 ```
+
+It lists every file it would touch, marking each `create` or `update`, then the domain
+jobs your config produces:
+
+```
+🔍 Dry run — no files will be written.
+
+Workflows:
+  create .github/workflows/pipeline.yml
+  create .github/workflows/enforce-pr-target.yml
+  create .github/workflows/pr-title-check.yml
+
+Composite actions:
+  create .github/actions/detect-changes/action.yml
+  …
+
+Domain jobs:
+  deploy-api
+  test-api
+  test-web
+
+Managed jobs: changes, version, gate, tag, promote, release
+Branch flow:  develop → main
+```
+
+The domain jobs list is the part worth reading. A domain that declares no `prefixes`
+generates no jobs, and this is where that becomes visible rather than after you have
+committed a pipeline missing its tests.
 
 The generate command also supports custom paths, which is useful if you're managing multiple configurations or experimenting with different setups:
 
@@ -124,12 +190,12 @@ pipecraft validate --config custom-config.json
 
 Validation is also built into the generate command, so you'll catch configuration errors there too. But running validation separately can help you iterate faster when you're making multiple changes.
 
-### pipecraft verify
+### pipecraft doctor
 
 While `validate` checks your configuration file, `verify` checks your entire PipeCraft setup:
 
 ```bash
-pipecraft verify
+pipecraft doctor
 ```
 
 This command confirms that your configuration exists, that your workflow files have been generated, and that your repository structure matches what PipeCraft expects. Think of it as a health check for your complete setup.
@@ -178,25 +244,60 @@ This command analyzes your commit history since the last version tag, applies yo
 
 Use this before releases to confirm that your commits will result in the version bump you expect.
 
-### pipecraft version --bump
+### Bumping and releasing
 
-When you're ready to update your version, this command handles the entire process:
+The `version` command has no `--bump` or `--release`. Bumping is the pipeline's job, not a
+local command.
+
+The generated `version` job resolves the next version from your conventional commits, `tag`
+creates the git tag, and `release` cuts the GitHub release. That keeps one machine deciding
+version numbers, so a developer running a command locally cannot produce a tag that
+disagrees with CI.
+
+Use `pipecraft version --check` to see what the pipeline will decide before you push.
+
+## AI Assistant Commands
+
+### pipecraft skill
+
+Writes the Pipecraft skill in the format each AI coding assistant reads:
 
 ```bash
-pipecraft version --bump
+pipecraft skill                                   # install into this project
+pipecraft skill --list                            # show which tools this project uses
+pipecraft skill --target cursor,codex             # pick the tools yourself
+pipecraft skill --global                          # ~/.claude/skills/pipecraft/SKILL.md
+pipecraft skill --uninstall                       # remove it again
 ```
 
-It determines the appropriate version number based on your commits, updates your `package.json`, creates a git tag, and optionally generates changelog entries. This command respects your configuration for how different commit types (feat, fix, breaking changes) affect versioning.
+| Tool             | File                                | Written as             |
+| ---------------- | ----------------------------------- | ---------------------- |
+| Claude Code      | `.claude/skills/pipecraft/SKILL.md` | whole file             |
+| Cursor           | `.cursorrules`                      | block inside your file |
+| GitHub Copilot   | `.github/copilot-instructions.md`   | block inside your file |
+| Windsurf         | `.windsurfrules`                    | block inside your file |
+| Cline / Roo Code | `.clinerules`                       | block inside your file |
+| Codex            | `AGENTS.md`                         | block inside your file |
 
-### pipecraft version --release
+Five of those files belong to you and may already hold your own instructions. Pipecraft
+writes only between `<!-- pipecraft:start -->` and `<!-- pipecraft:end -->` and changes
+nothing outside those markers. Reinstalling replaces the block in place, so your text
+survives a Pipecraft upgrade. `--uninstall` removes the block and leaves the file; a file
+that held nothing but the block is deleted.
 
-For a complete release process including changelog generation and git tag creation, use the release command:
+Claude Code is the exception. `.claude/skills/pipecraft/SKILL.md` is a file Pipecraft owns
+outright, so it is written whole and removed with its directory.
 
-```bash
-pipecraft version --release
-```
+Without `--target`, the command installs for the tools whose files or directories already
+exist in the project (`.claude`, `CLAUDE.md`, `.cursor`, `.cursorrules`, `.github`,
+`.windsurf`, `.windsurfrules`, `.clinerules`, `AGENTS.md`). Finding none, it installs every
+format, on the reasoning that a project with no AI tool configured has no preference to
+respect.
 
-This runs the full release-it flow with PipeCraft's configuration, creating a tagged release with proper semantic versioning and change documentation.
+`--global` applies to Claude Code alone. The other five formats are project files, and a copy
+in your home directory is a file no tool loads.
+
+`pipecraft init --with-skill` runs the same installation as part of `init`.
 
 ## Global Options
 
@@ -234,13 +335,15 @@ Use this when you explicitly want to overwrite existing files, regenerate cached
 
 ### Dry Run
 
-Many commands support a dry-run mode that shows you what would happen without actually making changes:
+`generate` supports a dry-run mode that reports what it would do without writing anything:
 
 ```bash
-pipecraft <command> --dry-run
+pipecraft generate --dry-run
 ```
 
-This is invaluable for testing configuration changes, previewing workflow generation, or understanding what a command will do before you commit to it.
+Use it to check a config change before it lands: which files appear, which get merged into,
+and which domain jobs the config actually produces. See
+[Generation Commands](#generation-commands) for the output.
 
 ## Common Command Patterns
 
@@ -278,7 +381,7 @@ git commit -m "chore: update workflow configuration"
 When workflows aren't behaving as expected:
 
 ```bash
-pipecraft verify                         # Check overall setup
+pipecraft doctor                         # Check overall setup
 pipecraft validate                       # Check configuration
 pipecraft generate --debug --dry-run     # See what would be generated
 pipecraft setup-github                   # Verify permissions
@@ -291,7 +394,6 @@ When preparing a release:
 ```bash
 pipecraft version --check                # Preview next version
 # Create and merge your feature branches
-pipecraft version --bump                 # Update version
 git push --follow-tags                   # Push version tag
 ```
 

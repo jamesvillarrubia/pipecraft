@@ -1,0 +1,14 @@
+{
+  "ciProvider": "github",
+  "mergeStrategy": "fast-forward",
+  "requireConventionalCommits": true,
+  "initialBranch": "main",
+  "finalBranch": "main",
+  "branchFlow": ["main"],
+  "semver": {
+    "bumpRules": { "feat": "minor", "fix": "patch", "breaking": "major" }
+  },
+  "domains": {
+    "lib": { "paths": ["src/**"], "description": "Library source", "prefixes": ["test"] }
+  }
+}

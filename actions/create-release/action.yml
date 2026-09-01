@@ -66,10 +66,14 @@ runs:
           RELEASE_NOTES=$(git log --pretty=format:"- %s" --no-merges)
         fi
 
-        # Create release with notes
+        # Create release with notes.
+        # Disable errexit around the gh call: composite steps run with 'bash -e', and a
+        # failed command substitution in an assignment exits IMMEDIATELY — before we can
+        # capture the exit code and run the "already exists" idempotency branch below.
+        set +e
         RELEASE_OUTPUT=$(gh release create "$VERSION" \--title "Release $VERSION" \--notes "$RELEASE_NOTES" \--latest 2>&1)
-
         RELEASE_EXIT_CODE=$?
+        set -e
 
         if [ $RELEASE_EXIT_CODE -eq 0 ]; then
           # Extract release URL from output

@@ -21,7 +21,7 @@ import type { PipecraftConfig } from '../../types/index.js'
  * @param {any} ctx - Context (not currently used)
  * @returns {string} YAML content for the composite action
  */
-const releaseActionTemplate = (ctx: any) => {
+export const releaseActionTemplate = (ctx: any) => {
   return dedent`name: 'Create Release'
     description: 'Create a GitHub release with auto-generated release notes'
     author: 'PipeCraft'
@@ -90,13 +90,17 @@ const releaseActionTemplate = (ctx: any) => {
               RELEASE_NOTES=$(git log --pretty=format:"- %s" --no-merges)
             fi
 
-            # Create release with notes
+            # Create release with notes.
+            # Disable errexit around the gh call: composite steps run with 'bash -e', and a
+            # failed command substitution in an assignment exits IMMEDIATELY — before we can
+            # capture the exit code and run the "already exists" idempotency branch below.
+            set +e
             RELEASE_OUTPUT=$(gh release create "$VERSION" \\
               --title "Release $VERSION" \\
               --notes "$RELEASE_NOTES" \\
               --latest 2>&1)
-
             RELEASE_EXIT_CODE=$?
+            set -e
 
             if [ $RELEASE_EXIT_CODE -eq 0 ]; then
               # Extract release URL from output
