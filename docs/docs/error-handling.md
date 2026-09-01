@@ -1,4 +1,4 @@
-# PipeCraft Error Handling Guide
+# Error Reference
 
 ## Overview
 
@@ -784,4 +784,4 @@ If you encounter an error not covered in this guide:
 - [Architecture](/docs/architecture) - System design and components
 - [Current Trunk Flow](/docs/flows/trunk-flow) - Implementation details
 - [Getting Started](intro) - User guide and examples
-- [Testing Guide](/docs/testing-guide) - Testing guidelines
+- [Troubleshooting](/docs/troubleshooting) - Symptom-based fixes for common issues
