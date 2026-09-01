@@ -172,6 +172,43 @@ Controls the Node.js and pnpm versions used in generated CI/CD workflows, so you
 
 > Tip: pin `pnpmVersion` (e.g. `'10'`) to avoid `pnpm/action-setup`'s `latest` pulling a major release with breaking changes into CI.
 
+### Checkout depth
+
+Two env vars in the generated `pipeline.yml` control how much history each job fetches.
+Both are preserved across regeneration, so edit them in the workflow and they stick.
+
+| Variable                 | Default | Used by                        |
+| ------------------------ | ------- | ------------------------------ |
+| `FETCH_DEPTH_AFFECTED`   | `100`   | change detection               |
+| `FETCH_DEPTH_VERSIONING` | `0`     | version, tag, promote, release |
+
+`FETCH_DEPTH_AFFECTED` bounds the diff used to decide which domains changed. 100 commits
+covers a normal pull request. Raise it if your branches diverge by more than that, or set
+`0` for complete history at the cost of a slower checkout.
+
+`FETCH_DEPTH_VERSIONING` must stay `0`. Semantic versioning reads the full tag history, and
+a shallow fetch silently resolves the wrong previous version.
+
+The `version` job checks out with `filter: blob:none`, a partial clone. It fetches every
+commit and every tag, and skips the historical file contents it never reads.
+
+It does not skip blobs entirely. `actions/checkout` still builds a working tree, so Git
+fetches the files at the checked-out commit. You pay for one commit's files instead of every
+version of every file in the history. Measured on a 20-commit repository with one large file
+rewritten each time: 428 KB against 6040 KB, and the gap widens with history length.
+
+Two things to know:
+
+- **Partial clone needs the server to allow it.** GitHub does. A self-hosted Git server
+  without `uploadpack.allowFilter` ignores the filter and sends everything, with no error
+  and no saving.
+- **A missing blob costs a round trip.** If a step reads a file, Git fetches that blob on
+  demand, so the filter cannot break a step that needs one. Today the job runs only
+  `calculate-version`, which reads tags and commit subjects.
+
+`tag` and `promote` are deliberately left unfiltered: both move refs and can merge, so they
+may legitimately need file contents.
+
 ### initialBranch
 
 **Type**: `string`
