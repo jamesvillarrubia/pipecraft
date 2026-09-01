@@ -329,7 +329,7 @@ Common causes:
 **Debug with:**
 
 ```bash
-npx pipecraft verify  # Validates configuration
+npx pipecraft doctor  # Full health check
 git diff origin/main --name-only  # See what git sees
 ```
 
@@ -338,7 +338,7 @@ git diff origin/main --name-only  # See what git sees
 Run pre-flight checks:
 
 ```bash
-npx pipecraft verify
+npx pipecraft doctor
 ```
 
 This validates:

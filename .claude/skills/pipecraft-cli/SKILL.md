@@ -20,7 +20,7 @@ Help users with **Pipecraft** - a trunk-based CI/CD workflow generator for GitHu
 
 | Command            | Purpose                         | Key Flags                                            |
 | ------------------ | ------------------------------- | ---------------------------------------------------- |
-| `init`             | Create `.pipecraftrc` config    | `--interactive`, `--force`, `--with-versioning`      |
+| `init`             | Create `.pipecraftrc` config    | `--yes`, `--force`, `--with-versioning`              |
 | `generate`         | Generate workflows              | `--dry-run`, `--verbose`, `--debug`, `--skip-checks` |
 | `validate`         | Check config syntax             | (none)                                               |
 | `verify`           | Health check entire setup       | (none)                                               |
@@ -29,7 +29,7 @@ Help users with **Pipecraft** - a trunk-based CI/CD workflow generator for GitHu
 | `setup-github`     | Configure GitHub permissions    | `--apply`                                            |
 | `version`          | Version management              | `--check`                                            |
 
-### validate vs verify: What's the Difference?
+### validate vs doctor: What's the Difference?
 
 These two commands are often confused. Here's when to use each:
 
@@ -57,7 +57,7 @@ These two commands are often confused. Here's when to use each:
 pipecraft validate
 
 # Something's broken - full diagnosis
-pipecraft verify
+pipecraft doctor
 ```
 
 ## Configuration
@@ -132,13 +132,12 @@ domains:
 
 ### Deprecated Fields (Don't Use)
 
-| Deprecated             | Use Instead                     |
-| ---------------------- | ------------------------------- |
-| `testable: true`       | `prefixes: [test]`              |
-| `deployable: true`     | `prefixes: [deploy]`            |
-| `remoteTestable: true` | `prefixes: [remote-test]`       |
-| `autoMerge`            | `autoPromote`                   |
-| `packageManager`       | Removed (language-agnostic now) |
+| Deprecated             | Use Instead               |
+| ---------------------- | ------------------------- |
+| `testable: true`       | `prefixes: [test]`        |
+| `deployable: true`     | `prefixes: [deploy]`      |
+| `remoteTestable: true` | `prefixes: [remote-test]` |
+| `autoMerge`            | `autoPromote`             |
 
 ## Typical Workflows
 
@@ -158,7 +157,7 @@ git commit -m "chore: add Pipecraft CI/CD"
 ### Debugging Issues
 
 ```bash
-pipecraft verify                    # Overall health check
+pipecraft doctor                    # Overall health check
 pipecraft validate                  # Config syntax
 pipecraft generate --dry-run        # Preview mode
 pipecraft generate --debug          # Maximum detail
@@ -217,3 +216,23 @@ When `pipecraft generate` runs:
 ## Full Reference
 
 See [PIPECRAFT_AI_GUIDE.md](../../../PIPECRAFT_AI_GUIDE.md) for complete documentation.
+
+## Behaviour that surprises agents
+
+**A direct push does not release.** `tag`, `release` and `promote` only run for commits
+GitHub authored (merged PRs) or a `workflow_dispatch`. A hand-pushed commit is tested, the
+version is reported, and those three jobs skip. Run the workflow from the Actions tab to
+release it deliberately.
+
+**Domain job bodies are the user's.** Pipecraft writes a placeholder marked
+`# TODO: Replace with your <domain> test logic` and no install or test commands. Jobs that
+only echo are not broken; they are unfilled.
+
+**`enforce-pr-target.yml` and `pr-title-check.yml` are overwritten on every generate.** Never
+edit them; change the config. `pipeline.yml` preserves custom jobs between its
+`# <--START CUSTOM JOBS-->` markers.
+
+**A domain with no `prefixes` generates no jobs.** Check with `pipecraft generate --dry-run`,
+which lists the domain jobs the config produces.
+
+**`doctor` exits 1 when it finds errors.** A non-zero exit means it ran and found problems, not that the command is broken.

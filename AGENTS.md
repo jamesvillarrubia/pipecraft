@@ -61,8 +61,8 @@ logic`.
 **Domain job bodies are the user's.** Pipecraft writes no install or toolchain steps into
 them. Do not expect a working test command; write one.
 
-`enforce-pr-target.yml` and `pr-title-check.yml` are wholly generated and rewritten on every
-run. Never edit them; change the config instead. `pipeline.yml` preserves custom jobs between
+`enforce-pr-target.yml` and `pr-title-check.yml` are wholly generated and overwritten on
+every run. Never edit them; change the config instead. Hand-edits are lost silently. `pipeline.yml` preserves custom jobs between
 its `# <--START CUSTOM JOBS-->` markers.
 
 ### Releases come from the pipeline
@@ -116,3 +116,5 @@ node /path/to/pipecraft/dist/cli/index.js generate --skip-checks
 Before concluding a config key is unused or a path is unreachable, run the search that would
 find it. `tests/unit/config-key-coverage.test.ts` exists because five separate bugs were the
 same shape: a key that validated, was documented, and was read by nothing.
+
+**`doctor` exits 1 when it finds errors.** A non-zero exit means it ran and found problems, not that the command is broken.

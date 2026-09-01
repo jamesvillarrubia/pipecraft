@@ -62,7 +62,7 @@
     "pipecraft": "tsx src/cli/index.ts",
     "init": "tsx src/cli/index.ts init --interactive",
     "generate": "tsx src/cli/index.ts generate",
-    "verify": "tsx src/cli/index.ts verify",
+    "doctor": "tsx src/cli/index.ts doctor",
     "docs:build": "cd docs && pnpm run build",
     "docs:dev": "cd docs && pnpm run start",
     "docs:serve": "cd docs && pnpm run serve",

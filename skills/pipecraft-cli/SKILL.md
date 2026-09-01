@@ -14,21 +14,21 @@ Help users with **Pipecraft** - a trunk-based CI/CD workflow generator for GitHu
 
 | Command                      | Purpose                         | Key Flags                                            |
 | ---------------------------- | ------------------------------- | ---------------------------------------------------- |
-| `pipecraft init`             | Create `.pipecraftrc` config    | `--interactive`, `--force`, `--with-versioning`      |
+| `pipecraft init`             | Create `.pipecraftrc` config    | `--yes`, `--force`, `--with-versioning`              |
 | `pipecraft generate`         | Generate workflows              | `--dry-run`, `--verbose`, `--debug`, `--skip-checks` |
 | `pipecraft validate`         | Check config syntax             | -                                                    |
-| `pipecraft verify`           | Health check entire setup       | -                                                    |
+| `pipecraft doctor`           | Health check entire setup       | -                                                    |
 | `pipecraft get-config <key>` | Read config value               | `--format json\|raw`                                 |
 | `pipecraft setup`            | Create branches from branchFlow | `--force`                                            |
 | `pipecraft setup-github`     | Configure GitHub permissions    | `--apply`                                            |
 | `pipecraft version`          | Version management              | `--check`                                            |
 
-### validate vs verify
+### validate vs doctor
 
 | Command    | Scope              | When to use                                   |
 | ---------- | ------------------ | --------------------------------------------- |
 | `validate` | Config syntax only | After editing config, before `generate`       |
-| `verify`   | Entire setup       | Troubleshooting, health checks, after cloning |
+| `doctor`   | Entire setup       | Troubleshooting, health checks, after cloning |
 
 ## Configuration
 
@@ -104,7 +104,6 @@ domains:
 | `deployable: true`     | `prefixes: [deploy]`      |
 | `remoteTestable: true` | `prefixes: [remote-test]` |
 | `autoMerge`            | `autoPromote`             |
-| `packageManager`       | Removed                   |
 
 ## Typical Workflows
 
@@ -124,7 +123,7 @@ git commit -m "chore: add Pipecraft CI/CD"
 ### Debugging
 
 ```bash
-pipecraft verify                    # Health check
+pipecraft doctor                    # Health check
 pipecraft validate                  # Config syntax
 pipecraft generate --dry-run        # Preview mode
 pipecraft generate --debug          # Maximum detail
@@ -177,3 +176,23 @@ branchFlow: [develop, staging, uat, production]
 2. **Branch strategy:** How many stages? (develop/main vs develop/staging/main)
 3. **Domains:** What parts need separate CI jobs?
 4. **Auto-promotion:** Should code auto-advance between branches?
+
+## Behaviour that surprises agents
+
+**A direct push does not release.** `tag`, `release` and `promote` only run for commits
+GitHub authored (merged PRs) or a `workflow_dispatch`. A hand-pushed commit is tested, the
+version is reported, and those three jobs skip. Run the workflow from the Actions tab to
+release it deliberately.
+
+**Domain job bodies are the user's.** Pipecraft writes a placeholder marked
+`# TODO: Replace with your <domain> test logic` and no install or test commands. Jobs that
+only echo are not broken; they are unfilled.
+
+**`enforce-pr-target.yml` and `pr-title-check.yml` are overwritten on every generate.** Never
+edit them; change the config. `pipeline.yml` preserves custom jobs between its
+`# <--START CUSTOM JOBS-->` markers.
+
+**A domain with no `prefixes` generates no jobs.** Check with `pipecraft generate --dry-run`,
+which lists the domain jobs the config produces.
+
+**`doctor` exits 1 when it finds errors.** A non-zero exit means it ran and found problems, not that the command is broken.

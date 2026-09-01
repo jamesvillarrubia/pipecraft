@@ -53,8 +53,8 @@
  * ## Examples
  *
  * ```bash
- * # Initialize configuration interactively
- * pipecraft init --interactive
+ * # Initialize configuration (prompts; use --yes for CI, scripts and agents)
+ * pipecraft init
  *
  * # Generate workflows
  * pipecraft generate
@@ -66,8 +66,8 @@
  * # Validate existing workflows
  * pipecraft validate
  *
- * # Setup GitHub repository
- * pipecraft setup --verify
+ * # Create the branches in your flow
+ * pipecraft setup
  *
  * # Debug mode
  * pipecraft generate --debug
@@ -194,13 +194,14 @@ program
   .command('init')
   .description('Initialize pipecraft configuration')
   .option('-f, --force', 'overwrite existing config file')
-  .option('-i, --interactive', 'run interactive setup wizard')
   .option('--with-versioning', 'include version management setup')
   .option('--with-skill', 'install AI coding assistant skills')
   .option('--ci-provider <provider>', 'CI provider (github|gitlab)', 'github')
   .option('--merge-strategy <strategy>', 'merge strategy (fast-forward|merge)', 'fast-forward')
   .option('--initial-branch <branch>', 'initial development branch', 'develop')
   .option('--final-branch <branch>', 'final production branch', 'main')
+  // init is interactive by default; --yes (or a non-TTY stdin) makes it not. A separate
+  // --interactive flag existed here and was read by nothing.
   .option('-y, --yes', 'accept defaults and never prompt (for CI, scripts and agents)')
   .action(async options => {
     try {

@@ -236,7 +236,7 @@ pipecraft validate --config custom-config.json
 Verify that PipeCraft is properly configured:
 
 ```bash
-pipecraft verify
+pipecraft doctor
 ```
 
 This checks:
