@@ -201,13 +201,26 @@ program
   .option('--merge-strategy <strategy>', 'merge strategy (fast-forward|merge)', 'fast-forward')
   .option('--initial-branch <branch>', 'initial development branch', 'develop')
   .option('--final-branch <branch>', 'final production branch', 'main')
+  .option('-y, --yes', 'accept defaults and never prompt (for CI, scripts and agents)')
   .action(async options => {
     try {
       const globalOptions = program.opts()
 
+      // init prompted for everything and ignored these flags entirely, so it could not be
+      // run by a script, by CI, or by a coding agent — it died on "User force closed the
+      // prompt" with stdin closed. Skip prompting when asked to, or when there is no
+      // terminal to prompt on.
+      const nonInteractive = Boolean(options.yes) || !process.stdin.isTTY
+
       await runModule(join(__dirname, '../generators/init.tpl.js'), {
         cwd: process.cwd(),
         argv: process.argv,
+        // Extra keys the init generator reads; PinionContext is not extensible here.
+        nonInteractive,
+        ciProvider: options.ciProvider,
+        mergeStrategy: options.mergeStrategy,
+        initialBranch: options.initialBranch,
+        finalBranch: options.finalBranch,
         pinion: {
           logger: {
             ...console,
@@ -225,7 +238,7 @@ program
             })
           }
         }
-      })
+      } as any)
 
       // Setup version management if requested
       if (options.withVersioning) {

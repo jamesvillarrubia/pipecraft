@@ -193,7 +193,5 @@ export const generate = (
       // Generate the PR title check workflow
       return generatePRTitleCheck(ctx)
     })
-    .then(ctx => {
-      logger.success('✅ Generated workflows in: .github/workflows')
-      return ctx
-    })
+// The CLI prints the success line itself, using the real --output path. Printing a second,
+// hardcoded one here meant `generate` reported success twice on every run.

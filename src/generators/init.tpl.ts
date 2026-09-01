@@ -335,6 +335,31 @@ const generateYamlConfig = (config: any): string => {
  * - Production branch name
  * - Branch flow sequence
  */
+/**
+ * Build a branch flow that the chosen branches are actually part of.
+ *
+ * `validateConfig` requires initialBranch first and finalBranch last, so a flow that
+ * ignores them produces a config Pipecraft rejects.
+ *
+ * @param initial - the branch features land on
+ * @param final - the production branch
+ * @param defaultFlow - the built-in flow, used verbatim when both ends match it so the
+ *   familiar develop → staging → main survives
+ */
+export function deriveBranchFlow(
+  initial: string,
+  final: string,
+  defaultFlow: readonly string[]
+): string[] {
+  if (initial === final) {
+    return [initial]
+  }
+  if (initial === defaultFlow[0] && final === defaultFlow[defaultFlow.length - 1]) {
+    return [...defaultFlow]
+  }
+  return [initial, final]
+}
+
 export const generate = async (ctx: PinionContext) => {
   const cwd = ctx.cwd || process.cwd()
 
@@ -367,65 +392,83 @@ export const generate = async (ctx: PinionContext) => {
   }
 
   // Run inquirer prompts
-  const answers = await inquirer.prompt([
-    {
-      type: 'list',
-      name: 'ciProvider',
-      message: 'Which CI provider are you using?',
-      choices: [
-        { name: 'GitHub Actions', value: 'github' },
-        { name: 'GitLab CI/CD', value: 'gitlab' }
-      ],
-      default: 'github'
-    },
-    {
-      type: 'list',
-      name: 'mergeStrategy',
-      message: 'What merge strategy do you prefer?',
-      choices: [
-        { name: 'Fast-forward only (recommended)', value: 'fast-forward' },
-        { name: 'Merge commits', value: 'merge' }
-      ],
-      default: 'fast-forward'
-    },
-    {
-      type: 'confirm',
-      name: 'requireConventionalCommits',
-      message: 'Require conventional commit format for PR titles?',
-      default: true
-    },
-    {
-      type: 'input',
-      name: 'initialBranch',
-      message: 'What is your development branch name?',
-      default: 'develop'
-    },
-    {
-      type: 'input',
-      name: 'finalBranch',
-      message: 'What is your production branch name?',
-      default: 'main'
-    },
-    {
-      type: 'input',
-      name: 'branchFlow',
-      message: 'Enter your branch flow (comma-separated)',
-      default: 'develop,staging,main',
-      filter: (input: string) => input.split(',').map(b => b.trim())
-    },
-    {
-      type: 'list',
-      name: 'domainSelection',
-      message: 'What domains exist in your codebase?',
-      choices: [
-        { name: 'API + Web (common monorepo)', value: 'api-web' },
-        { name: 'Frontend + Backend', value: 'frontend-backend' },
-        { name: 'Apps + Libs (Nx-style)', value: 'apps-libs' },
-        { name: 'Custom domains', value: 'custom' }
-      ],
-      default: 'api-web'
-    }
-  ])
+  // Non-interactive: no terminal to prompt on, or the caller asked us not to. Take the
+  // flags and defaults rather than dying on "User force closed the prompt", which is what
+  // made init unusable from a script, from CI, or from a coding agent.
+  const nonInteractive = Boolean((ctx as any).nonInteractive)
+
+  if (nonInteractive) {
+    console.log('ℹ️  Running non-interactively — using flags and defaults.')
+  }
+
+  const answers: Record<string, any> = nonInteractive
+    ? {
+        ciProvider: (ctx as any).ciProvider ?? defaultConfig.ciProvider,
+        mergeStrategy: (ctx as any).mergeStrategy ?? defaultConfig.mergeStrategy,
+        requireConventionalCommits: defaultConfig.requireConventionalCommits,
+        initialBranch: (ctx as any).initialBranch ?? defaultConfig.initialBranch,
+        finalBranch: (ctx as any).finalBranch ?? defaultConfig.finalBranch,
+        domainSelection: 'api-web'
+      }
+    : await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'ciProvider',
+          message: 'Which CI provider are you using?',
+          choices: [
+            { name: 'GitHub Actions', value: 'github' },
+            { name: 'GitLab CI/CD', value: 'gitlab' }
+          ],
+          default: 'github'
+        },
+        {
+          type: 'list',
+          name: 'mergeStrategy',
+          message: 'What merge strategy do you prefer?',
+          choices: [
+            { name: 'Fast-forward only (recommended)', value: 'fast-forward' },
+            { name: 'Merge commits', value: 'merge' }
+          ],
+          default: 'fast-forward'
+        },
+        {
+          type: 'confirm',
+          name: 'requireConventionalCommits',
+          message: 'Require conventional commit format for PR titles?',
+          default: true
+        },
+        {
+          type: 'input',
+          name: 'initialBranch',
+          message: 'What is your development branch name?',
+          default: 'develop'
+        },
+        {
+          type: 'input',
+          name: 'finalBranch',
+          message: 'What is your production branch name?',
+          default: 'main'
+        },
+        {
+          type: 'input',
+          name: 'branchFlow',
+          message: 'Enter your branch flow (comma-separated)',
+          default: 'develop,staging,main',
+          filter: (input: string) => input.split(',').map(b => b.trim())
+        },
+        {
+          type: 'list',
+          name: 'domainSelection',
+          message: 'What domains exist in your codebase?',
+          choices: [
+            { name: 'API + Web (common monorepo)', value: 'api-web' },
+            { name: 'Frontend + Backend', value: 'frontend-backend' },
+            { name: 'Apps + Libs (Nx-style)', value: 'apps-libs' },
+            { name: 'Custom domains', value: 'custom' }
+          ],
+          default: 'api-web'
+        }
+      ])
 
   // Handle custom domain selection
   let selectedDomains = []
@@ -490,6 +533,17 @@ export const generate = async (ctx: PinionContext) => {
     console.log('   You will need to edit the paths in .pipecraftrc after generation')
     console.log('   to match your actual project structure.\n')
   }
+
+  // branchFlow was always taken from the defaults, so choosing any branch other than
+  // develop/main produced a config that fails Pipecraft's own validation:
+  //   initialBranch "trunk" must be the first branch in branchFlow. Got [develop, staging, main]
+  // Derive it from the branches actually chosen. Keep the three-branch default only when
+  // both ends match it, so `develop → staging → main` still works out of the box.
+  answers.branchFlow = deriveBranchFlow(
+    answers.initialBranch ?? defaultConfig.initialBranch,
+    answers.finalBranch ?? defaultConfig.finalBranch,
+    defaultConfig.branchFlow
+  )
 
   // Merge answers with context and defaults
   const mergedCtx = { ...ctx, ...defaultConfig, ...answers } as any
