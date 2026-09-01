@@ -19,6 +19,7 @@ import { execSync } from 'child_process'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import type { PipecraftConfig } from '../types/index.js'
+import { buildReleaseItConfig } from './release-it-config.js'
 
 /**
  * Manager for semantic versioning and release automation.
@@ -77,107 +78,9 @@ export class VersionManager {
    * ```
    */
   generateReleaseItConfig(): string {
-    // Bump rules live under `semver` in the schema. `versioning.bumpRules` is the
-    // deprecated spelling and loses to it. This is the same precedence the release-it
-    // template and the pr-title-check template use — reading only `versioning` here meant
-    // a project configured the way the schema requires got none of its rules.
-    const userBumpRules = {
-      ...(this.config.versioning?.bumpRules ?? {}),
-      ...(this.config.semver?.bumpRules ?? {})
-    }
-
-    // Keep these in step with src/templates/release-it.cjs.tpl.ts.
-    const baseDefaults: Record<string, string> = {
-      test: 'ignore',
-      build: 'ignore',
-      ci: 'patch',
-      docs: 'patch',
-      chore: 'minor',
-      style: 'patch',
-      fix: 'patch',
-      perf: 'patch',
-      refactor: 'patch',
-      feat: 'minor',
-      major: 'major'
-    }
-
-    const mergedRules = { ...baseDefaults, ...userBumpRules }
-    const rulesEntries = Object.entries(mergedRules)
-      .map(([type, level]) => `  ${type}: '${level}'`)
-      .join(',\n')
-
-    const staticConfig = {
-      git: {
-        requireCleanWorkingDir: false,
-        commit: false,
-        pushArgs: ['--tags'],
-        tagMatch: 'v[0-9]*.[0-9]*.[0-9]*'
-      },
-      github: {
-        release: false
-      },
-      npm: {
-        ignoreVersion: true,
-        publish: false,
-        skipChecks: true
-      },
-      hooks: {
-        'after:release': 'echo ${version} > .release-version'
-      }
-    }
-
-    // whatBump has to be emitted as source. Serialising the whole config with
-    // JSON.stringify silently dropped it — and it is the only thing that reads the bump
-    // rules, so the generated file ignored them entirely.
-    return `const DEFAULT_PREFIXES = {
-${rulesEntries}
-}
-
-module.exports = {
-  ...${JSON.stringify(staticConfig, null, 2).replace(/\n/g, '\n  ')},
-  plugins: {
-    '@release-it/conventional-changelog': {
-      whatBump: commits => {
-        const bumpRules = DEFAULT_PREFIXES
-        let breakings = 0
-        let features = 0
-        const levelSet = ['major', 'minor', 'patch', 'ignore']
-
-        // Math.min() with no arguments is Infinity, which release-it cannot use as a bump
-        // level. Return an explicit "no release" instead, matching release-it.cjs.tpl.ts.
-        if (!commits || commits.length === 0) {
-          return { level: null, reason: 'No commits found - skipping release' }
-        }
-
-        const level = Math.min(
-          ...commits.map(commit => {
-            let level = levelSet.indexOf(bumpRules[commit.type] || 'ignore')
-            level = level < 0 ? 3 : level
-
-            if (commit.notes.length > 0) {
-              breakings += commit.notes.length
-            }
-            if (commit.type === 'feat') {
-              features += 1
-            }
-            return level
-          })
-        )
-
-        return {
-          level: level,
-          reason:
-            breakings === 1
-              ? \`There is \${breakings} BREAKING CHANGE and \${features} features\`
-              : \`There are \${breakings} BREAKING CHANGES and \${features} features\`
-        }
-      }
-    }
-  }
-}
-
-module.exports.DEFAULT_PREFIXES = DEFAULT_PREFIXES
-`
+    // Same builder `generate` uses, so `init --with-versioning` cannot produce a different
+    // file than the pipeline would. See src/utils/release-it-config.ts and #496.
+    return buildReleaseItConfig(this.config)
   }
 
   /**
