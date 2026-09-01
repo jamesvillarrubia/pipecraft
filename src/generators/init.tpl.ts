@@ -45,6 +45,19 @@ import inquirer from 'inquirer'
  *
  * @const
  */
+/**
+ * Job prefixes every domain init creates starts with.
+ *
+ * Domains written without prefixes generate no jobs at all, so `init` followed by
+ * `generate` produced a pipeline with nothing in it (#533, the same failure as #499
+ * reached through the front door).
+ *
+ * `test` only. A test job is near-universal and safe to scaffold as a placeholder the user
+ * fills in. Deployment is a decision Pipecraft has no basis to make for them; add `deploy`
+ * to a domain's prefixes when you want a deploy job.
+ */
+const DEFAULT_DOMAIN_PREFIXES = ['test']
+
 const defaultConfig = {
   ciProvider: 'github' as const,
   mergeStrategy: 'fast-forward' as const,
@@ -80,19 +93,23 @@ const defaultConfig = {
   domains: {
     api: {
       paths: ['apps/api/**'],
-      description: 'API application changes'
+      description: 'API application changes',
+      prefixes: DEFAULT_DOMAIN_PREFIXES
     },
     web: {
       paths: ['apps/web/**'],
-      description: 'Web application changes'
+      description: 'Web application changes',
+      prefixes: DEFAULT_DOMAIN_PREFIXES
     },
     libs: {
       paths: ['libs/**'],
-      description: 'Shared library changes'
+      description: 'Shared library changes',
+      prefixes: DEFAULT_DOMAIN_PREFIXES
     },
     cicd: {
       paths: ['.github/workflows/**'],
-      description: 'CI/CD configuration changes'
+      description: 'CI/CD configuration changes',
+      prefixes: DEFAULT_DOMAIN_PREFIXES
     }
   }
 }
@@ -517,14 +534,16 @@ export const generate = async (ctx: PinionContext) => {
   selectedDomains.forEach((domain: string) => {
     domainConfig[domain] = {
       paths: [`${domain}/**`], // Default path pattern
-      description: `${domain} application changes`
+      description: `${domain} application changes`,
+      prefixes: DEFAULT_DOMAIN_PREFIXES
     }
   })
 
   // Add cicd domain for CI/CD changes
   domainConfig.cicd = {
     paths: ['.github/**'],
-    description: 'CI/CD configuration changes'
+    description: 'CI/CD configuration changes',
+    prefixes: DEFAULT_DOMAIN_PREFIXES
   }
 
   // Show warning for custom domains about path editing
