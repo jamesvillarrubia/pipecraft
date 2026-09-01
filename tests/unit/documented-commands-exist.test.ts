@@ -220,6 +220,37 @@ describe('documented commands exist', () => {
   })
 
   /**
+   * Two SKILL.md files exist: `skills/pipecraft-cli/SKILL.md` ships to users, and
+   * `.claude/skills/pipecraft-cli/SKILL.md` is what this repo's own agents read. Both carry a
+   * Commands Reference table, and the two drifted: the shipped copy said `doctor` while the
+   * repo's copy still said `verify`, which meant the agent working on Pipecraft was told to
+   * run a command Pipecraft had removed.
+   *
+   * The two documents are deliberately different lengths, so this pins the part that goes
+   * stale rather than the prose.
+   */
+  it('both skill files list the same commands', () => {
+    const tableCommands = (file: string): string[] => {
+      const text = readFileSync(join(ROOT, file), 'utf-8')
+      const heading = text.indexOf('## Commands Reference')
+      expect(heading, `${file} has no Commands Reference table`).toBeGreaterThan(-1)
+
+      const names = [
+        ...text
+          .slice(heading)
+          .split(/\n## /)[0]
+          .matchAll(/^\|\s*`([^`]+)`/gm)
+      ].map(m => m[1].replace(/^pipecraft\s+/, '').split(/\s+/)[0])
+      return [...new Set(names)].sort()
+    }
+
+    expect(
+      tableCommands('.claude/skills/pipecraft-cli/SKILL.md'),
+      'the repo copy and the shipped copy name different commands'
+    ).toEqual(tableCommands('skills/pipecraft-cli/SKILL.md'))
+  })
+
+  /**
    * `getSkillContent()` prefers `skills/pipecraft-cli/SKILL.md` and falls back to an
    * embedded string. `files` did not list `skills`, so the tarball carried no such file and
    * every npm user got the fallback — which is how the fallback's `pipecraft verify`

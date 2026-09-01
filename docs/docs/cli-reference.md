@@ -1,4 +1,4 @@
-# CLI Reference
+# Quickstart
 
 PipeCraft is a command-line tool that generates CI/CD workflows for your project. This guide covers the essential commands you'll use day-to-day.
 
@@ -27,23 +27,20 @@ cd your-project
 npx pipecraft init
 ```
 
-This launches an interactive setup that asks you about your project structure. It will ask questions like:
+`init` prompts you through the choices. Pass the values as flags to skip the questions they
+answer:
 
-- Which branches you want to use (develop, staging, main)
-- Which package manager you use (npm, yarn, or pnpm) - auto-detected from lockfiles
-- What domains exist in your codebase (api, web, etc.)
-- Which paths belong to each domain
+```bash
+npx pipecraft init --initial-branch develop --final-branch main --ci-provider github
+```
 
-The init command automatically detects your package manager by checking for lockfiles:
+In CI, a script, or an agent session, `--yes` accepts every default and never prompts:
 
-- `pnpm-lock.yaml` → pnpm
-- `yarn.lock` → yarn
-- `package-lock.json` → npm
-- No lockfile → defaults to npm
+```bash
+npx pipecraft init --yes
+```
 
-You can confirm or override the detected package manager during the interactive prompts.
-
-Once complete, you'll have a `.pipecraftrc` file that contains your configuration (format can be JSON, YAML, or JavaScript).
+Once complete, you'll have a `.pipecraftrc` file you can edit to define your branch flow and domains (format can be JSON, YAML, or JavaScript). Domain change detection is path-based, so any project — including monorepos — is configured by pointing each domain at its file globs.
 
 ## Generating workflows
 
@@ -224,19 +221,27 @@ npx pipecraft init
 # 3. Generate workflows
 npx pipecraft generate
 
-# 5. Review the generated files
+# 4. Review the generated files
 ls -la .github/workflows/
 cat .github/workflows/pipeline.yml
 
-# 6. Commit the changes
+# 5. Commit the changes
 git add .github/ .pipecraftrc
 git commit -m "chore: add pipecraft workflows"
 git push
 
-# 7. Set up GitHub (requires a token)
-export GITHUB_TOKEN=ghp_xxxxxxxxxxxxx
+# 6. Create the branch flow (develop, staging, main, ...) on the remote
 pipecraft setup
+
+# 7. Configure GitHub Actions permissions (requires a token)
+export GITHUB_TOKEN=ghp_xxxxxxxxxxxxx
+pipecraft setup-github --apply
 ```
+
+Two distinct setup commands, both needed before promotions work:
+
+- **`pipecraft setup`** creates the branches in your `branchFlow` on the remote (e.g. `staging`, `production`). Promotion opens PRs into these branches, so they must exist first.
+- **`pipecraft setup-github`** configures the repository's Actions permissions (read/write, allow PR creation) so the version/tag/promote jobs can run.
 
 ## Configuration file
 
@@ -254,9 +259,14 @@ Most projects use `.pipecraftrc` because it's simple and can be either JSON or Y
 ```json
 {
   "ciProvider": "github",
+  "mergeStrategy": "fast-forward",
+  "requireConventionalCommits": true,
   "branchFlow": ["develop", "staging", "main"],
   "initialBranch": "develop",
   "finalBranch": "main",
+  "semver": {
+    "bumpRules": { "feat": "minor", "fix": "patch", "breaking": "major" }
+  },
   "domains": {
     "app": {
       "paths": ["src/**"],
@@ -265,6 +275,8 @@ Most projects use `.pipecraftrc` because it's simple and can be either JSON or Y
   }
 }
 ```
+
+`mergeStrategy`, `requireConventionalCommits`, and `semver` are required — `pipecraft validate` will tell you if any are missing. Use `prefixes` to choose which jobs a domain generates (e.g. `["test", "deploy"]`); the older `testable`/`deployable` flags are deprecated.
 
 This configuration tells PipeCraft to:
 

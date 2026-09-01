@@ -59,6 +59,10 @@ reference, examples, and troubleshooting.
 
 Working in this repo with an AI agent? See [AGENTS.md](AGENTS.md).
 
+Developing Pipecraft itself: [CONTRIBUTING.md](./CONTRIBUTING.md) for setup and workflow,
+[docs-dev/testing.md](./docs-dev/testing.md) for the testing approach, and
+[docs-dev/ast-operations.md](./docs-dev/ast-operations.md) for how the generator edits YAML.
+
 [![npm version](https://badge.fury.io/js/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
 [![NPM downloads](https://img.shields.io/npm/dm/pipecraft.svg)](https://www.npmjs.com/package/pipecraft)
 [![License](https://img.shields.io/npm/l/pipecraft.svg)](https://github.com/the-craftlab/pipecraft/blob/main/LICENSE)
