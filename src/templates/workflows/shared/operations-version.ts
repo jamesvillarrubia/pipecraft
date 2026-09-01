@@ -54,6 +54,11 @@ export function createVersionJobOperation(ctx: VersionContext): PathOperationCon
  Calculates the next semantic version based on conventional commits.
  Only runs on push events (skipped on pull requests).
 `,
+    // The checkout below uses `filter: blob:none`. Versioning reads tags and commit
+    // subjects, never file contents, so depth 0 is required for the tag history but the
+    // blobs in that history are not. Git fetches a blob on demand if a step asks for one.
+    // The filter is set here rather than as a YAML comment because a comment inside the
+    // `with:` mapping forces the serializer out of flow style and reshapes the whole job.
     value: createValueFromString(`
     needs: [ ${needsArray.join(', ')} ]
     if: \${{ ${allConditions} }}
@@ -63,6 +68,7 @@ export function createVersionJobOperation(ctx: VersionContext): PathOperationCon
         with:
           ref: \${{ inputs.commitSha || github.sha }}
           fetch-depth: \${{ env.FETCH_DEPTH_VERSIONING }}
+          filter: blob:none
       - uses: ${actionRef}
         id: version
         with:
