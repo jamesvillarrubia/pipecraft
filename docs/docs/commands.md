@@ -76,6 +76,10 @@ pipecraft setup
 
 This is particularly useful when you're setting up a new repository or when you've added a new branch to your flow. The command creates each branch and pushes it to your remote, ensuring your repository structure matches your configuration.
 
+It does not check anything out. Branches are created as refs from your current `HEAD`, so
+you stay on the branch you were on and your working tree is untouched — uncommitted changes
+included. If the command fails partway, you are still where you started.
+
 If branches already exist, the command skips them gracefully. You can force recreation of branches if needed, though this is rarely necessary:
 
 ```bash
