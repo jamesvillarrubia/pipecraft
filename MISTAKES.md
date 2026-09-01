@@ -2,6 +2,30 @@
 
 Repo-specific failures and what would have prevented them. Newest first.
 
+## 2026-09-01 — Corrected the skill copy that never ships, and released it
+
+**What happened:** #545 replaced `pipecraft verify` (a command that does not exist) across
+every AI guidance file, including `skills/pipecraft-cli/SKILL.md`, and added a test that
+scans markdown for invented commands. It released as v0.45.5. Unpacking the published
+tarball afterwards showed `pipecraft verify   # Health check` still in
+`dist/utils/skill-installer.js`, and no `skills/` directory at all.
+
+**Root cause:** `getSkillContent()` reads `skills/pipecraft-cli/SKILL.md` and falls back to
+an embedded string. `package.json` `files` listed `dist`, `src/generators` and `README.md`,
+so the tarball carried no SKILL.md and the fallback was the only path an npm user could
+reach. I corrected the copy in the repo and never checked which copy ships. The new test
+scanned markdown only, so it could not see a string literal in TypeScript, and it read the
+repo rather than the artifact.
+
+**Consequence:** v0.45.5 shipped with the defect the release claimed to fix. The same scan
+also missed `setup-github` printing "Run 'pipecraft edit' to create your first release";
+`edit` has never been a command either.
+
+**Prevention:** verify in the tarball, not the checkout. `npm pack`, extract, and read the
+file the code actually loads. The two new cases in
+`tests/unit/documented-commands-exist.test.ts` do this: one scans string literals under
+`src/`, the other runs `npm pack --dry-run` and asserts the skill file is in it.
+
 ## 2026-09-01 — Ran a full e2e sweep against a checkout 15 commits behind
 
 **What happened:** After a session of merging through worktrees, I ran

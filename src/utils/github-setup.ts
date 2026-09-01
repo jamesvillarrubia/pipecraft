@@ -1421,5 +1421,8 @@ export async function setupGitHubPermissions(autoApply: boolean = false): Promis
   console.log(`      ${repoInfo.owner}/${repoInfo.repo}/settings/actions`)
   console.log(`   2. Verify repository settings:`)
   console.log(`      ${repoInfo.owner}/${repoInfo.repo}/settings`)
-  console.log(`   3. Run 'pipecraft edit' to create your first release`)
+  console.log(`   3. Run 'pipecraft doctor' to check the setup`)
+  console.log(
+    `   4. Push a conventional commit to your initial branch — the pipeline versions, tags and releases from there`
+  )
 }
