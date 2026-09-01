@@ -2,6 +2,32 @@
 
 Repo-specific failures and what would have prevented them. Newest first.
 
+## 2026-09-01 — Ran a full e2e sweep against a checkout 15 commits behind
+
+**What happened:** After a session of merging through worktrees, I ran
+`harness.ts run all` from the parent checkout to verify the promotion gate (#280) and the
+init prefixes fix (#533). The checkout was still at `7b11d8e` from that morning, 15 commits
+behind `origin/develop`. `pnpm build` in the same command compiled that old source
+faithfully, so the harness was exercising code from before both changes. I caught it only
+because I glanced at `git log --oneline -1` for an unrelated reason.
+
+**Root cause:** every merge went through a worktree, so nothing ever pulled the parent. I
+treated "I ran `pnpm build`" as sufficient, when building guarantees the artifact matches
+the working tree and says nothing about whether the working tree matches the branch. The
+commit was visible in `git worktree list` output I had already read twice.
+
+**Consequence:** none, caught before reporting. Had it completed, all six flavors would have
+gone green — they passed that morning too — and I would have reported a sweep that proved
+nothing about the changes it was meant to verify.
+
+**Prevention:** before any e2e run or integration verification, confirm the checkout is
+current: `git rev-list --count HEAD..origin/develop` must be 0. A green result from stale
+code is worse than a red one, because it ends the investigation.
+
+This is the same shape as the `filter: blob:none` measurement earlier that day, which showed
+no saving twice because the local server lacked `uploadpack.allowFilter`. Right command,
+wrong conditions, plausible output.
+
 ## 2026-08-31 — Rewrote generateReleaseItConfig while an open issue described a third bug in it
 
 **What happened:** I rewrote `VersionManager.generateReleaseItConfig()` in v0.43.2 to fix

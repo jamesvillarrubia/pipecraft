@@ -202,6 +202,19 @@ is meant to be executable, evaluate it and assert on the resulting object.
 Integration tests shell out to `dist/cli/index.js`, so **`pnpm build` before running them**
 or you are testing stale output.
 
+**Building is not enough — check the checkout is current first.** Merges go through
+worktrees, so nothing pulls the parent checkout and it drifts behind `origin/develop` over a
+session. Building it then faithfully compiles old source, and e2e goes green while proving
+nothing about your change:
+
+```bash
+git rev-list --count HEAD..origin/develop   # must be 0
+git pull --ff-only origin develop && pnpm build
+```
+
+This nearly shipped a full e2e sweep as verification when the checkout was 15 commits
+behind. The flavors passed, because they passed before the change too.
+
 Use isolated workspaces (`tests/helpers/workspace.ts`), never a shared `TEST_DIR`. When a
 test shells out to the CLI, always pass a temp `cwd` — **never `process.cwd()`**. Only
 `pipeline.yml` honours an output override (`--output-pipeline`); the auxiliary workflows are
