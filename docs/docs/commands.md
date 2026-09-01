@@ -190,12 +190,12 @@ pipecraft validate --config custom-config.json
 
 Validation is also built into the generate command, so you'll catch configuration errors there too. But running validation separately can help you iterate faster when you're making multiple changes.
 
-### pipecraft verify
+### pipecraft doctor
 
 While `validate` checks your configuration file, `verify` checks your entire PipeCraft setup:
 
 ```bash
-pipecraft verify
+pipecraft doctor
 ```
 
 This command confirms that your configuration exists, that your workflow files have been generated, and that your repository structure matches what PipeCraft expects. Think of it as a health check for your complete setup.
@@ -246,7 +246,7 @@ Use this before releases to confirm that your commits will result in the version
 
 ### Bumping and releasing
 
-There is no `pipecraft version --bump` or `--release`. Bumping is the pipeline's job, not a
+The `version` command has no `--bump` or `--release`. Bumping is the pipeline's job, not a
 local command.
 
 The generated `version` job resolves the next version from your conventional commits, `tag`
@@ -338,7 +338,7 @@ git commit -m "chore: update workflow configuration"
 When workflows aren't behaving as expected:
 
 ```bash
-pipecraft verify                         # Check overall setup
+pipecraft doctor                         # Check overall setup
 pipecraft validate                       # Check configuration
 pipecraft generate --debug --dry-run     # See what would be generated
 pipecraft setup-github                   # Verify permissions

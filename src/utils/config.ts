@@ -276,8 +276,8 @@ export const validateConfig = (config: any) => {
  * Collect non-fatal warnings for config fields that are declared/documented but have no
  * effect, so the dead surface is visible instead of silently ignored.
  *
- * - `mergeMethod` and `mergeStrategy: 'merge'` are consumed nowhere — promotions always
- *   fast-forward (the promote action hardcodes `--ff-only`).
+ * - `mergeMethod` is consumed nowhere. `mergeStrategy` IS honoured: the promote action
+ *   branches on it, using `git merge --no-ff` for `'merge'` and `--ff-only` otherwise.
  * - `autoMerge` is a deprecated alias for `autoPromote`.
  *
  * @param config - A config object (already structurally validated)
@@ -288,7 +288,9 @@ export const getConfigWarnings = (config: any): string[] => {
 
   // Note: mergeStrategy 'merge' is now implemented (merge-commit promotion) — no warning.
   if (config?.mergeMethod !== undefined) {
-    warnings.push('mergeMethod is declared but has no effect; promotions always fast-forward.')
+    warnings.push(
+      'mergeMethod is declared but has no effect; use mergeStrategy to choose how promotions land.'
+    )
   }
   if (config?.autoMerge !== undefined) {
     warnings.push('autoMerge is deprecated; use autoPromote instead.')
