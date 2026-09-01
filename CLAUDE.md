@@ -105,21 +105,21 @@ Adding or changing a config field means touching all three, or `tsc` /
 3. `.pipecraft-schema.json` (hand-maintained; descriptions are _not_ checked, so keep them
    truthful yourself)
 
-### `bumpRules` has two spellings and two generators
+### `bumpRules` has two spellings and one generator
 
 - Location: `semver.bumpRules` is what the schema requires. `versioning.bumpRules` is
   deprecated and must lose to it. Resolve as `{...versioning, ...semver}` everywhere.
-- Generator: there are **two**, and both reach users. `src/templates/release-it.cjs.tpl.ts`
-  is what `generate` renders. `VersionManager.generateReleaseItConfig()` in
-  `src/utils/versioning.ts` is called by `setupVersionManagement()` (`versioning.ts`), which
-  `pipecraft init --with-versioning` invokes (`src/cli/index.ts`) and which does
-  `writeFileSync('.release-it.cjs', …)`. Whichever command a user ran last wins.
-  Confirm which path a reported bug actually hits before changing code, and keep the
-  `baseDefaults` in the two files in step.
-- They still diverge on `github.release` (template `true` with a `releaseName`, VersionManager
-  `false`) and on `options.preset.types` (template merges them, VersionManager ignores
-  `options`). Unifying is a behaviour change, not a refactor.
-  `tests/integration/release-it-config-parity.test.ts` pins the behaviours they must share.
+- Generator: **one**, `buildReleaseItConfig()` in `src/utils/release-it-config.ts`. Two
+  callers reach it: `src/templates/release-it.cjs.tpl.ts` (rendered by `generate`) and
+  `VersionManager.generateReleaseItConfig()` (called by `setupVersionManagement()`, which
+  `pipecraft init --with-versioning` invokes). Both write `.release-it.cjs`, so they have to
+  agree; put changes in the builder, never in a caller.
+- Those two used to diverge, and every divergence was a bug: #483 (different config keys),
+  #287 (`Infinity` on empty commits), #496 (`github.release`, and whether
+  `options.preset.types` is read). `tests/integration/release-it-unified.test.ts` asserts
+  the two callers produce byte-identical output, and
+  `tests/fixtures/release-it-golden.cjs` pins what `generate` emits so a change to the
+  builder cannot silently alter it.
 
 ### `whatBump`: config beats preset
 
