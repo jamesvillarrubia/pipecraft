@@ -173,7 +173,16 @@ async function prove(flavor: string, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<vo
     const marker = `e2e-${Date.now()}-${Math.floor(Math.random() * 1e6)}`
     writeFileSync(join(ddir, `${marker}.js`), `export const m = '${marker}'\n`)
     sh('git add -A', dir)
-    sh(`git commit -qm "feat: e2e proof ${marker}"`, dir)
+    // Commit as GitHub. tag/promote only run for commits whose committer is
+    // noreply@github.com — the marker GitHub puts on a merged pull request — or for a
+    // workflow_dispatch. A plain `git push` from this harness is exactly the direct push
+    // that gate exists to stop, so the proof has to look like a merged PR to reach
+    // promotion at all. See src/templates/workflows/shared/operations-tag-promote.ts.
+    sh(
+      `git -c user.name="GitHub" -c user.email="noreply@github.com" ` +
+        `commit -qm "feat: e2e proof ${marker}"`,
+      dir
+    )
     sh(`git push origin ${plan.initial}`, dir)
     const feat = sh('git rev-parse HEAD', dir)
     console.log(`   pushed feat ${feat.slice(0, 8)} to ${plan.initial}`)

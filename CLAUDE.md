@@ -147,6 +147,28 @@ gh issue list --repo the-craftlab/pipecraft --search "generateReleaseItConfig OR
 Rewriting `generateReleaseItConfig` without doing this left #287's bug on lines that were
 being replaced anyway — see `MISTAKES.md`.
 
+## Only GitHub-authored commits promote
+
+`tag` and `promote` carry `PROMOTION_SOURCE_GATE` from
+`src/templates/workflows/shared/operations-tag-promote.ts`:
+
+```
+github.event.head_commit.committer.email == 'noreply@github.com' ||
+  github.event_name == 'workflow_dispatch'
+```
+
+GitHub stamps that committer on the commit it creates when a pull request is merged, and a
+fast-forward promotion preserves it, so the marker survives the whole flow. Verified on this
+repo: `develop` and `main` both show `noreply@github.com`.
+
+A hand-pushed commit keeps its author's address and does not promote. `version`, change
+detection and domain jobs still run, so only tagging and promotion are held back.
+
+**This is why the e2e harness commits as `noreply@github.com`.** A plain `git push` from the
+harness is the direct push the gate exists to stop, so `prove` would never reach promotion.
+If you change how the harness commits, promotion silently stops and every flavor fails at
+`auto=false`.
+
 ## `autoPromote` controls the merge, not the PR
 
 `autoPromote: false` still **opens** the promotion PR; it just leaves it for a human. There
