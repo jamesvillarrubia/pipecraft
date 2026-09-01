@@ -156,4 +156,67 @@ describe('documented commands exist', () => {
     }
     expect(bad, 'a package.json script runs a command that does not exist').toEqual([])
   })
+
+  /**
+   * The markdown scan above cannot see the guidance the CLI prints or embeds. Two
+   * invocations hid there: `setup-github` closed with "Run 'pipecraft edit' to create your
+   * first release", and `getSkillContent()`'s embedded fallback listed `pipecraft verify`.
+   * Neither command exists.
+   *
+   * `pipecraft` only ever starts a string in this codebase when it is an invocation —
+   * prose puts a word in front of it ("Unknown pipecraft key", "/pipecraft or ask") — so
+   * anchoring the match to a quote or a line start needs no allowlist.
+   */
+  it('strings in src only name real commands', () => {
+    const bad: string[] = []
+    const walk = (dir: string): void => {
+      for (const entry of readdirSync(dir)) {
+        const path = join(dir, entry)
+        if (statSync(path).isDirectory()) walk(path)
+        else if (entry.endsWith('.ts')) {
+          readFileSync(path, 'utf-8')
+            .split('\n')
+            .forEach((line, i) => {
+              for (const m of line.matchAll(/(?:^|['"`])pipecraft ([a-z][a-z-]*)/g)) {
+                if (!commands.has(m[1])) {
+                  bad.push(`${path.replace(ROOT + '/', '')}:${i + 1} pipecraft ${m[1]}`)
+                }
+              }
+            })
+        }
+      }
+    }
+    walk(join(ROOT, 'src'))
+
+    expect(bad.sort(), 'the CLI prints or embeds a command that does not exist').toEqual([])
+  })
+
+  /**
+   * `getSkillContent()` prefers `skills/pipecraft-cli/SKILL.md` and falls back to an
+   * embedded string. `files` did not list `skills`, so the tarball carried no such file and
+   * every npm user got the fallback — which is how the fallback's `pipecraft verify`
+   * outlived the correction to the file.
+   */
+  it('the skill file the installer prefers is published', () => {
+    // dist/utils/skill-installer.js resolves '../../skills/pipecraft-cli/SKILL.md'.
+    const wanted = 'skills/pipecraft-cli/SKILL.md'
+    const packed = JSON.parse(
+      execSync('npm pack --dry-run --json', {
+        cwd: ROOT,
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'ignore']
+      })
+    )[0].files.map((f: { path: string }) => f.path)
+
+    expect(packed, 'the tarball must carry the skill or every user gets the fallback').toContain(
+      wanted
+    )
+    // skills/pipecraft-cli is its own publishable package (@pipecraft/claude-skill), so
+    // listing the directory would nest a second package.json and its install scripts inside
+    // this tarball. (npm adds the directory's README.md on its own; that is harmless.)
+    expect(
+      packed.filter((p: string) => p.startsWith('skills/') && !p.endsWith('.md')),
+      'only the skill markdown belongs in this tarball'
+    ).toEqual([])
+  })
 })

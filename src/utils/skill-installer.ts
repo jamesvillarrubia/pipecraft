@@ -96,7 +96,7 @@ Help users with **Pipecraft** - a trunk-based CI/CD workflow generator for GitHu
 pipecraft init              # Create config
 pipecraft generate          # Generate workflows
 pipecraft validate          # Check config syntax
-pipecraft verify            # Health check
+pipecraft doctor            # Health check (exits 1 on errors)
 pipecraft setup             # Create branches
 pipecraft setup-github      # GitHub permissions
 \`\`\`

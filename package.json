@@ -10,6 +10,7 @@
   "files": [
     "dist",
     "src/generators",
+    "skills/pipecraft-cli/SKILL.md",
     "README.md"
   ],
   "repository": {

@@ -229,6 +229,27 @@ For a generated file that must track config, assert that it **changes**: generat
 config, regenerate, then check the new value is present _and_ the old one is gone. See
 `tests/integration/regenerate-managed-workflows.test.ts`.
 
+## What ships is not what the repo holds
+
+`package.json` `files` is `dist`, `src/generators`, `skills/pipecraft-cli/SKILL.md` and
+`README.md`. Everything else in the repo is invisible to an npm user, so a correction to a
+file outside that list changes nothing for anyone.
+
+`getSkillContent()` in `src/utils/skill-installer.ts` reads that SKILL.md and falls back to
+an embedded template string. While `skills/` went unpublished, the fallback was the only
+path a user could reach, and it kept teaching `pipecraft verify` through the release that
+claimed to remove it — see `MISTAKES.md`.
+
+After changing anything a user reads, check the artifact:
+
+```bash
+npm pack --pack-destination /tmp/pcpack && tar xzf /tmp/pcpack/*.tgz -C /tmp/pcpack
+rg 'the string you changed' /tmp/pcpack/package/
+```
+
+`tests/unit/documented-commands-exist.test.ts` covers this mechanically: markdown, string
+literals under `src/`, `package.json` scripts, and `npm pack --dry-run` contents.
+
 ## Reserved job names
 
 Domains cannot be named `changes`, `version`, `gate`, `tag`, `promote`, or `release` —
