@@ -105,6 +105,15 @@ Adding or changing a config field means touching all three, or `tsc` /
 3. `.pipecraft-schema.json` (hand-maintained; descriptions are _not_ checked, so keep them
    truthful yourself)
 
+`tests/unit/config-key-coverage.test.ts` then fails if nothing under `src/` reads the new
+key. The most common defect here is a key that validates, gets documented, and is read by
+nothing — #483, #287, #499, #506 and #290 were all that shape. If a key is inert on purpose,
+add it to that test's `EXEMPT` map with the reason.
+
+The test greps, so it catches "nothing reads this at all", not "this is read correctly".
+#499's `testable` was mentioned in `getDomainJobNames()` while the code that built jobs
+ignored it. Behavioural tests are still what prove a key works.
+
 ### `bumpRules` has two spellings and one generator
 
 - Location: `semver.bumpRules` is what the schema requires. `versioning.bumpRules` is
