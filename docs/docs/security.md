@@ -47,6 +47,32 @@ If you prefer to configure branch protection manually, the key settings are:
 - Require pull request reviews before merging
 - Restrict who can push to protected branches
 
+## Only merged pull requests promote
+
+Branch protection can be configured away, and the initial branch often is not protected at
+all. So `tag` and `promote` carry their own condition:
+
+```yaml
+github.event.head_commit.committer.email == 'noreply@github.com' ||
+github.event_name == 'workflow_dispatch'
+```
+
+GitHub creates the commit when a pull request is merged, and stamps it with
+`noreply@github.com`. A fast-forward promotion preserves that committer, so the marker
+survives the whole branch flow. A commit you push by hand keeps your own address, so it
+does not tag and does not promote.
+
+This stops a hotfix typed on the wrong branch from cutting a release.
+
+What still happens on a direct push: change detection runs, your domain jobs run, and
+`version` reports the version it would have used. Only tagging and promotion are held back.
+
+To promote a hand-pushed commit deliberately, run the workflow from the Actions tab. The
+`workflow_dispatch` half of the condition exists for exactly that.
+
+If your CI pushes to the initial branch under its own identity rather than through a pull
+request, those pushes will stop promoting. Trigger the workflow explicitly instead.
+
 ## Keeping things secure
 
 A few simple practices will keep your PipeCraft setup secure:
