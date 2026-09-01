@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# Commands
+# CLI Reference
 
 PipeCraft provides a focused set of commands designed to get you from zero to a working CI/CD pipeline with minimal friction. Each command serves a specific purpose in your workflow, from initial setup through ongoing maintenance and troubleshooting.
 
@@ -343,7 +343,7 @@ pipecraft generate --dry-run
 
 Use it to check a config change before it lands: which files appear, which get merged into,
 and which domain jobs the config actually produces. See
-[Generating Workflows](#generating-workflows) for the output.
+[Generation Commands](#generation-commands) for the output.
 
 ## Common Command Patterns
 

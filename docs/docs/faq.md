@@ -544,7 +544,7 @@ Your customizations will be preserved during regeneration.
 
 ### How can I contribute?
 
-We welcome contributions! See the [Contributing guide](contributing.md) for:
+We welcome contributions! See the [Contributing guide](https://github.com/the-craftlab/pipecraft/blob/main/CONTRIBUTING.md) for:
 
 - Development setup
 - Code architecture
