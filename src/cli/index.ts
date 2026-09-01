@@ -545,7 +545,12 @@ program
         } else {
           console.log(`🌱 Creating branch '${branch}'...`)
           try {
-            execSync(`git checkout -b ${branch}`, { stdio: 'inherit' })
+            // `git branch` creates the ref without switching. The previous
+            // `git checkout -b` moved the working tree and then tried to switch back at
+            // the end, outside any try/finally — so a failure anywhere in this loop left
+            // the user on a branch they never chose, and uncommitted work could block the
+            // checkout or ride along to another branch. Creating refs needs no checkout.
+            execSync(`git branch ${branch}`, { stdio: 'inherit' })
             console.log(`✅ Created branch '${branch}'`)
           } catch (error: any) {
             if (error.message.includes('already exists')) {
@@ -573,11 +578,8 @@ program
         }
       }
 
-      // Return to original branch
-      execSync(`git checkout ${currentBranch}`, { stdio: 'inherit' })
-      console.log(`🔄 Returned to original branch: ${currentBranch}`)
-
-      console.log('✅ Branch setup complete!')
+      // No branch to return to: nothing above switched away from it.
+      console.log(`✅ Branch setup complete! Still on '${currentBranch}'.`)
     } catch (error: any) {
       console.error('❌ Setup command failed:', error.message)
       process.exit(1)
