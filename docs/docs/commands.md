@@ -16,21 +16,55 @@ The beauty of PipeCraft is that most of the time, you won't need to think about 
 
 ### pipecraft init
 
-The `init` command creates your initial configuration file with sensible defaults. When you run it, PipeCraft creates a `.pipecraftrc.json` file in your project root configured for trunk-based development with a standard three-branch flow: develop, staging, and main.
+The `init` command creates your `.pipecraftrc`. Run it with a terminal attached and it asks
+a short series of questions — CI provider, merge strategy, branches, and how to group your
+domains:
 
 ```bash
 pipecraft init
 ```
 
-This command is intentionally simple. It doesn't ask you a lot of questions or try to detect your project structure. Instead, it gives you a working configuration that you can customize by editing the JSON file directly. This approach gives you complete control while still providing a quick start.
+#### Without prompts
 
-If you've already initialized PipeCraft and want to start fresh, you can force overwrite your existing configuration:
+Pass `--yes` to accept defaults and answer nothing. Use this in CI, in setup scripts, and
+when a coding agent is driving:
+
+```bash
+pipecraft init --yes
+```
+
+Flags set individual values, so you can shape the config without a terminal:
+
+```bash
+pipecraft init --yes \
+  --initial-branch develop \
+  --final-branch main \
+  --merge-strategy fast-forward \
+  --ci-provider github
+```
+
+| Flag                          | Default        |
+| ----------------------------- | -------------- |
+| `--ci-provider <provider>`    | `github`       |
+| `--merge-strategy <strategy>` | `fast-forward` |
+| `--initial-branch <branch>`   | `develop`      |
+| `--final-branch <branch>`     | `main`         |
+
+`init` also skips prompting when stdin is not a terminal, so piping or redirecting works
+without `--yes`. It prints a line saying it did so.
+
+**The branch flow follows the branches you choose.** With the defaults you get
+`develop → staging → main`. Name different ends and you get exactly those two, so
+`--initial-branch trunk --final-branch production` produces `trunk → production`. Give the
+same branch for both and you get a single-branch flow.
+
+#### Overwriting
 
 ```bash
 pipecraft init --force
 ```
 
-Use this carefully—it will replace your entire configuration file with the defaults. If you've customized your setup, make sure you have a backup or have committed your changes to git first.
+This replaces your entire configuration with a fresh one. Commit your changes first.
 
 ### pipecraft setup
 

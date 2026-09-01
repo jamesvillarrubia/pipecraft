@@ -117,3 +117,30 @@ describe('generate --dry-run', () => {
     })
   })
 })
+
+describe('generate output', () => {
+  let workspace: string
+  let cleanup: () => void
+
+  beforeEach(() => {
+    ;[workspace, cleanup] = createWorkspaceWithCleanup('generate-output')
+  })
+  afterEach(() => cleanup())
+
+  it('reports success once, not twice', async () => {
+    await inWorkspace(workspace, () => {
+      execSync('git init', { cwd: workspace, stdio: 'pipe' })
+      writeFileSync('.pipecraftrc', JSON.stringify(config, null, 2))
+      const out = execSync(`node "${cliPath}" generate --skip-checks 2>&1`, {
+        cwd: workspace,
+        stdio: 'pipe',
+        timeout: 20000,
+        env: { ...process.env, CI: 'true' }
+      }).toString()
+
+      // The CLI and the generator each printed their own success line.
+      const successes = out.split('\n').filter(l => l.includes('Generated workflows in'))
+      expect(successes).toHaveLength(1)
+    })
+  })
+})
