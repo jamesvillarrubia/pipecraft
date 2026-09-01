@@ -26,15 +26,15 @@ Make Pipecraft easily usable with AI coding assistants (Claude Code, Cursor, Git
 
 ### 2. CLI Features Added
 
-| Feature                            | Description                              |
-| ---------------------------------- | ---------------------------------------- |
-| `pipecraft skill` command          | Installs AI skills to user's system      |
-| `pipecraft skill --list`           | Shows detected AI tools and skill status |
-| `pipecraft skill --uninstall`      | Removes installed skills                 |
-| `pipecraft skill --local`          | Project-level installation               |
-| `pipecraft skill --force`          | Install even if tool not detected        |
-| `pipecraft skill --target <tools>` | Install for specific tools only          |
-| `pipecraft init --with-skill`      | Install skills during init               |
+| Feature                            | Description                                    |
+| ---------------------------------- | ---------------------------------------------- |
+| `pipecraft skill` command          | Installs AI skills to user's system            |
+| `pipecraft skill --list`           | Shows detected AI tools and skill status       |
+| `pipecraft skill --uninstall`      | Removes installed skills                       |
+| `pipecraft skill --local`          | Project-level installation (the default)       |
+| `pipecraft skill --global`         | `~/.claude/skills/pipecraft`, Claude Code only |
+| `pipecraft skill --target <tools>` | Install for specific tools only                |
+| `pipecraft init --with-skill`      | Install skills during init                     |
 
 ### 3. Source Files Created
 
@@ -229,7 +229,7 @@ pnpm build
 
 # Test the skill command
 ./dist/cli/index.js skill --list
-./dist/cli/index.js skill --force
+./dist/cli/index.js skill --install
 ./dist/cli/index.js skill --uninstall
 
 # Test init with skill

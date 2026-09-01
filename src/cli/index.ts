@@ -253,7 +253,8 @@ program
       if (options.withSkill) {
         const { installSkills } = await import('../utils/skill-installer.js')
         console.log('\n🔧 Installing AI coding assistant skills...')
-        const results = installSkills({ global: true })
+        // `init` runs in the project being set up, so the project files are the ones to write.
+        const results = installSkills({ local: true })
         const installed = results.filter(r => r.success && !r.skipped)
         if (installed.length > 0) {
           console.log('✅ Skills installed for:', installed.map(r => r.target).join(', '))
@@ -613,18 +614,17 @@ program
   .command('skill')
   .description('Install Pipecraft skills for AI coding assistants (Claude Code, Cursor, etc.)')
   .option('--install', 'Install skills (default action)')
-  .option('--uninstall', 'Remove installed skills')
+  .option('--uninstall', 'Remove what was installed, leaving your own text in place')
   .option('--list', 'List available targets and their status')
-  .option('--global', 'Install to global/user directory (default)')
-  .option('--local', 'Install to current project directory')
-  .option('--force', 'Install even if target tool not detected')
+  .option('--local', 'Install into this project (default)')
+  .option('--global', 'Install into your home directory (Claude Code only)')
   .option(
     '--target <targets>',
-    'Specific targets to install (comma-separated: claude-code,cursor,copilot,windsurf)'
+    'Specific targets (comma-separated: claude-code,cursor,copilot,windsurf,cline,codex)'
   )
   .action(async options => {
     try {
-      const { installSkills, uninstallSkills, listSkillTargets } = await import(
+      const { installSkills, uninstallSkills, listSkillTargets, SKILL_TARGETS } = await import(
         '../utils/skill-installer.js'
       )
 
@@ -634,15 +634,13 @@ program
         console.log('\n📋 AI Coding Assistant Skill Targets:\n')
 
         for (const target of targets) {
-          const status = target.installed
-            ? target.hasSkill
-              ? '✅ Installed'
-              : '⚠️  Detected (no skill)'
+          const status = target.hasSkill
+            ? '✅ Installed'
+            : target.detected
+            ? '⚠️  Detected (no skill)'
             : '⬚  Not detected'
           console.log(`   ${status}  ${target.displayName}`)
-          if (target.installed) {
-            console.log(`             ${target.globalPath}`)
-          }
+          console.log(`             ${target.localPath}`)
         }
 
         console.log('\nRun `pipecraft skill --install` to install skills.')
@@ -655,7 +653,7 @@ program
         console.log('\n🗑️  Removing Pipecraft skills...\n')
 
         const results = uninstallSkills({
-          global: !options.local,
+          global: options.global,
           local: options.local
         })
 
@@ -663,7 +661,7 @@ program
         if (removed.length > 0) {
           console.log('Removed from:')
           for (const r of removed) {
-            console.log(`   ✅ ${r.target}`)
+            console.log(`   ✅ ${r.target}: ${r.path}`)
           }
         } else {
           console.log('No skills found to remove.')
@@ -676,12 +674,18 @@ program
       console.log('\n🔧 Installing Pipecraft skills for AI coding assistants...\n')
 
       const targetList = options.target?.split(',').map((t: string) => t.trim())
+      const known = SKILL_TARGETS.map(t => t.name)
+      const unknown = (targetList ?? []).filter((t: string) => !known.includes(t))
+      if (unknown.length > 0) {
+        console.error(`❌ Unknown target(s): ${unknown.join(', ')}`)
+        console.error(`   Known targets: ${known.join(', ')}`)
+        process.exit(1)
+      }
 
       const results = installSkills({
-        global: !options.local,
+        global: options.global,
         local: options.local,
-        targets: targetList,
-        force: options.force
+        targets: targetList
       })
 
       const installed = results.filter(r => r.success && !r.skipped)
@@ -696,11 +700,10 @@ program
       }
 
       if (skipped.length > 0) {
-        console.log('\n⏭️  Skipped (tool not detected):')
+        console.log('\n⏭️  Skipped:')
         for (const r of skipped) {
-          console.log(`   ${r.target}`)
+          console.log(`   ${r.target}: ${r.reason}`)
         }
-        console.log('   Use --force to install anyway')
       }
 
       if (failed.length > 0) {
@@ -711,9 +714,13 @@ program
       }
 
       if (installed.length > 0) {
-        console.log('\n📝 Usage:')
-        console.log('   Claude Code: Use /pipecraft or ask about Pipecraft setup')
-        console.log('   Cursor: The skill activates automatically when relevant')
+        console.log('\n📝 Notes:')
+        console.log('   Claude Code reads .claude/skills/pipecraft/SKILL.md.')
+        console.log(
+          '   The rules files keep your own text; Pipecraft only maintains the block between'
+        )
+        console.log('   <!-- pipecraft:start --> and <!-- pipecraft:end -->.')
+        console.log('   Run `pipecraft skill --uninstall` to remove that block.')
       }
 
       console.log('')

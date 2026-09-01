@@ -192,6 +192,34 @@ describe('documented commands exist', () => {
   })
 
   /**
+   * Both SKILL.md files open with a "Commands Reference" table. The shipped copy writes
+   * `pipecraft doctor` in its first column and the repo's own copy writes a bare `doctor`,
+   * so the scan above reads one and not the other. A `verify` row survived in the bare one
+   * for that reason, through the release that removed the name everywhere else.
+   */
+  it('every command named in a Commands Reference table is real', () => {
+    const bad: string[] = []
+    for (const file of documentationFiles()) {
+      const text = readFileSync(file, 'utf-8')
+      const heading = text.indexOf('## Commands Reference')
+      if (heading === -1) continue
+
+      const table = text.slice(heading).split(/\n## /)[0]
+      for (const line of table.split('\n')) {
+        const cell = line.match(/^\|\s*`([^`]+)`/)
+        if (!cell) continue
+        // "pipecraft get-config <key>" and "get-config <key>" both name get-config.
+        const command = cell[1].replace(/^pipecraft\s+/, '').split(/\s+/)[0]
+        if (!commands.has(command)) {
+          bad.push(`${file.replace(ROOT + '/', '')}: ${cell[1]}`)
+        }
+      }
+    }
+
+    expect(bad.sort(), 'a Commands Reference row names a command the CLI does not have').toEqual([])
+  })
+
+  /**
    * `getSkillContent()` prefers `skills/pipecraft-cli/SKILL.md` and falls back to an
    * embedded string. `files` did not list `skills`, so the tarball carried no such file and
    * every npm user got the fallback — which is how the fallback's `pipecraft verify`

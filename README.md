@@ -307,25 +307,32 @@ To report bugs or request features, open an issue on [GitHub Issues](https://git
 
 ## AI Assistant Integration
 
-Pipecraft includes AI skills for Claude Code, Cursor, GitHub Copilot, and other coding assistants.
-
-### Install the Skill
+Pipecraft ships a skill for Claude Code, Cursor, GitHub Copilot, Windsurf, Cline / Roo Code
+and Codex. One command writes it in the format each tool reads:
 
 ```bash
-# Via npm (Claude Code + Cursor)
-npm install -g @pipecraft/claude-skill
-
-# Via OpenSkills (universal)
-npx openskills install the-craftlab/pipecraft
+npx pipecraft skill              # install into this project
+pipecraft skill --list           # show which tools this project uses
+pipecraft skill --uninstall      # take it back out
 ```
 
-### Manual Setup
+| Tool             | File                                | Written as             |
+| ---------------- | ----------------------------------- | ---------------------- |
+| Claude Code      | `.claude/skills/pipecraft/SKILL.md` | whole file             |
+| Cursor           | `.cursorrules`                      | block inside your file |
+| GitHub Copilot   | `.github/copilot-instructions.md`   | block inside your file |
+| Windsurf         | `.windsurfrules`                    | block inside your file |
+| Cline / Roo Code | `.clinerules`                       | block inside your file |
+| Codex            | `AGENTS.md`                         | block inside your file |
 
-| Tool           | Configuration File                                   |
-| -------------- | ---------------------------------------------------- |
-| Claude Code    | `.claude/skills/pipecraft/SKILL.md`                  |
-| Cursor         | `.cursorrules` (included in repo)                    |
-| GitHub Copilot | `.github/copilot-instructions.md` (included in repo) |
+Five of those files are yours. Pipecraft writes only between `<!-- pipecraft:start -->` and
+`<!-- pipecraft:end -->`, leaves everything else untouched, replaces that block when you
+reinstall, and removes the block on `--uninstall`. A file that held nothing else is deleted.
+
+Without `--target`, the command installs for the tools whose files or directories are already
+in the project, and installs every format when it finds none. `--global` writes
+`~/.claude/skills/pipecraft/SKILL.md`; the other five formats are project files and have no
+home-directory form.
 
 ### What the Skill Provides
 
