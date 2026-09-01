@@ -471,12 +471,13 @@ program
   })
 
 // Version command - Version management
+// Bumping and releasing belong to the pipeline, not to a developer's laptop: the `version`
+// job resolves the version and `tag`/`release` act on it. This command reports only.
+// `--bump` and `--release` existed here as stubs that printed success and did nothing.
 program
   .command('version')
-  .description('Version management commands')
+  .description('Report the current and next version. Bumping happens in the pipeline.')
   .option('--check', 'check current version and next version')
-  .option('--bump', 'bump version using conventional commits')
-  .option('--release', 'create release with version bump')
   .action(async options => {
     try {
       const globalOptions = program.opts()
@@ -493,18 +494,6 @@ program
         // Check conventional commits
         const isValid = versionManager.validateConventionalCommits()
         console.log(`📝 Conventional commits: ${isValid ? '✅ Valid' : '❌ Invalid'}`)
-      }
-
-      if (options.bump) {
-        console.log('🔄 Bumping version...')
-        // This would run release-it in dry-run mode first
-        console.log('✅ Version bump completed!')
-      }
-
-      if (options.release) {
-        console.log('🚀 Creating release...')
-        // This would run the actual release process
-        console.log('✅ Release created!')
       }
     } catch (error: any) {
       console.error('❌ Version command failed:', error.message)

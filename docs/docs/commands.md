@@ -240,25 +240,17 @@ This command analyzes your commit history since the last version tag, applies yo
 
 Use this before releases to confirm that your commits will result in the version bump you expect.
 
-### pipecraft version --bump
+### Bumping and releasing
 
-When you're ready to update your version, this command handles the entire process:
+There is no `pipecraft version --bump` or `--release`. Bumping is the pipeline's job, not a
+local command.
 
-```bash
-pipecraft version --bump
-```
+The generated `version` job resolves the next version from your conventional commits, `tag`
+creates the git tag, and `release` cuts the GitHub release. That keeps one machine deciding
+version numbers, so a developer running a command locally cannot produce a tag that
+disagrees with CI.
 
-It determines the appropriate version number based on your commits, updates your `package.json`, creates a git tag, and optionally generates changelog entries. This command respects your configuration for how different commit types (feat, fix, breaking changes) affect versioning.
-
-### pipecraft version --release
-
-For a complete release process including changelog generation and git tag creation, use the release command:
-
-```bash
-pipecraft version --release
-```
-
-This runs the full release-it flow with PipeCraft's configuration, creating a tagged release with proper semantic versioning and change documentation.
+Use `pipecraft version --check` to see what the pipeline will decide before you push.
 
 ## Global Options
 
@@ -355,7 +347,6 @@ When preparing a release:
 ```bash
 pipecraft version --check                # Preview next version
 # Create and merge your feature branches
-pipecraft version --bump                 # Update version
 git push --follow-tags                   # Push version tag
 ```
 

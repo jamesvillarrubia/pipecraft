@@ -31,6 +31,8 @@ interface PathBasedPipelineContext extends PinionContext {
   branchFlow: string[]
   domains: Record<string, any>
   outputPipelinePath?: string
+  /** Only used for the example command in generated placeholder jobs. */
+  packageManager?: string
 }
 
 /**
@@ -184,7 +186,10 @@ function extractUserSection(yamlContent: string): string | null {
  * @param domains - Domain configuration
  * @returns YAML text for placeholder jobs, grouped by prefix
  */
-function generatePrefixedJobsText(domains: Record<string, any>): string {
+function generatePrefixedJobsText(
+  domains: Record<string, any>,
+  packageManager: string = 'npm'
+): string {
   // Group jobs by prefix
   const jobsByPrefix: Record<string, Array<{ domain: string; jobName: string }>> = {}
 
@@ -232,7 +237,7 @@ function generatePrefixedJobsText(domains: Record<string, any>): string {
         run: |
           echo "Running ${prefix} for ${job.domain} domain"
           echo "Replace this with your actual ${prefix} commands"
-          # Example: npm run ${prefix}:${job.domain}`
+          # Example: ${packageManager} run ${prefix}:${job.domain}`
 
         jobTexts.push(jobYaml)
       })
@@ -524,7 +529,10 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         let yamlContent = stringifyManagedWorkflow(doc)
 
         // Generate placeholder jobs from prefixes and merge with existing custom section
-        const generatedPlaceholders = generatePrefixedJobsText(domains)
+        // Echo the configured package manager into the placeholder's example command.
+        // Pipecraft writes no install or toolchain steps — domain job bodies are the
+        // user's — but the example it does write should match what they told us.
+        const generatedPlaceholders = generatePrefixedJobsText(domains, ctx.packageManager)
 
         // Debug: log generated job names
         const generatedJobNames = generatedPlaceholders

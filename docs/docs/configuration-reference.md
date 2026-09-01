@@ -119,10 +119,17 @@ Specifies which package manager to use for dependency installation in generated 
 
 **Impact on generated workflows:**
 
-- **Install commands** with automatic fallback:
-  - `npm`: `npm ci || npm install`
-  - `yarn`: `yarn install --frozen-lockfile || yarn install`
-  - `pnpm`: `pnpm install --frozen-lockfile || pnpm install`
+PipeCraft does not write install steps for you. Domain job bodies are yours: each one is
+generated as a placeholder marked `# TODO: Replace with your <domain> test logic`, and what
+runs inside it — checkout options, toolchain setup, install command, test command — is your
+decision.
+
+`packageManager` is used for the example command in that placeholder, so a project
+configured for `pnpm` gets `# Example: pnpm run test:api` rather than an npm one. Nothing
+else reads it.
+
+Earlier versions of this page claimed PipeCraft generated install commands with automatic
+fallback. It never did.
 
 **When to set explicitly:**
 
