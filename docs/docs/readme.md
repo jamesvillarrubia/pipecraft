@@ -255,15 +255,7 @@ pipecraft version --check
 
 Bump version based on conventional commits:
 
-```bash
-pipecraft version --bump
-```
-
 Create a release:
-
-```bash
-pipecraft version --release
-```
 
 #### 6. Branch Setup
 
@@ -326,7 +318,7 @@ PipeCraft provides the following commands:
 | `validate`     | Validate configuration file                     | `--config`                                                                                       |
 | `setup-github` | Configure GitHub Actions workflow permissions   | `--apply`, `--force`                                                                             |
 | `verify`       | Verify PipeCraft setup                          | None                                                                                             |
-| `version`      | Version management commands                     | `--check`, `--bump`, `--release`                                                                 |
+| `version`      | Report current and next version                 | `--check`                                                                                        |
 | `setup`        | Create branches from branch flow                | `--force`                                                                                        |
 
 > **Note**: All commands support global options like `--verbose` and `--debug` for detailed output.
@@ -371,10 +363,8 @@ pipecraft validate && git commit -am "chore: update workflow config"
 pipecraft version --check
 
 # Bump version based on conventional commits
-pipecraft version --bump
 
 # Create a full release with tag and changelog
-pipecraft version --release
 
 # Setup all branches for new repository
 pipecraft setup
@@ -820,15 +810,7 @@ Output:
 
 Bump version based on commits:
 
-```bash
-pipecraft version --bump
-```
-
 Create a full release:
-
-```bash
-pipecraft version --release
-```
 
 ### Conventional Commits
 
