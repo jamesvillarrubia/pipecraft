@@ -111,6 +111,30 @@ Configures GitHub Actions permissions, auto-merge settings, and branch protectio
 | `--apply` / `--force` | Auto-apply changes without prompting |
 | `--verbose` | Show detailed technical information |
 
+#### `pipecraft skill`
+
+Writes this guidance in the format each AI coding assistant reads: Claude Code
+(`.claude/skills/pipecraft/SKILL.md`), Cursor (`.cursorrules`), GitHub Copilot
+(`.github/copilot-instructions.md`), Windsurf (`.windsurfrules`), Cline / Roo Code
+(`.clinerules`) and Codex (`AGENTS.md`).
+
+**Options:**
+| Flag | Description |
+|------|-------------|
+| `--list` | Show which tools this project uses and where the skill would go |
+| `--target <tools>` | Comma-separated: `claude-code,cursor,copilot,windsurf,cline,codex` |
+| `--local` | Install into this project (default) |
+| `--global` | Install `~/.claude/skills/pipecraft/SKILL.md`; Claude Code only |
+| `--uninstall` | Remove the block, leaving the rest of the file |
+
+Five of the six files belong to the user. Pipecraft writes only between
+`<!-- pipecraft:start -->` and `<!-- pipecraft:end -->`, so reinstalling replaces that block
+and leaves everything else. Never hand-edit inside those markers; the next install
+overwrites it.
+
+Without `--target`, the command installs for the tools already present in the project and
+installs every format when it detects none.
+
 ### Generation Commands
 
 #### `pipecraft generate`

@@ -20,6 +20,7 @@ pipecraft setup             # Create branches from branchFlow
 pipecraft setup-github      # Configure GitHub permissions
 pipecraft get-config <key>  # Read config value
 pipecraft version --check   # Preview next version
+pipecraft skill             # Install this guidance for AI tools
 ```
 
 ## Configuration Required Fields

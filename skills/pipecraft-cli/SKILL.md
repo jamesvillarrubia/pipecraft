@@ -22,6 +22,7 @@ Help users with **Pipecraft** - a trunk-based CI/CD workflow generator for GitHu
 | `pipecraft setup`            | Create branches from branchFlow | `--force`                                            |
 | `pipecraft setup-github`     | Configure GitHub permissions    | `--apply`                                            |
 | `pipecraft version`          | Version management              | `--check`                                            |
+| `pipecraft skill`            | Install this skill for AI tools | `--list`, `--uninstall`, `--target`, `--global`      |
 
 ### validate vs doctor
 

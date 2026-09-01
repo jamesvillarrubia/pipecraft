@@ -256,6 +256,49 @@ disagrees with CI.
 
 Use `pipecraft version --check` to see what the pipeline will decide before you push.
 
+## AI Assistant Commands
+
+### pipecraft skill
+
+Writes the Pipecraft skill in the format each AI coding assistant reads:
+
+```bash
+pipecraft skill                                   # install into this project
+pipecraft skill --list                            # show which tools this project uses
+pipecraft skill --target cursor,codex             # pick the tools yourself
+pipecraft skill --global                          # ~/.claude/skills/pipecraft/SKILL.md
+pipecraft skill --uninstall                       # remove it again
+```
+
+| Tool             | File                                | Written as             |
+| ---------------- | ----------------------------------- | ---------------------- |
+| Claude Code      | `.claude/skills/pipecraft/SKILL.md` | whole file             |
+| Cursor           | `.cursorrules`                      | block inside your file |
+| GitHub Copilot   | `.github/copilot-instructions.md`   | block inside your file |
+| Windsurf         | `.windsurfrules`                    | block inside your file |
+| Cline / Roo Code | `.clinerules`                       | block inside your file |
+| Codex            | `AGENTS.md`                         | block inside your file |
+
+Five of those files belong to you and may already hold your own instructions. Pipecraft
+writes only between `<!-- pipecraft:start -->` and `<!-- pipecraft:end -->` and changes
+nothing outside those markers. Reinstalling replaces the block in place, so your text
+survives a Pipecraft upgrade. `--uninstall` removes the block and leaves the file; a file
+that held nothing but the block is deleted.
+
+Claude Code is the exception. `.claude/skills/pipecraft/SKILL.md` is a file Pipecraft owns
+outright, so it is written whole and removed with its directory.
+
+Without `--target`, the command installs for the tools whose files or directories already
+exist in the project (`.claude`, `CLAUDE.md`, `.cursor`, `.cursorrules`, `.github`,
+`.windsurf`, `.windsurfrules`, `.clinerules`, `AGENTS.md`). Finding none, it installs every
+format, on the reasoning that a project with no AI tool configured has no preference to
+respect.
+
+`--global` applies to Claude Code alone. The other five formats are project files, and a copy
+in your home directory is a file no tool loads.
+
+`pipecraft init --with-skill` runs the same installation as part of `init`.
+
 ## Global Options
 
 Several options work with every command to give you more control or visibility:

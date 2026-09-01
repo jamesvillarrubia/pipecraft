@@ -23,11 +23,12 @@ Help users with **Pipecraft** - a trunk-based CI/CD workflow generator for GitHu
 | `init`             | Create `.pipecraftrc` config    | `--yes`, `--force`, `--with-versioning`              |
 | `generate`         | Generate workflows              | `--dry-run`, `--verbose`, `--debug`, `--skip-checks` |
 | `validate`         | Check config syntax             | (none)                                               |
-| `verify`           | Health check entire setup       | (none)                                               |
+| `doctor`           | Health check entire setup       | (none)                                               |
 | `get-config <key>` | Read config value               | `--format json\|raw`                                 |
 | `setup`            | Create branches from branchFlow | `--force`                                            |
 | `setup-github`     | Configure GitHub permissions    | `--apply`                                            |
 | `version`          | Version management              | `--check`                                            |
+| `skill`            | Install this skill for AI tools | `--list`, `--uninstall`, `--target`, `--global`      |
 
 ### validate vs doctor: What's the Difference?
 
@@ -36,7 +37,7 @@ These two commands are often confused. Here's when to use each:
 | Command    | What it checks                                                                                             | When to use                                      |
 | ---------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | `validate` | **Config syntax only** - Parses `.pipecraftrc` and checks required fields, valid values, schema compliance | After editing config, before `generate`          |
-| `verify`   | **Entire setup** - Config exists + is valid + workflows are generated + repo structure is correct          | Troubleshooting, CI health checks, after cloning |
+| `doctor`   | **Entire setup** - Config exists + is valid + workflows are generated + repo structure is correct          | Troubleshooting, CI health checks, after cloning |
 
 **Use `validate` when:**
 
@@ -44,7 +45,7 @@ These two commands are often confused. Here's when to use each:
 - You want fast feedback on config errors
 - You're debugging a specific config issue
 
-**Use `verify` when:**
+**Use `doctor` when:**
 
 - Something isn't working and you don't know why
 - You cloned a repo and want to check if Pipecraft is set up

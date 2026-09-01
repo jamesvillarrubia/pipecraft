@@ -35,6 +35,7 @@ You are working on Pipecraft - a trunk-based CI/CD workflow generator for GitHub
 | `pipecraft doctor` | Full health check |
 | `pipecraft setup` | Create branches |
 | `pipecraft setup-github` | Configure permissions |
+| `pipecraft skill` | Install this guidance for AI tools |
 
 ## Testing
 
