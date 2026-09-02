@@ -43,7 +43,19 @@ if npm view "$PACKAGE@$VERSION" version >/dev/null 2>&1; then
   exit 0
 fi
 
-if npm publish --provenance --access public; then
+# --provenance signs a statement about the CI run that produced the tarball, so it needs a
+# supported CI to describe. A laptop has nothing to attest to and npm rejects the flag there,
+# which is exactly where the very first publish has to happen: OIDC cannot create a package,
+# so someone runs this by hand once. `npm publish --dry-run` accepts the flag either way, so
+# nothing catches this until the real publish.
+PROVENANCE=()
+if [ -n "${GITHUB_ACTIONS:-}" ]; then
+  PROVENANCE=(--provenance)
+else
+  echo "Not running in GitHub Actions, so publishing without provenance."
+fi
+
+if npm publish "${PROVENANCE[@]}" --access public; then
   echo "Published $PACKAGE@$VERSION"
   exit 0
 fi
