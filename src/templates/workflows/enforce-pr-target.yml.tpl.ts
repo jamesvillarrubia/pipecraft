@@ -80,12 +80,19 @@ export const generate = (ctx: PinionContext) =>
         if (initialBranch === finalBranch) {
           return `${ENFORCE_HEADER}name: Enforce PR Target Branch
 
+# pull_request_target for the same reason as the multi-branch form below: a pull_request run
+# from a first-time contributor waits for approval, and this workflow exists to report the
+# 'check-pr-target' status a branch protection rule may require. Gated behind approval, that
+# status never arrives and the contributor's PR can never merge. This job checks out nothing
+# and 'permissions: {}' leaves it no token.
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, edited, synchronize, reopened]
     # Single-branch flow: '${finalBranch}' is the only branch, so it is the only valid target.
     branches:
       - ${finalBranch}
+
+permissions: {}
 
 jobs:
   check-pr-target:
@@ -100,15 +107,25 @@ jobs:
 
         return `${ENFORCE_HEADER}name: Enforce PR Target Branch
 
+# pull_request_target, not pull_request. GitHub's approval gate applies to pull_request runs
+# from a first-time contributor, and 'github-actions[bot]' is one, so the last promotion hop
+# (the only one whose base is '${finalBranch}') opened an approval-gated run that nobody
+# approves. It expired and reported a failure against every release. pull_request_target runs
+# in the base repository's context and carries no such gate.
+#
+# The usual hazard of pull_request_target is running a fork's code with a write token. This
+# job checks out nothing and runs nothing from the pull request; it reads two ref names and
+# echoes. 'permissions: {}' removes the token as well, so there is nothing left to misuse.
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, edited, synchronize, reopened]
     # Only PRs targeting the final branch matter here (the rule rejects human PRs to it).
     # Scoping the trigger keeps PipeCraft's own promotion PRs to intermediate branches from
-    # spawning approval-gated runs at all; the job-level guard below covers promotion PRs
-    # that do target the final branch.
+    # spawning runs at all; the job-level guard below covers the hop that does target it.
     branches:
       - ${finalBranch}
+
+permissions: {}
 
 jobs:
   check-pr-target:
