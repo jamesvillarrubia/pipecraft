@@ -24,6 +24,17 @@ set -euo pipefail
 PACKAGE="$(node -p 'require("./package.json").name')"
 VERSION="${1:?usage: publish-skill.sh <version>}"
 
+# package.json holds the 0.0.0-releaseit placeholder, the same one the CLI carries, and the
+# release tag supplies the real number. Publishing without setting it first fails with "You
+# must specify a tag using --tag when publishing a prerelease version", which is what a
+# hand-run `npm publish` in this directory hits.
+#
+# Restore the file afterwards. CI throws the checkout away, but someone running the first
+# publish by hand should not be left with a modified package.json to notice and revert.
+ORIGINAL="$(cat package.json)"
+restore() { printf '%s' "$ORIGINAL" > package.json; }
+trap restore EXIT
+
 npm pkg set version="$VERSION"
 npm pkg set dependencies.pipecraft="$VERSION"
 

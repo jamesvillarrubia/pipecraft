@@ -28,7 +28,7 @@
     "url": "https://thecraftlab.dev"
   },
   "bin": {
-    "pipecraft-skill": "./bin.js"
+    "pipecraft-skill": "bin.js"
   },
   "files": [
     "SKILL.md",
