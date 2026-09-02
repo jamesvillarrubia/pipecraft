@@ -84,9 +84,11 @@ runs:
           RELEASE_ID=$(gh api repos/${{ github.repository }}/releases/tags/$VERSION --jq '.id')
           echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
 
+          echo "release_created=true" >> $GITHUB_OUTPUT
           echo "✅ Release created successfully"
           echo "🔗 URL: $RELEASE_URL"
         elif echo "$RELEASE_OUTPUT" | grep -qiE 'already exists'; then
+          echo "release_created=false" >> $GITHUB_OUTPUT
           # Idempotent re-run: the release for this version already exists. Treat as
           # success and surface the existing release's URL/ID instead of failing.
           echo "ℹ️  Release $VERSION already exists - treating as success (idempotent)."
@@ -101,7 +103,13 @@ runs:
           exit 1
         fi
 
+    # Only a release this run created gets a publish dispatch. The pipeline reaches this
+    # action once per push to the final branch, and a push that bumps nothing resolves to
+    # the version already released, so the step above takes its idempotent branch.
+    # Dispatching again publishes a version the registry already holds, which fails and
+    # reports a red X against a release that succeeded minutes earlier.
     - name: Trigger Publish Workflow (if exists)
+      if: steps.create.outputs.release_created == 'true'
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.token }}
