@@ -61,7 +61,4 @@ jobs:
         working-directory: skills/pipecraft-cli
         run: |
           TAG=${{ github.event.release.tag_name || inputs.tag }}
-          VERSION=${TAG#v}
-          npm pkg set version="$VERSION"
-          npm pkg set dependencies.pipecraft="$VERSION"
-          npm publish --provenance --access public
+          ../../scripts/publish-skill.sh "${TAG#v}"
