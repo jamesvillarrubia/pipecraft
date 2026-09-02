@@ -14,15 +14,18 @@ Make Pipecraft easily usable with AI coding assistants (Claude Code, Cursor, Git
 
 ### 1. Documentation Created
 
-| File                                    | Purpose                          | Location          |
-| --------------------------------------- | -------------------------------- | ----------------- |
-| `PIPECRAFT_AI_GUIDE.md`                 | Comprehensive AI agent reference | Project root      |
-| `.claude/skills/pipecraft-cli/SKILL.md` | Claude Code project skill        | `.claude/skills/` |
-| `.cursorrules`                          | Cursor AI configuration          | Project root      |
-| `.github/copilot-instructions.md`       | GitHub Copilot instructions      | `.github/`        |
-| `skills/pipecraft-cli/SKILL.md`         | Distributable skill file         | `skills/`         |
-| `skills/pipecraft-cli/package.json`     | npm package config               | `skills/`         |
-| `skills/pipecraft-cli/README.md`        | Package documentation            | `skills/`         |
+| File                                | Purpose                          | Location     |
+| ----------------------------------- | -------------------------------- | ------------ |
+| `PIPECRAFT_AI_GUIDE.md`             | Comprehensive AI agent reference | Project root |
+| `.cursorrules`                      | Cursor AI configuration          | Project root |
+| `.github/copilot-instructions.md`   | GitHub Copilot instructions      | `.github/`   |
+| `skills/pipecraft-cli/SKILL.md`     | The skill itself; the only copy  | `skills/`    |
+| `skills/pipecraft-cli/package.json` | npm package config               | `skills/`    |
+| `skills/pipecraft-cli/README.md`    | Package documentation            | `skills/`    |
+
+This branch also created `.claude/skills/pipecraft-cli/SKILL.md` as a Claude Code project
+skill. It is gone; see "Files Changed in This Branch" below for why a second copy was a
+defect rather than a convenience.
 
 ### 2. CLI Features Added
 
@@ -38,10 +41,14 @@ Make Pipecraft easily usable with AI coding assistants (Claude Code, Cursor, Git
 
 ### 3. Source Files Created
 
-| File                                 | Purpose                    |
-| ------------------------------------ | -------------------------- |
-| `src/utils/skill-installer.ts`       | Skill installation utility |
-| `tests/unit/skill-installer.test.ts` | Tests for skill installer  |
+| File                                           | Purpose                                        |
+| ---------------------------------------------- | ---------------------------------------------- |
+| `src/utils/skill-installer.ts`                 | Skill installation utility                     |
+| `skills/pipecraft-cli/SKILL.md`                | The one source; both packages ship this file   |
+| `skills/pipecraft-cli/bin.js`                  | `npx @thecraftlab/pipecraft-skill` entry point |
+| `tests/unit/skill-installer.test.ts`           | Targets, markers, detection, uninstall         |
+| `tests/integration/init-with-skill.test.ts`    | What `init --with-skill` writes, and where     |
+| `tests/unit/documented-commands-exist.test.ts` | One SKILL.md, and the package can install      |
 
 ### 4. Issues Filed (CLI Bugs Found During Review)
 
@@ -60,28 +67,42 @@ Make Pipecraft easily usable with AI coding assistants (Claude Code, Cursor, Git
 
 ### Channel 1: npm Package
 
-**Status:** Ready to publish
-**Package:** `@pipecraft/claude-skill`
+**Status:** Awaiting its first publish
+**Package:** `@thecraftlab/pipecraft-skill`
+
+`.github/workflows/publish.yml` publishes it from the same job as the CLI, at the same
+version, with `dependencies.pipecraft` pinned to match. That job cannot create the package:
+npm's OIDC publishing answers `404 Not Found - PUT` for a name the registry has never seen,
+which is how the v0.47.0 release failed after the CLI itself published cleanly.
 
 **Action Items:**
 
-- [ ] Publish to npm: `cd skills/pipecraft-cli && npm publish --access public`
+- [ ] First publish, from an authenticated shell: `cd skills/pipecraft-cli && npm publish --access public`
+- [ ] Skip the workflow's skill-publish step when that version is already on the registry, so
+      a duplicate cannot fail a release the way v0.46.1 did
 - [ ] Add npm badge to README
-- [ ] Test installation: `npm install -g @pipecraft/claude-skill`
 
 **Installation for users:**
 
 ```bash
-npm install -g @pipecraft/claude-skill
+npx @thecraftlab/pipecraft-skill
 ```
+
+The package carries `SKILL.md` and a `bin` that forwards to `pipecraft skill`; the installer
+itself lives in the CLI, so there is no second implementation to drift.
 
 ---
 
 ### Channel 2: Anthropic Official Skills Repository
 
 **URL:** https://github.com/anthropics/skills
-**Stars:** 63k+
-**Status:** PR needed
+**Stars:** 173k
+**Status:** Blocked on a question nobody has answered
+
+Their README documents what a skill needs (a folder holding `SKILL.md`, with `name` and
+`description` frontmatter) and says nothing about whether they accept third-party skills. The
+repo has no `CONTRIBUTING.md`. Read their merged pull requests for a community-contributed
+skill before writing one; the answer decides whether this channel exists at all.
 
 **Action Items:**
 
@@ -124,10 +145,21 @@ Helps users:
 ### Channel 3: awesome-agent-skills Community Repository
 
 **URL:** https://github.com/VoltAgent/awesome-agent-skills
-**Status:** PR needed
+**Status:** Wait, then submit
+
+Their `CONTRIBUTING.md` curates links only, so no packaging matters here; the entry is a link
+to a path in this repo. It also sets a bar this skill does not clear yet: _"Skill must have
+real community usage. We focus on community-adopted, proven skills. Brand new skills that were
+just created are not accepted. Give your skill time to mature and gain users before
+submitting."_ Download counts on `@thecraftlab/pipecraft-skill` are the evidence to point at,
+which makes the first publish the start of that clock.
+
+Their other stated requirements: a public repo, a README or SKILL.md, an author prefix in the
+name, a description of ten words or fewer, and a PR titled `Add skill: author/skill-name`.
 
 **Action Items:**
 
+- [ ] Wait for usage worth citing
 - [ ] Fork https://github.com/VoltAgent/awesome-agent-skills
 - [ ] Add entry to Community Skills section in README
 - [ ] Submit PR
@@ -173,18 +205,24 @@ pipecraft skill --list    # See what's installed
 
 ## Installation Paths by Tool
 
-| Tool           | Global Path                             | Project Path                  |
-| -------------- | --------------------------------------- | ----------------------------- |
-| Claude Code    | `~/.claude/skills/pipecraft/`           | `.claude/skills/pipecraft/`   |
-| Cursor         | `~/.cursor/skills/pipecraft/`           | `.cursor/skills/pipecraft/`   |
-| GitHub Copilot | `~/.copilot/skills/pipecraft/`          | `.github/skills/pipecraft/`   |
-| Windsurf       | `~/.codeium/windsurf/skills/pipecraft/` | `.windsurf/skills/pipecraft/` |
+Each tool gets the file it reads. The four `skills/` directories this plan first described
+were a path only Claude Code loads; the other three wrote a file nothing opened.
 
-**Config files (auto-loaded by tool):**
-| Tool | Config File |
-|------|-------------|
-| Cursor | `.cursorrules` (at project root) |
-| GitHub Copilot | `.github/copilot-instructions.md` |
+| Tool             | Project Path                        | Written as             |
+| ---------------- | ----------------------------------- | ---------------------- |
+| Claude Code      | `.claude/skills/pipecraft/SKILL.md` | whole file             |
+| Cursor           | `.cursorrules`                      | block inside your file |
+| GitHub Copilot   | `.github/copilot-instructions.md`   | block inside your file |
+| Windsurf         | `.windsurfrules`                    | block inside your file |
+| Cline / Roo Code | `.clinerules`                       | block inside your file |
+| Codex            | `AGENTS.md`                         | block inside your file |
+
+Five of those files belong to the user. Pipecraft maintains only the region between
+`<!-- pipecraft:start -->` and `<!-- pipecraft:end -->`, replaces it on reinstall, and removes
+it on `--uninstall`.
+
+`--global` covers Claude Code alone, at `~/.claude/skills/pipecraft/SKILL.md`. The other five
+formats are project files and have no home-directory form.
 
 ---
 
@@ -285,7 +323,7 @@ feat: add AI coding assistant skills infrastructure
 feat: add 'pipecraft skill' CLI command
 
 - Add src/utils/skill-installer.ts utility
-- Add 'pipecraft skill' command with --list, --uninstall, --local, --force options
+- Add 'pipecraft skill' command with --list, --uninstall, --local, --global, --target options
 - Add --with-skill flag to 'pipecraft init'
 - Add tests for skill installer
 ```
@@ -392,21 +430,30 @@ pnpm build
 
 ## Files Changed in This Branch
 
+Six of the files this branch created no longer exist. `.claude/skills/pipecraft-cli/` was a
+second `SKILL.md` declaring the same `name: pipecraft` as the shipped one, which showed a
+stranger two identically-named entries to choose between:
+
+```
+$ npx openskills install the-craftlab/pipecraft
+Found 2 skill(s)
+❯ ◉ pipecraft-cli             12.0KB
+  ◉ pipecraft-cli             14.4KB
+```
+
+Its Claude-only parts moved into the one source inside `<!-- claude-only:start -->` markers.
+`install-skill.js`, `uninstall-skill.js` and `.claude-skill.json` went with the `postinstall`
+hook they served; `bin.js` forwards to `pipecraft skill` instead.
+
 ```
 New files:
   PIPECRAFT_AI_GUIDE.md
   .cursorrules
   .github/copilot-instructions.md
-  .claude/skills/pipecraft-cli/SKILL.md
-  .claude/skills/pipecraft-cli/examples/minimal.json
-  .claude/skills/pipecraft-cli/examples/multi-domain.json
-  .claude/skills/pipecraft-cli/examples/three-branch.yaml
   skills/pipecraft-cli/SKILL.md
   skills/pipecraft-cli/package.json
   skills/pipecraft-cli/README.md
-  skills/pipecraft-cli/.claude-skill.json
-  skills/pipecraft-cli/install-skill.js
-  skills/pipecraft-cli/uninstall-skill.js
+  skills/pipecraft-cli/bin.js
   src/utils/skill-installer.ts
   tests/unit/skill-installer.test.ts
   docs/plans/AI_SKILLS_DISTRIBUTION_PLAN.md
