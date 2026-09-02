@@ -269,6 +269,14 @@ describe('documented commands exist', () => {
       expect(pkg.files, `${path} runs on install but is not published`).toContain(path)
       expect(statSync(join(dir, path)).isFile(), `${path} does not exist`).toBe(true)
     }
+
+    // npm normalises `bin` at publish time and drops an entry whose path starts with "./":
+    //   npm warn publish "bin[pipecraft-skill]" script name bin.js was invalid and removed
+    // `npm pack` keeps the entry, and installing that tarball works, so the first sign of it
+    // is a published package with no bin at all and an `npx` that does nothing.
+    for (const [name, path] of Object.entries((pkg.bin ?? {}) as Record<string, string>)) {
+      expect(path, `bin.${name} must not start with "./"; npm drops the entry`).not.toMatch(/^\.\//)
+    }
   })
 
   /**

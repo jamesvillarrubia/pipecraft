@@ -14,7 +14,7 @@
  * the script rather than by reading it.
  */
 import { execFileSync } from 'child_process'
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -56,7 +56,9 @@ esac
 case "$1" in
   view)    exit ${opts.packageExists ? 0 : 1} ;;
   publish) echo "npm publish ran"; exit ${opts.publishExit} ;;
-  pkg)     exit 0 ;;
+  pkg)     # Actually write, so the script's restore has something real to undo.
+           node -e "const f='package.json';const p=require('./'+f);const [k,v]=process.argv[1].split('=');k.split('.').reduce((o,s,i,a)=>i===a.length-1?(o[s]=v):(o[s]=o[s]||{}),p);require('fs').writeFileSync(f,JSON.stringify(p,null,2))" "$3"
+           exit 0 ;;
 esac
 exit 0
 `,
@@ -115,5 +117,31 @@ exit 0
 
     expect(status, 'a real failure must still fail the job').toBe(1)
     expect(output).toContain('::error::')
+  })
+
+  /**
+   * package.json carries the 0.0.0-releaseit placeholder. A hand-run `npm publish` in that
+   * directory fails with "You must specify a tag using --tag when publishing a prerelease
+   * version", and the fix is to set the version first — which then leaves the file modified
+   * for whoever runs it locally.
+   */
+  it('sets the release version and puts package.json back', () => {
+    stubNpm({ versionOnRegistry: false, packageExists: true, publishExit: 0 })
+    const before = readFileSync(join(dir, 'package.json'), 'utf-8')
+
+    const { status } = run('9.9.9')
+
+    expect(status).toBe(0)
+    expect(readFileSync(join(dir, 'package.json'), 'utf-8')).toBe(before)
+  })
+
+  it('puts package.json back even when the publish fails', () => {
+    stubNpm({ versionOnRegistry: false, packageExists: true, publishExit: 1 })
+    const before = readFileSync(join(dir, 'package.json'), 'utf-8')
+
+    const { status } = run('9.9.9')
+
+    expect(status).toBe(1)
+    expect(readFileSync(join(dir, 'package.json'), 'utf-8')).toBe(before)
   })
 })
