@@ -320,6 +320,13 @@ pipecraft skill --list           # show which tools this project uses
 pipecraft skill --uninstall      # take it back out
 ```
 
+Without the CLI, two other routes install the same file:
+
+```bash
+npx @thecraftlab/pipecraft-skill        # same command, packaged on its own
+npx openskills install the-craftlab/pipecraft
+```
+
 | Tool             | File                                | Written as             |
 | ---------------- | ----------------------------------- | ---------------------- |
 | Claude Code      | `.claude/skills/pipecraft/SKILL.md` | whole file             |

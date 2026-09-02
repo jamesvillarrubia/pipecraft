@@ -1,68 +1,58 @@
-# Pipecraft Claude Skill
+# Pipecraft agent skill
 
-AI coding assistant skill for [Pipecraft](https://pipecraft.thecraftlab.dev) - the trunk-based CI/CD workflow generator for GitHub Actions.
+Teaches an AI coding assistant how to drive [Pipecraft](https://pipecraft.thecraftlab.dev),
+the trunk-based CI/CD workflow generator for GitHub Actions.
 
-## Installation
-
-### Option 1: npm (Recommended)
+## Install
 
 ```bash
-# Global installation (available in all projects)
-npm install -g @pipecraft/claude-skill
-
-# Project-level installation
-npm install --save-dev @pipecraft/claude-skill
+npx @thecraftlab/pipecraft-skill          # install into this project
+npx @thecraftlab/pipecraft-skill --list   # show which tools this project uses
+npx @thecraftlab/pipecraft-skill --uninstall
 ```
 
-### Option 2: OpenSkills
+Every flag of `pipecraft skill` works here; this package forwards to it.
+
+If you already have the CLI, `npx pipecraft skill` does the same thing with one fewer
+package.
+
+Via [OpenSkills](https://www.npmjs.com/package/openskills), which reads `SKILL.md` straight
+from the repository:
 
 ```bash
 npx openskills install the-craftlab/pipecraft
 ```
 
-### Option 3: Manual Installation
+## Where it goes
 
-Copy `SKILL.md` to your skills directory:
+| Tool             | File                                | Written as             |
+| ---------------- | ----------------------------------- | ---------------------- |
+| Claude Code      | `.claude/skills/pipecraft/SKILL.md` | whole file             |
+| Cursor           | `.cursorrules`                      | block inside your file |
+| GitHub Copilot   | `.github/copilot-instructions.md`   | block inside your file |
+| Windsurf         | `.windsurfrules`                    | block inside your file |
+| Cline / Roo Code | `.clinerules`                       | block inside your file |
+| Codex            | `AGENTS.md`                         | block inside your file |
 
-| Tool           | Global Path                             | Project Path                  |
-| -------------- | --------------------------------------- | ----------------------------- |
-| Claude Code    | `~/.claude/skills/pipecraft/`           | `.claude/skills/pipecraft/`   |
-| Cursor         | `~/.cursor/skills/pipecraft/`           | `.cursor/skills/pipecraft/`   |
-| GitHub Copilot | `~/.copilot/skills/pipecraft/`          | `.github/skills/pipecraft/`   |
-| Windsurf       | `~/.codeium/windsurf/skills/pipecraft/` | `.windsurf/skills/pipecraft/` |
+Five of those files are yours and may already hold your own instructions. Pipecraft writes
+only between `<!-- pipecraft:start -->` and `<!-- pipecraft:end -->` and changes nothing
+outside those markers. Reinstalling replaces that block in place; `--uninstall` removes it
+and leaves the rest of the file.
 
-## Usage
+Without `--target`, the command installs for the tools whose files or directories already
+exist in the project, and installs every format when it finds none.
 
-Once installed, the skill activates automatically when you:
+## What the skill covers
 
-- Ask about CI/CD setup or GitHub Actions
-- Mention Pipecraft, trunk-based development, or workflow generation
-- Need help with `.pipecraftrc` configuration
+- Setting Pipecraft up from scratch, and what `init` asks
+- Configuring domains, branch flows, and promotion
+- `validate` against `doctor`, and which to reach for
+- Reading generated workflows, and which jobs are yours to edit
+- The behaviours that surprise people: `autoPromote` controls the merge rather than the PR,
+  and only commits GitHub itself authored will promote
 
-### Claude Code
-
-```
-/pipecraft help me set up CI/CD for my monorepo
-```
-
-Or just ask naturally:
-
-```
-How do I configure Pipecraft for a three-branch flow?
-```
-
-## What This Skill Provides
-
-- **Command reference** - All Pipecraft CLI commands and flags
-- **Configuration help** - Required fields, optional settings, domain setup
-- **Troubleshooting** - Common errors and solutions
-- **Best practices** - Branch flow patterns, domain configuration examples
-
-## Links
-
-- [Pipecraft Documentation](https://pipecraft.thecraftlab.dev)
-- [GitHub Repository](https://github.com/the-craftlab/pipecraft)
-- [Full AI Guide](https://github.com/the-craftlab/pipecraft/blob/main/PIPECRAFT_AI_GUIDE.md)
+`SKILL.md` in this package is the same file the repository carries at
+`skills/pipecraft-cli/SKILL.md`. There is one copy, so the two cannot disagree.
 
 ## License
 

@@ -79,5 +79,9 @@ examples/debug/
 # Overnight loop scaffolding (local only)
 .claude/overnight/
 
+# Installed by `pipecraft skill`. The source is skills/pipecraft-cli/SKILL.md; a committed
+# copy here would give openskills two skills named pipecraft to choose between.
+.claude/skills/pipecraft/
+
 # Loop state files (issue-loop skill)
 docs/tmp/

@@ -13,8 +13,8 @@ on:
         type: string
 
 permissions:
-  contents: write  # Need write to create releases
-  id-token: write  # Required for OIDC
+  contents: write # Need write to create releases
+  id-token: write # Required for OIDC
 
 jobs:
   publish:
@@ -53,3 +53,15 @@ jobs:
 
       - name: Publish to npm (using OIDC)
         run: npm publish --provenance --access public
+
+      # The skill package carries the same SKILL.md file this repo holds and depends on the
+      # CLI published above, so it takes that version rather than one of its own. Publishing
+      # it from the same job is what keeps the two from drifting apart.
+      - name: Publish the skill package
+        working-directory: skills/pipecraft-cli
+        run: |
+          TAG=${{ github.event.release.tag_name || inputs.tag }}
+          VERSION=${TAG#v}
+          npm pkg set version="$VERSION"
+          npm pkg set dependencies.pipecraft="$VERSION"
+          npm publish --provenance --access public

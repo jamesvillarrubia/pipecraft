@@ -1,11 +1,24 @@
 ---
 name: pipecraft
 description: Help users set up, configure, and use the Pipecraft CLI for GitHub Actions workflow generation. Assists with CI/CD setup, workflow generation, branch promotion, domain configuration, and troubleshooting. Invoke when users ask about trunk-based development, GitHub Actions pipelines, or Pipecraft configuration.
+argument-hint: '[command|question]'
+allowed-tools: Read, Grep, Glob, Bash(pipecraft *), Bash(npx pipecraft *), Bash(cat .pipecraftrc*), Bash(ls -la .pipecraftrc* .github/workflows/pipeline.yml 2>/dev/null), Edit, Write
 ---
 
 # Pipecraft CLI Assistant
 
 Help users with **Pipecraft** - a trunk-based CI/CD workflow generator for GitHub Actions.
+
+<!-- claude-only:start -->
+
+## Current Project State
+
+- Pipecraft version: !`pipecraft --version 2>/dev/null || echo "not installed"`
+- Config file: !`ls .pipecraftrc* 2>/dev/null | head -1 || echo "none found"`
+- Pipeline exists: !`test -f .github/workflows/pipeline.yml && echo "yes" || echo "no"`
+- Current branch: !`git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "not a git repo"`
+
+<!-- claude-only:end -->
 
 **Documentation:** https://pipecraft.thecraftlab.dev
 **GitHub:** https://github.com/the-craftlab/pipecraft

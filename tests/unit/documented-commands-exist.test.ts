@@ -220,34 +220,55 @@ describe('documented commands exist', () => {
   })
 
   /**
-   * Two SKILL.md files exist: `skills/pipecraft-cli/SKILL.md` ships to users, and
-   * `.claude/skills/pipecraft-cli/SKILL.md` is what this repo's own agents read. Both carry a
-   * Commands Reference table, and the two drifted: the shipped copy said `doctor` while the
-   * repo's copy still said `verify`, which meant the agent working on Pipecraft was told to
-   * run a command Pipecraft had removed.
+   * The repo used to carry the skill twice: `skills/pipecraft-cli/SKILL.md` for users and
+   * `.claude/skills/pipecraft-cli/SKILL.md` for its own agents, both declaring
+   * `name: pipecraft`. They drifted, and a stranger saw the result:
    *
-   * The two documents are deliberately different lengths, so this pins the part that goes
-   * stale rather than the prose.
+   *   $ npx openskills install the-craftlab/pipecraft
+   *   Found 2 skill(s)
+   *   ❯ ◉ pipecraft-cli             12.0KB
+   *     ◉ pipecraft-cli             14.4KB
+   *
+   * Two entries, one name, and no way to tell them apart. One copy is the fix; the installed
+   * `.claude/skills/pipecraft/` is gitignored so it cannot become the second again.
    */
-  it('both skill files list the same commands', () => {
-    const tableCommands = (file: string): string[] => {
-      const text = readFileSync(join(ROOT, file), 'utf-8')
-      const heading = text.indexOf('## Commands Reference')
-      expect(heading, `${file} has no Commands Reference table`).toBeGreaterThan(-1)
-
-      const names = [
-        ...text
-          .slice(heading)
-          .split(/\n## /)[0]
-          .matchAll(/^\|\s*`([^`]+)`/gm)
-      ].map(m => m[1].replace(/^pipecraft\s+/, '').split(/\s+/)[0])
-      return [...new Set(names)].sort()
+  it('the repo carries exactly one SKILL.md', () => {
+    const found: string[] = []
+    const walk = (dir: string): void => {
+      for (const entry of readdirSync(dir)) {
+        if (entry === 'node_modules' || entry === '.git' || entry === '.worktrees') continue
+        const path = join(dir, entry)
+        if (statSync(path).isDirectory()) walk(path)
+        else if (entry === 'SKILL.md') found.push(path.replace(ROOT + '/', ''))
+      }
     }
+    walk(ROOT)
 
-    expect(
-      tableCommands('.claude/skills/pipecraft-cli/SKILL.md'),
-      'the repo copy and the shipped copy name different commands'
-    ).toEqual(tableCommands('skills/pipecraft-cli/SKILL.md'))
+    expect(found, 'a second SKILL.md gives skill installers two skills to choose between').toEqual([
+      'skills/pipecraft-cli/SKILL.md'
+    ])
+  })
+
+  /**
+   * The skill package is published from the same file the repo holds, so the two cannot
+   * disagree. It must also be able to install: `files` omitted the very script `postinstall`
+   * invoked, which made `npm i @pipecraft/claude-skill` fail on a missing module.
+   */
+  it('the skill package can install what it ships', () => {
+    const dir = join(ROOT, 'skills', 'pipecraft-cli')
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf-8'))
+
+    const referenced = [
+      ...Object.values((pkg.bin ?? {}) as Record<string, string>),
+      ...Object.values((pkg.scripts ?? {}) as Record<string, string>).flatMap(s =>
+        [...String(s).matchAll(/([\w./-]+\.js)/g)].map(m => m[1])
+      )
+    ].map(p => String(p).replace(/^\.\//, ''))
+
+    for (const path of referenced) {
+      expect(pkg.files, `${path} runs on install but is not published`).toContain(path)
+      expect(statSync(join(dir, path)).isFile(), `${path} does not exist`).toBe(true)
+    }
   })
 
   /**
