@@ -55,7 +55,7 @@ case "$1 $2" in
 esac
 case "$1" in
   view)    exit ${opts.packageExists ? 0 : 1} ;;
-  publish) echo "npm publish ran"; exit ${opts.publishExit} ;;
+  publish) echo "npm publish ran: $@"; exit ${opts.publishExit} ;;
   pkg)     # Actually write, so the script's restore has something real to undo.
            node -e "const f='package.json';const p=require('./'+f);const [k,v]=process.argv[1].split('=');k.split('.').reduce((o,s,i,a)=>i===a.length-1?(o[s]=v):(o[s]=o[s]||{}),p);require('fs').writeFileSync(f,JSON.stringify(p,null,2))" "$3"
            exit 0 ;;
@@ -67,12 +67,15 @@ exit 0
     chmodSync(join(bin, 'npm'), 0o755)
   }
 
-  function run(version = '1.2.3'): { status: number; output: string } {
+  function run(
+    version = '1.2.3',
+    extraEnv: Record<string, string> = {}
+  ): { status: number; output: string } {
     try {
       const output = execFileSync('bash', [script, version], {
         cwd: dir,
         encoding: 'utf-8',
-        env: { ...process.env, PATH: `${bin}:${process.env.PATH}` }
+        env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, ...extraEnv }
       })
       return { status: 0, output }
     } catch (error: any) {
@@ -143,5 +146,23 @@ exit 0
 
     expect(status).toBe(1)
     expect(readFileSync(join(dir, 'package.json'), 'utf-8')).toBe(before)
+  })
+
+  /**
+   * --provenance signs a statement about the CI run that built the tarball, so it needs a CI
+   * to describe and npm rejects it on a laptop. That is exactly where the first publish has to
+   * happen, because OIDC cannot create a package. `npm publish --dry-run` accepts the flag
+   * either way, so nothing catches it until the real publish fails.
+   */
+  it('asks for provenance in Actions and not on a laptop', () => {
+    stubNpm({ versionOnRegistry: false, packageExists: true, publishExit: 0 })
+
+    const inCi = run('1.2.3', { GITHUB_ACTIONS: 'true' })
+    expect(inCi.output).toContain('--provenance')
+
+    const local = run('1.2.3', { GITHUB_ACTIONS: '' })
+    expect(local.output, 'npm rejects --provenance outside CI').not.toContain('--provenance')
+    expect(local.output).toContain('without provenance')
+    expect(local.output).toContain('npm publish ran')
   })
 })
