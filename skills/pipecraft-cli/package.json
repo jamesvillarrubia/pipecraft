@@ -1,12 +1,17 @@
 {
-  "name": "@pipecraft/claude-skill",
-  "version": "1.0.0",
-  "description": "Claude Code skill for Pipecraft CI/CD workflow generator",
+  "name": "@thecraftlab/pipecraft-skill",
+  "version": "0.0.0-releaseit",
+  "description": "Agent skill for Pipecraft, the trunk-based CI/CD workflow generator for GitHub Actions",
   "keywords": [
     "pipecraft",
     "claude-code",
     "claude-skill",
     "agent-skill",
+    "skill",
+    "cursor",
+    "copilot",
+    "windsurf",
+    "codex",
     "ci-cd",
     "github-actions",
     "workflow-generator"
@@ -22,14 +27,16 @@
     "name": "The Craft Lab",
     "url": "https://thecraftlab.dev"
   },
+  "bin": {
+    "pipecraft-skill": "./bin.js"
+  },
   "files": [
     "SKILL.md",
     "README.md",
-    ".claude-skill.json"
+    "bin.js"
   ],
-  "scripts": {
-    "postinstall": "node install-skill.js",
-    "preuninstall": "node uninstall-skill.js"
+  "dependencies": {
+    "pipecraft": "*"
   },
   "engines": {
     "node": ">=18.0.0"

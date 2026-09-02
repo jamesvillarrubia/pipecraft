@@ -78,6 +78,40 @@ describe('skill-installer', () => {
     })
   })
 
+  /**
+   * SKILL.md is one file for six tools. Claude Code runs `!`-prefixed lines when it loads a
+   * skill and reads `argument-hint` / `allowed-tools` from the frontmatter; the other five
+   * render both as text. A `.cursorrules` carrying "!`pipecraft --version`" shows its reader
+   * a backtick-quoted shell command that nothing runs.
+   */
+  describe('the Claude-only region', () => {
+    it('reaches Claude Code', () => {
+      installSkills({ local: true, targets: ['claude-code'], cwd: project, home })
+
+      const content = read(join('.claude', 'skills', 'pipecraft', 'SKILL.md'))
+      expect(content).toContain('## Current Project State')
+      expect(content).toContain('!`pipecraft --version')
+      expect(content).toContain('allowed-tools:')
+    })
+
+    it('reaches no one else', () => {
+      installSkills({ local: true, targets: ['cursor', 'codex'], cwd: project, home })
+
+      for (const file of ['.cursorrules', 'AGENTS.md']) {
+        const content = read(file)
+        expect(content, `${file} must not carry command substitution`).not.toContain('!`')
+        expect(content, `${file} must not carry the Claude-only heading`).not.toContain(
+          'Current Project State'
+        )
+        expect(content, `${file} must not carry the markers themselves`).not.toContain(
+          'claude-only'
+        )
+        // The rest of the document still arrives.
+        expect(content).toContain('Pipecraft')
+      }
+    })
+  })
+
   describe('files Pipecraft owns', () => {
     it('writes the skill with its frontmatter intact', () => {
       installSkills({ local: true, targets: ['claude-code'], cwd: project, home })

@@ -151,10 +151,18 @@ For full documentation, see https://pipecraft.thecraftlab.dev
 `
 }
 
-/** The skill without its YAML frontmatter, which means nothing inside a rules file. */
+/**
+ * The skill without its YAML frontmatter, which means nothing inside a rules file, and
+ * without the Claude-only region.
+ *
+ * That region holds `!`-prefixed command substitution, which Claude Code runs when it loads
+ * the skill. Every other tool reads the line as text, so a `.cursorrules` carrying it shows
+ * the reader a literal backtick-quoted shell command that nothing ever runs.
+ */
 function skillBody(content: string): string {
   const match = content.match(/^---\n[\s\S]*?\n---\n+/)
-  return match ? content.slice(match[0].length) : content
+  const body = match ? content.slice(match[0].length) : content
+  return body.replace(/<!-- claude-only:start -->[\s\S]*?<!-- claude-only:end -->\n*/g, '')
 }
 
 /** The block Pipecraft maintains, delimiters included. */
