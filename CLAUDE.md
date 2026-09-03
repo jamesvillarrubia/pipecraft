@@ -250,6 +250,83 @@ rg 'the string you changed' /tmp/pcpack/package/
 `tests/unit/documented-commands-exist.test.ts` covers this mechanically: markdown, string
 literals under `src/`, `package.json` scripts, and `npm pack --dry-run` contents.
 
+### `npm pack` is not `npm publish`
+
+The pack path is more forgiving than the publish path, so a packed-and-installed tarball
+proves less than it looks. `skills/pipecraft-cli` declared `"bin": {"pipecraft-skill":
+"./bin.js"}`. `npm pack` kept it, installing that tarball gave a working `pipecraft-skill`,
+and publishing answered:
+
+```
+npm warn publish "bin[pipecraft-skill]" script name bin.js was invalid and removed
+```
+
+npm drops a bin path with a leading `./` at publish, so the published package would have had
+no bin at all. `--dry-run` is no better: it accepts `--provenance` outside CI, which a real
+publish rejects. Both are now pinned in `documented-commands-exist.test.ts` and
+`publish-skill-script.test.ts`, because neither is reachable by packing.
+
+`skills/pipecraft-cli` publishes as `@thecraftlab/pipecraft-skill` through
+`scripts/publish-skill.sh`, which the release workflow calls. It carries the same `SKILL.md`
+file the main package ships, so the two cannot disagree. A version already on the registry is
+skipped and a package the registry has never seen is a warning, because neither is a broken
+release; a failure on a package that exists still fails the job.
+
+## One SKILL.md, and installers that read the repo
+
+The repo must hold exactly one `SKILL.md`. It once held two, both declaring `name: pipecraft`,
+and nothing in the repo showed the problem. The install command did:
+
+```
+$ npx openskills install the-craftlab/pipecraft
+Found 2 skill(s)
+❯ ◉ pipecraft-cli             12.0KB
+  ◉ pipecraft-cli             14.4KB
+```
+
+Skill installers clone the repository and walk it, so any second copy becomes a second choice
+for a stranger. `.claude/skills/pipecraft/` is gitignored for that reason: it is what
+`pipecraft skill` installs here, not a file to commit.
+
+Claude Code reads `argument-hint`, `allowed-tools` and `!`-prefixed command substitution;
+the other five tools print them as text. Those parts live in the one source between
+`<!-- claude-only:start -->` and `<!-- claude-only:end -->`, which `skillBody()` strips for
+everyone else.
+
+## GitHub approval gates run before a job's `if`
+
+A workflow run can fail before any job exists. `gh run view` calls that "This run likely
+failed because of a workflow file issue", which is a guess and was wrong: the file parsed and
+was byte-identical on all three branches. The annotation on the run page said
+
+```
+This workflow run required approval but was not approved before it expired.
+```
+
+`github-actions[bot]` authors promotion PRs, GitHub counts a bot as a first-time contributor,
+and this repo's `fork-pr-contributor-approval` policy is `first_time_contributors`. Approval
+is evaluated before a job's `if`, so a job-level guard cannot skip a run that never starts.
+`enforce-pr-target.yml` uses `pull_request_target`, which runs in the base repository's
+context and has no approval gate; it checks out nothing and declares `permissions: {}`.
+
+When a run fails with zero jobs, read the annotation on the run page. The API exposes no
+check run for it, and `gh run view --log-failed` returns "log not found".
+
+## The e2e harness counts failures it did not cause
+
+`prove` prints `(failed runs seen: N)` from the repository's recent runs, not only the ones
+its own push produced. A green sweep can still print a number. Date them before reading
+anything into it:
+
+```bash
+gh run list --repo the-craftlab/pipecraft-example-<flavor> \
+  --workflow "<name>" --limit 3 --json conclusion,createdAt,headBranch
+```
+
+A full sweep on 2026-09-03 reported `failed runs seen: 1` for `minimal`, `basic` and `mixed`
+while every run it created succeeded. The failures were from 2026-09-01, before the approval
+gate was fixed.
+
 ## Reserved job names
 
 Domains cannot be named `changes`, `version`, `gate`, `tag`, `promote`, or `release` —
