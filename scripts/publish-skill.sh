@@ -32,8 +32,8 @@ VERSION="${1:?usage: publish-skill.sh <version>}"
 # Restore the file afterwards. CI throws the checkout away, but someone running the first
 # publish by hand should not be left with a modified package.json to notice and revert.
 ORIGINAL="$(cat package.json)"
-restore() { printf '%s' "$ORIGINAL" > package.json; }
-trap restore EXIT
+restore() { printf '%s\n' "$ORIGINAL" > package.json; }
+trap 'rc=$?; restore; exit $rc' EXIT
 
 npm pkg set version="$VERSION"
 npm pkg set dependencies.pipecraft="$VERSION"
@@ -55,7 +55,7 @@ else
   echo "Not running in GitHub Actions, so publishing without provenance."
 fi
 
-if npm publish "${PROVENANCE[@]}" --access public; then
+if npm publish ${PROVENANCE[@]+"${PROVENANCE[@]}"} --access public; then
   echo "Published $PACKAGE@$VERSION"
   exit 0
 fi

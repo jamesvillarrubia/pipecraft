@@ -259,6 +259,15 @@ describe('skill-installer', () => {
 
       expect(existsSync(join(project, '.claude', 'skills', 'pipecraft'))).toBe(false)
     })
+
+    it('removes only the requested target, leaving the others installed', () => {
+      installSkills({ local: true, targets: ['claude-code', 'codex'], cwd: project, home })
+
+      uninstallSkills({ local: true, targets: ['codex'], cwd: project, home })
+
+      expect(existsSync(join(project, 'AGENTS.md'))).toBe(false)
+      expect(read(join('.claude', 'skills', 'pipecraft', 'SKILL.md'))).toContain('pipecraft')
+    })
   })
 
   describe('listSkillTargets', () => {
@@ -274,6 +283,17 @@ describe('skill-installer', () => {
       expect(cline?.hasSkill).toBe(true)
       expect(codex?.detected).toBe(false)
       expect(codex?.hasSkill).toBe(false)
+    })
+
+    it('distinguishes a global-only install from a project install', () => {
+      installSkills({ global: true, local: false, targets: ['claude-code'], cwd: project, home })
+
+      const listed = listSkillTargets({ cwd: project, home })
+      const claudeCode = listed.find(t => t.name === 'claude-code')
+
+      expect(claudeCode?.hasGlobalSkill).toBe(true)
+      expect(claudeCode?.hasLocalSkill).toBe(false)
+      expect(claudeCode?.hasSkill).toBe(true)
     })
   })
 })

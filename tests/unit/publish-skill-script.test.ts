@@ -31,7 +31,7 @@ describe('publish-skill.sh', () => {
     mkdirSync(bin)
     writeFileSync(
       join(dir, 'package.json'),
-      JSON.stringify({ name: '@thecraftlab/pipecraft-skill', version: '0.0.0' }),
+      `${JSON.stringify({ name: '@thecraftlab/pipecraft-skill', version: '0.0.0' })}\n`,
       'utf-8'
     )
   })
@@ -69,10 +69,11 @@ exit 0
 
   function run(
     version = '1.2.3',
-    extraEnv: Record<string, string> = {}
+    extraEnv: Record<string, string> = {},
+    shell = 'bash'
   ): { status: number; output: string } {
     try {
-      const output = execFileSync('bash', [script, version], {
+      const output = execFileSync(shell, [script, version], {
         cwd: dir,
         encoding: 'utf-8',
         env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, ...extraEnv }
@@ -164,5 +165,40 @@ exit 0
     expect(local.output, 'npm rejects --provenance outside CI').not.toContain('--provenance')
     expect(local.output).toContain('without provenance')
     expect(local.output).toContain('npm publish ran')
+  })
+
+  /**
+   * `PROVENANCE=()` then `"${PROVENANCE[@]}"` is an unbound-variable error under `set -u` on
+   * bash < 4.4, which macOS ships as /bin/bash 3.2. The EXIT trap ran `restore` (exit 0) after
+   * that abort, masking it: the script printed "unbound variable" and still exited 0, with
+   * `npm publish` never called.
+   */
+  it('runs npm publish under macOS /bin/bash 3.2, not just modern bash', () => {
+    stubNpm({ versionOnRegistry: false, packageExists: true, publishExit: 0 })
+
+    const { status, output } = run('1.2.3', {}, '/bin/bash')
+
+    expect(status, 'the unbound PROVENANCE array must not abort the script').toBe(0)
+    expect(output).toContain('npm publish ran')
+    expect(output, 'the abort must not be silently masked as success').not.toContain(
+      'unbound variable'
+    )
+  })
+
+  it('exits non-zero when a real failure aborts the script, rather than the trap masking it', () => {
+    stubNpm({ versionOnRegistry: false, packageExists: true, publishExit: 1 })
+    writeFileSync(
+      join(bin, 'npm'),
+      `#!/usr/bin/env bash\nif [ "$1" = "pkg" ] && [ "$2" = "set" ]; then exit 1; fi\nexit 0\n`,
+      'utf-8'
+    )
+    chmodSync(join(bin, 'npm'), 0o755)
+
+    const { status } = run('1.2.3', {}, '/bin/bash')
+
+    expect(
+      status,
+      'restore must preserve the failing exit status, not overwrite it with its own'
+    ).toBe(1)
   })
 })
