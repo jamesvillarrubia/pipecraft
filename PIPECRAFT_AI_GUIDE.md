@@ -85,7 +85,6 @@ Creates a `.pipecraftrc` configuration file with sensible defaults.
 | Flag | Description |
 |------|-------------|
 | `--force` | Overwrite existing config file |
-| `--interactive` | Run interactive setup wizard |
 | `--with-versioning` | Include version management setup |
 | `--ci-provider <provider>` | CI provider: `github` or `gitlab` (default: github) |
 | `--merge-strategy <strategy>` | `fast-forward` or `merge` (default: fast-forward) |
@@ -262,16 +261,6 @@ finalBranch: main
 branchFlow:
   - develop
   - main
-
-# Semantic versioning configuration
-semver:
-  bumpRules:
-    feat: minor # New features → 1.0.0 → 1.1.0
-    fix: patch # Bug fixes → 1.0.0 → 1.0.1
-    breaking: major # Breaking changes → 1.0.0 → 2.0.0
-    chore: patch
-    docs: patch
-    test: ignore
 
 # Domain definitions (your project structure)
 domains:
