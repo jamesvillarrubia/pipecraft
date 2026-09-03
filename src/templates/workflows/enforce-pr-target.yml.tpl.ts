@@ -116,14 +116,19 @@ jobs:
 # The usual hazard of pull_request_target is running a fork's code with a write token. This
 # job checks out nothing and runs nothing from the pull request; it reads two ref names and
 # echoes. 'permissions: {}' removes the token as well, so there is nothing left to misuse.
+#
+# No 'branches:' filter. That filter matches on the pull request's base, so scoping it to
+# '${finalBranch}' made github.base_ref always '${finalBranch}' inside a run: the reject step
+# fired every time and the confirm step below could never run. Worse, a contributor who
+# followed the rejection text and retargeted the PR to '${initialBranch}' produced an
+# 'edited' event the filter excluded, so no new run started and the failed 'check-pr-target'
+# remained the latest status on that head SHA — unmergeable where branch protection requires
+# it. The filter was there to keep promotion PRs from opening approval-gated runs; the
+# pull_request_target trigger has no approval gate, and the pipecraft-promote guard on the
+# job below is what skips those PRs now.
 on:
   pull_request_target:
     types: [opened, edited, synchronize, reopened]
-    # Only PRs targeting the final branch matter here (the rule rejects human PRs to it).
-    # Scoping the trigger keeps PipeCraft's own promotion PRs to intermediate branches from
-    # spawning runs at all; the job-level guard below covers the hop that does target it.
-    branches:
-      - ${finalBranch}
 
 permissions: {}
 
