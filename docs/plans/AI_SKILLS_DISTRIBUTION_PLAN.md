@@ -97,12 +97,20 @@ itself lives in the CLI, so there is no second implementation to drift.
 
 **URL:** https://github.com/anthropics/skills
 **Stars:** 173k
-**Status:** Blocked on a question nobody has answered
+**Status:** Not a channel. Do not spend time here.
 
-Their README documents what a skill needs (a folder holding `SKILL.md`, with `name` and
-`description` frontmatter) and says nothing about whether they accept third-party skills. The
-repo has no `CONTRIBUTING.md`. Read their merged pull requests for a community-contributed
-skill before writing one; the answer decides whether this channel exists at all.
+Their README documents what a skill needs and says nothing about third-party contributions,
+and the repo has no `CONTRIBUTING.md`, so their merge history is the only answer available.
+Checked on 2026-09-03:
+
+- every merged pull request comes from an Anthropic-affiliated account (`cj-ant`,
+  `peterlai-ant`, `zack-anthropic`, `rlancemartin`, `kswan-wk` and similar), and each one
+  updates a skill Anthropic already owns
+- 15 open pull requests titled "Add … skill" come from community accounts, the oldest from
+  2026-08-16, and none has been merged
+
+Submitting Pipecraft's skill there would join that queue. Revisit only if a
+community-contributed skill lands.
 
 **Action Items:**
 

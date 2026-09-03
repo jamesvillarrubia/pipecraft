@@ -207,6 +207,48 @@ Doctor runs these checks:
 
 Run `pipecraft doctor` any time promotions fail unexpectedly or after making changes to your repository or org settings.
 
+## Teaching your AI assistant
+
+Pipecraft ships a skill describing its commands, its configuration, and the behaviours that
+surprise people. `pipecraft skill` writes it in the format each tool reads:
+
+```bash
+pipecraft skill                          # install into this project
+pipecraft skill --list                   # which tools this project uses, and where it would go
+pipecraft skill --target cursor,codex    # pick the tools yourself
+pipecraft skill --uninstall              # take it back out
+```
+
+| Tool             | File                                | Written as             |
+| ---------------- | ----------------------------------- | ---------------------- |
+| Claude Code      | `.claude/skills/pipecraft/SKILL.md` | whole file             |
+| Cursor           | `.cursorrules`                      | block inside your file |
+| GitHub Copilot   | `.github/copilot-instructions.md`   | block inside your file |
+| Windsurf         | `.windsurfrules`                    | block inside your file |
+| Cline / Roo Code | `.clinerules`                       | block inside your file |
+| Codex            | `AGENTS.md`                         | block inside your file |
+
+Five of those files are yours, and most projects already have something in them. Pipecraft
+writes only between `<!-- pipecraft:start -->` and `<!-- pipecraft:end -->` and changes nothing
+outside those markers. Reinstalling after an upgrade replaces that block in place, so your own
+instructions survive. `--uninstall` removes the block and leaves the file; a file that held
+nothing else is deleted.
+
+Given no `--target`, the command installs for the tools whose files or directories already
+exist in the project, and installs every format when it finds none.
+
+`--global` writes `~/.claude/skills/pipecraft/SKILL.md` and covers Claude Code alone. The other
+five formats are project files, so a copy in your home directory is one no tool loads.
+
+`pipecraft init --with-skill` runs the same installation as part of `init`.
+
+Two other routes install the same file without the CLI:
+
+```bash
+npx @thecraftlab/pipecraft-skill
+npx openskills install the-craftlab/pipecraft
+```
+
 ## Example workflow
 
 Here's a typical workflow when adding PipeCraft to an existing project:
