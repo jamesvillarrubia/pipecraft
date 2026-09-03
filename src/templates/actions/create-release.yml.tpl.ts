@@ -18,10 +18,17 @@ import type { PipecraftConfig } from '../../types/index.js'
 /**
  * Generates the create-release composite action YAML content.
  *
- * @param {any} ctx - Context (not currently used)
+ * @param {any} ctx - Context carrying the resolved config. The generator spreads
+ *   `ctx.config` over the top level before rendering, so both shapes are read.
  * @returns {string} YAML content for the composite action
  */
 export const releaseActionTemplate = (ctx: any) => {
+  // The publish dispatch needs a ref that exists. Hardcoding 'main' made `gh workflow run`
+  // answer "could not find any ref" on any repo whose final branch is named something else
+  // (examples/gated ends at 'production'), and the dispatch's else branch swallowed that as
+  // a warning — so nothing published and nothing went red.
+  const finalBranch = ctx?.config?.finalBranch || ctx?.finalBranch || 'main'
+
   return dedent`name: 'Create Release'
     description: 'Create a GitHub release with auto-generated release notes'
     author: 'PipeCraft'
@@ -104,7 +111,13 @@ export const releaseActionTemplate = (ctx: any) => {
 
             if [ $RELEASE_EXIT_CODE -eq 0 ]; then
               # Extract release URL from output
-              RELEASE_URL=$(echo "$RELEASE_OUTPUT" | grep -oE 'https://github.com/.*/releases/.*')
+              # Guarded for the same reason the idempotent branch below guards its lookups:
+              # this runs under 'bash -eo pipefail', so a grep that matches nothing
+              # (a GitHub Enterprise host, say) would fail the assignment and abort the step
+              # before release_created=true is written. Every later re-run then takes the
+              # "already exists" branch, which writes release_created=false, and that version
+              # never dispatches publish. An unmatched URL leaves RELEASE_URL empty instead.
+              RELEASE_URL=$(echo "$RELEASE_OUTPUT" | grep -oE 'https://github.com/.*/releases/.*' || echo "")
               echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
 
               # Get release ID using gh api
@@ -148,10 +161,11 @@ export const releaseActionTemplate = (ctx: any) => {
             if [ -f ".github/workflows/$PUBLISH_WORKFLOW" ]; then
               echo "🔄 Triggering $PUBLISH_WORKFLOW for $VERSION"
 
-              # Trigger the publish workflow with the release tag on main branch
-              # This is necessary because GITHUB_TOKEN release creation doesn't trigger workflows
-              # Explicitly use --ref main to ensure it runs on main, not the default branch (develop)
-              if gh workflow run "$PUBLISH_WORKFLOW" --ref main --field tag="$VERSION" 2>&1; then
+              # Trigger the publish workflow with the release tag on the final branch.
+              # This is necessary because GITHUB_TOKEN release creation doesn't trigger workflows.
+              # The ref is explicit so the dispatch lands on '${finalBranch}', not on the
+              # repository's default branch.
+              if gh workflow run "$PUBLISH_WORKFLOW" --ref ${finalBranch} --field tag="$VERSION" 2>&1; then
                 echo "✅ Publish workflow triggered for $VERSION"
               else
                 echo "⚠️  Failed to trigger publish workflow, but continuing"

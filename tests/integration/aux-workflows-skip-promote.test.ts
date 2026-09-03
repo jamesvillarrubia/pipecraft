@@ -50,10 +50,16 @@ describe('auxiliary workflows skip promotion PRs', () => {
         const yaml = readFileSync(join(workspace, '.github/workflows', file), 'utf-8')
         // Defense-in-depth guard: skip pipecraft-promote head branches.
         expect(yaml).toContain(GUARD)
-        // Trigger scoping: promote PRs target downstream branches, so neither check fires.
-        // pr-title-check is scoped to the initial branch; enforce-pr-target to the final.
-        const expectedBranch = file === 'pr-title-check.yml' ? 'develop' : 'main'
-        expect(yaml).toMatch(new RegExp(`branches:\\s*\\n\\s*-\\s*${expectedBranch}`))
+        // pr-title-check stays scoped to the initial branch. enforce-pr-target must not be
+        // scoped at all: `on.pull_request_target.branches` filters on the PR's base, so a
+        // filter of [finalBranch] makes github.base_ref always finalBranch inside a run —
+        // the confirm step becomes unreachable, and a PR retargeted to develop produces no
+        // run at all, stranding the failed check-pr-target status on that head SHA.
+        if (file === 'pr-title-check.yml') {
+          expect(yaml).toMatch(/branches:\s*\n\s*-\s*develop/)
+        } else {
+          expect(yaml, 'a base-branch filter strands a corrected PR').not.toMatch(/^\s+branches:/m)
+        }
       })
     }
   )
@@ -100,6 +106,47 @@ describe('auxiliary workflows skip promotion PRs', () => {
       )
       // Nothing from the pull request may be checked out under this trigger.
       expect(yaml).not.toContain('actions/checkout')
+    })
+  })
+
+  /**
+   * `on.pull_request_target.branches: [main]` filters on the PR's base branch, so every run
+   * it allows has `github.base_ref == 'main'`. The reject step's `if` was therefore always
+   * true and the confirm step's `if: github.base_ref == 'develop'` could never be. A human
+   * who followed the rejection text and retargeted the PR to develop got an `edited` event
+   * the filter excluded, so no run was created and the failed `check-pr-target` stayed the
+   * latest result on that head SHA — unmergeable if branch protection requires it.
+   *
+   * The filter (added to stop approval-gated runs on promotion PRs) lost its reason when the
+   * trigger became pull_request_target, which has no approval gate. The job-level
+   * pipecraft-promote guard is what skips promotion PRs now.
+   */
+  it('leaves both target checks reachable', async () => {
+    await inWorkspace(workspace, () => {
+      execSync('git init', { cwd: workspace, stdio: 'pipe' })
+      writeFileSync('.pipecraftrc', JSON.stringify(createMinimalConfig(), null, 2))
+      execSync(`node "${cliPath}" generate --skip-checks`, {
+        cwd: workspace,
+        stdio: 'pipe',
+        timeout: 15000,
+        env: { ...process.env, CI: 'true' }
+      })
+
+      const yaml = readFileSync(join(workspace, '.github/workflows/enforce-pr-target.yml'), 'utf-8')
+
+      // The trigger carries no base-branch filter, so a retargeted PR produces a fresh run.
+      expect(yaml, 'a branches filter pins github.base_ref to one value').not.toMatch(
+        /^\s+branches:/m
+      )
+      // The job-level guard is what skips PipeCraft's promotion PRs.
+      expect(yaml).toContain(GUARD)
+      expect(yaml).toMatch(/if: github\.base_ref == 'main'/)
+      expect(yaml).toMatch(/if: github\.base_ref == 'develop'/)
+      // The reject step precedes the confirm step and is the one gated on the final branch.
+      const reject = yaml.indexOf("if: github.base_ref == 'main'")
+      const confirm = yaml.indexOf("if: github.base_ref == 'develop'")
+      expect(yaml.slice(reject, confirm)).toContain('Pull requests must target')
+      expect(yaml.slice(confirm)).toContain('PR correctly targets')
     })
   })
 })
