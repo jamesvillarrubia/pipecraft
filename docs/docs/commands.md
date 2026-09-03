@@ -192,7 +192,7 @@ Validation is also built into the generate command, so you'll catch configuratio
 
 ### pipecraft doctor
 
-While `validate` checks your configuration file, `verify` checks your entire PipeCraft setup:
+While `validate` checks your configuration file, `doctor` checks your entire PipeCraft setup:
 
 ```bash
 pipecraft doctor
@@ -200,7 +200,7 @@ pipecraft doctor
 
 This command confirms that your configuration exists, that your workflow files have been generated, and that your repository structure matches what PipeCraft expects. Think of it as a health check for your complete setup.
 
-Use verify when you're troubleshooting why workflows aren't running, when you're setting up PipeCraft in a new environment, or when you want to confirm that everything is ready before pushing to your remote.
+Use `doctor` when you're troubleshooting why workflows aren't running, when you're setting up PipeCraft in a new environment, or when you want to confirm that everything is ready before pushing to your remote.
 
 ## GitHub Setup Commands
 

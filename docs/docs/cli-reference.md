@@ -58,7 +58,7 @@ Before generating any files, PipeCraft runs automatic pre-flight checks to valid
 
 **Configuration file discovery**: PipeCraft searches for your configuration using cosmiconfig, looking in `.pipecraftrc`, `.pipecraftrc.json`, `.pipecraftrc.yml`, `.pipecraftrc.yaml`, `.pipecraftrc.js`, `pipecraft.config.js`, or the `pipecraft` key in `package.json`. It searches parent directories recursively, so you can run commands from subdirectories. If no configuration is found, you'll see a clear message suggesting you run `pipecraft init` first.
 
-**Configuration validation**: Your configuration JSON must be syntactically valid and include all required fields. PipeCraft checks that you've defined a `ciProvider` (github or gitlab), a `branchFlow` array with at least two branches, and at least one domain with valid path patterns. If anything is missing or malformed, the error message explains exactly what needs to be fixed.
+**Configuration validation**: Your configuration JSON must be syntactically valid and include all required fields. PipeCraft checks that you've defined a `ciProvider` (github or gitlab), a `branchFlow` array with at least one branch (a single-branch flow is valid), and at least one domain with valid path patterns. If anything is missing or malformed, the error message explains exactly what needs to be fixed.
 
 **Git repository check**: PipeCraft verifies you're in a git repository before generating workflows. If you're not, it suggests running `git init` or cloning an existing repository. This prevents the confusing situation where workflows generate successfully but can't run because there's no git history.
 
@@ -318,7 +318,7 @@ Most projects use `.pipecraftrc` because it's simple and can be either JSON or Y
 }
 ```
 
-`mergeStrategy`, `requireConventionalCommits`, and `semver` are required — `pipecraft validate` will tell you if any are missing. Use `prefixes` to choose which jobs a domain generates (e.g. `["test", "deploy"]`); the older `testable`/`deployable` flags are deprecated.
+`mergeStrategy` and `requireConventionalCommits` are required; `pipecraft validate` reports any that are missing. `semver` is optional, and the built-in bump rules apply when it is omitted. Use `prefixes` to choose which jobs a domain generates (e.g. `["test", "deploy"]`); the older `testable`/`deployable` flags are deprecated.
 
 This configuration tells PipeCraft to:
 
