@@ -628,19 +628,35 @@ program
         '../utils/skill-installer.js'
       )
 
+      const targetList = options.target?.split(',').map((t: string) => t.trim())
+      const known = SKILL_TARGETS.map(t => t.name)
+      const unknown = (targetList ?? []).filter((t: string) => !known.includes(t))
+      if (unknown.length > 0) {
+        console.error(`❌ Unknown target(s): ${unknown.join(', ')}`)
+        console.error(`   Known targets: ${known.join(', ')}`)
+        process.exit(1)
+      }
+
       // List mode
       if (options.list) {
         const targets = listSkillTargets()
         console.log('\n📋 AI Coding Assistant Skill Targets:\n')
 
         for (const target of targets) {
-          const status = target.hasSkill
-            ? '✅ Installed'
+          const status = target.hasLocalSkill
+            ? '✅ Installed (project)'
+            : target.hasGlobalSkill
+            ? '✅ Installed (global)'
             : target.detected
             ? '⚠️  Detected (no skill)'
             : '⬚  Not detected'
+          const path = target.hasLocalSkill
+            ? target.localPath
+            : target.hasGlobalSkill
+            ? target.globalPath!
+            : target.localPath
           console.log(`   ${status}  ${target.displayName}`)
-          console.log(`             ${target.localPath}`)
+          console.log(`             ${path}`)
         }
 
         console.log('\nRun `pipecraft skill --install` to install skills.')
@@ -654,7 +670,8 @@ program
 
         const results = uninstallSkills({
           global: options.global,
-          local: options.local
+          local: options.local,
+          targets: targetList
         })
 
         const removed = results.filter(r => r.success)
@@ -672,15 +689,6 @@ program
 
       // Install mode (default)
       console.log('\n🔧 Installing Pipecraft skills for AI coding assistants...\n')
-
-      const targetList = options.target?.split(',').map((t: string) => t.trim())
-      const known = SKILL_TARGETS.map(t => t.name)
-      const unknown = (targetList ?? []).filter((t: string) => !known.includes(t))
-      if (unknown.length > 0) {
-        console.error(`❌ Unknown target(s): ${unknown.join(', ')}`)
-        console.error(`   Known targets: ${known.join(', ')}`)
-        process.exit(1)
-      }
 
       const results = installSkills({
         global: options.global,
