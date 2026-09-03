@@ -248,11 +248,15 @@ function buildTargetBranchExpression(branchFlow: string[]): string {
   if (branchFlow.length === 1) return `''`
   if (branchFlow.length === 2) return `'${branchFlow[1]}'`
 
-  // For 3+ branches: develop → staging, staging → main
-  // github.ref_name == 'develop' && 'staging' || 'main'
-  return `github.ref_name == '${branchFlow[0]}' && '${branchFlow[1]}' || '${
-    branchFlow[branchFlow.length - 1]
-  }'`
+  // One clause per hop, the same shape buildAutoPromoteExpression uses below. The earlier
+  // form mapped only the first hop and sent every other source to the final branch, which a
+  // three-branch flow never shows (its one intermediate branch is branchFlow[1]) and a
+  // five-branch flow shows as a push to alpha opening a PR straight to production.
+  const clauses: string[] = []
+  for (let i = 0; i < branchFlow.length - 1; i += 1) {
+    clauses.push(`(github.ref_name == '${branchFlow[i]}' && '${branchFlow[i + 1]}')`)
+  }
+  return `${clauses.join(' || ')} || ''`
 }
 
 /**

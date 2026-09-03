@@ -305,8 +305,12 @@ export interface TargetStatus {
   globalPath?: string
   /** The tool's marker files are present in this project. */
   detected: boolean
-  /** Pipecraft's skill is already installed here. */
+  /** Pipecraft's skill is already installed here, locally or globally. */
   hasSkill: boolean
+  /** The project copy is installed. */
+  hasLocalSkill: boolean
+  /** The home-directory copy is installed. */
+  hasGlobalSkill: boolean
 }
 
 /** List every target, whether the project uses it, and whether the skill is already there. */
@@ -318,6 +322,8 @@ export function listSkillTargets(options: { cwd?: string; home?: string } = {}):
   return SKILL_TARGETS.map(target => {
     const localPath = join(cwd, target.localPath)
     const globalPath = target.globalPath ? join(home, target.globalPath) : undefined
+    const hasLocalSkill = hasSkill(target, localPath)
+    const hasGlobalSkill = globalPath ? hasSkill(target, globalPath) : false
 
     return {
       name: target.name,
@@ -325,7 +331,9 @@ export function listSkillTargets(options: { cwd?: string; home?: string } = {}):
       localPath,
       globalPath,
       detected: detected.includes(target.name),
-      hasSkill: hasSkill(target, localPath) || (globalPath ? hasSkill(target, globalPath) : false)
+      hasSkill: hasLocalSkill || hasGlobalSkill,
+      hasLocalSkill,
+      hasGlobalSkill
     }
   })
 }
@@ -338,15 +346,25 @@ function hasSkill(target: SkillTarget, path: string): boolean {
 
 /** Remove what `installSkills` wrote, and nothing else. */
 export function uninstallSkills(
-  options: { global?: boolean; local?: boolean; cwd?: string; home?: string } = {}
+  options: {
+    global?: boolean
+    local?: boolean
+    targets?: string[]
+    cwd?: string
+    home?: string
+  } = {}
 ): InstallResult[] {
   const results: InstallResult[] = []
   const cwd = options.cwd || process.cwd()
   const home = options.home || homedir()
   const removeGlobal = options.global ?? false
   const removeLocal = options.local ?? !removeGlobal
+  const targets =
+    options.targets && options.targets.length > 0
+      ? SKILL_TARGETS.filter(t => options.targets!.includes(t.name))
+      : SKILL_TARGETS
 
-  for (const target of SKILL_TARGETS) {
+  for (const target of targets) {
     if (removeGlobal && target.globalPath) {
       results.push(remove(target, join(home, target.globalPath)))
     }
