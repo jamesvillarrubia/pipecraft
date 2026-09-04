@@ -2,6 +2,23 @@
 
 Repo-specific failures and what would have prevented them. Newest first.
 
+## 2026-09-04 — Told the person running the publish by hand to publish by hand
+
+**What happened:** The first hand run of `scripts/publish-skill.sh` got `404 Not Found -
+PUT` from npm, and the script exited 0 with "Publish it once by hand, then this step takes
+over". The token in `~/.npmrc` was dead: `npm whoami` returned 401.
+
+**Root cause:** npm answers an unauthenticated PUT to a scoped package with 404, the same
+status a missing package gets. The script's never-published branch was written for the CI
+job, whose OIDC token cannot create a package, and it ran unchanged outside CI, where the
+person it was advising was the one meant to create the package.
+
+**Consequence:** A failed publish reported success, and the advice sent James in a circle.
+
+**Prevention:** A 404 on `npm publish` is not proof the package is missing; check
+`npm whoami` first. A branch that exists to excuse CI must be gated on being in CI.
+Fixed in #595, with tests for the hand path.
+
 ## 2026-09-01 — Corrected the skill copy that never ships, and released it
 
 **What happened:** #545 replaced `pipecraft verify` (a command that does not exist) across
