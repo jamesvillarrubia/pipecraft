@@ -2,6 +2,13 @@
 
 Repo-specific failures and what would have prevented them. Newest first.
 
+## 2026-09-04 — Opened three PRs and three issues with empty bodies
+
+**What happened:** `gh pr create --body-file` and `gh issue create --body-file` ran with a body file that a failed `sed '1{/^$/d}'` (BSD sed rejects the brace form on one line) had left empty. All six landed on GitHub with a one-character body. The approved text went in afterwards through `gh api ... -X PATCH`.
+**Root cause:** the body file was produced by a pipeline and handed straight to `gh` without a size check, and `set -e` did not stop the run because the failing `sed` was inside a pipeline whose last command succeeded.
+**Consequence:** six outward edits instead of six outward creates, on a repo where every outward action is approved by number.
+**Prevention:** after writing any file that will go outward, print its byte count before the command that sends it, and stop on zero. Use `awk` or `sed -e '1d'` (separate expressions) rather than brace addresses on macOS.
+
 ## 2026-09-04 — Told the person running the publish by hand to publish by hand
 
 **What happened:** The first hand run of `scripts/publish-skill.sh` got `404 Not Found -
