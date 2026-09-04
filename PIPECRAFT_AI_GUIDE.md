@@ -275,11 +275,11 @@ domains:
 
 ```yaml
 # Auto-promotion configuration
-autoPromote: false                    # boolean: enable for all
+autoPromote: false                    # the promotion PR is opened either way; false leaves the merge to a person
 # Or per-branch:
 autoPromote:
   staging: true                       # Auto-promote to staging
-  main: false                         # Manual promotion to main
+  main: false                         # PR to main is still opened; a person merges it
 
 # Merge method for auto-merge
 mergeMethod: auto                     # 'auto', 'merge', 'squash', 'rebase'
