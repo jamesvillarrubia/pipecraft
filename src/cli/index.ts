@@ -207,6 +207,15 @@ program
     try {
       const globalOptions = program.opts()
 
+      // The schema accepts "gitlab" as a config value, but nothing under src/ generates
+      // anything but GitHub Actions. Writing a "gitlab" config would promise output
+      // Pipecraft cannot produce, so init rejects it before writing anything.
+      if (options.ciProvider === 'gitlab') {
+        throw new Error(
+          'ciProvider "gitlab" is not supported yet. Pipecraft generates GitHub Actions workflows only.'
+        )
+      }
+
       // init prompted for everything and ignored these flags entirely, so it could not be
       // run by a script, by CI, or by a coding agent — it died on "User force closed the
       // prompt" with stdin closed. Skip prompting when asked to, or when there is no
