@@ -20,24 +20,6 @@ These are gaps in the current implementation that you should understand before
 building on PipeCraft. None of them are silent — they are documented here so you
 can plan around them.
 
-### Promotion dispatch is fire-and-forget
-
-When a branch promotes to the next stage, `promote-branch` dispatches the target
-branch's pipeline via `gh workflow run` and immediately returns success. It does **not**
-wait to verify that the triggered run actually started.
-
-**What this means for you:** If the dispatch silently drops (misconfigured branch,
-transient API error, rate limit), the promote job shows green and the target branch
-never runs. Always verify the target branch actually shows a new run in the Actions
-tab after a promotion.
-
-**Workaround:** Check the Actions tab on the target branch after each promotion.
-
-**Fix status:** Planned (P0-1 in ROADMAP.md) — add a post-dispatch poll to assert
-the run appeared.
-
----
-
 ### No built-in rollback after a failed deployment
 
 When a promotion PR merges and the deploy job on the target branch fails, there is
@@ -100,28 +82,25 @@ an immediate priority.
 
 These are the near-term priorities, in order:
 
-**1. Verify promotion dispatch actually started (P0-1)**
-After dispatching `gh workflow run`, poll the target branch's run list and emit a
-warning (or fail) if the run doesn't appear within ~30 seconds. This closes the
-silent-failure gap in the promotion chain.
+**1. Publish Marketplace actions (P0-2)**
+The `create-tag`, `promote-branch`, and `calculate-version` actions have been readied
+for GitHub Marketplace but not yet published. `remote` action mode already works
+today through pinned repository refs (`actionSourceMode: remote` + `actionVersion`;
+see `examples/remote/.pipecraftrc.json`). Publishing adds Marketplace discoverability:
+teams find the actions by browsing the Marketplace instead of pointing at the repo
+directly).
 
-**2. Publish Marketplace actions (P0-2)**
-The `create-tag`, `promote-branch`, and `calculate-version` actions have been
-readied for GitHub Marketplace but not yet published. Until they are, `remote`
-action mode is non-functional. Publishing unblocks teams who want to reference
-PipeCraft actions without copying them into their repo.
-
-**3. Thread version through promotion (P1-1)**
+**2. Thread version through promotion (P1-1)**
 Calculate the version on the initial branch and pass it explicitly as a
 `workflow_dispatch` input to the target branch's pipeline. This eliminates the need
 for `calculate-version` to re-derive the version on the target branch, removing the
 main source of "no release was cut" failures.
 
-**4. GitLab CI support (P2-1)**
+**3. GitLab CI support (P2-1)**
 Generate `.gitlab-ci.yml` with the same domain-based testing, semantic versioning,
 and branch promotion features available to GitHub Actions users today.
 
-**5. Additional branch flow patterns (P2-2)**
+**4. Additional branch flow patterns (P2-2)**
 GitHub Flow (feature branches → main) and GitFlow (develop → release → main with
 hotfixes) are planned after the current trunk-based model is fully hardened.
 

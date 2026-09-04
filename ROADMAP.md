@@ -21,7 +21,8 @@ items 6, 7 (concurrency only), 8, 9, 10, 11**. Each landed as its own tested com
   shipped; the durable version-threading remains).
 - **P1.10 follow-up** — rework the custom-jobs merge to dedup managed-named jobs so the
   duplicate-key detection (currently a non-fatal warning) can become a hard error.
-- **P1.12** — publish the marketplace actions (out-of-band release step).
+- **P1.12** — publish the marketplace actions for discoverability (out-of-band release step);
+  `remote` mode already works today through repository refs.
 - **P2 (12–17)** — improvements & forward features (below).
 - **Out-of-band (not code):** set branch protection's required check to `gate` so the
   now-robust gate is actually enforced at merge.
@@ -67,11 +68,10 @@ Items below are kept for history/context; see the strikethrough/✅ markers.
    promotion; no concurrency guard → racing pipelines half-promote. _Source:_ Pass 1.
    _Fix:_ parse the version from `release/{src}-to-{tgt}-{version}` on the target push; emit
    `concurrency: { group: pipeline-${{ github.ref_name }} }`.
-8. **Verify promote actually triggered the target run.** `promote-branch` dispatches the next
-   pipeline via `gh workflow run` and reports success immediately; a dropped dispatch
-   (misconfig / API error / rate limit) is invisible. _Source:_ arch review (dispatch finding).
-   _Fix:_ after dispatch, poll `gh run list` for the target branch (~30 s) and warn + non-zero
-   if the run doesn't appear.
+8. ✅ **Verify promote actually triggered the target run.** Shipped in #436 (`f9c4396`);
+   confirmed present at `src/templates/actions/promote-branch.yml.tpl.ts:363-379`. After
+   dispatch, the action polls `gh run list` for the target branch (six attempts, 5 s apart)
+   and warns if no run appears within ~30 s. _Source:_ arch review (dispatch finding).
 9. **`create-release` idempotency + release-it failure handling.** Re-running a released version
    fails the job; a transient release-it failure reads as "no version" (silent skip).
    _Source:_ Pass 1.
@@ -81,7 +81,11 @@ Items below are kept for history/context; see the strikethrough/✅ markers.
 11. **Pin generator default `pnpmVersion` to an exact patch + add `packageManager`.** Default is
     `'10'` (major); `package.json` has no `packageManager`. _Source:_ Pass 3.
 12. **Publish the marketplace actions.** Prepped (#206/#207/#217) + reconciled (#409) but not
-    published — so `remote` action mode is currently unusable. _Source:_ drift assessment.
+    published. `remote` action mode already works today through pinned repository refs
+    (`actionSourceMode: remote` + `actionVersion`; see `examples/remote/.pipecraftrc.json` and
+    `src/utils/action-reference.ts`). The `remote` e2e flavor passed on 2026-09-03. A
+    Marketplace listing adds discoverability: teams browse the Marketplace instead of
+    pointing at the repo directly. _Source:_ drift assessment.
 
 ## P2 — Improvements & forward features
 
@@ -102,7 +106,8 @@ Items below are kept for history/context; see the strikethrough/✅ markers.
 
 ## Known gaps (state vs intent)
 
-- **Marketplace publication** prepped but not done → `remote` mode unusable.
+- **Marketplace publication** prepped but not done. `remote` mode already works through
+  repository refs. Publication adds Marketplace discoverability.
 - **Durable promote/version threading (B2)** designed but deferred; B1 is a guard, not the fix.
 - **`mergeMethod` / `mergeStrategy:'merge'`** advertised but inert (intent is fast-forward).
 - **Self-CI is not a trustworthy gate** (path-filtered required checks; inert `gate` on PRs).
@@ -115,10 +120,11 @@ Items below are kept for history/context; see the strikethrough/✅ markers.
    schema/types/docs honest.
 3. **Heal managed drift + fix the default action set** (P0.4, P0.5) — restores the core
    preserve/generate guarantee for the default user.
-4. **B2 + concurrency + dispatch verification + release idempotency** (P1.7–9) — make release
-   correct under the recommended manual-prod-promotion path.
+4. **B2 durable version threading** (P1.7) — concurrency guard, dispatch verification, and
+   release idempotency shipped in #436; the version-threading half of B2 remains.
 5. **Resolve `mergeMethod`** (P1.6) and **pin pnpm exactly** (P1.11) — remove dead surface,
    finish retiring the pin.
-6. **Publish marketplace actions** (P1.12), then **forward features** (P2.17).
+6. **Publish marketplace actions for discoverability** (P1.12), then **forward features**
+   (P2.17).
 
 Each P0/P1 item is independently shippable as its own PR with tests; work top-down.
