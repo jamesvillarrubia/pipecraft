@@ -83,14 +83,14 @@ domains:
 
 ### Optional Fields
 
-| Field                | Type          | Default  | Purpose                                                   |
-| -------------------- | ------------- | -------- | --------------------------------------------------------- |
-| `autoPromote`        | bool/object   | `false`  | Auto-promote between branches                             |
-| `mergeMethod`        | string/object | `auto`   | `merge`, `squash`, `rebase`                               |
-| `actionSourceMode`   | string        | `local`  | `local`, `remote`, `source`                               |
-| `actionVersion`      | string        | `v1`     | Version for remote actions                                |
-| `versioning.enabled` | bool          | -        | Enable release-it versioning                              |
-| `semver.bumpRules`   | object        | built-in | Commit type → bump size, e.g. `feat: minor`, `fix: patch` |
+| Field                | Type          | Default  | Purpose                                                        |
+| -------------------- | ------------- | -------- | -------------------------------------------------------------- |
+| `autoPromote`        | bool/object   | `false`  | Merge promotion PRs without a person; `false` still opens them |
+| `mergeMethod`        | string/object | `auto`   | `merge`, `squash`, `rebase`                                    |
+| `actionSourceMode`   | string        | `local`  | `local`, `remote`, `source`                                    |
+| `actionVersion`      | string        | `v1`     | Version for remote actions                                     |
+| `versioning.enabled` | bool          | -        | Enable release-it versioning                                   |
+| `semver.bumpRules`   | object        | built-in | Commit type → bump size, e.g. `feat: minor`, `fix: patch`      |
 
 ### Domain Configuration
 
