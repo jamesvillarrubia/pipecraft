@@ -46,6 +46,7 @@ describe('publish-skill.sh', () => {
     versionOnRegistry: boolean
     packageExists: boolean
     publishExit: number
+    loggedIn?: boolean
   }) {
     writeFileSync(
       join(bin, 'npm'),
@@ -54,6 +55,7 @@ case "$1 $2" in
   "view @thecraftlab/pipecraft-skill@"*) exit ${opts.versionOnRegistry ? 0 : 1} ;;
 esac
 case "$1" in
+  whoami)  exit ${opts.loggedIn === false ? 1 : 0} ;;
   view)    exit ${opts.packageExists ? 0 : 1} ;;
   publish) echo "npm publish ran: $@"; exit ${opts.publishExit} ;;
   pkg)     # Actually write, so the script's restore has something real to undo.
@@ -104,14 +106,52 @@ exit 0
     expect(output, 'publish must not even be attempted').not.toContain('npm publish ran')
   })
 
-  it('warns rather than fails when the package has never been published', () => {
+  it('warns rather than fails in Actions when the package has never been published', () => {
     stubNpm({ versionOnRegistry: false, packageExists: false, publishExit: 1 })
 
-    const { status, output } = run()
+    const { status, output } = run('1.2.3', { GITHUB_ACTIONS: 'true' })
 
     expect(status, 'OIDC cannot create a package; that is a setup step, not a failure').toBe(0)
     expect(output).toContain('::warning::')
-    expect(output).toContain('npm publish --access public')
+    // A bare `npm publish` in that directory trips over the 0.0.0-releaseit placeholder, so
+    // the advice names this script, which sets the version first.
+    expect(output).toContain('publish-skill.sh')
+  })
+
+  /**
+   * The "publish it once by hand" warning is advice for the CI job, whose OIDC token cannot
+   * create a package. Printed from the hand run itself, it told the person who had just run
+   * `npm publish` to go and run `npm publish`, and exited 0 on a publish that did not happen.
+   * The real cause that time was a dead token in ~/.npmrc: npm answers an unauthenticated
+   * scoped PUT with 404, which the script read as "never published".
+   */
+  it('fails by hand when the publish fails, and points at the login', () => {
+    stubNpm({ versionOnRegistry: false, packageExists: false, publishExit: 1 })
+
+    const { status, output } = run('1.2.3', { GITHUB_ACTIONS: '' })
+
+    expect(status, 'a hand run that did not publish must not exit 0').toBe(1)
+    expect(output).toContain('::error::')
+    expect(output).not.toContain('Publish it once by hand')
+  })
+
+  it('refuses to publish by hand when npm has no valid login', () => {
+    stubNpm({ versionOnRegistry: false, packageExists: false, publishExit: 0, loggedIn: false })
+
+    const { status, output } = run('1.2.3', { GITHUB_ACTIONS: '' })
+
+    expect(status).toBe(1)
+    expect(output).toContain('npm login')
+    expect(output, 'no publish attempt without a login').not.toContain('npm publish ran')
+  })
+
+  it('does not require a login in Actions, where OIDC has no whoami', () => {
+    stubNpm({ versionOnRegistry: false, packageExists: true, publishExit: 0, loggedIn: false })
+
+    const { status, output } = run('1.2.3', { GITHUB_ACTIONS: 'true' })
+
+    expect(status).toBe(0)
+    expect(output).toContain('npm publish ran')
   })
 
   it('fails when publishing a package that exists goes wrong', () => {
