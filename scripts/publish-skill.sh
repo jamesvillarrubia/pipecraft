@@ -53,6 +53,15 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
   PROVENANCE=(--provenance)
 else
   echo "Not running in GitHub Actions, so publishing without provenance."
+  # npm answers an unauthenticated PUT to a scoped package with 404, the same status a
+  # package that does not exist gets, so a dead token in ~/.npmrc looks like "never
+  # published" to the branch below. Ask npm who we are first; OIDC in Actions has no answer
+  # to that until publish time, so the check stays out of CI.
+  if ! npm whoami >/dev/null 2>&1; then
+    echo "::error::npm has no valid login on this machine ('npm whoami' failed)."
+    echo "::error::Run 'npm login', then run this script again."
+    exit 1
+  fi
 fi
 
 if npm publish ${PROVENANCE[@]+"${PROVENANCE[@]}"} --access public; then
@@ -65,7 +74,15 @@ if npm view "$PACKAGE" version >/dev/null 2>&1; then
   exit 1
 fi
 
+# By hand there is no OIDC to excuse a failed first publish: the person running this is the
+# one who was meant to create the package, so telling them to run it by hand is circular.
+if [ -z "${GITHUB_ACTIONS:-}" ]; then
+  echo "::error::Publishing $PACKAGE@$VERSION failed, and the package does not exist yet."
+  echo "::error::Check that 'npm whoami' names an account that can publish under the @thecraftlab scope."
+  exit 1
+fi
+
 echo "::warning::$PACKAGE has never been published, and npm's OIDC cannot create a package."
 echo "::warning::Publish it once by hand, then this step takes over:"
-echo "::warning::  cd skills/pipecraft-cli && npm publish --access public"
+echo "::warning::  cd skills/pipecraft-cli && ../../scripts/publish-skill.sh <version>"
 exit 0
