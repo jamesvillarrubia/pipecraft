@@ -52,7 +52,9 @@ jobs:
           npm pkg set version=$VERSION
 
       - name: Publish to npm (using OIDC)
-        run: npm publish --provenance --access public
+        run: |
+          TAG=${{ github.event.release.tag_name || inputs.tag }}
+          ./scripts/publish-main.sh "${TAG#v}"
 
       # The skill package carries the same SKILL.md file this repo holds and depends on the
       # CLI published above, so it takes that version rather than one of its own. Publishing
