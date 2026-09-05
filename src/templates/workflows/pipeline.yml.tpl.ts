@@ -255,7 +255,11 @@ function generatePrefixedJobsText(
  * @param generatedJobs - Generated placeholder jobs text
  * @returns Merged content
  */
-function mergeCustomJobsContent(userSection: string | null, generatedJobs: string): string {
+function mergeCustomJobsContent(
+  userSection: string | null,
+  generatedJobs: string,
+  additionalExcludeNames?: Set<string>
+): string {
   if (!generatedJobs) {
     return userSection || ''
   }
@@ -269,6 +273,11 @@ function mergeCustomJobsContent(userSection: string | null, generatedJobs: strin
     while ((match = jobNameRegex.exec(userSection)) !== null) {
       existingJobNames.add(match[1])
     }
+  }
+  // A job the user moved outside the markers (or a managed job) still occupies its name
+  // at the top level of the document; a placeholder must not duplicate it.
+  if (additionalExcludeNames) {
+    for (const name of additionalExcludeNames) existingJobNames.add(name)
   }
 
   logger.verbose(
@@ -308,6 +317,70 @@ function mergeCustomJobsContent(userSection: string | null, generatedJobs: strin
   }
 
   return parts.join('\n\n')
+}
+
+/**
+ * Remove the custom-jobs region (the START marker line through the END marker line,
+ * inclusive) from an already-stringified workflow document. A no-op when no markers are
+ * present.
+ *
+ * Parsing an existing pipeline.yml and stringifying it again preserves the custom-jobs
+ * section and its marker comments verbatim: comments attach to the YAML node they sit
+ * beside, and that node's whole subtree round-trips. Splicing a freshly merged section back
+ * in without first removing the old one duplicates every custom job and both markers.
+ */
+function stripExistingCustomJobsRegion(yamlContent: string): string {
+  const startMarkerRegex = /^.*#+\s*<--START CUSTOM JOBS-->\s*$/m
+  const endMarkerRegex = /^.*#+\s*<--END CUSTOM JOBS-->\s*$/m
+  const startMatch = yamlContent.match(startMarkerRegex)
+  const endMatch = yamlContent.match(endMarkerRegex)
+  if (!startMatch || !endMatch) return yamlContent
+
+  return (
+    yamlContent.slice(0, startMatch.index!) +
+    yamlContent.slice(endMatch.index! + endMatch[0].length)
+  ).replace(/\n{3,}/g, '\n\n')
+}
+
+/**
+ * Splice custom-jobs content (already merged with generated placeholders) back into the
+ * workflow, wrapped in markers, right after the version job's outputs. Shared by the
+ * force/new-file path and the no-force merge path so both splice at the same location the
+ * same way.
+ *
+ * When `content` is empty and `addEmptyMarkersForNewFile` is set (only true for a brand-new
+ * file), empty markers are written so the file has somewhere to add custom jobs later.
+ * Otherwise, empty content leaves `yamlContent` untouched.
+ */
+function insertCustomJobsSection(
+  yamlContent: string,
+  content: string,
+  options: { addEmptyMarkersForNewFile: boolean }
+): string {
+  const versionOutputsPattern = /^( {2}version:\s*\n(?:.*\n)*? {4}outputs:\s*\n\s*version:.*)$/m
+  const match = yamlContent.match(versionOutputsPattern)
+  if (!match) return yamlContent
+
+  if (content.trim().length > 0) {
+    const insertionIndex = match.index! + match[0].length
+    const contentWithMarkers = `# <--START CUSTOM JOBS-->\n\n${content}\n\n  # <--END CUSTOM JOBS-->`
+    return (
+      yamlContent.slice(0, insertionIndex) +
+      '\n\n  ' +
+      contentWithMarkers +
+      '\n' +
+      yamlContent.slice(insertionIndex)
+    )
+  }
+
+  if (options.addEmptyMarkersForNewFile) {
+    return yamlContent.replace(
+      versionOutputsPattern,
+      '$1\n\n  # <--START CUSTOM JOBS-->\n\n  # <--END CUSTOM JOBS-->\n'
+    )
+  }
+
+  return yamlContent
 }
 
 /**
@@ -386,6 +459,13 @@ export const generate = (ctx: PathBasedPipelineContext) =>
       // Extract user-customized section and custom jobs from existing file if it exists
       let userSection: string | null = null
       const customJobsFromExisting: any[] = []
+      // Job names converted from customJobsFromExisting into userSection text below (the
+      // "markers missing/mismatched" recovery path). Such a job already sits at the top
+      // level of `doc`'s own jobs map and survives the stringify untouched (it never sat
+      // between two marker lines for stripExistingCustomJobsRegion to remove), so once its
+      // text is folded into userSection for re-insertion, the no-force branch must delete
+      // it from `doc`'s map too, or it renders twice.
+      const recoveredJobNames = new Set<string>()
       // Preserve gate job's needs and if (user may have customized them)
       let preservedGateNeeds: any = null
       let preservedGateIf: any = null
@@ -452,6 +532,9 @@ export const generate = (ctx: PathBasedPipelineContext) =>
               const jobTexts: string[] = []
 
               for (const pair of customJobsFromExisting) {
+                const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
+                recoveredJobNames.add(String(keyStr))
+
                 // Create a temp doc for this one job to get proper YAML formatting
                 const tempDoc = new Document(new YAMLMap())
                 ;(tempDoc.contents as YAMLMap).items = [pair]
@@ -547,37 +630,9 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         )
 
         const mergedCustomContent = mergeCustomJobsContent(userSection, generatedPlaceholders)
-
-        // Insert merged custom section (user jobs + generated placeholders)
-        if (mergedCustomContent && mergedCustomContent.trim().length > 0) {
-          // Find the version job's outputs section
-          const versionOutputsPattern =
-            /^ {2}version:\s*\n(?:.*\n)*? {4}outputs:\s*\n\s*version:.*$/m
-          const match = yamlContent.match(versionOutputsPattern)
-          if (match) {
-            const insertionIndex = match.index! + match[0].length
-
-            const userSectionWithMarkers = `# <--START CUSTOM JOBS-->\n\n${mergedCustomContent}\n\n  # <--END CUSTOM JOBS-->`
-            yamlContent =
-              yamlContent.slice(0, insertionIndex) +
-              '\n\n  ' +
-              userSectionWithMarkers +
-              '\n' +
-              yamlContent.slice(insertionIndex)
-            logger.verbose(
-              '📋 Inserted custom jobs section (user + generated placeholders) after version job'
-            )
-          }
-        } else if (!fileExists) {
-          // For new files, add placeholder markers
-          const versionOutputsPattern =
-            /^( {2}version:\s*\n(?:.*\n)*? {4}outputs:\s*\n\s*version:.*)$/m
-          yamlContent = yamlContent.replace(
-            versionOutputsPattern,
-            '$1\n\n  # <--START CUSTOM JOBS-->\n\n  # <--END CUSTOM JOBS-->\n'
-          )
-          logger.verbose('📝 Added placeholder user section markers')
-        }
+        yamlContent = insertCustomJobsSection(yamlContent, mergedCustomContent, {
+          addEmptyMarkersForNewFile: !fileExists
+        })
 
         warnOnDuplicateKeys(yamlContent)
         const formattedContent = formatIfConditions(yamlContent)
@@ -588,7 +643,64 @@ export const generate = (ctx: PathBasedPipelineContext) =>
       // Parse existing file for merge mode (no force flag)
       const freshContent = fs.readFileSync(filePath, 'utf8')
       const doc = parseDocument(freshContent)
+
+      // The leading comment above the first job (always `changes`) survives a parse round
+      // trip attached to the `jobs` map itself, not to the `changes` key: the yaml parser
+      // assigns a comment before a mapping's first item to the mapping, not the item.
+      const jobsNodeBeforeOps = (doc.contents as YAMLMap)?.get('jobs') as YAMLMap | undefined
+
+      // A job recovered above (markers missing or mismatched) is about to be re-inserted
+      // via userSection/insertCustomJobsSection below. It is still sitting untouched in this
+      // freshly parsed `doc`, at whatever top-level position it held in the file (inside a
+      // one-sided marker, or with no markers at all), so stringifying `doc` as-is would
+      // render it once there and once more from userSection: delete it here so the
+      // re-insertion is the only copy.
+      if (jobsNodeBeforeOps && recoveredJobNames.size > 0) {
+        for (const name of recoveredJobNames) jobsNodeBeforeOps.delete(name)
+      }
+
       applyManagedWorkflowOperations(doc, operations, ctx)
+
+      // applyManagedWorkflowOperations above sets the CHANGES DETECTION banner fresh on the
+      // `changes` key every run, so the stale copy still on the map would render a second
+      // time. Only that banner text is managed; a user comment placed directly above
+      // `changes` (which the parser also attaches to the map, per the note above) is not
+      // part of the contract and must survive. Strip only the banner substring from the
+      // map's stale commentBefore and keep whatever else is there.
+      if (jobsNodeBeforeOps) {
+        const changesPair = jobsNodeBeforeOps.items.find(pair => {
+          const keyStr = pair.key instanceof Scalar ? pair.key.value : pair.key
+          return keyStr === 'changes'
+        }) as { key: unknown } | undefined
+        const changesBanner =
+          changesPair && changesPair.key && typeof changesPair.key === 'object'
+            ? (changesPair.key as { commentBefore?: string }).commentBefore ?? undefined
+            : undefined
+
+        const staleComment = jobsNodeBeforeOps.commentBefore
+        const remainder =
+          staleComment && changesBanner && staleComment.includes(changesBanner)
+            ? staleComment.split(changesBanner).join('').replace(/\n+$/, '')
+            : ''
+
+        jobsNodeBeforeOps.commentBefore = remainder.length > 0 ? remainder : undefined
+        // Same relocation for the blank line the comment's `spaceBefore` config draws: it
+        // survives parsing attached to the map, while the key gets its own copy too. Only
+        // clear it when nothing of the map's original comment remains.
+        if (remainder.length === 0) {
+          jobsNodeBeforeOps.spaceBefore = false
+        }
+      }
+
+      // Job names already present in the parsed document: managed jobs, plus any custom job
+      // whether it sits inside the markers or was moved out. A placeholder must not
+      // duplicate one of these.
+      const existingJobsMap = (doc.contents as YAMLMap)?.get('jobs') as YAMLMap | undefined
+      const docJobNames = new Set<string>(
+        ((existingJobsMap?.items ?? []) as Array<{ key: unknown }>).map(pair =>
+          String(pair.key instanceof Scalar ? pair.key.value : pair.key)
+        )
+      )
 
       // Stringify to YAML
       let yamlContent = stringify(doc, {
@@ -599,15 +711,22 @@ export const generate = (ctx: PathBasedPipelineContext) =>
         minContentWidth: 0
       })
 
-      // Insert user section after version job if it exists
-      // Find the version job's outputs section
-      const versionOutputsPattern = /^ {2}version:\s*\n(?:.*\n)*? {4}outputs:\s*\n\s*version:.*$/m
-      const match = yamlContent.match(versionOutputsPattern)
-      if (match) {
-        const insertionIndex = match.index! + match[0].length
+      // The parsed-and-restringified document still carries the original custom-jobs
+      // section and its markers verbatim; remove that region before splicing the freshly
+      // merged one back in below, or every custom job and both markers duplicate.
+      yamlContent = stripExistingCustomJobsRegion(yamlContent)
 
-        // If no user section exists, create default with test-gate example
-        const defaultCustomSection = `#=============================================================================
+      // Generate placeholder jobs from prefixes and merge with the preserved custom
+      // section, so a domain added to the config gets a placeholder job here too.
+      const generatedPlaceholders = generatePrefixedJobsText(domains, ctx.packageManager)
+      const mergedCustomContent = mergeCustomJobsContent(
+        userSection,
+        generatedPlaceholders,
+        docJobNames
+      )
+
+      // If nothing to preserve or merge, fall back to the default test-gate example.
+      const defaultCustomSection = `#=============================================================================
   # CUSTOM JOBS SECTION (✅ Add your test, deploy, and remote-test jobs here)
   #=============================================================================
   # This section is preserved across regenerations. Add your custom jobs between
@@ -623,26 +742,21 @@ export const generate = (ctx: PathBasedPipelineContext) =>
   #   steps:
   #     - run: echo "✅ All tests passed"`
 
-        const contentToInsert = userSection || defaultCustomSection
-        const userSectionWithMarkers = `# <--START CUSTOM JOBS-->\n\n${contentToInsert}\n\n  # <--END CUSTOM JOBS-->`
+      const hasContent = mergedCustomContent.trim().length > 0
+      const contentToInsert = hasContent ? mergedCustomContent : defaultCustomSection
+      logger.verbose(
+        hasContent
+          ? '📋 Inserting preserved user section between markers'
+          : '📝 Creating default custom section with test-gate example'
+      )
 
-        if (userSection) {
-          logger.verbose('📋 Inserting preserved user section between markers')
-        } else {
-          logger.verbose('📝 Creating default custom section with test-gate example')
-        }
-
-        yamlContent =
-          yamlContent.slice(0, insertionIndex) +
-          '\n\n  ' +
-          userSectionWithMarkers +
-          '\n' +
-          yamlContent.slice(insertionIndex)
-      }
+      yamlContent = insertCustomJobsSection(yamlContent, contentToInsert, {
+        addEmptyMarkersForNewFile: false
+      })
 
       warnOnDuplicateKeys(yamlContent)
       const formattedContent = formatIfConditions(yamlContent)
-      const status = userSection ? 'merged' : 'updated'
+      const status = hasContent ? 'merged' : 'updated'
       return { ...ctx, yamlContent: formattedContent, mergeStatus: status }
     })
     .then(ctx => {
@@ -661,6 +775,7 @@ export const generate = (ctx: PathBasedPipelineContext) =>
     .then(
       renderTemplate(
         (ctx: any) => ctx.yamlContent,
-        toFile((ctx: any) => ctx.outputPipelinePath || '.github/workflows/pipeline.yml')
+        toFile((ctx: any) => ctx.outputPipelinePath || '.github/workflows/pipeline.yml'),
+        { force: true }
       )
     )

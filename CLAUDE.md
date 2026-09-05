@@ -88,12 +88,18 @@ that means it is written once and then never updated — `generate` prints "Skip
 exits 0, so it looks like success.
 
 `enforce-pr-target.yml` and `pr-title-check.yml` therefore pass `{ force: true }` to
-`renderTemplate`. They have no user-editable regions, unlike `pipeline.yml`, which merges
-into existing YAML to preserve custom jobs. Without force, renaming `finalBranch` left the
-old name enforced and adding a commit type left `pr-title-check` rejecting it.
+`renderTemplate`. They have no user-editable regions. Without force, renaming `finalBranch`
+left the old name enforced and adding a commit type left `pr-title-check` rejecting it.
 
-If you add another fully-generated workflow, pass `{ force: true }` and cover it in
-`tests/integration/regenerate-managed-workflows.test.ts`.
+`pipeline.yml` passes force too, since the regenerate fix (reqts/goal-regenerate-pipeline.md). Its merge into the existing YAML is what
+preserves custom jobs; force only makes Pinion write the merged result. Before that fix
+the file was written once and never again, on every published version back to 0.29.3, and
+the no-force branch also duplicated the custom section. `tests/integration/regenerate-pipeline.test.ts`
+pins the second run. `.release-it.cjs` and the composite actions still render without force
+(follow-up issue).
+
+If you add another generated file that must track config, pass `{ force: true }` and cover
+it in `tests/integration/regenerate-managed-workflows.test.ts`.
 
 ## Config keys live in three places
 

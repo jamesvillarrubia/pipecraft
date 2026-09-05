@@ -253,6 +253,37 @@ test-api:
 
 You can modify the steps in these jobs however you need. Want to add code coverage? Use a different Node version? Run integration tests? Just add the steps you need. PipeCraft will preserve your changes when regenerating.
 
+### Deployment environments
+
+A GitHub environment on a deploy job gives you environment-scoped secrets, a branch rule for
+which branch may deploy, an optional required-reviewer approval before the job runs, and a
+deployment history in the repository's Environments sidebar. Pipecraft does not write the
+line for you; the deploy job is yours, so add it by hand.
+
+1. On GitHub, open Settings, then Environments, then New environment. Name it (for example
+   `production`) and add required reviewers, a deployment branch rule, or secrets.
+2. Inside the `<--START CUSTOM JOBS-->` and `<--END CUSTOM JOBS-->` markers in
+   `.github/workflows/pipeline.yml`, add `environment:` to the deploy job:
+
+   ```yaml
+   deploy-api:
+     needs: [changes, test-api]
+     if: needs.changes.outputs.api == 'true'
+     runs-on: ubuntu-latest
+     environment: production
+     steps:
+       - uses: actions/checkout@v4
+       - run: ./deploy.sh
+   ```
+
+3. Commit. `pipecraft generate` preserves everything between the markers, so the line
+   survives every later regeneration.
+
+A required reviewer holds the job until someone approves it in the run's Deployments panel.
+Secrets defined on the environment resolve through `${{ secrets.NAME }}` only in a job that
+names that environment. The generated `deploy-<domain>` job needs only `changes`, so add the
+domain's test job to `needs` if the deploy should wait for tests.
+
 ## Safe regeneration
 
 PipeCraft is designed to be regenerated safely. When you run `pipecraft generate` again (perhaps after changing your configuration), it will:

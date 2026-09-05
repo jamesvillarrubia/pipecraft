@@ -2,6 +2,26 @@
 
 Repo-specific failures and what would have prevented them. Newest first.
 
+## 2026-09-05 — Recommended re-running a Publish run whose main package had already shipped
+
+**What happened:** Publish v0.47.12 had published `pipecraft` and failed only on the skill
+package (404, missing Trusted Publisher). After James added the publisher I recommended
+`gh run rerun 33879945462`. Attempt 2 failed at "Publish to npm (using OIDC)" with "You
+cannot publish over the previously published versions: 0.47.12", and the skill step never
+ran.
+
+**Root cause:** `publish.yml` publishes the main package unconditionally, so a re-run of a
+half-successful release fails before reaching the step it was re-run for. I read the failed
+step of attempt 1 and not the steps before it.
+
+**Consequence:** one approved outward action spent on a run that could not test the fix; the
+Trusted Publisher stays unverified until the next fresh release.
+
+**Prevention:** before recommending a re-run, list the run's steps and ask which of them are
+idempotent. A publish step that already succeeded will fail on re-run unless the workflow
+skips an existing version, which `scripts/publish-skill.sh` does and the main-package step
+does not.
+
 ## 2026-09-04 — Told the person running the publish by hand to publish by hand
 
 **What happened:** The first hand run of `scripts/publish-skill.sh` got `404 Not Found -
