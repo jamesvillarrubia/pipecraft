@@ -114,6 +114,31 @@ describe('managed auxiliary workflows regenerate', () => {
     })
   })
 
+  it('propagates a changed bumpRule into .release-it.cjs', async () => {
+    await inWorkspace(workspace, () => {
+      execSync('git init', { cwd: workspace, stdio: 'pipe' })
+      write(createMinimalConfig({ requireConventionalCommits: true }))
+      generate()
+
+      const path = join(workspace, '.release-it.cjs')
+      expect(readFileSync(path, 'utf-8')).toContain("perf: 'patch'")
+
+      write(
+        createMinimalConfig({
+          requireConventionalCommits: true,
+          semver: { bumpRules: { feat: 'minor', fix: 'patch', breaking: 'major', perf: 'major' } }
+        })
+      )
+      generate()
+
+      const content = readFileSync(path, 'utf-8')
+      expect(content).toContain("perf: 'major'")
+      // The old rule must be gone, or a regenerate after a config change silently keeps
+      // the stale bump rule.
+      expect(content).not.toContain("perf: 'patch'")
+    })
+  })
+
   it('is idempotent — regenerating an unchanged config leaves both files alone', async () => {
     await inWorkspace(workspace, () => {
       execSync('git init', { cwd: workspace, stdio: 'pipe' })
