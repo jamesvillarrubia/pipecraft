@@ -18,35 +18,13 @@ Defined in: [templates/workflows/shared/operations-domain-jobs.ts:14](https://gi
 
 ## Functions
 
-### createDomainDeployJobOperations()
-
-```ts
-function createDomainDeployJobOperations(ctx): PathOperationConfig[]
-```
-
-Defined in: [templates/workflows/shared/operations-domain-jobs.ts:134](https://github.com/the-craftlab/pipecraft/blob/main/src/templates/workflows/shared/operations-domain-jobs.ts#L134)
-
-Create deploy job operations for deployable domains
-
-#### Parameters
-
-##### ctx
-
-[`DomainJobsContext`](#domainjobscontext)
-
-#### Returns
-
-[`PathOperationConfig`](../../../utils/ast-path-operations.md#pathoperationconfig)[]
-
----
-
 ### createDomainRemoteTestJobOperations()
 
 ```ts
 function createDomainRemoteTestJobOperations(ctx): PathOperationConfig[]
 ```
 
-Defined in: [templates/workflows/shared/operations-domain-jobs.ts:180](https://github.com/the-craftlab/pipecraft/blob/main/src/templates/workflows/shared/operations-domain-jobs.ts#L180)
+Defined in: [templates/workflows/shared/operations-domain-jobs.ts:134](https://github.com/the-craftlab/pipecraft/blob/main/src/templates/workflows/shared/operations-domain-jobs.ts#L134)
 
 Create remote test job operations for remotely testable domains
 
@@ -120,7 +98,7 @@ Array of path operations for all prefix-based jobs
 function getDomainJobNames(domains): object
 ```
 
-Defined in: [templates/workflows/shared/operations-domain-jobs.ts:231](https://github.com/the-craftlab/pipecraft/blob/main/src/templates/workflows/shared/operations-domain-jobs.ts#L231)
+Defined in: [templates/workflows/shared/operations-domain-jobs.ts:185](https://github.com/the-craftlab/pipecraft/blob/main/src/templates/workflows/shared/operations-domain-jobs.ts#L185)
 
 Get list of all domain job names for dependency management
 

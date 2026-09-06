@@ -102,8 +102,9 @@ Here's what the workflow execution looks like in practice:
 Commit: changes to both packages/api and packages/web
 ├─ changes job (runs, detects both api and web changed)
 ├─ test-api job (runs in parallel)
+│  └─ deploy-api job (runs after test-api succeeds)
 └─ test-web job (runs in parallel)
-   └─ deploy-all job (runs after both tests pass)
+   └─ deploy-web job (runs after test-web succeeds)
 ```
 
 ### Shared code and dependencies

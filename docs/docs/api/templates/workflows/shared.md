@@ -20,12 +20,6 @@ Re-exports [createChangesJobOperation](shared/operations-changes.md#createchange
 
 ---
 
-### createDomainDeployJobOperations
-
-Re-exports [createDomainDeployJobOperations](shared/operations-domain-jobs.md#createdomaindeployjoboperations)
-
----
-
 ### createDomainRemoteTestJobOperations
 
 Re-exports [createDomainRemoteTestJobOperations](shared/operations-domain-jobs.md#createdomainremotetestjoboperations)
@@ -77,6 +71,12 @@ Re-exports [DomainJobsContext](shared/operations-domain-jobs.md#domainjobscontex
 ### ensureGateJob
 
 Re-exports [ensureGateJob](shared/operations-gate.md#ensuregatejob)
+
+---
+
+### GATE_COMMENT
+
+Re-exports [GATE_COMMENT](shared/operations-gate.md#gate_comment)
 
 ---
 

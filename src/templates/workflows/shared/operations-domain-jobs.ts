@@ -129,52 +129,6 @@ export function createDomainTestJobOperations(ctx: DomainJobsContext): PathOpera
 }
 
 /**
- * Create deploy job operations for deployable domains
- */
-export function createDomainDeployJobOperations(ctx: DomainJobsContext): PathOperationConfig[] {
-  const { domains } = ctx
-  const operations: PathOperationConfig[] = []
-
-  const deployableDomains = Object.keys(domains)
-    .sort()
-    .filter(d => domains[d].deployable === true)
-
-  deployableDomains.forEach((domain, index) => {
-    operations.push({
-      path: `jobs.deploy-${domain}`,
-      operation: 'preserve', // User can customize this job!
-      // Only add comment to the first deploy job
-      ...(index === 0 && {
-        commentBefore: `
-=============================================================================
- DEPLOYMENT JOBS (✅ Customize these with your deploy logic)
-=============================================================================
- These jobs deploy each domain when changes are detected and tests pass.
- Replace the TODO commands with your actual deployment commands.
-`
-      }),
-      value: createValueFromString(`
-    needs: [ version, changes ]
-    if: \${{ always() && needs.version.result == 'success' && needs.changes.outputs.${domain} == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: \${{ inputs.commitSha || github.sha }}
-      # TODO: Replace with your ${domain} deployment logic
-      - name: Deploy ${domain}
-        run: |
-          echo "Deploying ${domain} with version \${{ needs.version.outputs.version }}"
-          echo "Replace this with your actual deploy commands"
-          # Example: npm run deploy:${domain}
-  `)
-    })
-  })
-
-  return operations
-}
-
-/**
  * Create remote test job operations for remotely testable domains
  */
 export function createDomainRemoteTestJobOperations(ctx: DomainJobsContext): PathOperationConfig[] {
