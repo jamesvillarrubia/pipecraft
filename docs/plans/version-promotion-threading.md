@@ -2,8 +2,32 @@
 
 **Branch:** fix/version-promotion-robustness
 **Created:** 2026-06-15
-**Status:** Design note — NOT implemented (deferred as too large/risky for an
-unattended sitting; see "Why deferred")
+**Status:** Implemented. The design below (B2) is wired in current code, added
+by a commit that predates this status update and that neither this doc nor
+`reqts/goal-version-threading.md` had been checked against. Four wiring points
+carry the established version end to end:
+
+1. `src/templates/actions/promote-branch.yml.tpl.ts:350` dispatches the target
+   branch's pipeline with `--field version="$VERSION"`.
+2. `src/templates/workflows/shared/operations-header.ts:171-181` declares
+   `on.workflow_dispatch.inputs.version` on the pipeline.
+3. `src/templates/workflows/shared/operations-version.ts` passes
+   `with: version: ${{ inputs.version }}` to the version job's
+   `calculate-version` step.
+4. `src/templates/actions/calculate-version.yml.tpl.ts:119-127` reads
+   `inputs.version` in its `check_input_version` step first; the tag-lookup
+   step is gated `if: steps.check_input_version.outputs.version == ''`, so an
+   explicit input skips the tag lookup entirely.
+
+`tests/snapshots/workflow-snapshots.test.ts` (`Specific Validations`) asserts
+(1) and (4) against the generated composite actions and (2) and (3) against
+generated workflow YAML; each assertion was confirmed to fail when its wiring
+point was reverted.
+
+What remains: a live end-to-end proof (a real `basic` or `gated` flavor
+promotion through a merge-commit, watching `release` cut on the final branch
+without a tag-on-HEAD). That is reserved for an attended session per "Why
+deferred" below, since it needs a real dispatch against a sandbox repo.
 
 ## Problem
 
