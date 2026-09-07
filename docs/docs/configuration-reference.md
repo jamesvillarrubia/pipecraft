@@ -436,11 +436,11 @@ That config generates `test-api` and `deploy-api`. Each job:
 
 Three prefixes have wiring in the managed jobs:
 
-| Prefix        | Job                    | Runs                                      |
-| ------------- | ---------------------- | ----------------------------------------- |
-| `test`        | `test-{domain}`        | On changes, before versioning             |
-| `deploy`      | `deploy-{domain}`      | After tests pass and the version resolves |
-| `remote-test` | `remote-test-{domain}` | After `deploy-{domain}` succeeds          |
+| Prefix        | Job                    | Runs                                                                                       |
+| ------------- | ---------------------- | ------------------------------------------------------------------------------------------ |
+| `test`        | `test-{domain}`        | On changes, before versioning                                                              |
+| `deploy`      | `deploy-{domain}`      | After the version resolves, and after `test-{domain}` succeeds when the domain is testable |
+| `remote-test` | `remote-test-{domain}` | After `deploy-{domain}` succeeds                                                           |
 
 Any other prefix generates a placeholder job you can fill in, so `prefixes: ["lint", "build", "test"]`
 produces `lint-api`, `build-api` and `test-api`.
