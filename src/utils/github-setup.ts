@@ -833,7 +833,13 @@ export function getRecommendedRepositorySettings(): RepositorySettings {
     allow_squash_merge: true,
     squash_merge_commit_title: 'PR_TITLE',
     squash_merge_commit_message: 'COMMIT_MESSAGES',
-    ...(allowMergeCommit ? { merge_commit_title: 'PR_TITLE' as const } : {})
+    // GitHub only accepts specific title/message pairings for merge commits
+    // (PR_TITLE+PR_BODY, PR_TITLE+BLANK, or MERGE_MESSAGE+PR_TITLE) — a lone
+    // merge_commit_title without its paired message 422s with
+    // invalid_merge_commit_setting_combo.
+    ...(allowMergeCommit
+      ? { merge_commit_title: 'PR_TITLE' as const, merge_commit_message: 'PR_BODY' as const }
+      : {})
   }
 }
 
@@ -935,10 +941,17 @@ export function getSettingsGaps(
     }
   }
 
-  // Only check merge commit title if merge commits will be enabled
+  // Only check merge commit title/message if merge commits will be enabled. Both must be
+  // patched together — GitHub rejects a lone merge_commit_title change that doesn't pair
+  // with an allowed merge_commit_message (invalid_merge_commit_setting_combo).
   const mergeWillBeEnabled = gaps.allow_merge_commit ?? current.allow_merge_commit
-  if (mergeWillBeEnabled && current.merge_commit_title !== recommended.merge_commit_title) {
-    gaps.merge_commit_title = recommended.merge_commit_title
+  if (mergeWillBeEnabled) {
+    if (current.merge_commit_title !== recommended.merge_commit_title) {
+      gaps.merge_commit_title = recommended.merge_commit_title
+    }
+    if (current.merge_commit_message !== recommended.merge_commit_message) {
+      gaps.merge_commit_message = recommended.merge_commit_message
+    }
   }
 
   return gaps
@@ -970,7 +983,8 @@ export function displaySettingsComparison(
     { key: 'allow_squash_merge', label: 'Allow squash merging' },
     { key: 'squash_merge_commit_title', label: 'Squash merge commit title' },
     { key: 'squash_merge_commit_message', label: 'Squash merge commit message' },
-    { key: 'merge_commit_title', label: 'Merge commit title' }
+    { key: 'merge_commit_title', label: 'Merge commit title' },
+    { key: 'merge_commit_message', label: 'Merge commit message' }
   ]
 
   settings.forEach(({ key, label }) => {
