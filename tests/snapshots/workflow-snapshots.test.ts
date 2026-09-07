@@ -195,5 +195,56 @@ describe('Workflow Snapshots', () => {
       expect(yaml).toContain('the-craftlab/')
       expect(yaml).not.toMatch(/uses:\s+\.\//m) // Should not have local action references
     })
+
+    it('minimal: pipeline declares a workflow_dispatch version input for promotion threading', () => {
+      const config = loadConfig('minimal')
+      const yaml = generateWorkflowFromConfig(config)
+      const parsed = parseDocument(yaml).toJSON()
+
+      const versionInput = parsed.on.workflow_dispatch.inputs.version
+      expect(versionInput).toBeDefined()
+      expect(versionInput.type).toBe('string')
+      expect(versionInput.required).toBe(false)
+    })
+
+    it('minimal: version job passes the dispatched version into calculate-version', () => {
+      const config = loadConfig('minimal')
+      const yaml = generateWorkflowFromConfig(config)
+      const parsed = parseDocument(yaml).toJSON()
+
+      const versionStep = parsed.jobs.version.steps.find((s: { id?: string }) => s.id === 'version')
+      expect(versionStep).toBeDefined()
+      expect(versionStep.with.version).toBe('${{ inputs.version }}')
+    })
+
+    it('promote-branch action dispatches the pipeline workflow with the resolved version', () => {
+      // actions/promote-branch/action.yml is generated from
+      // src/templates/actions/promote-branch.yml.tpl.ts via `pnpm sync-actions` and kept in
+      // sync by `pnpm sync-actions:check` in CI, so reading the committed file here is
+      // reading the same content the template renders (see promote-branch-guard.test.ts
+      // for the same pattern).
+      const actionPath = join(__dirname, '../../actions/promote-branch/action.yml')
+      const raw = readFileSync(actionPath, 'utf-8')
+      expect(raw).toContain('--field version="$VERSION"')
+    })
+
+    it('calculate-version action prefers the dispatched input version over the tag lookup', () => {
+      // actions/calculate-version/action.yml is the synced output of
+      // src/templates/actions/calculate-version.yml.tpl.ts (same sync mechanism as above).
+      const actionPath = join(__dirname, '../../actions/calculate-version/action.yml')
+      const raw = readFileSync(actionPath, 'utf-8')
+      const action = parseDocument(raw).toJSON() as {
+        runs: { steps: Array<{ id?: string; if?: string; run?: string }> }
+      }
+      const steps = action.runs.steps
+
+      const checkInputStep = steps.find(s => s.id === 'check_input_version')
+      expect(checkInputStep).toBeDefined()
+      expect(checkInputStep?.run).toContain('${{ inputs.version }}')
+
+      const tagLookupStep = steps.find(s => s.id === 'get_version_old')
+      expect(tagLookupStep).toBeDefined()
+      expect(tagLookupStep?.if).toBe("steps.check_input_version.outputs.version == ''")
+    })
   })
 })
