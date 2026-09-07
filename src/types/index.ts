@@ -258,7 +258,7 @@ export interface PipecraftConfig {
     /**
      * pnpm version for workflows (used when the project installs with pnpm).
      * Accepts a major (e.g. `'10'`) or an exact version (e.g. `'10.6.2'`).
-     * @default '10'
+     * @default '10.6.2'
      */
     pnpmVersion?: string
   }

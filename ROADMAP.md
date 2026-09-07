@@ -13,7 +13,13 @@ _what · why · source_.
 ## Status (2026-06-18)
 
 **✅ Shipped in #436** (squash `f9c4396` on `develop`): all of **P0 (1–5)** and **P1
-items 6, 7 (concurrency only), 8, 9, 10, 11**. Each landed as its own tested commit.
+items 6, 7 (concurrency only), 8, 9, 10, 11 (pnpmVersion default only)**. Each landed as its own
+tested commit.
+
+**✅ Item 11 completed in #608**: the generator's `pnpmVersion` default was already an exact
+patch (`'10.6.2'`, shipped in #436); #608 added the missing `packageManager` field to this
+repo's own `package.json` and fixed a stale `@default '10'` JSDoc on `runtime.pnpmVersion`
+(`src/types/index.ts`).
 
 **Still open:**
 
@@ -78,8 +84,10 @@ Items below are kept for history/context; see the strikethrough/✅ markers.
 10. **Guard custom-job vs managed-job name collisions.** A custom `release`/`tag`/etc. job emits
     duplicate keys → unparseable workflow + partial write. _Source:_ Pass 2. _Fix:_ detect
     reserved names; make generation transactional. (Also fixes the marker-fallback comment loss.)
-11. **Pin generator default `pnpmVersion` to an exact patch + add `packageManager`.** Default is
-    `'10'` (major); `package.json` has no `packageManager`. _Source:_ Pass 3.
+11. **Pin generator default `pnpmVersion` to an exact patch + add `packageManager`.** ✅ Done.
+    Generator default: shipped in #436 (`operations-header.ts` defaults `pnpmVersion` to
+    `'10.6.2'`, an exact patch, not a floating major). Repo's own `package.json`
+    `packageManager` field: added in #608. _Source:_ Pass 3.
 12. **Publish the marketplace actions.** Prepped (#206/#207/#217) + reconciled (#409) but not
     published. `remote` action mode already works today through pinned repository refs
     (`actionSourceMode: remote` + `actionVersion`; see `examples/remote/.pipecraftrc.json` and
