@@ -41,7 +41,7 @@ PipeCraft supports multiple configuration file formats to match your preferences
 **Required**: Yes
 **Default**: `'github'`
 
-Specifies which CI/CD platform you're using. Currently, PipeCraft generates GitHub Actions syntax regardless of this setting, but this field is required for future GitLab CI/CD support.
+Specifies which CI/CD platform you're using. PipeCraft generates GitHub Actions workflows only; `init` and `generate` both reject a config with `ciProvider: "gitlab"` and exit with an error.
 
 ```json
 {
