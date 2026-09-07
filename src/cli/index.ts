@@ -339,6 +339,16 @@ program
       const config = loadConfig(configPath) as PipecraftConfig
       validateConfig(config)
 
+      // The schema accepts "gitlab" as a config value, but nothing under src/ generates
+      // anything but GitHub Actions. `init --ci-provider gitlab` already rejects this at
+      // write time (src/cli/index.ts, init's own action); a hand-written or older config
+      // reaches generate directly, so generate rejects it here too.
+      if (config.ciProvider === 'gitlab') {
+        throw new Error(
+          'ciProvider "gitlab" is not supported yet. Pipecraft generates GitHub Actions workflows only.'
+        )
+      }
+
       if (globalOptions.dryRun) {
         reportDryRun(config, pipelinePath)
         return
