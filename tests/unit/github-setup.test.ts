@@ -642,6 +642,17 @@ describe('GitHub Setup', () => {
         expect(settings.allow_merge_commit).toBe(false)
         expect(settings.allow_rebase_merge).toBe(false)
       })
+
+      it('should recommend allow_merge_commit true when mergeStrategy is merge', () => {
+        mockLoadConfig.mockReturnValue({
+          branchFlow: ['develop', 'main'],
+          mergeStrategy: 'merge'
+        })
+
+        const settings = getRecommendedRepositorySettings()
+
+        expect(settings.allow_merge_commit).toBe(true)
+      })
     })
 
     describe('getRepositorySettings()', () => {
@@ -832,6 +843,63 @@ describe('GitHub Setup', () => {
         const gaps = getSettingsGaps(current, recommended)
         // Should not include squash settings if squash merge is disabled
         expect(gaps).not.toHaveProperty('squash_merge_commit_title')
+      })
+
+      it('should detect merge commit title gap when merge commits will be enabled', () => {
+        const current = {
+          allow_merge_commit: true,
+          merge_commit_title: 'MERGE_MESSAGE' as const
+        }
+
+        const recommended = {
+          allow_merge_commit: true,
+          merge_commit_title: 'PR_TITLE' as const
+        }
+
+        const gaps = getSettingsGaps(current, recommended)
+        expect(gaps.merge_commit_title).toBe('PR_TITLE')
+      })
+
+      it('should not check merge commit title if merge commits stay disabled', () => {
+        const current = {
+          allow_merge_commit: false,
+          merge_commit_title: 'MERGE_MESSAGE' as const
+        }
+
+        const recommended = {
+          allow_merge_commit: false,
+          merge_commit_title: 'PR_TITLE' as const
+        }
+
+        const gaps = getSettingsGaps(current, recommended)
+        expect(gaps).not.toHaveProperty('merge_commit_title')
+      })
+
+      it('should thread mergeStrategy: merge through to an actual PATCH-able gap', () => {
+        // End-to-end of the bug this story fixes: a repo with allow_merge_commit already
+        // false, recommended settings computed from a mergeStrategy: 'merge' config, must
+        // surface both allow_merge_commit and merge_commit_title as gaps to apply.
+        mockLoadConfig.mockReturnValue({
+          branchFlow: ['develop', 'alpha', 'production'],
+          mergeStrategy: 'merge'
+        })
+
+        const current = {
+          allow_auto_merge: false,
+          allow_update_branch: true,
+          allow_merge_commit: false,
+          allow_rebase_merge: false,
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'PR_TITLE' as const,
+          squash_merge_commit_message: 'COMMIT_MESSAGES' as const,
+          merge_commit_title: 'MERGE_MESSAGE' as const
+        }
+
+        const recommended = getRecommendedRepositorySettings()
+        const gaps = getSettingsGaps(current, recommended)
+
+        expect(gaps.allow_merge_commit).toBe(true)
+        expect(gaps.merge_commit_title).toBe('PR_TITLE')
       })
     })
   })

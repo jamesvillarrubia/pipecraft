@@ -808,21 +808,32 @@ export function shouldEnableAutoMerge(): boolean {
  * These are the settings that work best with Pipecraft workflows:
  * - Allow auto-merge: ON if any branch has autoPromote in config, OFF otherwise
  * - Always suggest updating PR branches: ON
- * - Allow merge commits: OFF
+ * - Allow merge commits: ON if config.mergeStrategy is 'merge', OFF otherwise
  * - Allow rebase merging: OFF
  * - Allow squash merging: ON
  * - Squash merge commit title: PR_TITLE
  * - Squash merge commit message: COMMIT_MESSAGES (PR title + commit details)
  */
 export function getRecommendedRepositorySettings(): RepositorySettings {
+  let mergeStrategy: PipecraftConfig['mergeStrategy'] | undefined
+  try {
+    mergeStrategy = (loadConfig() as PipecraftConfig).mergeStrategy
+  } catch (error) {
+    // No config file or mergeStrategy not configured
+    mergeStrategy = undefined
+  }
+
+  const allowMergeCommit = mergeStrategy === 'merge'
+
   return {
     allow_auto_merge: shouldEnableAutoMerge(),
     allow_update_branch: true,
-    allow_merge_commit: false,
+    allow_merge_commit: allowMergeCommit,
     allow_rebase_merge: false,
     allow_squash_merge: true,
     squash_merge_commit_title: 'PR_TITLE',
-    squash_merge_commit_message: 'COMMIT_MESSAGES'
+    squash_merge_commit_message: 'COMMIT_MESSAGES',
+    ...(allowMergeCommit ? { merge_commit_title: 'PR_TITLE' as const } : {})
   }
 }
 
@@ -924,6 +935,12 @@ export function getSettingsGaps(
     }
   }
 
+  // Only check merge commit title if merge commits will be enabled
+  const mergeWillBeEnabled = gaps.allow_merge_commit ?? current.allow_merge_commit
+  if (mergeWillBeEnabled && current.merge_commit_title !== recommended.merge_commit_title) {
+    gaps.merge_commit_title = recommended.merge_commit_title
+  }
+
   return gaps
 }
 
@@ -952,7 +969,8 @@ export function displaySettingsComparison(
     { key: 'allow_rebase_merge', label: 'Allow rebase merging' },
     { key: 'allow_squash_merge', label: 'Allow squash merging' },
     { key: 'squash_merge_commit_title', label: 'Squash merge commit title' },
-    { key: 'squash_merge_commit_message', label: 'Squash merge commit message' }
+    { key: 'squash_merge_commit_message', label: 'Squash merge commit message' },
+    { key: 'merge_commit_title', label: 'Merge commit title' }
   ]
 
   settings.forEach(({ key, label }) => {
