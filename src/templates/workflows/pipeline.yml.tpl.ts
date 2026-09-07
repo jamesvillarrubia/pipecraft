@@ -224,9 +224,32 @@ function generatePrefixedJobsText(
       const jobs = jobsByPrefix[prefix]
 
       jobs.forEach(job => {
+        // A deploy job for a testable domain must not run (or count as satisfied) until
+        // its test job actually succeeds: a bare `needs: changes` lets deploy proceed
+        // whether test-<domain> passed, failed, or never ran in this workflow (`needs`
+        // alone is satisfied by a skip). Non-deploy prefixes, and deploy for a domain
+        // with no 'test' prefix, keep the generic changes-gated shape.
+        const domainPrefixes: string[] = Array.isArray(domains[job.domain]?.prefixes)
+          ? domains[job.domain].prefixes
+          : []
+        const testJobName = `test-${job.domain}`
+        const isTestGatedDeploy = prefix === 'deploy' && domainPrefixes.includes('test')
+
+        const needsLine = isTestGatedDeploy
+          ? `needs: [ changes, version, ${testJobName} ]`
+          : prefix === 'deploy'
+          ? `needs: [ changes, version ]`
+          : `needs: changes`
+
+        const ifLine = isTestGatedDeploy
+          ? `if: \${{ always() && needs.version.result == 'success' && needs.changes.outputs.${job.domain} == 'true' && needs.${testJobName}.result == 'success' }}`
+          : prefix === 'deploy'
+          ? `if: \${{ always() && needs.version.result == 'success' && needs.changes.outputs.${job.domain} == 'true' }}`
+          : `if: \${{ needs.changes.outputs.${job.domain} == 'true' }}`
+
         const jobYaml = `  ${job.jobName}:
-    needs: changes
-    if: \${{ needs.changes.outputs.${job.domain} == 'true' }}
+    ${needsLine}
+    ${ifLine}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

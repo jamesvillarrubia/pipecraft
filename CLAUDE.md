@@ -95,8 +95,16 @@ left the old name enforced and adding a commit type left `pr-title-check` reject
 preserves custom jobs; force only makes Pinion write the merged result. Before that fix
 the file was written once and never again, on every published version back to 0.29.3, and
 the no-force branch also duplicated the custom section. `tests/integration/regenerate-pipeline.test.ts`
-pins the second run. `.release-it.cjs` and the composite actions still render without force
-(follow-up issue).
+pins the second run.
+
+`release-it.cjs.tpl.ts` passes force too (#618): the file has no user-editable region
+(`buildReleaseItConfig()` builds the whole thing), so without force a later `semver.bumpRules`
+change never reached `.release-it.cjs` and `generate` still exited 0.
+`tests/integration/regenerate-managed-workflows.test.ts` pins a changed bump rule landing on
+the second run. The composite action templates (`src/templates/actions/*.tpl.ts`) still
+render without force by decision, not by gap: `docs/docs/cli-reference.md` and
+`docs/docs/workflow-generation.md` already tell users to pass `--force` after upgrading
+PipeCraft, and a consumer may have hand-edited a generated action.
 
 If you add another generated file that must track config, pass `{ force: true }` and cover
 it in `tests/integration/regenerate-managed-workflows.test.ts`.

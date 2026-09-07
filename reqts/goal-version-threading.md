@@ -1,7 +1,10 @@
 # Thread the established version through promotion
 
-Rank 7. Decision: **build**, attended, after deployment environments. The design already
-exists at `docs/plans/version-promotion-threading.md` (B2, 2026-06-15).
+Rank 7. Decision: **implemented**. The design at
+`docs/plans/version-promotion-threading.md` (B2, 2026-06-15) is wired in current code: see
+that doc's Status line for the four file:line wiring points and the tests in
+`tests/snapshots/workflow-snapshots.test.ts` that pin them. Only a live end-to-end proof
+(a real promotion through a merge commit) remains, reserved for an attended session.
 
 ## Problem
 
