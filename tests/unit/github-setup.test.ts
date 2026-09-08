@@ -642,6 +642,32 @@ describe('GitHub Setup', () => {
         expect(settings.allow_merge_commit).toBe(false)
         expect(settings.allow_rebase_merge).toBe(false)
       })
+
+      it('should recommend allow_merge_commit true when mergeStrategy is merge', () => {
+        mockLoadConfig.mockReturnValue({
+          branchFlow: ['develop', 'main'],
+          mergeStrategy: 'merge'
+        })
+
+        const settings = getRecommendedRepositorySettings()
+
+        expect(settings.allow_merge_commit).toBe(true)
+      })
+
+      it('should recommend a valid merge_commit_title/message pairing when mergeStrategy is merge', () => {
+        // GitHub 422s a lone merge_commit_title without a paired merge_commit_message
+        // (invalid_merge_commit_setting_combo) — verified live against
+        // pipecraft-example-gated this session.
+        mockLoadConfig.mockReturnValue({
+          branchFlow: ['develop', 'main'],
+          mergeStrategy: 'merge'
+        })
+
+        const settings = getRecommendedRepositorySettings()
+
+        expect(settings.merge_commit_title).toBe('PR_TITLE')
+        expect(settings.merge_commit_message).toBe('PR_BODY')
+      })
     })
 
     describe('getRepositorySettings()', () => {
@@ -832,6 +858,72 @@ describe('GitHub Setup', () => {
         const gaps = getSettingsGaps(current, recommended)
         // Should not include squash settings if squash merge is disabled
         expect(gaps).not.toHaveProperty('squash_merge_commit_title')
+      })
+
+      it('should detect merge commit title/message gaps when merge commits will be enabled', () => {
+        const current = {
+          allow_merge_commit: true,
+          merge_commit_title: 'MERGE_MESSAGE' as const,
+          merge_commit_message: 'PR_TITLE' as const
+        }
+
+        const recommended = {
+          allow_merge_commit: true,
+          merge_commit_title: 'PR_TITLE' as const,
+          merge_commit_message: 'PR_BODY' as const
+        }
+
+        const gaps = getSettingsGaps(current, recommended)
+        expect(gaps.merge_commit_title).toBe('PR_TITLE')
+        expect(gaps.merge_commit_message).toBe('PR_BODY')
+      })
+
+      it('should not check merge commit title/message if merge commits stay disabled', () => {
+        const current = {
+          allow_merge_commit: false,
+          merge_commit_title: 'MERGE_MESSAGE' as const,
+          merge_commit_message: 'PR_TITLE' as const
+        }
+
+        const recommended = {
+          allow_merge_commit: false,
+          merge_commit_title: 'PR_TITLE' as const,
+          merge_commit_message: 'PR_BODY' as const
+        }
+
+        const gaps = getSettingsGaps(current, recommended)
+        expect(gaps).not.toHaveProperty('merge_commit_title')
+        expect(gaps).not.toHaveProperty('merge_commit_message')
+      })
+
+      it('should thread mergeStrategy: merge through to an actual PATCH-able gap', () => {
+        // End-to-end of the bug this story fixes: a repo with allow_merge_commit already
+        // false, recommended settings computed from a mergeStrategy: 'merge' config, must
+        // surface allow_merge_commit plus a VALID merge_commit_title/message pairing —
+        // GitHub 422s a lone title without its paired message (verified live).
+        mockLoadConfig.mockReturnValue({
+          branchFlow: ['develop', 'alpha', 'production'],
+          mergeStrategy: 'merge'
+        })
+
+        const current = {
+          allow_auto_merge: false,
+          allow_update_branch: true,
+          allow_merge_commit: false,
+          allow_rebase_merge: false,
+          allow_squash_merge: true,
+          squash_merge_commit_title: 'PR_TITLE' as const,
+          squash_merge_commit_message: 'COMMIT_MESSAGES' as const,
+          merge_commit_title: 'MERGE_MESSAGE' as const,
+          merge_commit_message: 'PR_TITLE' as const
+        }
+
+        const recommended = getRecommendedRepositorySettings()
+        const gaps = getSettingsGaps(current, recommended)
+
+        expect(gaps.allow_merge_commit).toBe(true)
+        expect(gaps.merge_commit_title).toBe('PR_TITLE')
+        expect(gaps.merge_commit_message).toBe('PR_BODY')
       })
     })
   })
